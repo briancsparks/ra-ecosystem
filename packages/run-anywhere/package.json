@@ -1,0 +1,25 @@
+{
+  "name": "run-anywhere",
+  "version": "0.0.1",
+  "description": "Write your Node.js functions in the run-anywhere format, and run them anywhere (CLI, AWS Lambda, etc.)",
+  "main": "ra.js",
+  "bin": {
+    "ra": "bin.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/briancsparks/run-anywhere.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/briancsparks/run-anywhere/issues"
+  },
+  "homepage": "https://github.com/briancsparks/run-anywhere#readme",
+  "dependencies": {
+    "sgsg": "^0.8.6"
+  }
+}
