@@ -10,23 +10,24 @@
 var sg                = require('sgsg');
 var _                 = sg._;
 var path              = require('path');
+var ra                = require('./ra');
 
-var ra = {};
+var commands = {};
 
 var ARGV  = sg.ARGV();
 
 var main = function() {
   var command = ARGV.args.shift();
 
-  if (ra[command]) {
-    return ra[command]();
+  if (commands[command]) {
+    return commands[command]();
   }
 
   /* otherwise -- unknown command */
-  console.error("Unknown command, known commands: ", _.keys(ra));
+  console.error("Unknown command, known commands: ", _.keys(commands));
 };
 
-ra.invoke = function() {
+commands.invoke = function() {
   var moduleFilename  = ARGV.args.shift();
   var functionName    = ARGV.args.shift();
 
@@ -54,36 +55,27 @@ ra.invoke = function() {
   }
 
   /* otherwise */
-  var args    = [];
-  var argv    = ARGV;
-  var context = {};
+  var argv      = ARGV;
 
   if (_.isFunction(argv.getParams)) {
     argv = argv.getParams({skipArgs:true});
   }
 
-  var cb = function(err) {
+  var params    = {};
+  params.params = argv;
+
+  var spec      = {};
+  return ra.invoke(params, spec, fn, function(err) {
     if (err) { console.error(err); }
 
     if (arguments.length === 2) {
-      process.stdout.write(JSON.stringify(arguments[1]));
+      process.stdout.write(JSON.stringify(arguments[1])+'\n');
       return;
     }
 
     /* otherwise */
-    process.stdout.write(JSON.stringify(_.rest(arguments)));
-  };
-
-  args.push(argv);
-  args.push(context);
-  args.push(cb);
-
-  // Always put the callback last
-  if (_.last(args) !== cb) {
-    args.push(cb);
-  }
-
-  return fn.apply(this, args);
+    process.stdout.write(JSON.stringify(_.rest(arguments))+'\n');
+  });
 };
 
 if (process.argv[1] === __filename) {
