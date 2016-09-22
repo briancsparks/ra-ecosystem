@@ -7,6 +7,7 @@
 
 var sg            = require('sgsg');
 var _             = sg._;
+var path          = require('path');
 
 var ra = {};
 
@@ -38,12 +39,39 @@ exports.invoke = function(params_, spec_, fn, callback) {
   return fn.apply(this, args);
 };
 
-ra.exportFunction = function(name, fn_, options_) {
-  var fn = fn_;
+ra.exportFunction = ra.raify = function(name, fn_, options_) {
+  var options   = options || {};
+  var fn        = fn_;
 
-  fn.raName = name;   // Cannot use 'name'
+  fn.ra = {
+    raified : (fn.raified = true),
+    name    : (fn.raName  = name)     // Cannot use 'name'
+  };
 
   return fn;
+};
+
+ra.wrap = function(lib) {
+
+  var wrapped = {};
+  _.each(lib, function(fn, key) {
+    if (_.isFunction(fn)) {
+      wrapped[key] = function(a,b,c) {
+        if (arguments.length === 1 && _.isFunction(a)) { return fn.call(this, {}, {}, a); }
+
+        return fn.apply(this, arguments);
+      };
+    }
+  });
+
+  return wrapped;
+};
+
+ra.require = function(libname_, dirname) {
+  var libname = dirname ? path.join(dirname, libname_) : libname_;
+  var lib = require(libname);
+
+  return ra.wrap(lib);
 };
 
 // Export the ra object.
