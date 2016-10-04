@@ -49,7 +49,7 @@ commands.invoke = function() {
 
   var fn = mod[functionName];
   if (!fn) {
-    console.error("function "+functionName+" not found");
+    console.error("function "+functionName+" not found. "+"Found: "+_.keys(mod));
     process.exit(1);
     return;
   }
