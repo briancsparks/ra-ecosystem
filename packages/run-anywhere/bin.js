@@ -66,7 +66,7 @@ commands.invoke = function() {
 
   var spec      = {};
   return ra.invoke(params, spec, fn, function(err) {
-    if (err) { console.error("Error invoking: "+moduleFilename+"::"+functionName); }
+    if (err) { console.error(err, "Error invoking: "+moduleFilename+"::"+functionName); }
     if (arguments.length === 1) { return; }
 
     if (arguments.length === 2) {
