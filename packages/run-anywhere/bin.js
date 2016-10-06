@@ -79,10 +79,51 @@ commands.invoke = function() {
   });
 };
 
+commands.ls = function() {
+  var moduleFilename  = ARGV.args.shift();
+
+  if (!moduleFilename) {
+    console.error("Must provide module (.js file)");
+    process.exit(1);
+    return;
+  }
+
+  /* otherwise */
+  var mod = raInvokeRequire(moduleFilename);
+  if (!mod) {
+    console.error("module "+moduleFilename+" failed to be required");
+    process.exit(1);
+    return;
+  }
+
+  /* otherwise -- look at 'mod' and display functions */
+  var args = ['\\(\\s*argv\\s*,\\s*context\\s*,\\s*callback\\s*\\)', moduleFilename];
+
+  return sg.exec('grep', args, function(error, exitCode, stdoutChunks, stderrChunks, signal) {
+    var lines = stdoutChunks.join('').split('\n');
+
+    lines = _.compact(_.map(lines, function(line) {
+      var m = line.match(/([a-z0-9_]+)\s*=\s*function\(([^)]+)\)/i);
+      if (m) {
+        return m[1];
+      }
+
+      // TODO: match function xyz(...) style
+    }));
+
+    _.each(lines, function(line) {
+      process.stdout.write(line+'\n');
+    });
+  });
+}
+
 if (process.argv[1] === __filename || process.argv[1].match(/bin.ra$/)) {
   return main();
 }
 
+/**
+ *  A require() function for use by invoke.
+ */
 function raInvokeRequire(name_) {
   var name = name_;
   var mod;

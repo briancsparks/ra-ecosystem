@@ -54,13 +54,16 @@ ra.exportFunction = ra.raify = function(name, fn_, options_) {
 ra.wrap = function(lib) {
 
   var wrapped = {};
-  _.each(lib, function(fn, key) {
-    if (_.isFunction(fn)) {
+  _.each(lib, function(value, key) {
+    var fn = value;
+    if (_.isFunction(value)) {
       wrapped[key] = function(a,b,c) {
         if (arguments.length === 1 && _.isFunction(a)) { return fn.call(this, {}, {}, a); }
 
         return fn.apply(this, arguments);
       };
+    } else {
+      wrapped[key] = value;
     }
   });
 
@@ -69,7 +72,7 @@ ra.wrap = function(lib) {
 
 ra.require = function(libname_, dirname) {
   var libname = dirname ? path.join(dirname, libname_) : libname_;
-  var lib = require(libname);
+  var lib     = require(libname);
 
   return ra.wrap(lib);
 };
