@@ -51,6 +51,17 @@ ra.exportFunction = ra.raify = function(name, fn_, options_) {
   return fn;
 };
 
+ra.routesify = function(options_, fn) {
+  var toRr = function(req, res, match) {
+    var rr = {req:req, res:res};
+    return fn(rr, {}, function(err) {
+      if (err) { return sg.nextMatch(req, res, match, err); }
+    });
+  };
+
+  return toRr;
+};
+
 ra.wrap = function(lib) {
 
   var wrapped = {};
