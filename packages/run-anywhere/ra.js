@@ -51,9 +51,18 @@ ra.exportFunction = ra.raify = function(name, fn_, options_) {
   return fn;
 };
 
-ra.routesify = function(options_, fn) {
+ra.routesify = function(a, b) {
+  var options, fn;
+  if (arguments.length === 1) {
+    options = {};
+    fn      = a;
+  } else {
+    options = a || {};
+    fn      = b;
+  }
+
   var toRr = function(req, res, match) {
-    var rr = {req:req, res:res};
+    var rr = {req:req, res:res, params:match.params, splats:match.splats};
     return fn(rr, {}, function(err) {
       if (err) { return sg.nextMatch(req, res, match, err); }
     });
