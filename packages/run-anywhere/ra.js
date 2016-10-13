@@ -8,6 +8,9 @@
 var sg            = require('sgsg');
 var _             = sg._;
 var path          = require('path');
+var urlLib        = require('url');
+
+var nextMatch     = sg.routes().nextMatch;
 
 var ra = {};
 
@@ -61,10 +64,13 @@ ra.routesify = function(a, b) {
     fn      = b;
   }
 
-  var toRr = function(req, res, match) {
-    var rr = {req:req, res:res, params:match.params, splats:match.splats};
-    return fn(rr, {}, function(err) {
-      if (err) { return sg.nextMatch(req, res, match, err); }
+  var toRr = function(req, res, match, path_) {
+    var path      = path_ || urlLib.parse(req.url).path;
+    var rr        = {req:req, res:res, params:match.params, splats:match.splats, match:match, path:path};
+
+    return fn(rr, {}, function(err, a) {
+      if (err)                          { return nextMatch(req, res, match, err); }
+      if (err === null && a === false)  { return nextMatch(req, res, match, err); }
     });
   };
 
