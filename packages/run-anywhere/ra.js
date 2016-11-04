@@ -12,7 +12,7 @@ var urlLib        = require('url');
 
 var nextMatch     = sg.routes().nextMatch;
 
-var ra = {};
+var libRa = {};
 
 exports.invoke = function(params_, spec_, fn, callback) {
   var params  = params_ || {};
@@ -42,7 +42,7 @@ exports.invoke = function(params_, spec_, fn, callback) {
   return fn.apply(this, args);
 };
 
-ra.exportFunction = ra.raify = function(name, fn_, options_) {
+libRa.exportFunction = libRa.raify = function(name, fn_, options_) {
   var options   = options || {};
   var fn        = fn_;
 
@@ -54,7 +54,7 @@ ra.exportFunction = ra.raify = function(name, fn_, options_) {
   return fn;
 };
 
-ra.routesify = function(a, b) {
+libRa.routesify = function(a, b) {
   var options, fn;
   if (arguments.length === 1) {
     options = {};
@@ -77,7 +77,7 @@ ra.routesify = function(a, b) {
   return toRr;
 };
 
-ra.wrap = function(lib) {
+libRa.wrap = function(lib) {
 
   var wrapped = {};
   _.each(lib, function(value, key) {
@@ -96,15 +96,69 @@ ra.wrap = function(lib) {
   return wrapped;
 };
 
-ra.require = function(libname_, dirname) {
+libRa.middlewareify = function(lib) {
+
+  _.each(lib, function(origFn, origFnName) {
+    if (_.isFunction(origFn)) {
+      lib[origFnName] = function(a,b,c) {
+        if (arguments.length === 1 && _.isFunction(a)) { return origFn.call(this, {}, {}, a); }
+
+        return origFn.apply(this, arguments);
+      };
+    }
+  });
+
+  return lib;
+};
+
+libRa.require = function(libname_, dirname) {
   var libname = dirname ? path.join(dirname, libname_) : libname_;
   var lib     = require(libname);
 
-  return ra.wrap(lib);
+  return libRa.middlewareify(lib);
 };
 
-// Export the ra object.
-_.each(_.keys(ra), function(key) {
-  exports[key] = ra[key];
+//------------------------------------------------------------------------------------------------
+//
+//    Error handling
+//
+//
+
+var errorHandlers = require('./lib/error-handlers');
+
+libRa.ErrorHandler = function(argv, context, callback) {
+  var self      = this;
+  var modnames  = ['console'];
+
+  var errorMods = {}, errorModNames = [];
+
+  self.loadErrorHandler = function(mod) {
+    if (errorHandlers[mod]) {
+      errorMods[mod] = new errorHandlers[mod]();
+      errorModNames.push(mod);
+    }
+  };
+
+  self.die = function(err, loc) {
+    var i;
+    for (i = 0; i < errorModNames.length; i++) {
+      errorMods[errorModNames[i]].die(err, loc);
+    }
+    return callback(sg.toError(err));
+  };
+
+  _.each(modnames, function(modname) {
+    self.loadErrorHandler(modname);
+  });
+
+};
+
+libRa.errorHandler = function(argv, context, callback) {
+  return new libRa.ErrorHandler(argv, context, callback);
+};
+
+// Export the libRa object.
+_.each(libRa, function(value, key) {
+  exports[key] = value;
 });
 

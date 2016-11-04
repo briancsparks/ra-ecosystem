@@ -20,6 +20,8 @@
   },
   "homepage": "https://github.com/briancsparks/run-anywhere#readme",
   "dependencies": {
+    "js-aws": "0.0.1",
+    "js-mongo": "0.0.1",
     "sgsg": "^0.8.6"
   }
 }
