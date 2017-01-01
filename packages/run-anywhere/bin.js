@@ -66,8 +66,17 @@ commands.invoke = function() {
 
   var spec      = {};
   return ra.invoke(params, spec, fn, function(err) {
-    if (err) { console.error(err, "Error invoking: "+moduleFilename+"::"+functionName); }
-    if (arguments.length === 1) { return; }
+    var exitCode = 0;
+
+    if (err) {
+      exitCode = 1;
+      console.error(err, "Error invoking: "+moduleFilename+"::"+functionName);
+    }
+
+    if (arguments.length === 1) {
+      process.exit(exitCode);
+      return;
+    }
 
     if (arguments.length === 2) {
       process.stdout.write(JSON.stringify(arguments[1])+'\n');
@@ -76,6 +85,7 @@ commands.invoke = function() {
 
     /* otherwise */
     process.stdout.write(JSON.stringify(_.rest(arguments))+'\n');
+    process.exit(exitCode);
   });
 };
 
@@ -115,7 +125,7 @@ commands.ls = function() {
       process.stdout.write(line+'\n');
     });
   });
-}
+};
 
 if (process.argv[1] === __filename || process.argv[1].match(/bin.ra$/)) {
   return main();
