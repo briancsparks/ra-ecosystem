@@ -20,8 +20,8 @@
   },
   "homepage": "https://github.com/briancsparks/run-anywhere#readme",
   "dependencies": {
-    "js-aws": "0.0.1",
-    "js-mongo": "0.0.1",
-    "sgsg": "^0.8.6"
+    "js-aws": "https://github.com/briancsparks/js-aws/tarball/master",
+    "js-mongo": "https://github.com/briancsparks/js-mongo/tarball/master",
+    "sgsg": "https://github.com/briancsparks/sg/tarball/master"
   }
 }
