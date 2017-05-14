@@ -14,6 +14,9 @@ var nextMatch     = sg.routes().nextMatch;
 
 var libRa = {};
 
+/**
+ *  Invoke a single function from within a JS package.
+ */
 exports.invoke = function(params_, spec_, fn, callback) {
   var params  = params_ || {};
   var spec    = spec_   || {};
@@ -42,6 +45,9 @@ exports.invoke = function(params_, spec_, fn, callback) {
   return fn.apply(this, args);
 };
 
+/**
+ *
+ */
 libRa.exportFunction = libRa.raify = function(name, fn_, options_) {
   var options   = options || {};
   var fn        = fn_;
@@ -54,6 +60,23 @@ libRa.exportFunction = libRa.raify = function(name, fn_, options_) {
   return fn;
 };
 
+/**
+ *  Turns an `rr` style function into one that is usable by the `routes` NPM package.
+ *
+ *          function(rr, context, callback) ...
+ *
+ *  Where `rr` will have:
+ *
+ *          {
+ *            req     : req,              // The Node.js req param
+ *            res     : res,              // The Node.js res param
+ *            params  : match.params,     // The Routes match.params (url parts, like /:user/:id)
+ *            splats  : match.splats,     // The Routes match.splats
+ *            match   : match,            // The Routes match
+ *            path    : path              // The Node.js path param from being url.parse()
+ *          }
+ *
+ */
 libRa.routesify = function(a, b) {
   var options, fn;
   if (arguments.length === 1) {
@@ -77,6 +100,17 @@ libRa.routesify = function(a, b) {
   return toRr;
 };
 
+/**
+ *  Wraps a function so it can be called from within its own module.
+ *
+ *  The intention is that you might be calling the function within your
+ *  own module, or maybe something else altogether, like an improved version
+ *  running as a Lambda module.
+ *
+ *  I.e. wrap all your run-anywhere style functions when you call them internally,
+ *  and once deployed you can 'swap-out' the called function with something
+ *  running on Lambda without updating this module.
+ */
 libRa.wrap = function(lib) {
 
   var wrapped = {};
@@ -96,6 +130,9 @@ libRa.wrap = function(lib) {
   return wrapped;
 };
 
+/**
+ *  For use by ra.require(); wraps all functions from a lib.
+ */
 libRa.middlewareify = function(lib) {
 
   _.each(lib, function(origFn, origFnName) {
@@ -111,6 +148,9 @@ libRa.middlewareify = function(lib) {
   return lib;
 };
 
+/**
+ *  Use ra.require('lib', __dirname) to bring in run-anywhere modules.
+ */
 libRa.require = function(libname_, dirname) {
   var libname = dirname ? path.join(dirname, libname_) : libname_;
   var lib     = require(libname);

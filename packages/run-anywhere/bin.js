@@ -16,6 +16,11 @@ var commands = {};
 
 var ARGV  = sg.ARGV();
 
+/**
+ *  This is the main function that gets invoked if the user runs the `ra` command.
+ *
+ *  It simply looks up the requested function in its `commands` object, and calls it.
+ */
 var main = function() {
   var command = ARGV.args.shift();
 
@@ -27,6 +32,12 @@ var main = function() {
   console.error("Unknown command, known commands: ", _.keys(commands));
 };
 
+/**
+ *  The workhorse invoke() function.
+ *
+ *  This is the function that parses the command line, finds, and loads the requested
+ *  script. Then it calls `ra.js` invoking the `invoke` function.
+ */
 commands.invoke = function() {
   var moduleFilename  = ARGV.args.shift();
   var functionName    = ARGV.args.shift();
