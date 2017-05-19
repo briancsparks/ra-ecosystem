@@ -25,6 +25,8 @@ This is the goal of the Run-anywhere (Ra) library:
 * CLI - invoke your function from the command-line.
 * AWS Lambda
 * Express
+* Routes
+* React / ReactNative
 
 # The run-anywhere Calling Convention
 
@@ -66,22 +68,23 @@ AWS lambda-like parameters.
 Note that Ra does not provide any functionality to deploy your code. Other tools like serverless and
 Claudia already do an excellent job, so you should use them.
 
-### The raEnv Parameter
+### Parameters
 
-You must accept three parameters to your function: (argv, context, callback), but generally speaking,
+You must accept three parameters to your function: `(argv, context, callback)`, but generally speaking,
 your code will work best if you only _use_ ```argv```, and ```callback``` -- try your best to make
 your code work irrespective of the context under which it runs.
 
-* ```argv```        - The end-result of processing inputs, and first parameter send to your function.
+* ```argv```        - The end-result of processing inputs, and first parameter sent to your function.
 * ```context```     - The AWS Lambda ```context``` parameter, if this is an AWS Lambda invocation, or a
-                      similar looking object otherwise.
+                      similar looking object otherwise. Note that you should not directly access this
+                      parameter (see below.)
 * ```callback```    - The typical Node.js callback parameter.
 
 
 ### CLI Usage
 
 Run-anywhere (Ra) has a command-line mode that allows you to invoke any Ra function from the command line.
-All parameters are parsed by an ```ARGV``` object
+All parameters are parsed by an ```ARGV``` object from the sgsg project.
 
 # Details
 
@@ -118,6 +121,32 @@ ra invoke sample/hello.js echo --bar --baz=quxx | underscore print
 
 ```json
 { "hello": "world", "bar": true, "baz": "quxx" }
+```
+
+This example uses the excellent `underscore-cli` npm project:
+
+```sh
+npm install -g underscore-cli
+```
+
+### The context Parameter
+
+You should not directly access this parameter, as it will be different depending on the function
+container under which your function is being run. First, try not to access this parameter at all,
+since that will make your code less portable. But if you have to, first let Ra wrap it, and then
+use the wrapped version:
+
+```js
+// This is TBD, but:
+
+var ra = require('run-anywhere');
+
+exports.foo = function(argv, context, callback) {
+  var raCtx = ra.context(context);
+
+  var eol = raCtx.timeOfDeath();
+};
+
 ```
 
 
