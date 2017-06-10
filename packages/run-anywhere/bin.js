@@ -90,7 +90,11 @@ commands.invoke = function() {
     }
 
     if (arguments.length === 2) {
-      process.stdout.write(JSON.stringify(arguments[1])+'\n');
+      if (_.isString(arguments[1])) {
+        process.stdout.write(arguments[1]+'\n');
+      } else {
+        process.stdout.write(JSON.stringify(arguments[1])+'\n');
+      }
       return;
     }
 
