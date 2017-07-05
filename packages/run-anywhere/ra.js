@@ -5,17 +5,24 @@
  *  This is the module that gets required.
  */
 
-var sg            = require('sgsg');
-var _             = sg._;
-var path          = require('path');
-var urlLib        = require('url');
+var sg                        = require('sgsg');
+var _                         = sg._;
+var fs                        = sg.fs;
+var path                      = require('path');
+var urlLib                    = require('url');
 
-var nextMatch     = sg.routes().nextMatch;
+var nextMatch                 = sg.routes().nextMatch;
 
 var libRa = {};
 
 /**
- *  Invoke a single function from within a JS package.
+ *  Invoke a single function that adheres to the run-anywhere calling convention.
+ *
+ *      fn(params.params, params.context, callback);
+ *
+ *      - or -
+ *
+ *      fn(params.params, params.context, callback, spec.raEnv, callback);
  */
 exports.invoke = function(params_, spec_, fn, callback) {
   var params  = params_ || {};
@@ -26,6 +33,9 @@ exports.invoke = function(params_, spec_, fn, callback) {
   args.push(params.params  || {});
   args.push(params.context || {});
 
+  // Wrap the callback -- we will push it up to two times:
+  // 1. It is always the third parameter.
+  // 2. The final parameter is always the callback.
   var cb = function(err) {
     return callback.apply(this, arguments);
   };
@@ -46,7 +56,7 @@ exports.invoke = function(params_, spec_, fn, callback) {
 };
 
 /**
- *
+ *  Add meta-info to the function.
  */
 libRa.exportFunction = libRa.raify = function(name, fn_, options_) {
   var options   = options || {};
@@ -104,7 +114,7 @@ libRa.routesify = function(a, b) {
  *  Wraps a function so it can be called from within its own module.
  *
  *  The intention is that you might be calling the function within your
- *  own module, or maybe something else altogether, like an improved version
+ *  own module, or you might be calling something else altogether, like an improved version
  *  running as a Lambda module.
  *
  *  I.e. wrap all your run-anywhere style functions when you call them internally,
@@ -139,6 +149,7 @@ libRa.middlewareify = function(lib) {
     if (_.isFunction(origFn)) {
       lib[origFnName] = function(a,b,c) {
         if (arguments.length === 1 && _.isFunction(a)) { return origFn.call(this, {}, {}, a); }
+        if (arguments.length === 2 && _.isFunction(b)) { return origFn.call(this,  a, {}, b); }
 
         return origFn.apply(this, arguments);
       };
@@ -156,6 +167,102 @@ libRa.require = function(libname_, dirname) {
   var lib     = require(libname);
 
   return libRa.middlewareify(lib);
+};
+
+const safeRequire = function(name) {
+  try {
+    return require(name);
+  } catch(e) { }
+
+  return {};
+};
+
+/**
+ *  Loads all the scripts in a dir.
+ */
+const loadScripts_ = function(dirname) {
+  var result;
+
+  if (!fs.test('-d', dirname))  { return result; }
+
+  result = {};
+  _.each(sg.fs.ls(dirname), (name_) => {
+    const name      = path.basename(name_, '.js');
+    const filename  = path.join(dirname, name);
+    if (!fs.test('-f', `${filename}.js`)) { return; }  // skip
+
+    result[name] = result[name] || {};
+    _.extend(result[name], libRa.middlewareify(safeRequire(filename)));
+  });
+
+  return result;
+};
+
+/**
+ *  Loads all the scripts from a packages ra-scripts dir.
+ */
+libRa.loadScripts = function(dirname) {
+  var result = {mods:{}};
+
+  const scriptDirname = path.join(dirname, 'ra-scripts');
+  if (!fs.test('-d', scriptDirname))  { return /* undefined */; }
+
+  // ----- Load scripts in the base ra-scripts dir -----
+  var   raScripts = loadScripts_(scriptDirname);
+
+  // Put fns on to results.mods[fname]
+  _.extend(result.mods, raScripts);
+
+  // Put fns on top-level.
+  _.each(raScripts, (mod) => {
+    _.each(mod, (fn, fname) => {
+      result[fname] = fn;
+    });
+  });
+
+  // ----- Load sub-dirs (except special ones) -----
+  _.each(sg.fs.ls(scriptDirname), (name) => {
+    const dirname  = path.join(scriptDirname, name);
+    if (!fs.test('-d', dirname))      { return; }  // skip
+    if (name in {models:true})        { return; }  // skip
+
+    _.extend(result.mods, loadScripts_(dirname));
+  });
+
+  // ----- Load models in a special way -----
+  const models = loadScripts_(path.join(scriptDirname, 'models')) || {};
+  result.models = models;
+
+  _.each(models, (model) => {
+    _.each(model, (fn, name) => {
+      if (name.match(/^(upsert|find)[A-Z]/)) {
+        result.models[name] = fn;
+      }
+    });
+  });
+
+  return result;
+};
+
+/**
+ *  Curry the context parameter.
+ */
+libRa.contextify = function(origFn, context_) {
+  return function(argv, callback_) {
+    var context   = sg.extend(context_) || {};
+    var callback  = callback_;
+    var callArgs  = [];
+
+    callArgs.push(argv);
+    if (arguments.length === 3) {
+      _.extend(context, arguments[1]);
+      callback = arguments[2];
+    }
+    callArgs.push(context);
+    callArgs.push(callback);
+
+    return origFn.apply(this, callArgs);
+  };
 };
 
 //------------------------------------------------------------------------------------------------
