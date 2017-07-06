@@ -32,3 +32,10 @@ test('loadScripts knows crud', t => {
   t.is(typeof raScripts.models.upsertFoo, 'function');
 });
 
+test('loadScripts knows not to load helpers.js', t => {
+  const raScripts = ra.loadScripts(__dirname);
+
+  t.falsy(raScripts.helper);
+  t.falsy(raScripts.models.helpers);
+});
+

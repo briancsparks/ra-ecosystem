@@ -189,7 +189,8 @@ const loadScripts_ = function(dirname) {
   _.each(sg.fs.ls(dirname), (name_) => {
     const name      = path.basename(name_, '.js');
     const filename  = path.join(dirname, name);
-    if (!fs.test('-f', `${filename}.js`)) { return; }  // skip
+    if (!fs.test('-f', `${filename}.js`)) { return; }   // skip
+    if (name.startsWith('helper'))        { return; }   // skip helper(s).js
 
     result[name] = result[name] || {};
     _.extend(result[name], libRa.middlewareify(safeRequire(filename)));
