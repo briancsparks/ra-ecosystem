@@ -20,6 +20,6 @@
   },
   "homepage": "https://github.com/briancsparks/run-anywhere#readme",
   "dependencies": {
-    "sgsg": "https://github.com/briancsparks/sg/tarball/master"
+    "sgsg": "^0.9.14"
   }
 }
