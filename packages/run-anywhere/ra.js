@@ -169,6 +169,30 @@ libRa.require = function(libname_, dirname) {
   return libRa.middlewareify(lib);
 };
 
+/**
+ *
+ */
+libRa.adapt = function(a,b,c,d) {   /* (argv, context, callback1, callback) -or- (arguments, callback) */
+
+  const callback                    = (arguments.length === 2 ? b : d);
+  const [argv, context, callback1]  = (arguments.length === 2 ? a : [a,b,c]);
+
+  var ra = {};
+
+  ra.wrap = function(fn) {
+    return function(argv, callback) {
+      return fn(argv, context, callback);
+    };
+  };
+
+  // Must return (below) before we call the callback
+  sg.setTimeout(1, function() {
+    return callback(argv, context, callback1);
+  });
+
+  return ra;
+};
+
 const safeRequire = function(name) {
   try {
     return require(name);
