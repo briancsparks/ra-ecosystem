@@ -69,11 +69,15 @@ commands.invoke = function() {
   var argv      = ARGV;
 
   if (_.isFunction(argv.getParams)) {
-    argv = argv.getParams({skipArgs:true});
+    argv = argv.getParams({});
   }
 
   var params    = {};
-  params.params = argv;
+  params.params = _.omit(argv, 'args');
+
+  _.each(argv.args, function(arg, n) {
+    params.params['arg'+n] = arg;
+  });
 
   var spec      = {};
   return ra.invoke(params, spec, fn, function(err) {
