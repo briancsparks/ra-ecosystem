@@ -170,6 +170,26 @@ libRa.require = function(libname_, dirname) {
 };
 
 /**
+ *  Injects RA between the caller and your function.
+ *
+ *  Call this at the very top of the function, which gives ra the context object.
+ *  You get back an ra object that you should use to wrap any other ra functions,
+ *  so that the proper context gets used.
+ *
+ *  ```
+ *    lib.foo = function() {
+ *      const ra = raLib.adapt(arguments, function(argv, context, callback) {
+ *        const setSomething = ra.wrap(lib.setSomething);
+ *
+ *        // ...
+ *
+ *        // At this point, setSomething is called correctly, given the context
+ *        setSomething(params, function(err, result) {
+ *          // ...
+ *        });
+ *      });
+ *    };
+ *  ```
  *
  */
 libRa.adapt = function(a,b,c,d) {   /* (argv, context, callback1, callback) -or- (arguments, callback) */
