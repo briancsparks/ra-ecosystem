@@ -199,9 +199,33 @@ libRa.adapt = function(a,b,c,d) {   /* (argv, context, callback1, callback) -or-
 
   var ra = {};
 
-  ra.wrap = function(fn) {
-    return function(argv, callback) {
-      return fn(argv, context, callback);
+  ra.wrap = function(fn, sendErrorAlong_) {
+    var sendErrorAlong = sendErrorAlong_;
+
+    return function(argv, b, c) {                 // (argv, sendErrorAlong__, callback)
+      var callback, msg = '';
+
+      if (arguments.length === 3) {
+        callback        = c;
+        sendErrorAlong  = b;
+      } else {
+        callback        = b;
+      }
+
+      if (typeof sendErrorAlong === 'string') {
+        msg             = sendErrorAlong;
+        sendErrorAlong  = false;
+      }
+
+      if (sendErrorAlong) {
+        return fn(argv, context, callback);
+      }
+
+      return fn(argv, context, function(err) {
+        if (err)  { return sg.die(err, callback, `Error processing ${msg}`); }
+
+        return callback.apply(this, arguments);
+      });
     };
   };
 
