@@ -12,6 +12,8 @@ var _                 = sg._;
 var path              = require('path');
 var ra                = require('./ra');
 
+var fs                = sg.fs;
+
 var commands = {};
 
 var ARGV  = sg.ARGV();
@@ -30,6 +32,48 @@ var main = function() {
 
   /* otherwise -- unknown command */
   console.error("Unknown command, known commands: ", _.keys(commands));
+};
+
+commands['invoke-script'] = commands.invokeScript = commands.invokescript = function() {
+  var moduleName      = ARGV.args.shift();
+  var functionName    = ARGV.args.shift();
+  var moduleDirname;
+
+  if (!moduleName || !functionName) {
+    console.error("Must provide module and function names");
+    process.exit(1);
+    return;
+  }
+
+  var name = path.join(process.env.HOME, 'dev', moduleName);
+  if (fs.test('-d', name))  { moduleDirname = name; }
+
+  if (!moduleDirname) {
+    name = path.join(process.env.HOME, 'dev', 'b', moduleName);
+    if (fs.test('-d', name))  { moduleDirname = name; }
+  }
+
+  if (!moduleDirname) {
+    console.error("module "+moduleFilename+" failed to be required");
+    process.exit(1);
+    return;
+  }
+
+  var raScripts = ra.loadScripts(moduleDirname);
+//  console.log(raScripts);
+
+  var fn = raScripts[functionName];
+  if (!_.isFunction(fn)) {
+    fn = raScripts.models[functionName];
+  }
+
+  if (!_.isFunction(fn)) {
+    console.error("function "+functionName+" not found.");
+    process.exit(1);
+    return;
+  }
+
+  return invoke(ARGV, fn, moduleName+"::"+functionName);
 };
 
 /**
@@ -66,7 +110,11 @@ commands.invoke = function() {
   }
 
   /* otherwise */
-  var argv      = ARGV;
+  return invoke(ARGV, fn, moduleFilename+"::"+functionName);
+};
+
+function invoke(argv_, fn, msg) {
+  var argv = argv_;
 
   if (_.isFunction(argv.getParams)) {
     argv = argv.getParams({});
@@ -85,7 +133,7 @@ commands.invoke = function() {
 
     if (err) {
       exitCode = 1;
-      console.error(err, "Error invoking: "+moduleFilename+"::"+functionName);
+      console.error(err, "Error invoking: "+msg);
     }
 
     if (arguments.length === 1) {
@@ -106,7 +154,7 @@ commands.invoke = function() {
     process.stdout.write(JSON.stringify(_.rest(arguments))+'\n');
     process.exit(exitCode);
   });
-};
+}
 
 commands.ls = function() {
   var moduleFilename  = ARGV.args.shift();
