@@ -10,6 +10,7 @@ var _                         = sg._;
 var fs                        = sg.fs;
 var path                      = require('path');
 var urlLib                    = require('url');
+const difflet                 = require('difflet');
 
 var nextMatch                 = sg.routes().nextMatch;
 
@@ -377,4 +378,36 @@ libRa.errorHandler = function(argv, context, callback) {
 _.each(libRa, function(value, key) {
   exports[key] = value;
 });
+
+exports.Validator = function(context) {
+  var   errors = 0;
+  const assert = require('assert');
+
+  const self = this;
+
+  self.runner = function(fns, callback) {
+    return sg.__runll(fns, function() {
+      if (errors) {
+        return callback(''+errors+' Errors.');
+      }
+      return callback();
+    });
+  };
+
+  self.compare  = function(fn, argv, shouldBe, callback) {
+    return fn(argv, context, function(err, data) {
+
+      if (err) {
+        errors++;
+      }
+
+      if (!sg.deepEqual(data, shouldBe)) {
+        const d = difflet.compare(shouldBe, data);
+        process.stderr.write(d);
+        errors++;
+      }
+      return callback();
+    });
+  };
+};
 

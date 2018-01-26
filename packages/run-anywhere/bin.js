@@ -113,6 +113,41 @@ commands.invoke = function() {
   return invoke(ARGV, fn, moduleFilename+"::"+functionName);
 };
 
+/**
+ *  The validate() function.
+ *
+ */
+commands.validate = function() {
+  var moduleFilename  = ARGV.args.shift();
+  var functionName    = 'ra-validate';
+
+  if (!moduleFilename || !functionName) {
+    console.error("Must provide module and function names");
+    process.exit(1);
+    return;
+  }
+
+  /* otherwise */
+  var mod = raInvokeRequire(moduleFilename);
+  if (!mod) {
+    console.error("module "+moduleFilename+" failed to be required");
+    process.exit(1);
+    return;
+  }
+
+  /* otherwise */
+
+  var fn = mod[functionName];
+  if (!fn) {
+    console.error("function "+functionName+" not found. "+"Found: "+_.keys(mod));
+    process.exit(1);
+    return;
+  }
+
+  /* otherwise */
+  return invoke(ARGV, fn, moduleFilename+"::"+functionName);
+};
+
 function invoke(argv_, fn, msg) {
   var argv = argv_;
 
