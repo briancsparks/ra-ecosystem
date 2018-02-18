@@ -317,9 +317,15 @@ libRa.loadScripts = function(dirname) {
 /**
  *  Curry the context parameter.
  */
-libRa.contextify = function(origFn, context_) {
+libRa.contextify = function(origFn, context__) {
+  var context_ = {};
+
+  if (!(context__.req && context__.res)) {
+    context_ = context__;
+  }
+
   return function(argv, callback_) {
-    var context   = sg.extend(context_) || {};
+    var context   = sg._extend(context_) || {};
     var callback  = callback_;
     var callArgs  = [];
 
@@ -334,6 +340,7 @@ libRa.contextify = function(origFn, context_) {
     return origFn.apply(this, callArgs);
   };
 };
+
 
 //------------------------------------------------------------------------------------------------
 //
