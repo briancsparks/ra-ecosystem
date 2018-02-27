@@ -341,6 +341,79 @@ libRa.contextify = function(origFn, context__) {
   };
 };
 
+/**
+ *  An ra-ified function that needs a DB or redis should use this to bootstrap.
+ *
+ *  It manages the lifetime of a short-lived connection, or gets out of the way
+ *  if the caller to the ra-ified function provided the DB/redis connection.
+ */
+libRa.bootServices = function(fname, options_, argv, context, outerCb, callback) {
+  const options     = servicesOptions(options_);
+  const needDb      = options.db;
+  const needRedis   = options.redis;
+  const givenDb     = needDb    && sg.extract(argv, 'db')     || context.db;
+  const givenRedis  = needRedis && sg.extract(argv, 'redis')  || context.redis;
+  const canDie      = sg.extract(argv, 'canDie') || options.canDie || !givenDb;
+  const namespace   = sg.argvGet(argv, 'namespace,ns') || options.namespace || process.env.NAMESPACE || 'layer67';
+  const abort       = sg.extract(argv, 'abort') || options.abort || myAbort;
+  var   db          = givenDb;
+  var   redis       = givenRedis;
+  var   config      = {};
+
+  var   MongoClient, redisLib;
+
+  return sg.__run([function(next) {
+    if (db || !needDb) { return next(); }
+
+    const dbAddress   = process.env.LAYER67_DB_IP || options.dbIp  || 'db';
+    var   dbUrl       = 'mongodb://'+dbAddress+':27017/'+namespace;
+
+    return MongoClient.connect(dbUrl, function(err, db_) {
+      if (!sg.ok(err, db_)) { return abort === myAbort ? abort(err, 'MongoClient_connect') : abort(); }
+
+      db = db_;
+      return next();
+    });
+
+  }, function(next) {
+    if (redis || !needRedis) { return next(); }
+
+    const redisHost = process.env.LAYER67_UTIL_IP || options.redisIp || 'redis';
+    const redisPort = 6379;
+
+    redisLib  = require('redis');
+    redis     = redisLib.createClient(redisPort, redisHost);
+
+    return next();
+  }], function done() {
+
+    config.db       = db;
+    config.redis    = redis;
+
+    return sg.iwrap(fname, outerCb, abort, function(eabort) {
+      return callback(null, config, eabort, abort);
+    });
+  });
+
+  function myAbort(err, msg) {
+    if (!givenDb && db) {
+      db.close();
+    }
+
+    if (!givenRedis && redis) {
+      redis.quit();
+    }
+
+    if (msg) {
+      if (canDie) { return sg.die(err, outerCb, msg); }
+
+      console.error(msg, err);
+    }
+
+    return outerCb(err);
+  }
+};
+
 
 //------------------------------------------------------------------------------------------------
 //
@@ -417,4 +490,13 @@ exports.Validator = function(context) {
     });
   };
 };
+
+function servicesOptions(options) {
+  if (_.isString(options)) {
+    return sg.keyMirror(options);
+  }
+
+  return options || {};
+}
+
 
