@@ -111,19 +111,14 @@ merge = function(a, b) {
 //...
 lib.quickMerge = lib.qm = function(a, b) {
   return mergeObjects(a, b);
-//  var   [aKeys, len, keys]    = keyMirrorFromObject(a);
-//  var   [bKeys]               = keyMirrorFromObject(b);
-//  var   result                = {};
-//console.log({aKeys, bKeys, len});
-//
-//  for (var i = 0; i < len; ++i) {
-//    const key = keys[i];
-//    result[key] = {...a[key], ...(b[key] || {})};
-//console.log({key, result, a, b});
-//  }
-//  return result;
 };
 
+const resolve = lib.resolve = function(x) {
+  if (typeof x === 'function') {
+    return resolve(x());
+  }
+  return x;
+};
 
 
 
