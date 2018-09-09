@@ -2,8 +2,7 @@
 /**
  *
  */
-const sg                      = require('sgsg');
-const _                       = sg._;
+const _                       = require('underscore');
 
 const test                    = require('ava');
 const quickMerge              = require('../index');
