@@ -12,8 +12,5 @@
   "license": "MIT",
   "devDependencies": {
     "ava": "^0.25.0"
-  },
-  "dependencies": {
-    "underscore": "^1.9.1"
   }
 }

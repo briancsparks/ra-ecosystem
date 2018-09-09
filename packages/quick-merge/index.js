@@ -2,9 +2,6 @@
 /**
  *
  */
-const _                       = require('underscore');
-
-var lib = {};
 
 var merge, mergeObjects;
 
@@ -102,22 +99,17 @@ merge = function(a, b) {
 };
 
 //...
-lib.quickMerge = lib.qm = function(a, b) {
+exports.quickMerge = exports.qm = function(a, b) {
   return mergeObjects(a, b);
 };
 
-const resolve = lib.resolve = function(x) {
+const resolve = exports.resolve = function(x) {
   if (typeof x === 'function') {
     return resolve(x());
   }
   return x;
 };
 
-
-
-_.each(lib, (value, key) => {
-  exports[key] = value;
-});
 
 function keyMirrorFromObject(obj) {
   var   result = {};

@@ -2,8 +2,6 @@
 /**
  *
  */
-const _                       = require('underscore');
-
 const test                    = require('ava');
 const quickMerge              = require('../index');
 
