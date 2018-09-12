@@ -94,3 +94,19 @@ test('quick-merge handles resolve AB', t => {
   t.deepEqual(merged, {a:42, b:21, c:{d:'foo', e:'bar'}});
 });
 
+test('quick-merge allows undefined A', t => {
+  const x = {};
+  // const a = {a:42, c:{d:'foo'}};
+  const b = {b:21, c:{e:'bar'}};
+  const merged = qm(x.a, b);
+  t.deepEqual(merged, {b:21, c:{e:'bar'}});
+});
+
+test('quick-merge allows undefined B', t => {
+  const x = {};
+  const a = {a:42, c:{d:'foo'}};
+  // const b = {b:21, c:{e:'bar'}};
+  const merged = qm(a, x.b);
+  t.deepEqual(merged, {a:42, c:{d:'foo'}});
+});
+

@@ -99,7 +99,9 @@ merge = function(a, b) {
 };
 
 //...
-exports.quickMerge = exports.qm = function(a, b) {
+exports.quickMerge = exports.qm = function(a_, b_) {
+  const a = a_ || {};
+  const b = b_ || {};
   return mergeObjects(a, b);
 };
 
