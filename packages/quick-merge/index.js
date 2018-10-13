@@ -1,18 +1,20 @@
 
 /**
- *
+ * Implementation of quick-merge merging algorithm.
  */
+
+ // The lib file has other helpers like kv(), keyMirror(), isnt(), and the like
 const lib                     = require('./lib/kv');
 
+// Export all the lib functions
 Object.keys(lib).forEach(key => {
   exports[key] = lib[key];
 });
 
+// Forward declarations
+var merge, appendArrays, appendToArray, awins, bwins;
 
-var merge, mergeObjects, appendArrays, appendToArray, awins, bwins;
-var resolve;
-
-mergeObjects = function(strategy, a, b) {
+const mergeObjects = function(strategy, a, b) {
   var   [aKeys, len, keys]    = keyMirrorFromObject(a);
   var   [bKeys]               = keyMirrorFromObject(b);
   var   result                = {};
@@ -20,7 +22,7 @@ mergeObjects = function(strategy, a, b) {
   for (var i = 0; i < len; ++i) {
     const key = keys[i];
     if (!bKeys[key]) {
-      result[key] = a[key];
+      result[key] = merge(strategy, a[key], b[key]);
     } else {
       result[key] = merge(strategy, a[key], b[key]);
       delete bKeys[key];
@@ -32,36 +34,69 @@ mergeObjects = function(strategy, a, b) {
   len   = keys.length;
   for (var i = 0; i < len; ++i) {
     const key = keys[i];
-    result[key] = b[key];
+    result[key] = merge(strategy, a[key], b[key]);
   }
 
   return result;
 };
 
-appendArrays = function(strategy, a, b) {
-  return [...a, ...b];
+function deepCopyAny(strategy, a) {
+  const tA      = realTypeof(a);
+
+  if (strategy.isScalar(a)) {
+    return a;
+  }
+
+  if (tA === 'object') {
+    return strategy.deepCopyObject(strategy, a);
+  }
+
+  if (tA === 'array') {
+    return strategy.deepCopyArray(strategy, a);
+  }
+
+  return strategy.deepCopy(strategy, a);
 }
+
+// Is the deepCopyArray function when b is []
+appendArrays = function(strategy, a, b) {
+  return [ ...a.map(x => {
+    return strategy.deepCopy(strategy, x);
+  }),
+  ...b.map(x => {
+    return strategy.deepCopy(strategy, x);
+  })]
+};
 
 appendToArray = function(strategy, a, b) {
-  return [...a, b];
-}
+  return appendArrays(strategy, a, [b]);
+};
 
 awins = function(strategy, a, b) {
-  return a;
+  if (strategy.isScalar(a)) {
+    return a;
+  }
+
+  return strategy.deepCopy(strategy, a);
 }
 
 bwins = function(strategy, a, b) {
-  return b;
+  if (strategy.isScalar(b)) {
+    return b;
+  }
+
+  return strategy.deepCopy(strategy, b);
 }
 
 
 //
 const basicMerges = {
+  name  : 'basicMerges',
   merges : {
     object  : {
       object      : mergeObjects,
       scalar      : bwins,
-      function    : bwins,
+      function    : bwins,        /* resolve overrides */
 
       otherwise   : awins,
     },
@@ -84,11 +119,32 @@ const basicMerges = {
       NULL        : bwins,
     },
     function : {
+      "function"  : (x,a,b) => b,        /* resolve overrides */
       NULL        : awins,
       UNDEFINED   : awins,
+      /*otherwise :                         resolve overrides */
     },
   },
+
   otherwise       : bwins,
+
+  deepCopy        : (s,a) => deepCopyAny(s,a),
+  deepCopyObject  : (s,a) => mergeObjects(s,a,{}),
+  deepCopyArray   : (s,a) => appendArrays(s,a,[]),
+
+  isScalar        : function(x) {                   /* resolve overrides */
+    if (x === null)           { return true; }
+    if (x === void 0)         { return true; }
+    if (Array.isArray(x))     { return false; }
+
+    const type = typeof x;
+
+    if (type === 'object')    { return false; }
+    if (type === 'function')  { return true; }
+
+    return true;
+  }
+
 };
 
 merge = function(strategy, a, b) {
@@ -113,12 +169,14 @@ merge = function(strategy, a, b) {
     }
   }
 
-  // console.log(`second`, {tA, tB, a, b});
+  /* otherwise */
+  // console.log(`second`, {tA, tB, a, b, merges:strategy.merges});
   return strategy.otherwise(strategy, a, b);
 };
 
 
 const basicPlusResolveMerges = merge(basicMerges, basicMerges, {
+  name  : 'basicPlusResolveMerges',
   merges : {
     object  : {
       "function"  : (x, a, b) => merge(x, a, b()),
@@ -127,6 +185,14 @@ const basicPlusResolveMerges = merge(basicMerges, basicMerges, {
       "function"  : (x, a, b) => merge(x, a(), b()),
       otherwise   : (x, a, b) => merge(x, a(), b),
     },
+  },
+
+  isScalar        : function(x) {
+    if (typeof x === 'function') {
+      return basicPlusResolveMerges.isScalar(x());
+    }
+
+    return basicMerges.isScalar(x);
   },
 });
 
@@ -146,17 +212,10 @@ exports.quickMerge = exports.qm = function(a, b, c) {
   return quickMerge(a, b, c);
 };
 
-exports.qmResolve = function(a, b) {
+exports.quickMergeResolve = exports.qmResolve = function(a, b) {
   return quickMerge(basicPlusResolveMerges, a, b);
 };
 
-
-resolve = exports.resolve = function(x) {
-  if (typeof x === 'function') {
-    return resolve(x());
-  }
-  return x;
-};
 
 
 function keyMirrorFromObject(obj) {

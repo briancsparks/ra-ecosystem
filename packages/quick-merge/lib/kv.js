@@ -244,3 +244,7 @@ exports.safeJSONParse = function(json) {
   }
 };
 
+exports.deepCopy = function(x) {
+  return JSON.parse(JSON.stringify(x));
+};
+
