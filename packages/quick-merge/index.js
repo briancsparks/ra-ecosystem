@@ -3,11 +3,10 @@
  *
  */
 
-var merge, mergeObjects;
+var merge, mergeObjects, appendArrays, appendToArray, awins, bwins;
+var resolve;
 
-var merges = {};
-
-mergeObjects = function(a, b) {
+mergeObjects = function(strategy, a, b) {
   var   [aKeys, len, keys]    = keyMirrorFromObject(a);
   var   [bKeys]               = keyMirrorFromObject(b);
   var   result                = {};
@@ -17,7 +16,7 @@ mergeObjects = function(a, b) {
     if (!bKeys[key]) {
       result[key] = a[key];
     } else {
-      result[key] = merge(a[key], b[key]);
+      result[key] = merge(strategy, a[key], b[key]);
       delete bKeys[key];
     }
   }
@@ -33,79 +32,120 @@ mergeObjects = function(a, b) {
   return result;
 };
 
-const mergeObjectAndNonObject = function(a, b) {
-  // b clobbers
+appendArrays = function(strategy, a, b) {
+  return [...a, ...b];
+}
+
+appendToArray = function(strategy, a, b) {
+  return [...a, b];
+}
+
+awins = function(strategy, a, b) {
+  return a;
+}
+
+bwins = function(strategy, a, b) {
   return b;
+}
+
+
+//
+const basicMerges = {
+  merges : {
+    object  : {
+      object      : mergeObjects,
+      scalar      : bwins,
+      function    : bwins,
+
+      otherwise   : awins,
+    },
+    array   : {
+      array       : appendArrays,
+      scalar      : appendToArray,
+      object      : appendToArray,
+      function    : appendToArray,
+      NULL        : awins,
+      UNDEFINED   : awins,
+    },
+    scalar  : {
+      NULL        : awins,
+      UNDEFINED   : awins,
+    },
+    NULL   : {
+      UNDEFINED   : awins,
+    },
+    UNDEFINED : {
+      NULL        : bwins,
+    },
+    function : {
+      NULL        : awins,
+      UNDEFINED   : awins,
+    },
+  },
+  otherwise       : bwins,
 };
 
-merges.object = {};
-merges.object.object = mergeObjects;
+merge = function(strategy, a, b) {
+  const { merges }  = strategy;
 
-merges.object.function = function(a, b) {
-  return merge(a, b());
-};
+  const tA      = realTypeof(a);
+  const tB      = realTypeof(b);
 
-merges.function = {};
-merges.function.object = function(a, b) {
-  return merge(a(), b);
-};
-
-merges.function.function = function(a, b) {
-  return merge(a(), b());
-};
-
-var   misMerges = {};   // mis-match merges
-
-misMerges.object = function(a, b) {
-  return mergeObjectAndNonObject(a, b);
-};
-
-misMerges.function = function(a, b) {
-  return merge(a(), b);
-};
-
-merge = function(a, b) {
-  if (b === null || b === void 0) {
-    return a;
-  }
-
-  const tA      = typeof a;
-  const tB      = typeof b;
   const mergeA  = merges[tA] || {};
 
   if (typeof mergeA === 'object' && !!mergeA) {
     const mergeAB = mergeA[tB];
 
     if (typeof mergeAB === 'function') {
-      return mergeAB(a,b);
+      // console.log(`first`, {tA, tB, a, b});
+      return mergeAB(strategy, a, b);
     }
 
-    const misMerge = misMerges[tA];
-    if (typeof misMerge === 'function') {
-      return misMerge(a, b);
+    /* otherwise */
+    if (typeof mergeA.otherwise === 'function') {
+      return mergeA.otherwise(strategy, a, b);
     }
-
-    if (tA === 'function') {
-      return merge(a(), b);
-    }
-
-    if (tB === 'function') {
-      return merge(a, b());
-    }
-    return mergeObjectAndNonObject(a, b);
   }
 
-  return b;
+  // console.log(`second`, {tA, tB, a, b});
+  return strategy.otherwise(strategy, a, b);
 };
+
+
+const basicPlusResolveMerges = merge(basicMerges, basicMerges, {
+  merges : {
+    object  : {
+      "function"  : (x, a, b) => merge(x, a, b()),
+    },
+    function : {
+      "function"  : (x, a, b) => merge(x, a(), b()),
+      otherwise   : (x, a, b) => merge(x, a(), b),
+    },
+  },
+});
 
 //...
-exports.quickMerge = exports.qm = function(a_, b_) {
-  const a = a_ || {};
-  const b = b_ || {};
-  return mergeObjects(a, b);
+const quickMerge = function(strategy, a, b) {
+
+  // TODO: do not use '|| {}' below, let the merge figure it out
+  return mergeObjects(strategy, a || {}, b || {});
 };
 
-const resolve = exports.resolve = function(x) {
+exports.quickMerge = exports.qm = function(a, b, c) {
+
+  if (arguments.length === 2) {
+    return quickMerge(basicMerges, a, b);
+  }
+
+  return quickMerge(a, b, c);
+};
+
+exports.qmResolve = function(a, b) {
+  return quickMerge(basicPlusResolveMerges, a, b);
+};
+
+
+resolve = exports.resolve = function(x) {
   if (typeof x === 'function') {
     return resolve(x());
   }
@@ -124,5 +164,18 @@ function keyMirrorFromObject(obj) {
   }
 
   return [result, l, keys];
+}
+
+function realTypeof(x) {
+  if (x === null)           { return 'NULL'; }
+  if (x === void 0)         { return 'UNDEFINED'; }
+  if (Array.isArray(x))     { return 'array'; }
+
+  const type = typeof x;
+
+  if (type === 'object')    { return 'object'; }
+  if (type === 'function')  { return 'function'; }
+
+  return 'scalar';
 }
 
