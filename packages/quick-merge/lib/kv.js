@@ -239,7 +239,7 @@ exports.safeJSONParse = function(json) {
   if (is(json) && json !== '') {
     try {
       return JSON.parse(json);
-    } catch() {
+    } catch(error) {
     }
   }
 };
