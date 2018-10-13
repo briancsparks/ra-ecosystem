@@ -173,3 +173,17 @@ test('quick-merge-resolve object/scalar is scalar', t => {
   t.deepEqual(merged, {a:42, b:21, c:55});
 });
 
+test('quick-merge not top-level array', t => {
+  const a = {arr: [1, 2, 3]};
+  const b = {arr: [8, 9]};
+  const merged = qm(a, b);
+  t.deepEqual(merged, {arr: [1, 2, 3, 8, 9]});
+});
+
+test('quick-merge top-level array', t => {
+  const a = [1, 2, 3];
+  const b = [8, 9];
+  const merged = qm(a, b);
+  t.deepEqual(merged, [1, 2, 3, 8, 9]);
+});
+

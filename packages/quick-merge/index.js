@@ -198,9 +198,7 @@ const basicPlusResolveMerges = merge(basicMerges, basicMerges, {
 
 //...
 const quickMerge = function(strategy, a, b) {
-
-  // TODO: do not use '|| {}' below, let the merge figure it out
-  return mergeObjects(strategy, a || {}, b || {});
+  return merge(strategy, a, b);
 };
 
 exports.quickMerge = exports.qm = function(a, b, c) {
