@@ -25,7 +25,7 @@ console.log(x);
 
 {
   sub : {
-    foo : 'bar,
+    foo : 'bar',
     my  : 'favorite color'
   },
   sky : 'blue',
