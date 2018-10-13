@@ -2,6 +2,12 @@
 /**
  *
  */
+const lib                     = require('./lib/kv');
+
+Object.keys(lib).forEach(key => {
+  exports[key] = lib[key];
+});
+
 
 var merge, mergeObjects, appendArrays, appendToArray, awins, bwins;
 var resolve;
