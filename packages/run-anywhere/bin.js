@@ -155,6 +155,11 @@ function invoke(argv_, fn, msg) {
     argv = argv.getParams({});
   }
 
+  if (argv.ra_file) {
+    let jsonfile = argv.ra_file;
+    argv = require(jsonfile);
+  }
+
   var params    = {};
   params.params = _.omit(argv, 'args');
 
@@ -229,7 +234,7 @@ commands.ls = function() {
   });
 };
 
-if (process.argv[1] === __filename || process.argv[1].match(/bin.ra$/)) {
+if (process.argv[1] === __filename || process.argv[1].match(/bin.js$/)) {
   return main();
 }
 
