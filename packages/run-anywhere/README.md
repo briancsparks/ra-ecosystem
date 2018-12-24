@@ -1,4 +1,17 @@
 
+# TODO
+
+- [ ] Steal ModSquad from step-forward power
+- [ ] Steal all the other fns, too.
+- [ ] Make lib/raV2.js, so users of lib can require('run-anywhere).v2;
+- [ ] Steal stuff from netlab-server: `lib/db/*.js`, esp `getXyzDb()`, and `getRedis()`
+- [ ] Steal anything that uses context.netlabContext, likee `netlabContextMw()`
+- [ ] Provide one function that can be the landing function for all calls from various AWS events, see `getHttpParams()`
+    in netlab-server src/app/http-helpers.js
+- [ ] Use `loud-rejection` and/or `hard-rejection` properly
+- [ ] Should be able to stop using sgsg
+- [ ] Steal minimistify from step-forward
+
 # Run-anywhere
 
 Write your Node.js functions in the run-anywhere format, and run them anywhere (CLI, AWS Lambda, etc.)
