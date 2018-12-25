@@ -11,10 +11,11 @@ var fs                        = sg.fs;
 var path                      = require('path');
 var urlLib                    = require('url');
 const difflet                 = require('difflet');
+const runAnywhereV2           = require('./lib/rav2');
 
 var nextMatch                 = sg.routes().nextMatch;
 
-var libRa = {};
+var libRa = {v2:runAnywhereV2};
 
 /**
  *  Invoke a single function that adheres to the run-anywhere calling convention.

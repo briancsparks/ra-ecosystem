@@ -1,16 +1,23 @@
 
 # TODO
 
-- [ ] Steal ModSquad from step-forward power
+- [x] Steal ModSquad from step-forward power
 - [ ] Steal all the other fns, too.
-- [ ] Make lib/raV2.js, so users of lib can require('run-anywhere).v2;
+- [x] Make lib/raV2.js, so users of lib can require('run-anywhere).v2;
 - [ ] Steal stuff from netlab-server: `lib/db/*.js`, esp `getXyzDb()`, and `getRedis()`
 - [ ] Steal anything that uses context.netlabContext, likee `netlabContextMw()`
-- [ ] Provide one function that can be the landing function for all calls from various AWS events, see `getHttpParams()`
-    in netlab-server src/app/http-helpers.js
+- [ ] Provide one function that can be the landing function for all calls from various AWS events, see `getHttpParams()` in netlab-server src/app/http-helpers.js
 - [ ] Use `loud-rejection` and/or `hard-rejection` properly
 - [ ] Should be able to stop using sgsg
 - [ ] Steal minimistify from step-forward
+- [ ] Use `../aws-lambda-test` as the test-project for ra on Lambda
+- [x] Get rid of test-apps
+
+## AWS-Lambda-Test
+
+- Root lambda.js -- has exports.lamba = function(...) {...}, which is the only entry-point from AWS.
+  - Registers with `lib/v2/lambda-handler.js` all the handlers it needs for the various services.
+  - Forwards to ra function `lib/v2/lambda-handler.js`, which figures out what service it was from.
 
 # Run-anywhere
 
