@@ -5,19 +5,21 @@
  *  This is the module that gets required.
  */
 
-var sg                        = require('sgsg');
-var _                         = sg._;
-var fs                        = sg.fs;
-var path                      = require('path');
-var urlLib                    = require('url');
-const difflet                 = require('difflet');
-const runAnywhereV2           = require('./lib/rav2');
+var   sg                        = require('sgsg');
+var   _                         = sg._;
+var   fs                        = sg.fs;
+var   path                      = require('path');
+var   urlLib                    = require('url');
+const difflet                   = require('difflet');
+const runAnywhereV2             = require('./lib/rav2');
 
-var nextMatch                 = sg.routes().nextMatch;
+const setOn                     = runAnywhereV2.utils.setOn;
 
-var libRa = {v2:runAnywhereV2};
+var   nextMatch                 = sg.routes().nextMatch;
 
-  /**
+var   libRa                     = {v2:runAnywhereV2};
+
+/**
  *  Invoke a single function that adheres to the run-anywhere calling convention.
  *
  *      fn(params.params, params.context, callback);
@@ -27,10 +29,11 @@ var libRa = {v2:runAnywhereV2};
  *      fn(params.params, params.context, callback, spec.raEnv, callback);
  */
 exports.invoke = function(params_, spec_, fn, callback) {
-  var params  = params_ || {};
-  var spec    = spec_   || {};
+  var   spec    = spec_   || {};
+  var   params  = params_ || {};
+  var   args    = [];
 
-  var args = [];
+  setOn(params, 'context.isRaInvoked', true);
 
   args.push(params.params  || {});
   args.push(params.context || {});
@@ -46,7 +49,7 @@ exports.invoke = function(params_, spec_, fn, callback) {
 
   // ... other args
   if (spec.raEnv) {
-    args.push(params);
+    args.push(spec.raEnv);
   }
 
   // Always put the callback last

@@ -200,12 +200,12 @@ exports.dumbDeepCopy = function(x) {
 exports.setOn = function(obj, pathish, value) {
   if (!obj || isnt(value))            { return value; }
   if (typeof pathish === 'string')    { return exports.setOn(obj, pathish.split('.'), value); }
-  if (_.any(pathish, x => isnt(x)))   { return value; }
+  if (_.some(pathish, x => isnt(x)))  { return value; }
 
   var   names = [...pathish];
 
   var curr = obj;
-  while (names.length > 0) {
+  while (names.length > 1) {
     let name = names.shift();
     curr = curr[name] = curr[name] || {};
   }
@@ -214,7 +214,7 @@ exports.setOn = function(obj, pathish, value) {
   if (_.isArray(curr[name]) || _.isArray(value)) {
     curr[name] = [...(curr[name] || []), ...arrayify(value)];
 
-  } else if (_.isObject(value) && value.merge) {
+  } else if (_.isPlainObject(value) && value.merge) {
     curr[name] = {...(curr[name] || {}), ...value.merge};
 
   } else {
@@ -231,7 +231,7 @@ function arrayify(x) {
 exports.deref = function(obj, pathish) {
   if (!obj)                           { return; }
   if (typeof pathish === 'string')    { return exports.deref(obj, pathish.split('.')); }
-  if (_.any(pathish, x => isnt(x)))   { return; }
+  if (_.some(pathish, x => isnt(x)))   { return; }
 
   const len = pathish.length;
   var   i;

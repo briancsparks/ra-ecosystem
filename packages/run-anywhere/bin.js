@@ -7,16 +7,18 @@
  *  bash prompt.
  */
 
-var sg                = require('sgsg');
-var _                 = sg._;
-var path              = require('path');
-var ra                = require('./ra');
+var sg                      = require('sgsg');
+var _                       = sg._;
+var path                    = require('path');
+var ra                      = require('./ra');
+const runAnywhereV2         = require('./lib/rav2');
 
-var fs                = sg.fs;
+var fs                      = sg.fs;
 
 var commands = {};
 
 var ARGV  = sg.ARGV();
+
 
 /**
  *  This is the main function that gets invoked if the user runs the `ra` command.
@@ -59,6 +61,8 @@ commands['invoke-script'] = commands.invokeScript = commands.invokescript = func
     return;
   }
 
+  runAnywhereV2.utils.setQuiet(true);
+
   var raScripts = ra.loadScripts(moduleDirname);
 //  console.log(raScripts);
 
@@ -91,6 +95,8 @@ commands.invoke = function() {
     process.exit(1);
     return;
   }
+
+  runAnywhereV2.utils.setQuiet(true);
 
   /* otherwise */
   var mod = raInvokeRequire(moduleFilename);
@@ -126,6 +132,8 @@ commands.validate = function() {
     process.exit(1);
     return;
   }
+
+  runAnywhereV2.utils.setQuiet(true);
 
   /* otherwise */
   var mod = raInvokeRequire(moduleFilename);

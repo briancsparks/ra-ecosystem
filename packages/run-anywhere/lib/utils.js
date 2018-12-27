@@ -19,11 +19,31 @@ const isSanityCheck = exports.isSanityCheck = function(context) {
   return context && context.sanityCheck === 'sanityCheck';
 }
 
+var   g_quiet = null;
+
+exports.setQuiet = function(q) {
+  g_quiet = q;
+};
+
 exports.getQuiet = function(context) {
 
-  // Quiet during sanity checks
+  var   result = false;
+
+  if (g_quiet != null) {
+    return g_quiet;
+  }
+
   if (context) {
-    return isSanityCheck(context);
+
+    // Quiet during sanity checks
+    if ((result = isSanityCheck(context))) {
+      return result;
+    }
+
+    // Quiet during `ra invoke ...`
+    if ((result = context.isRaInvoked)) {
+      return result;
+    }
   }
 
   // Quiet during scripts
@@ -36,10 +56,7 @@ exports.getQuiet = function(context) {
     return true;
   }
 
-  // TODO: remove, and code-up quiet curing `ra invoke`
-  return true;
-
-  // return false;
+  return false;
 }
 
 
