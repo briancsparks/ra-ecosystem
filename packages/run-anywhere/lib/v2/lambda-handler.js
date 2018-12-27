@@ -1,5 +1,6 @@
 
 const _         = require('lodash');
+const utils     = require('../utils');
 
 var handlers = {};
 
@@ -25,7 +26,7 @@ exports.lambda_handler = function(argv, context, callback) {
   // AWS Gateway-API -- look for the api-gateway domain name
 
   if (!utils.getQuiet(context)) { console.log(argv.requestContext); }
-  if (!utils.getQuiet(context)) { console.log(argv.requestContext.domainName); }
+  if (!utils.getQuiet(context)) { console.log(argv.requestContext && argv.requestContext.domainName); }
   if (argv.requestContext && argv.requestContext.domainName) {
     let domainName = argv.requestContext.domainName;
     if (!utils.getQuiet(context)) { console.log(domainName, domainName.match(/execute-api/i), domainName.match(/amazonaws[.]com$/i)); }
