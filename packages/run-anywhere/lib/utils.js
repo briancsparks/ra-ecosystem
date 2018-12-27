@@ -29,11 +29,13 @@ exports.getQuiet = function(context) {
 
   var   result = false;
 
-  if (g_quiet != null) {
-    return g_quiet;
-  }
+  if (!context) {
 
-  if (context) {
+    if (g_quiet != null) {
+      return g_quiet;
+    }
+
+    } else {
 
     // Quiet during sanity checks
     if ((result = isSanityCheck(context))) {
