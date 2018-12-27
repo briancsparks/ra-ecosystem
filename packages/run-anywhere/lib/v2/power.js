@@ -110,7 +110,7 @@ const kv = exports.kv;
  * A better _.extend(), because it does not mutate the first argument.
  *
  */
-exports.extend = function(args) {
+exports.extend = function(...args) {
   return _.extend({}, ...args);
 };
 power.extend = exports.extend;

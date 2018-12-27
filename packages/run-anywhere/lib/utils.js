@@ -7,7 +7,67 @@ lib.sg                        = _.extend({}, lib.power);
 
 const sg                      = lib.power;
 
+exports.isDebug = function() {
+  return process.env.NODE_ENV !== 'production';
+};
+
+exports.isAws = function() {
+  return process.env.LAMBDA_RUNTIME_DIR && process.env.AWS_REGION;
+};
+
+const isSanityCheck = exports.isSanityCheck = function(context) {
+  return context && context.sanityCheck === 'sanityCheck';
+}
+
+exports.getQuiet = function(context) {
+
+  // Quiet during sanity checks
+  if (context) {
+    return isSanityCheck(context);
+  }
+
+  // Quiet during scripts
+  if ('npm_lifecycle_event' in process.env) {
+    return true;
+  }
+
+  // Quiet while claudia is testing
+  if (process.platform === 'win32' && process.argv[1] && process.argv[1].match(/claudia/i)) {
+    return true;
+  }
+
+  // TODO: remove, and code-up quiet curing `ra invoke`
+  return true;
+
+  // return false;
+}
+
+
+
+
 // lib   = sg.extend(lib, require(...));
+
+// The interesting keys on the process object
+const procKeys = 'title,version,moduleLoadList,versions,arch,platform,release,argv,execArgv,env,pid,features,ppid,execPath,debugPort,config,argv0'.split(',');
+
+const cleanProcess = function() {
+  const x     = process;
+  var result  = _.reduce(procKeys, (m,k) => {
+    const v=x[k];
+    if (!_.isFunction(v)) {
+      return { ...m, [k]: v};
+    }
+    return m;
+  }, {});
+
+  return { ...result, env: lib.cleanEnv()};
+};
+
+lib.logProcess = function(msg) {
+  console.log(msg, lib.inspect(cleanProcess()));
+};
+
+
 
 
 _.extend(module.exports, lib);

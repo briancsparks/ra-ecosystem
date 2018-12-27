@@ -1,4 +1,9 @@
 
+const _                       = require('lodash');
+const utilLib                 = require('util');
+
+const promisify               = utilLib.promisify;
+const callbackify             = utilLib.callbackify;
 
 const ModSquad = function(otherModule) {
   var   self      = this;

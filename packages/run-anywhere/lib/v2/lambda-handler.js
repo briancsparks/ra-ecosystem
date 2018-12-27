@@ -3,6 +3,15 @@ const _         = require('lodash');
 
 var handlers = {};
 
+/**
+ * Registers a handler for an AWS function.
+ *
+ * * gatewayApi
+ * * lambda
+ *
+ * @param {*} name
+ * @param {*} fn
+ */
 exports.registerHandler = function(name, fn) {
   handlers[name] = fn;
 };
@@ -12,8 +21,8 @@ exports.lambda_handler = function(argv, context, callback) {
 
   // =========================================================================================================
   // AWS Gateway-API -- look for the api-gateway domain name
-  if (event.requestContext.domainName) {
-    let domainName = event.requestContext.domainName;
+  if (argv.requestContext && argv.requestContext.domainName) {
+    let domainName = argv.requestContext.domainName;
     if (domainName.match(/execute-api/i) && domainName.match(/amazonaws[.]com$/i)) {
       // AWS Gateway-API
       let handler = handlers.gatewayApi;
