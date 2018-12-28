@@ -86,7 +86,7 @@ exports.listen = function(app, callback) {
 
   } else {
     if (_.isFunction(callback)) {
-      return callback(null, port);
+      return callback(null, -1);
     }
   }
 };
