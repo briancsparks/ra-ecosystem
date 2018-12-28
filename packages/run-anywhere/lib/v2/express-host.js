@@ -48,19 +48,20 @@ exports.hookIntoHost = function(app) {
     app.use(awsServerlessExpressMiddleware.eventContext());
   } else {
     app.use(raContextMw());
-    app.runAnywhere = {
-      listen: function(callback) {
-        exports.listen(app, function(err, port) {
-          return callback(err, port);
-        });
-      },
+  };
 
-      close: function() {
-        exports.close();
-      }
-    };
-  }
-};
+  app.runAnywhere = {
+    listen: function(callback) {
+      exports.listen(app, function(err, port) {
+        return callback(err, port);
+      });
+    },
+
+    close: function() {
+      exports.close();
+    }
+  };
+}
 
 /**
  *  Calls Node.js listen function unless on Lambda, where Lambda will listen on a
@@ -82,6 +83,11 @@ exports.listen = function(app, callback) {
         return callback(null, port);
       }
     });
+
+  } else {
+    if (_.isFunction(callback)) {
+      return callback(null, port);
+    }
   }
 };
 
@@ -98,7 +104,9 @@ exports.close = function() {
     }
   });
 
-  server.close();
+  if (!isAws()) {
+    server.close();
+  }
 };
 
 // -------------------------------------------------------------------------------------
@@ -146,6 +154,7 @@ function raContextMw(collNames = []) {
   // We grab connections to the DB here, so we dont have to close the DB after
   // every request.
 
+  collNames = 'clients,sessions,users,telemetry,attrstream,logs'.split(',');
   collNames.forEach(collName => {
     const { coll, close } = getGetXyzDb(collName, dbName)(raApp.context);
 
