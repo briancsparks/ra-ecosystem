@@ -103,7 +103,7 @@ const queryCursor = exports.queryCursor = function(xyzDb, context, ...argvs) {
     return qm(argv, arg);
   }, {});
 
-  if (!quiet) console.error(`queryCursor`, inspect({argv}));
+  if (!quiet) console.log(`queryCursor`, inspect({argv}));
 
   // Default query is all
   var query       = argv.query          || {};
@@ -145,6 +145,10 @@ sanityChecks.push(async function({assert, ...context}) {
 
   return `db_close(),db_queryCursor()`;
 });
+
+exports.smQueryResult = function(result) {
+  return utils.smallItems(result, 'items');
+};
 
 exports.updatify = function(updates_, query, context) {
 

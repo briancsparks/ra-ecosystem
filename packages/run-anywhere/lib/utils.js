@@ -35,6 +35,25 @@ const isSanityCheck = exports.isSanityCheck = function(context) {
   return context && context.sanityCheck === 'sanityCheck';
 }
 
+exports.pad = function(s_, len, fill) {
+  var s = ''+s_;
+  while (s.length < len) {
+    s = fill + s;
+  }
+  return s;
+};
+
+exports.smallItems = function(obj, key = 'items') {
+  if (!obj[key] || !_.isArray(obj[key])) {
+    return obj;
+  }
+
+  return {...obj, [key]: [obj[key][0], obj[key].length-1]};
+};
+
+
+// -------------------- getQuiet
+
 var   g_quiet = null;
 
 exports.setQuiet = function(q) {
