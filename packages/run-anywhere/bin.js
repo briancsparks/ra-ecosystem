@@ -7,6 +7,11 @@
  *  bash prompt.
  */
 
+
+// -------------------------------------------------------------------------------------
+//  requirements
+//
+
 var sg                      = require('sgsg');
 var _                       = sg._;
 var path                    = require('path');
@@ -15,9 +20,17 @@ const runAnywhereV2         = require('./lib/rav2');
 
 var fs                      = sg.fs;
 
+// -------------------------------------------------------------------------------------
+//  Data
+//
 var commands = {};
 
 var ARGV  = sg.ARGV();
+
+
+// -------------------------------------------------------------------------------------
+//  Functions
+//
 
 
 /**
@@ -155,6 +168,10 @@ commands.validate = function() {
   /* otherwise */
   return invoke(ARGV, fn, moduleFilename+"::"+functionName);
 };
+
+// -------------------------------------------------------------------------------------
+//  Helper functions
+//
 
 function invoke(argv_, fn, msg) {
   var argv = argv_;

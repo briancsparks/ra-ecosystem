@@ -7,6 +7,12 @@
     {
       "type": "node",
       "request": "launch",
+      "name": "Debug Current File",
+      "program": "${file}"
+    },
+    {
+      "type": "node",
+      "request": "launch",
       "name": "ra invoke",
       "program": "${workspaceFolder}/ra.js",
       "args": [ "invoke", "lib/loading.js", "testHook", "--a", "--verbose" ],

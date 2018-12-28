@@ -5,6 +5,11 @@
  *  This is the module that gets required.
  */
 
+
+// -------------------------------------------------------------------------------------
+//  requirements
+//
+
 var   sg                        = require('sgsg');
 var   _                         = sg._;
 var   fs                        = sg.fs;
@@ -17,7 +22,15 @@ const setOn                     = runAnywhereV2.utils.setOn;
 
 var   nextMatch                 = sg.routes().nextMatch;
 
+// -------------------------------------------------------------------------------------
+//  Data
+//
+
 var   libRa                     = {v2:runAnywhereV2};
+
+// -------------------------------------------------------------------------------------
+//  Functions
+//
 
 /**
  *  Invoke a single function that adheres to the run-anywhere calling convention.
@@ -503,4 +516,8 @@ function servicesOptions(options) {
   return options || {};
 }
 
+
+// -------------------------------------------------------------------------------------
+//  Helper functions
+//
 

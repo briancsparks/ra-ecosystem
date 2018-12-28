@@ -1,9 +1,22 @@
 
+
+// -------------------------------------------------------------------------------------
+//  requirements
+//
+
 const _                       = require('lodash');
 const utilLib                 = require('util');
 
 const promisify               = utilLib.promisify;
 const callbackify             = utilLib.callbackify;
+
+// -------------------------------------------------------------------------------------
+//  Data
+//
+
+// -------------------------------------------------------------------------------------
+//  Functions
+//
 
 const ModSquad = function(otherModule) {
   var   self      = this;
@@ -39,5 +52,9 @@ const ModSquad = function(otherModule) {
 module.exports.modSquad = function(...args) {
   return new ModSquad(...args);
 };
+
+// -------------------------------------------------------------------------------------
+//  Helper functions
+//
 
 

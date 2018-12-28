@@ -1,5 +1,9 @@
 
 
+// -------------------------------------------------------------------------------------
+//  requirements
+//
+
 const _                       = require('lodash');
 var   lib                     = require('./v2/power');
 
@@ -7,12 +11,24 @@ lib.sg                        = _.extend({}, lib.power);
 
 const sg                      = lib.power;
 
+// -------------------------------------------------------------------------------------
+//  Data
+//
+
+// -------------------------------------------------------------------------------------
+//  Functions
+//
+
 exports.isDebug = function() {
   return process.env.NODE_ENV !== 'production';
 };
 
 exports.isAws = function() {
   return process.env.LAMBDA_RUNTIME_DIR && process.env.AWS_REGION;
+};
+
+exports.raContext = function(context = {}) {
+  return context.runAnywhereContext    = context.runAnywhereContext  || {};
 };
 
 const isSanityCheck = exports.isSanityCheck = function(context) {
@@ -90,3 +106,8 @@ lib.logProcess = function(msg) {
 
 
 _.extend(module.exports, lib);
+
+// -------------------------------------------------------------------------------------
+//  Helper functions
+//
+
