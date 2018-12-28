@@ -7,15 +7,15 @@
 const _                           = require('lodash');
 const utils                       = require('../utils');
 const { registerSanityChecks }    = require('./sanity-checks');
+const { inspect }                 = utils;
 
 // -------------------------------------------------------------------------------------
 //  Data
 //
 
 var   sanityChecks  = [];
-var   handlers = {};
-
-var   handlerFns = [];
+var   handlers      = {};
+var   handlerFns    = [];
 
 // -------------------------------------------------------------------------------------
 //  Functions
@@ -23,9 +23,9 @@ var   handlerFns = [];
 
 exports.lambda_handler = function(event, context, callback) {
 
-  if (!utils.getQuiet(context)) { console.log(`ra.lambda_handler`, {event, context}); }
+  if (!utils.getQuiet(context)) { console.log(`ra.lambda_handler`, inspect({event, context})); }
 
-  if (!utils.getQuiet(context)) { console.log(event.requestContext); }
+  if (!utils.getQuiet(context)) { console.log(inspect(event.requestContext)); }
   if (!utils.getQuiet(context)) { console.log(event.requestContext && event.requestContext.domainName); }
 
   var handled = false;
@@ -56,7 +56,7 @@ exports.expressServerlessRoutes = function(subdomainName, appBuilder) {
 
   exports.registerHandler(function(event, context) {
 
-    if (!utils.getQuiet(context)) { console.log(event.requestContext); }
+    if (!utils.getQuiet(context)) { console.log(inspect(event.requestContext)); }
     if (!utils.getQuiet(context)) { console.log(event.requestContext && event.requestContext.domainName); }
 
     if (event.requestContext && event.requestContext.domainName) {
@@ -80,7 +80,7 @@ exports.expressServerlessRoutes = function(subdomainName, appBuilder) {
 exports.claudiaServerlessApi = function(subdomainName, handler) {
   exports.registerHandler(function(event, context) {
 
-    if (!utils.getQuiet(context)) { console.log(event.requestContext); }
+    if (!utils.getQuiet(context)) { console.log(inspect(event.requestContext)); }
     if (!utils.getQuiet(context)) { console.log(event.requestContext && event.requestContext.domainName); }
 
     if (event.requestContext && event.requestContext.domainName) {
@@ -102,7 +102,7 @@ exports.claudiaServerlessApi = function(subdomainName, handler) {
 };
 
 
-exports.lambda_handler = function(event, context, callback) {
+exports.lambda_handlerX = function(event, context, callback) {
 
   if (!utils.getQuiet(context)) { console.log(`ra.lambda_handler`, {event, context}); }
 

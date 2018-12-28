@@ -11,7 +11,7 @@ const { qm }                    = require('quick-merge');
 const { registerSanityChecks }  = require('../sanity-checks');
 
 const {
-  getQuiet, raContext,
+  getQuiet, raContext, inspect,
 }                               = utils;
 
 // -------------------------------------------------------------------------------------
@@ -103,7 +103,7 @@ const queryCursor = exports.queryCursor = function(xyzDb, context, ...argvs) {
     return qm(argv, arg);
   }, {});
 
-  if (!quiet) console.error(`queryCursor`, {argv});
+  if (!quiet) console.error(`queryCursor`, inspect({argv}));
 
   // Default query is all
   var query       = argv.query          || {};

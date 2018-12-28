@@ -9,7 +9,7 @@ const redisLib                  = require('redis');
 const { registerSanityChecks }  = require('../sanity-checks');
 
 const {
-  getQuiet, raContext,
+  getQuiet, raContext, inspect,
 }                               = utils;
 
 // -------------------------------------------------------------------------------------
