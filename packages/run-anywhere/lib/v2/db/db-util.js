@@ -194,8 +194,8 @@ function getNow(context = {}) {
 }
 
 function getIds(query = {}) {
-  return reduce(query, {}, (m,v,k) => {
-    if (k.toLowerCase().endsWith('id'))   { return kv(m, k, v); }
+  return sg.reduce(query, {}, (m,v,k) => {
+    if (k.toLowerCase().endsWith('id'))   { return sg.kv(m, k, v); }
     return m;
   });
 }

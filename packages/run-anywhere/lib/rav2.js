@@ -6,11 +6,13 @@
 //
 
 const _                         = require('lodash');
-const utils                     = require('./utils');
+var   utils                     = require('./utils');
 const sg                        = utils.sg;
 const libModSquad               = require('./v2/mod-squad');
 const lambdaHandler             = require('./v2/lambda-handler');
 const sanityChecksLib           = require('./v2/sanity-checks');
+const dbUtils                   = require('./v2/db/db-util');
+const redisUtils                = require('./v2/redis/redis-util');
 const { promisify }             = require('util');
 
 const modSquad                  = libModSquad.modSquad;
@@ -25,14 +27,18 @@ var   sanityChecks  = [];
 //  Functions
 //
 
+utils.modSquad                = modSquad;
+utils.registerSanityChecks    = sanityChecksLib.registerSanityChecks;
+utils.runSanityChecksFor      = sanityChecksLib.runSanityChecksFor;
+utils.dbUtils                 = dbUtils;
+utils.redisUtils              = redisUtils;
+
 _.each(lambdaHandler, function(v,k) {
   module.exports[k] = v;
 });
 
 module.exports.utils                  = utils;
 module.exports.modSquad               = modSquad;
-// module.exports.lambda_handler         = lambdaHandler.lambda_handler;
-// module.exports.registerHandler        = lambdaHandler.registerHandler;
 module.exports.registerSanityChecks   = sanityChecksLib.registerSanityChecks;
 module.exports.runSanityChecksFor     = sanityChecksLib.runSanityChecksFor;
 
