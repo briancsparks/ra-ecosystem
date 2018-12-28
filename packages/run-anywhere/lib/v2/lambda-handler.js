@@ -23,6 +23,7 @@ var   handlerFns    = [];
 
 exports.lambda_handler = function(event, context, callback) {
 
+  console.log(`ra.lambda_handler`, inspect({event, context}));
   if (!utils.getQuiet(context)) { console.log(`ra.lambda_handler`, inspect({event, context})); }
 
   if (!utils.getQuiet(context)) { console.log(inspect(event.requestContext)); }
