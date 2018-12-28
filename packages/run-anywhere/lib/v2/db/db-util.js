@@ -18,8 +18,8 @@ const {
 //  Data
 //
 
-var   xyzDbs        = {};
 var   sanityChecks  = [];
+var   xyzDbs        = {};
 
 
 // -------------------------------------------------------------------------------------
@@ -142,6 +142,8 @@ sanityChecks.push(async function({assert, ...context}) {
   const { runsDb, close } = await exports.getGetXyzDb('sanitycheck', 'runs')(context);
   var   cursor = queryCursor(runsDb, context, {});
   close();
+
+  return `db_close(),db_queryCursor()`;
 });
 
 exports.updatify = function(updates_, query, context) {

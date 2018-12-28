@@ -3,21 +3,33 @@
 //  requirements
 //
 
-const { qm }                  = require('quick-merge');
-const cleanEnv                = require('step-forward').libPower.cleanEnv;
+const _                         = require('lodash');
+const utils                     = require('../utils');
+const sg                        = utils.sg;
+const { qm }                    = require('quick-merge');
+const { registerSanityChecks }  = require('./sanity-checks');
 const {
-  isAws
-}                             = require('../utils');
+  isAws,
+  cleanEnv,
+}                               = utils;
 const {
-  getXyzDb
-}                             = require('../lib/db/db-util');
+  getGetXyzDb
+}                               = require('./db/db-util');
 
 // -------------------------------------------------------------------------------------
 //  Data
 //
+
+var   sanityChecks  = [];
+
+// TODO: move out
 const collNames               = 'clients,sessions,users,telemetry,attrstream,logs'.split(',');
 const dbName                  = process.env.DB_NAME || 'ntl';
 
+var   collections = {};
+var   closes      = {};
+
+var   server;
 
 
 
@@ -35,7 +47,18 @@ exports.hookIntoHost = function(app) {
     const awsServerlessExpressMiddleware  = require('aws-serverless-express/middleware');
     app.use(awsServerlessExpressMiddleware.eventContext());
   } else {
-    app.use(netlabContextMw());
+    app.use(raContextMw());
+    app.runAnywhere = {
+      listen: function(callback) {
+        exports.listen(app, function(err, port) {
+          return callback(err, port);
+        });
+      },
+
+      close: function() {
+        exports.close();
+      }
+    };
   }
 };
 
@@ -47,19 +70,48 @@ exports.hookIntoHost = function(app) {
  * @param {*} port
  * @returns
  */
-exports.listen = function(app, port_) {
-  // console.error(`host listening`, {port_, env:cleanEnv(), argv:process.argv});
-  // console.log(`host listening`, {port_, env:cleanEnv(), argv:process.argv});
+exports.listen = function(app, callback) {
 
   if (!isAws()) {
-    const port  = getPort(port_);
+    const port  = getPort();
     if (port <= 0)  { console.log(`Not starting server`); return; }
 
-    app.listen(port, () => {
+    server = app.listen(port, () => {
       console.log(`Server is listening on ${port}`);
+      if (_.isFunction(callback)) {
+        return callback(null, port);
+      }
     });
   }
 };
+
+exports.close = function() {
+  const keys = Object.keys(closes);
+
+  _.each(keys, (key) => {
+    const close = closes[key];
+    if (_.isFunction(close)) {
+      close();
+
+      delete collections[key];
+      delete closes[key];
+    }
+  });
+
+  server.close();
+};
+
+// -------------------------------------------------------------------------------------
+//  Helper functions
+//
+
+sanityChecks.push(async function({assert, ...context}) {
+  getPort();
+
+  return `getPort()`;
+});
+
+registerSanityChecks(module, __filename, sanityChecks);
 
 // -------------------------------------------------------------------------------------
 //  Helper functions
@@ -77,9 +129,8 @@ function getPort(port_) {
 }
 
 
-
 /**
- *  Provides middleware for Netlab.
+ *  Provides middleware for run-anywhere's Express app.
  *
  *  * Get DB connections at startup, and share in each request, so we dont have to
  *    open and close the DB connection all the time, but also allowing the code
@@ -87,17 +138,16 @@ function getPort(port_) {
  *
  * @returns
  */
-function netlabContextMw() {
-  var   netlabApp = {context:{}};
+
+ // TODO: should not create this unless needed
+function raContextMw(collNames = []) {
+  var   raApp = {context:{}};
 
   // We grab connections to the DB here, so we dont have to close the DB after
   // every request.
 
-  var   collections = {};
-  var   closes      = {};
-
   collNames.forEach(collName => {
-    const { coll, close } = getXyzDb(collName, netlabApp.context, dbName);
+    const { coll, close } = getGetXyzDb(collName, dbName)(raApp.context);
 
     collections[collName] = coll;
     closes[collName]      = close;
@@ -107,7 +157,7 @@ function netlabContextMw() {
   // Hook into the request/response stream -- the prototypical express.js middleware pattern
   return function(req, res, next) {
 
-    req.netlabApp = qm(req.netlabApp, netlabApp);
+    req.raApp = qm(req.raApp, raApp);
 
     // If you ever need to hook in and know when the request completes, see for an example:
     //    https://github.com/expressjs/compression/blob/master/index.js

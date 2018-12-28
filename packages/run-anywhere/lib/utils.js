@@ -77,6 +77,14 @@ exports.getQuiet = function(context) {
   return false;
 }
 
+const pad = exports.pad = function(s_, len, fill) {
+  var s = ''+s_;
+  while (s.length < len) {
+    s = fill + s;
+  }
+  return s;
+};
+
 
 
 

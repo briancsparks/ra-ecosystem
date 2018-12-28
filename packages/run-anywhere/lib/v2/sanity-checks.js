@@ -46,8 +46,13 @@ exports.registerSanityChecks = function(otherMod, filename, sanityChecks) {
 
     sanityChecks.forEach(async (check) => {
       try {
-        await check({assert, ...context});
+        const names = ''+ await check({assert, ...context});
         count += 1;
+
+        _.each(names.split(','), name => {
+          console.log(`Pass: ${name}`);
+        });
+
       } catch(error) {
         // console.error(error.message);
         // console.error(error.stack);
