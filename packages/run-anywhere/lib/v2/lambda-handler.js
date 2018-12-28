@@ -50,7 +50,7 @@ exports.registerHandler = function(select, handleIt) {
 };
 
 exports.expressServerlessRoutes = function(subdomainName, appBuilder) {
-  const lambdaExpressHost       = require('./src/app/lambda-express-host');
+  const lambdaExpressHost       = require('./lambda-express-host');
 
   appBuilder(lambdaExpressHost.app);
 

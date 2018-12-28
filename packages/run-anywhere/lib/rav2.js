@@ -25,10 +25,14 @@ var   sanityChecks  = [];
 //  Functions
 //
 
+_.each(lambdaHandler, function(v,k) {
+  module.exports[k] = v;
+});
+
 module.exports.utils                  = utils;
 module.exports.modSquad               = modSquad;
-module.exports.lambda_handler         = lambdaHandler.lambda_handler;
-module.exports.registerHandler        = lambdaHandler.registerHandler;
+// module.exports.lambda_handler         = lambdaHandler.lambda_handler;
+// module.exports.registerHandler        = lambdaHandler.registerHandler;
 module.exports.registerSanityChecks   = sanityChecksLib.registerSanityChecks;
 module.exports.runSanityChecksFor     = sanityChecksLib.runSanityChecksFor;
 
