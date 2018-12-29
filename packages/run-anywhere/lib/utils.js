@@ -48,7 +48,7 @@ exports.smallItems = function(obj, key = 'items') {
     return obj;
   }
 
-  return {...obj, [key]: [obj[key][0], obj[key].length-1]};
+  return {...obj, [key]: [obj[key][0], `--- Plus ${obj[key].length-1} more items ---`]};
 };
 
 

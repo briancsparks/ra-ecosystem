@@ -36,8 +36,8 @@ exports.claudia2RaArgs = function(args, callback) {
 
   var   context = {
     ...(context_ || request.lambdaContext || {}),
-    gatewayApi  : request.context,
-    request     : request
+    __gatewayApi  : request.context,
+    __request     : request
   };
 
   // Here are the args that should get sent to ra-aware fns
@@ -55,7 +55,10 @@ exports.claudia2RaArgs2 = function(argv, args, callback) {
   const raArgs = exports.claudia2RaArgs(args, callback);
 
   // Replace with the passed-in argv
-  raArgs[0] = argv;
+  raArgs[0] = {
+    __request: raArgs[0].__request,
+    ...argv,
+  };
 
   return raArgs;
 };
