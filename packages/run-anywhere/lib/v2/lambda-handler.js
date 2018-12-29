@@ -6,14 +6,14 @@
 
 const _                           = require('lodash');
 const utils                       = require('../utils');
-const { registerSanityChecks }    = require('./sanity-checks');
+// const { registerSanityChecks }    = require('./sanity-checks');
 const { inspect }                 = utils;
 
 // -------------------------------------------------------------------------------------
 //  Data
 //
 
-var   sanityChecks  = [];
+// var   sanityChecks  = [];
 var   handlers      = {};
 var   handlerFns    = [];
 
@@ -23,11 +23,7 @@ var   handlerFns    = [];
 
 exports.lambda_handler = function(event, context, callback) {
 
-  console.log(`ra.lambda_handler`, inspect({event, context}));
-  if (!utils.getQuiet(context)) { console.log(`ra.lambda_handler`, inspect({event, context})); }
-
-  if (!utils.getQuiet(context)) { console.log(inspect(event.requestContext)); }
-  if (!utils.getQuiet(context)) { console.log(event.requestContext && event.requestContext.domainName); }
+  // if (!utils.getQuiet(context)) { console.log(`ra.lambda_handler`, inspect({event, context})); }
 
   var handled = false;
   _.each(handlerFns, (handler) => {
@@ -81,8 +77,9 @@ exports.expressServerlessRoutes = function(subdomainName, appBuilder) {
 exports.claudiaServerlessApi = function(subdomainName, handler) {
   exports.registerHandler(function(event, context) {
 
-    if (!utils.getQuiet(context)) { console.log(inspect(event.requestContext)); }
-    if (!utils.getQuiet(context)) { console.log(event.requestContext && event.requestContext.domainName); }
+    // TOOD: remove
+    // if (!utils.getQuiet(context)) { console.log(inspect(event.requestContext)); }
+    // if (!utils.getQuiet(context)) { console.log(event.requestContext && event.requestContext.domainName); }
 
     if (event.requestContext && event.requestContext.domainName) {
       let domainName = event.requestContext.domainName;
@@ -103,83 +100,83 @@ exports.claudiaServerlessApi = function(subdomainName, handler) {
 };
 
 
-exports.lambda_handlerX = function(event, context, callback) {
+// exports.lambda_handlerX = function(event, context, callback) {
 
-  if (!utils.getQuiet(context)) { console.log(`ra.lambda_handler`, {event, context}); }
+//   if (!utils.getQuiet(context)) { console.log(`ra.lambda_handler`, {event, context}); }
 
-  // =========================================================================================================
-  // AWS Gateway-API -- look for the api-gateway domain name
+//   // =========================================================================================================
+//   // AWS Gateway-API -- look for the api-gateway domain name
 
-  if (!utils.getQuiet(context)) { console.log(event.requestContext); }
-  if (!utils.getQuiet(context)) { console.log(event.requestContext && event.requestContext.domainName); }
-  if (event.requestContext && event.requestContext.domainName) {
-    let domainName = event.requestContext.domainName;
-    if (!utils.getQuiet(context)) { console.log(domainName, domainName.match(/execute-api/i), domainName.match(/amazonaws[.]com$/i)); }
-    if (domainName.match(/execute-api/i) && domainName.match(/amazonaws[.]com$/i)) {
-      // AWS Gateway-API
-      let handler = handlers.gatewayApi;
+//   if (!utils.getQuiet(context)) { console.log(event.requestContext); }
+//   if (!utils.getQuiet(context)) { console.log(event.requestContext && event.requestContext.domainName); }
+//   if (event.requestContext && event.requestContext.domainName) {
+//     let domainName = event.requestContext.domainName;
+//     if (!utils.getQuiet(context)) { console.log(domainName, domainName.match(/execute-api/i), domainName.match(/amazonaws[.]com$/i)); }
+//     if (domainName.match(/execute-api/i) && domainName.match(/amazonaws[.]com$/i)) {
+//       // AWS Gateway-API
+//       let handler = handlers.gatewayApi;
 
-      if (_.isFunction(handler)) {
-        return handler(event, context, callback);
-      }
+//       if (_.isFunction(handler)) {
+//         return handler(event, context, callback);
+//       }
 
-      // No handler! Warn
-      if ('gatewayApi' in handlers) {
-        console.warn(`In runAnywhere.lambda_handler - a gatewayApi handler was registered, but it is not a function.`);
-      } else {
-        console.warn(`In runAnywhere.lambda_handler - no gatewayApi handler was registered, but a request arrived.`);
-      }
+//       // No handler! Warn
+//       if ('gatewayApi' in handlers) {
+//         console.warn(`In runAnywhere.lambda_handler - a gatewayApi handler was registered, but it is not a function.`);
+//       } else {
+//         console.warn(`In runAnywhere.lambda_handler - no gatewayApi handler was registered, but a request arrived.`);
+//       }
 
-      return;
-    }
-  }
+//       return;
+//     }
+//   }
 
-  // =========================================================================================================
-  // AWS Gateway-API -- look for the api-gateway domain name
+//   // =========================================================================================================
+//   // AWS Gateway-API -- look for the api-gateway domain name
 
-  // =========================================================================================================
-  // AWS Lambda -- there are no clues, so must be last
-  let handler = handlers.lambda;
+//   // =========================================================================================================
+//   // AWS Lambda -- there are no clues, so must be last
+//   let handler = handlers.lambda;
 
-  if (_.isFunction(handler)) {
-    return handler(event, context, callback);
-  }
+//   if (_.isFunction(handler)) {
+//     return handler(event, context, callback);
+//   }
 
-  // No handler! Warn
-  if ('lambda' in handlers) {
-    console.warn(`In runAnywhere.lambda_handler - a Lambda handler was registered, but it is not a function.`);
-  } else {
-    console.warn(`In runAnywhere.lambda_handler - no Lambda handler was registered, but a request arrived.`);
-  }
+//   // No handler! Warn
+//   if ('lambda' in handlers) {
+//     console.warn(`In runAnywhere.lambda_handler - a Lambda handler was registered, but it is not a function.`);
+//   } else {
+//     console.warn(`In runAnywhere.lambda_handler - no Lambda handler was registered, but a request arrived.`);
+//   }
 
-  return;
-};
-
-
+//   return;
+// };
 
 
 
 
 
-/**
- * Registers a handler for an AWS function.
- *
- * * gatewayApi
- * * lambda
- *
- * @param {*} name
- * @param {*} fn
- */
-exports.registerHandlerX = function(name, fn) {
-  handlers[name] = fn;
-};
-sanityChecks.push(async function({assert, ...context}) {
-  exports.registerHandler('foo', function(){});
 
-  return `registerHandler()`;
-});
 
-registerSanityChecks(module, __filename, sanityChecks);
+// /**
+//  * Registers a handler for an AWS function.
+//  *
+//  * * gatewayApi
+//  * * lambda
+//  *
+//  * @param {*} name
+//  * @param {*} fn
+//  */
+// exports.registerHandlerX = function(name, fn) {
+//   handlers[name] = fn;
+// };
+// sanityChecks.push(async function({assert, ...context}) {
+//   exports.registerHandler('foo', function(){});
+
+//   return `registerHandler()`;
+// });
+
+// registerSanityChecks(module, __filename, sanityChecks);
 
 // -------------------------------------------------------------------------------------
 //  Helper functions

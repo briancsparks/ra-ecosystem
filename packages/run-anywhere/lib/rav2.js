@@ -11,6 +11,7 @@ const sg                        = utils.sg;
 const libModSquad               = require('./v2/mod-squad');
 const lambdaHandler             = require('./v2/lambda-handler');
 const sanityChecksLib           = require('./v2/sanity-checks');
+const claudiaUtils              = require('./v2/claudia/claudia-utils');
 const dbUtils                   = require('./v2/db/db-util');
 const redisUtils                = require('./v2/redis/redis-util');
 const { promisify }             = require('util');
@@ -32,6 +33,7 @@ utils.registerSanityChecks    = sanityChecksLib.registerSanityChecks;
 utils.runSanityChecksFor      = sanityChecksLib.runSanityChecksFor;
 utils.dbUtils                 = dbUtils;
 utils.redisUtils              = redisUtils;
+utils.claudiaUtils            = claudiaUtils;
 
 _.each(lambdaHandler, function(v,k) {
   module.exports[k] = v;

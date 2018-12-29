@@ -95,7 +95,6 @@ exports.getGetXyzDb = function(dbname, collname) {
 
 
 const queryCursor = exports.queryCursor = function(xyzDb, context, ...argvs) {
-  const quiet           = getQuiet(context);
 
   var argv = _.reduce(argvs, (argv, arg) => {
     if (typeof arg === 'string')    { return qm(argv, {query:{ [arg]: {$exists:true}}}); }
@@ -103,7 +102,7 @@ const queryCursor = exports.queryCursor = function(xyzDb, context, ...argvs) {
     return qm(argv, arg);
   }, {});
 
-  if (!quiet) console.log(`queryCursor`, inspect({argv}));
+  // if (!getQuiet(context)) console.log(`queryCursor`, inspect({argv}));
 
   // Default query is all
   var query       = argv.query          || {};
