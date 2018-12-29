@@ -52,6 +52,7 @@ const getXyzDb = async function(collName, context, dbName) {
   // These two are returned
   var   close           = function(){};
   var   xyzDb           = connections[`${dbName}/${collName}`];
+  var   meaningfulClose = false;
 
   if (!xyzDb) {
     let   dbHost        = process.env.db || process.env.SERVERASSIST_DB_IP || 'db';
@@ -67,6 +68,7 @@ const getXyzDb = async function(collName, context, dbName) {
       if (!quiet) console.log(`Closing for ${collName}`);
       conn.close();
     };
+    meaningfulClose = true;
   }
 
   // Return the collection as a couple of different names as convienence to caller
@@ -74,11 +76,25 @@ const getXyzDb = async function(collName, context, dbName) {
     [`${collName}Db`]:    xyzDb,
     collection:           xyzDb,
     coll:                 xyzDb,
-    close
+    close,
+    meaningfulClose
   };
 };
 
 
+/**
+ * Gets a 'db' (actually a MongoDB collection, but called a DB in run-anywhere.)
+ *
+ * This function allows you to specify the db name and the collection name first
+ * (they are probably known at startup time), and then the context later.
+ *
+ * This is the entry-point fot the getXyzDb() function, which does all the real
+ * work.
+ *
+ * @param {*} dbname
+ * @param {*} collname
+ * @returns
+ */
 exports.getGetXyzDb = function(dbname, collname) {
 
   xyzDbs[dbname] = xyzDbs[dbname] || {};
@@ -94,6 +110,14 @@ exports.getGetXyzDb = function(dbname, collname) {
 };
 
 
+/**
+ * Builds a MongoDB Cursor object in an easy way.
+ *
+ * @param {*} xyzDb
+ * @param {*} context
+ * @param {*} argvs
+ * @returns
+ */
 const queryCursor = exports.queryCursor = function(xyzDb, context, ...argvs) {
 
   var argv = _.reduce(argvs, (argv, arg) => {
@@ -145,10 +169,26 @@ sanityChecks.push(async function({assert, ...context}) {
   return `db_close(),db_queryCursor()`;
 });
 
+/**
+ * When logging a result of querying, the list is usually big, and not meaningful to
+ * the log, this function shortens the list of items to one, and shows the length.
+ *
+ * @param {*} result
+ * @returns
+ */
 exports.smQueryResult = function(result) {
   return utils.smallItems(result, 'items');
 };
 
+/**
+ * Does the mundane `mtime/ctime` on an object, and makes sure that IDs that are
+ * on the query are put into the update.
+ *
+ * @param {*} updates_
+ * @param {*} query
+ * @param {*} context
+ * @returns
+ */
 exports.updatify = function(updates_, query, context) {
 
   const now     = getNow(context);
@@ -164,6 +204,22 @@ exports.updatify = function(updates_, query, context) {
   });
 };
 
+/**
+ * Changes attributes on objects into more complex types, that you use a lot.
+ *
+ * ```js
+ *  {
+ *    clientId: "$re:/bo+ya/i"
+ *  }
+ * ```
+ *
+ * * re, regexp -- RegExp, like above.
+ * * dt, date   -- a string that can be parsed by Date c-tor
+ * * tm, time   -- a number (or all-numeric string) to use to make a Date from a time epoch
+ *
+ * @param {*} arr
+ * @returns
+ */
 exports.fixParams = function(arr) {
   if (!_.isArray(arr))    { return exports.fixParams([arr])[0]; }
 

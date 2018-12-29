@@ -10,16 +10,7 @@ const app                     = express();
 
 host.hookIntoHost(app);
 
-// TODO: remove these
-// const ingest                  = require('./routes/ingest');
-// const clientStart             = require('./routes/client-start');
-// app.use('/ingest',      ingest);
-// app.use('/clientStart', clientStart);
-
 module.exports = app;
-
-//host.listen(app);
-
 
 
 

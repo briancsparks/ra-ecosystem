@@ -43,6 +43,8 @@ var   server;
  * @param {*} app
  */
 exports.hookIntoHost = function(app) {
+
+  // Use the middleware that is appropriate for the environment.
   if (isAws()) {
     const awsServerlessExpressMiddleware  = require('aws-serverless-express/middleware');
     app.use(awsServerlessExpressMiddleware.eventContext());
@@ -50,6 +52,7 @@ exports.hookIntoHost = function(app) {
     app.use(raContextMw());
   };
 
+  // Setup
   app.runAnywhere = {
     listen: function(callback) {
       exports.listen(app, function(err, port) {
@@ -85,12 +88,18 @@ exports.listen = function(app, callback) {
     });
 
   } else {
+
+    // Still need to call back
     if (_.isFunction(callback)) {
       return callback(null, -1);
     }
   }
 };
 
+/**
+ * Closes dbs (MongoDB collections), and stops the server.
+ *
+ */
 exports.close = function() {
   const keys = Object.keys(closes);
 
@@ -154,6 +163,7 @@ function raContextMw(collNames = []) {
   // We grab connections to the DB here, so we dont have to close the DB after
   // every request.
 
+  // TODO: move out
   collNames = 'clients,sessions,users,telemetry,attrstream,logs'.split(',');
   collNames.forEach(collName => {
     const { coll, close } = getGetXyzDb(collName, dbName)(raApp.context);

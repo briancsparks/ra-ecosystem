@@ -23,6 +23,30 @@ const {
 //  Functions
 //
 
+/**
+ * Converts the arguments to the Claudia.JS API handlers into the `argv, context, callback`
+ * style that run-anywhere uses.
+ *
+ * The Claudia.JS `request` object (the first parameter) has a lot of stuff, and the second is
+ * the AWS context parameter.
+ *
+ * Looks through the `request` object, and finds all the JSON-able data, and builds argv out of
+ * that, but also adds __request, which is the original request object.
+ *
+ * So, if `api` is Claudia's `ApiBuilder`, then you would use this function like this:
+ *
+ * ```js
+ *          api.get('/feed', function(...args) {
+ *            const [ request, context ]  = args;
+ *
+ *            var feedData = await getFeed(...claudia2RaArgs(args));
+ *          });
+ * ```
+ *
+ * @param {*} args
+ * @param {*} callback
+ * @returns
+ */
 exports.claudia2RaArgs = function(args, callback) {
   checkArgs(args);
 
@@ -51,6 +75,27 @@ exports.claudia2RaArgs = function(args, callback) {
   return raArgs;
 };
 
+/**
+ * Converts the arguments to the Claudia.JS API handlers into the `argv, context, callback`
+ * style that run-anywhere uses. But this function allows you to build the `argv` parameter
+ * yourself and pass it through.
+ *
+ * So, if `api` is Claudia's `ApiBuilder`, then you would use this function like this:
+ *
+ * ```js
+ *          api.get('/feed', function(...args) {
+ *            const [ request, context ]  = args;
+ *
+ *            const argv = { Key: request.queryString.Key };
+ *
+ *            var feedData = await getFeed(...claudia2RaArgs2(argv, args));
+ *          });
+ * ```
+ *
+ * @param {*} args
+ * @param {*} callback
+ * @returns
+ */
 exports.claudia2RaArgs2 = function(argv, args, callback) {
   const raArgs = exports.claudia2RaArgs(args, callback);
 
@@ -64,7 +109,30 @@ exports.claudia2RaArgs2 = function(argv, args, callback) {
 };
 
 
-exports.claudia2RaMyArgs = function(argv, args, callback) {
+/**
+ * Converts the arguments to the Claudia.JS API handlers into the `argv, context, callback`
+ * style that run-anywhere uses. But this function allows you to build the `argv` parameter
+ * yourself and pass it through.
+ *
+ * Unlike the other 2 styles, does not put `__request` on the `argv` object.
+ *
+ * So, if `api` is Claudia's `ApiBuilder`, then you would use this function like this:
+ *
+ * ```js
+ *          api.get('/feed', function(...args) {
+ *            const [ request, context ]  = args;
+ *
+ *            const argv = { Key: request.queryString.Key };
+ *
+ *            var feedData = await getFeed(...claudia2RaMyArgs(argv, args));
+ *          });
+ * ```
+ *
+ * @param {*} args
+ * @param {*} callback
+ * @returns
+ */
+ exports.claudia2RaMyArgs = function(argv, args, callback) {
   const raArgs = exports.claudia2RaArgs(args, callback);
 
   // Replace with the passed-in argv
