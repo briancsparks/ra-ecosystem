@@ -63,7 +63,17 @@ exports.claudia2RaArgs2 = function(argv, args, callback) {
   return raArgs;
 };
 
-  // -------------------------------------------------------------------------------------
+
+exports.claudia2RaMyArgs = function(argv, args, callback) {
+  const raArgs = exports.claudia2RaArgs(args, callback);
+
+  // Replace with the passed-in argv
+  raArgs[0] = argv;
+
+  return raArgs;
+};
+
+// -------------------------------------------------------------------------------------
 //  Helper functions
 //
 
