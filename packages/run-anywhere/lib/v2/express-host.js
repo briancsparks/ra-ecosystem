@@ -148,7 +148,7 @@ exports.raContextMw = exports.raExpressMw = function(dbName, collNames = []) {
   // Hook into the request/response stream -- the prototypical express.js middleware pattern
   return function(req, res, next) {
 
-    req.raApp = qm(req.raApp, raApp);
+    req.raApp = qm(req.raApp || {}, raApp);
 
     // If you ever need to hook in and know when the request completes, see for an example:
     //    https://github.com/expressjs/compression/blob/master/index.js

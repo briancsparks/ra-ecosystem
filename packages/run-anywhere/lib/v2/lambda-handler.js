@@ -53,20 +53,22 @@ exports.expressServerlessRoutes = function(subdomainName, handler /*, appBuilder
   exports.registerHandler(function(event, context) {
 
     // TODO: Remove
-    if (!utils.getQuiet(context)) { console.log(inspect(event.requestContext)); }
-    if (!utils.getQuiet(context)) { console.log(event.requestContext && event.requestContext.domainName); }
+    if (!utils.getQuiet(context)) { console.log(`Loading Routes1`, inspect(event.requestContext)); }
+    if (!utils.getQuiet(context)) { console.log(`Loading Routes2`, event.requestContext && event.requestContext.domainName); }
 
     if (event.requestContext && event.requestContext.domainName) {
       let domainName = event.requestContext.domainName;
-      if (!utils.getQuiet(context)) { console.log(domainName, domainName.match(/execute-api/i), domainName.match(/amazonaws[.]com$/i)); }
+      if (!utils.getQuiet(context)) { console.log(`Loading Routes3`, domainName, domainName.match(/execute-api/i), domainName.match(/amazonaws[.]com$/i)); }
 
       if (domainName.match(/execute-api/i) && domainName.match(/amazonaws[.]com$/i)) {
         if (domainName.indexOf(subdomainName) !== -1) {
+          if (!utils.getQuiet(context)) { console.log(`Sending request to handler for express sub-domain: ${subdomainName}`); }
           return true;
         }
       }
     }
 
+    if (!utils.getQuiet(context)) { console.log(`NOT Sending request to handler for express sub-domain: ${subdomainName}`); }
     return false;
   },
   function(event, context, callback) {
