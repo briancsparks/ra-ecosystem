@@ -249,7 +249,11 @@ exports.smResult = exports.smReceipt = exports.smDbResult = exports.smDbReceipt 
 //
 
 function getNow(context = {}) {
-  return (context.ntlctx || {}).now   || new Date();
+  const result = (context.ntlctx || {}).now;
+  if (result instanceof Date) {
+    return result;
+  }
+  return new Date();
 }
 
 function getIds(query = {}) {
