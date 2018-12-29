@@ -191,11 +191,10 @@ exports.smQueryResult = function(result) {
  */
 exports.updatify = function(updates_, query, context) {
 
-  // const now     = getNow(context);
-  const now     = new Date();
+  const now     = getNow(context);
   var   updates = qm(updates_, {$set:getIds(query)});
 
-  return qm(updates, {
+  const result = qm(updates, {
     $set: {
       mtime:    now
     },
@@ -203,6 +202,12 @@ exports.updatify = function(updates_, query, context) {
       ctime:    now
     }
   });
+
+  // TODO: once qm handles Date()s, remove this
+  result.$set.mtime           = now;
+  result.$setOnInsert.ctime   = now;
+
+  return result;
 };
 
 /**
