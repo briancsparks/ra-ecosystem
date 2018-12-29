@@ -10,6 +10,7 @@ var   utils                     = require('./utils');
 const sg                        = utils.sg;
 const libModSquad               = require('./v2/mod-squad');
 const lambdaHandler             = require('./v2/lambda-handler');
+const expressHost               = require('./v2/express-host');
 const sanityChecksLib           = require('./v2/sanity-checks');
 const claudiaUtils              = require('./v2/claudia/claudia-utils');
 const dbUtils                   = require('./v2/db/db-util');
@@ -40,9 +41,20 @@ _.each(lambdaHandler, function(v,k) {
 });
 
 module.exports.utils                  = utils;
+module.exports.sg                     = utils.sg;
 module.exports.modSquad               = modSquad;
 module.exports.registerSanityChecks   = sanityChecksLib.registerSanityChecks;
 module.exports.runSanityChecksFor     = sanityChecksLib.runSanityChecksFor;
+module.exports.raExpressMw            = expressHost.raExpressMw;
+module.exports.dbUtils                = dbUtils;
+module.exports.redisUtils             = redisUtils;
+module.exports.claudiaUtils           = claudiaUtils;
+
+module.exports.express = {
+  middleware: expressHost.raExpressMw,
+  listen:     expressHost.listen,             /* (app, [callback]) */
+  close:      expressHost.close,
+};
 
 
 

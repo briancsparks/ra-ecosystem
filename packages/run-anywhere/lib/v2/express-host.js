@@ -49,7 +49,7 @@ exports.hookIntoHost = function(app) {
     const awsServerlessExpressMiddleware  = require('aws-serverless-express/middleware');
     app.use(awsServerlessExpressMiddleware.eventContext());
   } else {
-    app.use(raContextMw());
+    app.use(exports.raContextMw(dbName, collNames));
   };
 
   // Setup
@@ -81,7 +81,7 @@ exports.listen = function(app, callback) {
     if (port <= 0)  { console.log(`Not starting server`); return; }
 
     server = app.listen(port, () => {
-      console.log(`Server is listening on ${port}`);
+      // console.log(`Server is listening on ${port}`);
       if (_.isFunction(callback)) {
         return callback(null, port);
       }
@@ -118,6 +118,46 @@ exports.close = function() {
   }
 };
 
+/**
+ *  Provides middleware for run-anywhere's Express app.
+ *
+ *  * Get DB connections at startup, and share in each request, so we dont have to
+ *    open and close the DB connection all the time, but also allowing the code
+ *    to get DB connections whenever needed in the case of something like Lamba
+ *
+ * @returns
+ */
+exports.raContextMw = exports.raExpressMw = function(dbName, collNames = []) {
+  var   raApp = {context:{}};
+
+  // We grab connections to the DB here, so we dont have to close the DB after
+  // every request.
+
+  // TODO: move out
+  // collNames = 'clients,sessions,users,telemetry,attrstream,logs'.split(',');
+  collNames.forEach(collName => {
+
+    // TODO: this is an async function, must await, or use Promise
+    const { coll, close } = getGetXyzDb(dbName, collName)(raApp.context);
+
+    collections[collName] = coll;
+    closes[collName]      = close;
+  });
+
+
+  // Hook into the request/response stream -- the prototypical express.js middleware pattern
+  return function(req, res, next) {
+
+    req.raApp = qm(req.raApp, raApp);
+
+    // If you ever need to hook in and know when the request completes, see for an example:
+    //    https://github.com/expressjs/compression/blob/master/index.js
+    // and see `hook` below.
+
+    return next();
+  };
+}
+
 // -------------------------------------------------------------------------------------
 //  Helper functions
 //
@@ -145,46 +185,6 @@ function getPort(port_) {
   return +port;
 }
 
-
-/**
- *  Provides middleware for run-anywhere's Express app.
- *
- *  * Get DB connections at startup, and share in each request, so we dont have to
- *    open and close the DB connection all the time, but also allowing the code
- *    to get DB connections whenever needed in the case of something like Lamba
- *
- * @returns
- */
-
- // TODO: should not create this unless needed
-function raContextMw(collNames = []) {
-  var   raApp = {context:{}};
-
-  // We grab connections to the DB here, so we dont have to close the DB after
-  // every request.
-
-  // TODO: move out
-  collNames = 'clients,sessions,users,telemetry,attrstream,logs'.split(',');
-  collNames.forEach(collName => {
-    const { coll, close } = getGetXyzDb(collName, dbName)(raApp.context);
-
-    collections[collName] = coll;
-    closes[collName]      = close;
-  });
-
-
-  // Hook into the request/response stream -- the prototypical express.js middleware pattern
-  return function(req, res, next) {
-
-    req.raApp = qm(req.raApp, raApp);
-
-    // If you ever need to hook in and know when the request completes, see for an example:
-    //    https://github.com/expressjs/compression/blob/master/index.js
-    // and see `hook` below.
-
-    return next();
-  };
-}
 
 /**
  *  Example of how to do Express.js middleware when you need to do something at the end

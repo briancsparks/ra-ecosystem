@@ -46,10 +46,9 @@ exports.registerHandler = function(select, handleIt) {
   handlerFns.push(mkHandlerWrapper(select, handleIt));
 };
 
-exports.expressServerlessRoutes = function(subdomainName, appBuilder) {
-  const lambdaExpressHost       = require('./lambda-express-host');
-
-  appBuilder(lambdaExpressHost.app);
+exports.expressServerlessRoutes = function(subdomainName, handler /*, appBuilder*/) {
+  // const lambdaExpressHost       = require('./lambda-express-host');
+  // appBuilder(lambdaExpressHost.app);
 
   exports.registerHandler(function(event, context) {
 
@@ -71,7 +70,8 @@ exports.expressServerlessRoutes = function(subdomainName, appBuilder) {
     return false;
   },
   function(event, context, callback) {
-    return lambdaExpressHost.handler(event, context, callback);
+    // return lambdaExpressHost.handler(event, context, callback);
+    return handler(event, context, callback);
   });
 };
 
