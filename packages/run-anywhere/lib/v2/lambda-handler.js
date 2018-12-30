@@ -6,6 +6,7 @@
 
 const _                           = require('lodash');
 const utils                       = require('../utils');
+const { reportWarning }           = require('../error-handlers');
 // const { registerSanityChecks }    = require('./sanity-checks');
 const { inspect }                 = utils;
 
@@ -35,7 +36,11 @@ exports.lambda_handler = function(event, context, callback) {
     }
   });
 
-  return;
+  if (!handled) {
+    return reportWarning({log:[`Cannot determine source for event`, {event}]}, context, callback);
+  }
+
+  return callback();
 };
 
 const mkHandlerWrapper = function(select, handleIt) {
@@ -47,32 +52,23 @@ exports.registerHandler = function(select, handleIt) {
 };
 
 exports.expressServerlessRoutes = function(subdomainName, handler /*, appBuilder*/) {
-  // const lambdaExpressHost       = require('./lambda-express-host');
-  // appBuilder(lambdaExpressHost.app);
-
   exports.registerHandler(function(event, context) {
-
-    // TODO: Remove
-    if (!utils.getQuiet(context)) { console.log(`Loading Routes1`, inspect(event.requestContext)); }
-    if (!utils.getQuiet(context)) { console.log(`Loading Routes2`, event.requestContext && event.requestContext.domainName); }
 
     if (event.requestContext && event.requestContext.domainName) {
       let domainName = event.requestContext.domainName;
-      if (!utils.getQuiet(context)) { console.log(`Loading Routes3`, domainName, domainName.match(/execute-api/i), domainName.match(/amazonaws[.]com$/i)); }
 
       if (domainName.match(/execute-api/i) && domainName.match(/amazonaws[.]com$/i)) {
         if (domainName.indexOf(subdomainName) !== -1) {
-          if (!utils.getQuiet(context)) { console.log(`Sending request to handler for express sub-domain: ${subdomainName}`); }
+          // if (!utils.getQuiet(context)) { console.log(`Sending request to handler for express sub-domain: ${subdomainName}`); }
           return true;
         }
       }
     }
 
-    if (!utils.getQuiet(context)) { console.log(`NOT Sending request to handler for express sub-domain: ${subdomainName}`); }
+    // if (!utils.getQuiet(context)) { console.log(`NOT Sending request to handler for express sub-domain: ${subdomainName}`); }
     return false;
   },
   function(event, context, callback) {
-    // return lambdaExpressHost.handler(event, context, callback);
     return handler(event, context, callback);
   });
 };
@@ -82,7 +78,6 @@ exports.claudiaServerlessApi = function(subdomainName, handler) {
 
     if (event.requestContext && event.requestContext.domainName) {
       let domainName = event.requestContext.domainName;
-      if (!utils.getQuiet(context)) { console.log(domainName, domainName.match(/execute-api/i), domainName.match(/amazonaws[.]com$/i)); }
 
       if (domainName.match(/execute-api/i) && domainName.match(/amazonaws[.]com$/i)) {
         if (domainName.indexOf(subdomainName) !== -1) {

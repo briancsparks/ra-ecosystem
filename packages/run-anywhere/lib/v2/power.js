@@ -76,6 +76,20 @@ var   power = {};
 
 
 /**
+ * Returns the number of keys on the object, or zero if it isnt an object.
+ *
+ * @param {*} obj
+ * @returns the number of keys.
+ */
+exports.numKeys = power.numKeys = function(obj) {
+  if (obj) {
+    return Object.keys(obj).length;
+  }
+
+  return 0;
+};
+
+/**
  * Extracts `key` from `obj` and returns it.
  *
  * @param {*} obj

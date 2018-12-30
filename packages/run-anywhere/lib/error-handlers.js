@@ -7,8 +7,13 @@
 //  requirements
 //
 
-var sg                  = require('sgsg');
-var _                   = sg._;
+const _                       = require('lodash');
+const modSquad                = require('./v2/mod-squad');
+
+const mod                     = modSquad.modSquad(module);
+
+// var sg                  = require('sgsg');
+// var _                   = sg._;
 
 // -------------------------------------------------------------------------------------
 //  Data
@@ -40,6 +45,19 @@ libMongo.ErrorHandler = function() {
 
 libSns.ErrorHandler = function() {
 };
+
+mod.xport({reportError: function(argv, context, callback) {
+
+  return callback();
+}});
+
+mod.xport({reportWarning: function(argv, context, callback) {
+
+  console.warn(`WWWWWWWWWWWWWWWWWWWWWWWW`);
+  console.warn(...argv.log);
+
+  return callback();
+}});
 
 
 _.each(libErrorHandlers, function(value, key) {

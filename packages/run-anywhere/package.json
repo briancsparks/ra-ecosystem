@@ -29,5 +29,8 @@
     "quick-merge": "^1.0.7",
     "redis": "^2.8.0",
     "sgsg": "^0.9.54"
+  },
+  "devDependencies": {
+    "ava": "^1.0.1"
   }
 }

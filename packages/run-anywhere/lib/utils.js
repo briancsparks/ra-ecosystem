@@ -54,10 +54,15 @@ exports.smallItems = function(obj, key = 'items') {
 
 // -------------------- getQuiet
 
-var   g_quiet = null;
+var   g_quiet   = null;
+var   g_dquiet  = null;
 
 exports.setQuiet = function(q) {
   g_quiet = q;
+};
+
+exports.setDQuiet = function(q) {
+  g_dquiet = q;
 };
 
 exports.getQuiet = function(context) {
@@ -83,6 +88,12 @@ exports.getQuiet = function(context) {
     }
   }
 
+  if (sg.numKeys(context) && context.runAnywhereContext) {
+    if ('quiet' in context.runAnywhereContext) {
+      return context.runAnywhereContext.quiet;
+    }
+  }
+
   // Quiet during scripts
   if ('npm_lifecycle_event' in process.env) {
     return true;
@@ -95,6 +106,25 @@ exports.getQuiet = function(context) {
 
   return false;
 }
+
+exports.getDQuiet = function(context) {
+
+  if (g_dquiet !== null) {
+    return g_dquiet;
+  }
+
+  if (sg.numKeys(context) && context.runAnywhereContext) {
+    if ('dquiet' in context.runAnywhereContext) {
+      return context.runAnywhereContext.dquiet;
+    }
+  }
+
+  if (exports.getQuiet(context)) {
+    return true;
+  }
+
+  return true;
+};
 
 const pad = exports.pad = function(s_, len, fill) {
   var s = ''+s_;

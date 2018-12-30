@@ -126,8 +126,6 @@ const queryCursor = exports.queryCursor = function(xyzDb, context, ...argvs) {
     return qm(argv, arg);
   }, {});
 
-  // if (!getQuiet(context)) console.log(`queryCursor`, inspect({argv}));
-
   // Default query is all
   var query       = argv.query          || {};
   var projection  = argv.projection;
