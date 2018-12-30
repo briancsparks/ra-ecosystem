@@ -45,7 +45,7 @@ exports.lambda_handler = function(event, context, callback) {
   //   return reportWarning({log:[`Cannot determine source for event`, {event}]}, context, callback);
   // }
 
-  return callback();
+  // return callback();
 };
 
 const mkHandlerWrapper = function(select, handleIt) {
