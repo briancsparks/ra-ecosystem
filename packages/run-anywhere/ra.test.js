@@ -56,8 +56,10 @@ test('The right exports', t=> {
 
   // TODO: Add the rest
   t.true('isDebug' in ra.v2.utils);
+  t.true('setQuiet' in ra.v2.utils);
   t.true('getQuiet' in ra.v2.utils);
   t.true('getDQuiet' in ra.v2.utils);
+  t.true('setDQuiet' in ra.v2.utils);
 
   // TODO: Add the rest
   t.true('extract' in ra.v2.sg);
