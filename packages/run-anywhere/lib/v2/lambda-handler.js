@@ -36,9 +36,10 @@ exports.lambda_handler = function(event, context, callback) {
     }
   });
 
-  if (!handled) {
-    return reportWarning({log:[`Cannot determine source for event`, {event}]}, context, callback);
-  }
+  // TODO: putttt back
+  // if (!handled) {
+  //   return reportWarning({log:[`Cannot determine source for event`, {event}]}, context, callback);
+  // }
 
   return callback();
 };
@@ -59,13 +60,14 @@ exports.expressServerlessRoutes = function(subdomainName, handler /*, appBuilder
 
       if (domainName.match(/execute-api/i) && domainName.match(/amazonaws[.]com$/i)) {
         if (domainName.indexOf(subdomainName) !== -1) {
-          // if (!utils.getQuiet(context)) { console.log(`Sending request to handler for express sub-domain: ${subdomainName}`); }
+          if (!utils.getDQuiet(context)) { console.log(`DDDSending request to handler for express sub-domain: ${subdomainName}`); }
+          if (!utils.getQuiet(context)) { console.log(`Sending request to handler for express sub-domain: ${subdomainName}`); }
           return true;
         }
       }
     }
 
-    // if (!utils.getQuiet(context)) { console.log(`NOT Sending request to handler for express sub-domain: ${subdomainName}`); }
+    if (!utils.getQuiet(context)) { console.log(`NOT Sending request to handler for express sub-domain: ${subdomainName}`); }
     return false;
   },
   function(event, context, callback) {
