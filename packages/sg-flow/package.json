@@ -10,7 +10,6 @@
   "author": "Brian C Sparks",
   "license": "MIT",
   "dependencies": {
-    "lodash": "^4.17.11",
-    "sg0": "^0.9.1"
+    "lodash": "^4.17.11"
   }
 }
