@@ -21,7 +21,6 @@
   "homepage": "https://github.com/briancsparks/run-anywhere#readme",
   "dependencies": {
     "aws-serverless-express": "^3.3.5",
-    "difflet": "^1.0.1",
     "express": "^4.16.4",
     "lodash": "^4.17.11",
     "loud-rejection": "^1.6.0",
@@ -31,6 +30,7 @@
     "sgsg": "^0.9.54"
   },
   "devDependencies": {
-    "ava": "^1.0.1"
+    "ava": "^1.0.1",
+    "difflet": "^1.0.1"
   }
 }
