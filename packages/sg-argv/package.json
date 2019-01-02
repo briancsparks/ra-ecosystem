@@ -1,0 +1,16 @@
+{
+  "name": "sg-argv",
+  "version": "0.9.3",
+  "description": "Parameter parsing.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Brian C Sparks",
+  "license": "MIT",
+  "dependencies": {
+    "minimist": "^1.2.0",
+    "sg0": "^0.9.3"
+  }
+}
