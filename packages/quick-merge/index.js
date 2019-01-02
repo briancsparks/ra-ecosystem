@@ -137,6 +137,9 @@ const basicMerges = {
     if (x === void 0)         { return true; }
     if (Array.isArray(x))     { return false; }
 
+    if (x instanceof Date)    { return true; }
+    if (x instanceof RegExp)  { return true; }
+
     const type = typeof x;
 
     if (type === 'object')    { return false; }
@@ -233,6 +236,9 @@ function realTypeof(x) {
   if (x === null)           { return 'NULL'; }
   if (x === void 0)         { return 'UNDEFINED'; }
   if (Array.isArray(x))     { return 'array'; }
+
+  if (x instanceof Date)    { return 'scalar'; }
+  if (x instanceof RegExp)  { return 'scalar'; }
 
   const type = typeof x;
 

@@ -134,6 +134,15 @@ test('quick-merge does not append null to array', t => {
 });
 
 
+test('quick-merge knows Date is not really an Object', t => {
+  const a = {};
+  const b = {a: new Date()};
+  const merged = qm(a, b);
+  t.true(merged.a instanceof Date);
+});
+
+
+
 
 
 test('quick-merge-resolve handles resolve', t => {
