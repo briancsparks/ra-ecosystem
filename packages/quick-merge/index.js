@@ -3,14 +3,6 @@
  * Implementation of quick-merge merging algorithm.
  */
 
- // The lib file has other helpers like kv(), keyMirror(), isnt(), and the like
-const lib                     = require('./lib/kv');
-
-// Export all the lib functions
-Object.keys(lib).forEach(key => {
-  exports[key] = lib[key];
-});
-
 // Forward declarations
 var merge, appendArrays, appendToArray, awins, bwins;
 
