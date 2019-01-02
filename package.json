@@ -4,6 +4,8 @@
   "workspaces":[
     "packages/*"
   ],
+  "author": "Brian C Sparks",
+  "license": "MIT",
   "devDependencies": {
     "ava": "^1.0.1",
     "lerna": "^3.8.0"

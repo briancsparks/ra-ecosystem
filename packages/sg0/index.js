@@ -127,7 +127,7 @@ var ap = sg.ap = function(a, v) {
  *
  *  If x is undefined, `_push()` will not push it, and returns undefined.
  */
-sg._push = function(arr, x) {
+sg.push = function(arr, x) {
   if (_.isUndefined(x))     { return x; }
 
   const length = arr.length;
@@ -136,6 +136,7 @@ sg._push = function(arr, x) {
 
   return length;
 };
+sg._push = sg.push;
 
 /**
  *  Returns the keys of an object.
@@ -410,6 +411,7 @@ sg.trueOrFalse = function(value_) {
   if (_.isString(value)) { value = +value; }    // Convert to number
   return !!value;
 };
+sg.tf = sg.trueOrFalse;   // alias
 
 /**
  *  Just like _.each, except adds three params to the callback:
