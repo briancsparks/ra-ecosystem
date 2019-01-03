@@ -1,0 +1,30 @@
+{
+  "name": "aws-command",
+  "version": "0.8.0",
+  "description": "> TODO: description",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/briancsparks/ra-ecosystem.git"
+  },
+  "author": "Brian C Sparks",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/briancsparks/ra-ecosystem/issues"
+  },
+  "homepage": "https://github.com/briancsparks/ra-ecosystem/tree/master/packages/aws-command#readme",
+  "directories": {
+    "lib": "lib",
+    "test": "__tests__"
+  },
+  "files": [
+    "lib"
+  ],
+  "dependencies": {
+    "sg0": "^0.9.4"
+  }
+}
