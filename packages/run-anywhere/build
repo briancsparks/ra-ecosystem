@@ -1,6 +1,0 @@
-#!/bin/bash -e
-
-eval "$(cli-shezargs $@)"
-
-echo '{"ok":true}' > run-anywhere.json
-
