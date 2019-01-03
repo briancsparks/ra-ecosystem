@@ -13,6 +13,10 @@
   },
   "author": "Brian C Sparks",
   "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/briancsparks/ra-ecosystem/issues"
+  },
+  "homepage": "https://github.com/briancsparks/ra-ecosystem/tree/master/packages/sg-argv#readme",
   "dependencies": {
     "minimist": "^1.2.0",
     "sg0": "^0.9.4"

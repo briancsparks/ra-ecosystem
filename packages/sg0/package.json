@@ -13,6 +13,10 @@
   },
   "author": "Brian C Sparks",
   "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/briancsparks/ra-ecosystem/issues"
+  },
+  "homepage": "https://github.com/briancsparks/ra-ecosystem/tree/master/packages/sg0#readme",
   "dependencies": {
     "lodash": "^4.17.11"
   }

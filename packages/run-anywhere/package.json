@@ -18,7 +18,7 @@
   "bugs": {
     "url": "https://github.com/briancsparks/ra-ecosystem/issues"
   },
-  "homepage": "https://github.com/briancsparks/ra-ecosystem/packages/run-anywhere#readme",
+  "homepage": "https://github.com/briancsparks/ra-ecosystem/tree/master/packages/run-anywhere#readme",
   "dependencies": {
     "aws-serverless-express": "^3.3.5",
     "express": "^4.16.4",
