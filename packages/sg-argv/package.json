@@ -1,6 +1,6 @@
 {
   "name": "sg-argv",
-  "version": "0.9.4",
+  "version": "0.9.5",
   "description": "Parameter parsing.",
   "main": "index.js",
   "scripts": {
@@ -15,6 +15,6 @@
   "license": "MIT",
   "dependencies": {
     "minimist": "^1.2.0",
-    "sg0": "^0.9.3"
+    "sg0": "^0.9.4"
   }
 }
