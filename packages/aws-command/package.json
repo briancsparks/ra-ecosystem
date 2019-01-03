@@ -25,6 +25,10 @@
     "lib"
   ],
   "dependencies": {
+    "aws-sdk": "^2.382.0",
+    "lodash": "^4.17.11",
+    "run-anywhere": "^0.7.1",
+    "sg-flow": "^0.9.4",
     "sg0": "^0.9.4"
   }
 }

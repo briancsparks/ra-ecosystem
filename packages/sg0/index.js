@@ -489,7 +489,7 @@ sg.extract = function(collection_, name) {
  * @returns
  */
 sg.extracts = function(collection /*, names... */) {
-  var names  = _.rest(arguments);
+  var names  = _.drop(arguments);
   var result = {};
 
   _.each(names, function(name) {

@@ -23,7 +23,7 @@ sg.okv = function(err /*, [argN]*/) { /* verbose */
   if (err)  { console.error(err); return false; }
 
   var result = true;
-  _.each(_.rest(arguments), function(value, index) {
+  _.each(_.drop(arguments), function(value, index) {
     var is = !isnt(value);
 
     result = result && is;
@@ -52,7 +52,7 @@ sg.ok = function(err /*, [argN]*/) {
   if (err)  { return false; }
 
   var result = true;
-  _.each(_.rest(arguments), function(value, index) {
+  _.each(_.drop(arguments), function(value, index) {
     var is = !isnt(value);
     result = result && is;
   });
@@ -335,7 +335,7 @@ sg.__run2 = function(a,b,c,d) {   // self, fns, last, abort
   else                   { abort_ = abort_ || last; }
 
   abort = function(err) {
-    var args = _.rest(arguments);
+    var args = _.drop(arguments);
     args.unshift(err || 'aborted');
 
     // Make sure it is a function, then call it
@@ -373,7 +373,7 @@ sg.__run2 = function(a,b,c,d) {   // self, fns, last, abort
  */
 sg.replaceResult = function(result /*, ...replaces*/) {
 
-  var replaces = _.rest(arguments);
+  var replaces = _.drop(arguments);
 
   // First, clobber the result
   _.each(result, function(value, key) {
@@ -468,7 +468,7 @@ sg.until = function(/* [options,] fn, callback */) {
  */
 var __eachll = sg.__eachll = function(list_ /*, max_, fn_, callback_*/ ) {
 
-  var args      = _.rest(arguments);
+  var args      = _.drop(arguments);
   var callback  = args.pop();
   var fn        = args.pop();
   var max       = args.length > 0 ? args.shift() : 10000000;
@@ -517,13 +517,13 @@ var __eachll = sg.__eachll = function(list_ /*, max_, fn_, callback_*/ ) {
  */
 sg.__runll = function(/*fns, max, onDone*/) {
 
-  var args    = _.rest(arguments, 0);
+  var args    = _.drop(arguments, 0);
   var onDone  = args.pop();
 
   // The dispatch function
   args.push(function(fn /*, next, index, coll*/) {
     // fn(next, index, coll)
-    return fn.apply(this, _.rest(arguments));
+    return fn.apply(this, _.drop(arguments));
   });
 
   // The final function
@@ -536,7 +536,7 @@ sg.__runll = function(/*fns, max, onDone*/) {
  *  Internally wrap a function so error handling is not so boiler-plateish.
  */
 sg.iwrap = function(myname, fncallback /*, abort, body_callback*/) {
-  var   args             = _.rest(arguments, 2);
+  var   args             = _.drop(arguments, 2);
   const body_callback    = args.pop();
   var   abort            = args.shift();
 

@@ -216,7 +216,7 @@ function invoke(argv_, fn, msg) {
     }
 
     /* otherwise */
-    process.stdout.write(JSON.stringify(_.rest(arguments))+'\n');
+    process.stdout.write(JSON.stringify(_.drop(arguments))+'\n');
     process.exit(exitCode);
   });
 }
