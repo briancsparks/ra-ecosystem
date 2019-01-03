@@ -11,14 +11,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/briancsparks/run-anywhere.git"
+    "url": "git+https://github.com/briancsparks/ra-ecosystem.git"
   },
-  "author": "",
+  "author": "Brian C Sparks",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/briancsparks/run-anywhere/issues"
+    "url": "https://github.com/briancsparks/ra-ecosystem/issues"
   },
-  "homepage": "https://github.com/briancsparks/run-anywhere#readme",
+  "homepage": "https://github.com/briancsparks/ra-ecosystem/packages/run-anywhere#readme",
   "dependencies": {
     "aws-serverless-express": "^3.3.5",
     "express": "^4.16.4",
