@@ -12,6 +12,30 @@ sg.setTimeout(ms, callback);
 sg.reduce(collection, initial, callback);
 ```
 
+## Fix Fixes
+
+I don't know why lodash renamed some of the underscore functions, or removed things.
+
+```js
+sg.min();
+sg.max();
+sg.rest();
+sg.pluck();
+sg.head();
+sg.last();
+sg.initial();
+sg.any();
+sg.all();
+sg.compose();
+sg.contains();
+sg.findWhere();
+sg.indexBy();
+sg.invoke();
+sg.mapObject();
+sg.pairs();
+sg.where();
+```
+
 ## Ease Usage
 
 Similar to the quick fixes, these functions make it easier to call another common function,

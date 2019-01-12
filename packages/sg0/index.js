@@ -444,6 +444,62 @@ sg.reduce = function(collection, initial, fn) {
 };
 
 /**
+ * Restore rest().
+ *
+ * @returns
+ */
+sg.rest = function() {
+  return _.drop.apply(_, arguments);
+};
+
+/**
+ * Restore max().
+ *
+ * @returns
+ */
+sg.max = function() {
+  if (arguments.length == 1) {
+    return _.max.apply(_, arguments);
+  }
+  return _.maxBy.apply(_, arguments);
+};
+
+/**
+ * Restore min().
+ *
+ * @returns
+ */
+sg.min = function() {
+  if (arguments.length == 1) {
+    return _.min.apply(_, arguments);
+  }
+  return _.minBy.apply(_, arguments);
+};
+
+// From https://github.com/lodash/lodash/wiki/Migrating
+sg.pluck        = _.map;
+sg.head         = _.take;
+sg.last         = _.takeRight;
+sg.initial      = _.dropRight;
+sg.any          = _.some;
+sg.all          = _.every;
+sg.compose      = _.flowRight;
+sg.contains     = _.includes;
+sg.findWhere    = _.find;
+sg.indexBy      = _.keyBy;
+sg.invoke       = _.invokeMap;
+sg.mapObject    = _.mapValues;
+sg.pairs        = _.toPairs;
+sg.where        = _.filter;
+
+
+// TBD:
+// sg.flatten should be deep, lodash is shallow
+// sg.indexOf 3rd parameter handling
+// sample, object, omit(By), pick(By), sortedIndex, uniq(By),
+
+
+/**
  *  Just like _.extend, but does not mutate the 1st arg.
  */
 sg.extend = function() {
