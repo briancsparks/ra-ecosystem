@@ -5,10 +5,13 @@
 
 const _                       = require('lodash');
 const sg                      = require('sg-flow');
+const utils                   = require('../utils');
 const ra                      = require('run-anywhere').v2;
 const AWS                     = require('aws-sdk');
 
 const mod                     = ra.modSquad(module);
+
+const getTag                  = utils.getTag;
 
 const ec2 = new AWS.EC2({region: 'us-east-1'});
 
@@ -17,6 +20,7 @@ var lib = {};
 mod.xport({getSubnets: function(argv, context, callback) {
 
   const classB = argv.classB;
+  const kind   = argv.kind ? argv.kind.toLowerCase() : argv.kind;
 
   var   allVpcs, allSubnets, allSecurityGroups;
 
@@ -49,6 +53,7 @@ mod.xport({getSubnets: function(argv, context, callback) {
     var result = {};
     var vpcs = [], subnets = [], securityGroups = [];
 
+    // Filter the VPCs by class B
     if (classB) {
       vpcs = sg.reduce(allVpcs || [], vpcs, function(m, vpc) {
         let parts = (vpc.CidrBlock || '').split(/[^0-9]+/);
@@ -59,17 +64,25 @@ mod.xport({getSubnets: function(argv, context, callback) {
       });
     }
 
+    // Filter the subnets and SGs by the VPCs' IDs
     _.each(vpcs, function(vpc) {
       subnets = sg.reduce(allSubnets, subnets, function(m, subnet) {
         if (subnet.VpcId === vpc.VpcId) {
-          return sg.ap(m, subnet);
+
+          if (!kind || getTag(subnet, 'aws:cloudformation:logical-id').toLowerCase().endsWith(kind)) {
+            return sg.ap(m, subnet);
+          }
         }
         return m;
       });
 
       securityGroups = sg.reduce(allSecurityGroups, securityGroups, function(m, securityGroup) {
         if (securityGroup.VpcId === vpc.VpcId) {
-          return sg.ap(m, securityGroup);
+          const sgKind = getTag(securityGroup, 'aws:cloudformation:logical-id').toLowerCase();
+
+          if (!kind || sgKind == 'sgwide' || (kind === 'public' && sgKind === 'sgweb')) {
+            return sg.ap(m, securityGroup);
+          }
         }
         return m;
       });
