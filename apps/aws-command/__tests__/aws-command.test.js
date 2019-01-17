@@ -1,7 +1,11 @@
-'use strict';
 
-const awsCommand = require('..');
+const cmd                     = require('..');
+const test                    = require('ava');
 
-describe('aws-command', () => {
-    it('needs tests');
+test('vpc', t => {
+  const a         = {a:'foo', b:'bar', d:{e:'all'}};
+
+  t.deepEqual(a, {a:'foo', b:'bar', d:{e:'all'}});
 });
+
+

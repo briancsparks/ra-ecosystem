@@ -6,7 +6,7 @@
 var _                         = require('lodash');
 var util                      = require('util');
 
-var   sg = {};
+var   sg = {_:_};
 
 var seconds = sg.seconds = sg.second = 1000,        second = seconds;
 var minutes = sg.minutes = sg.minute = 60*seconds,  minute = minutes;

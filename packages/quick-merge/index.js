@@ -142,6 +142,33 @@ const basicMerges = {
 
 };
 
+const isZeroLevel       = basicMerges.isScalar;
+
+const isScalar = function(x) {
+
+  if (isZeroLevel(x)) {
+    if (x === null)           { return false; }
+    if (x === void 0)         { return false; }
+
+    const type = typeof x;
+    if (type === 'function')  { return false; }
+
+    return true;
+  }
+
+  return false;
+};
+
+const deepCopy = function(x) {
+  return basicMerges.deepCopy(basicMerges, x);
+};
+
+exports.isZeroLevel           = isZeroLevel;
+exports.isScalar              = isScalar;
+exports.deepCopy              = deepCopy;
+exports.keyMirrorFromObject   = keyMirrorFromObject;
+exports.realTypeof            = realTypeof;
+
 merge = function(strategy, a, b) {
   const { merges }  = strategy;
 
