@@ -8,7 +8,7 @@
     "watch": "ava --watch",
     "coverage": "nyc ava"
   },
-  "author": "Brian C Sparks",
+  "author": "Brian C Sparks <briancsparks@gmail.com>",
   "license": "MIT",
   "devDependencies": {
     "ava": "^0.25.0"

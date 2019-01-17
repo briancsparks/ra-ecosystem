@@ -11,7 +11,7 @@
     "type": "git",
     "url": "git+https://github.com/briancsparks/ra-ecosystem.git"
   },
-  "author": "Brian C Sparks",
+  "author": "Brian C Sparks <briancsparks@gmail.com>",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/briancsparks/ra-ecosystem/issues"

@@ -2,7 +2,7 @@
   "name": "sg-echo",
   "version": "1.0.0",
   "description": "> TODO: description",
-  "author": "Brian C Sparks <brian.c.sparks@hp.com>",
+  "author": "Brian C Sparks <briancsparks@gmail.com>",
   "homepage": "https://github.com/briancsparks/ra-ecosystem#readme",
   "license": "MIT",
   "main": "lib/sg-echo.js",

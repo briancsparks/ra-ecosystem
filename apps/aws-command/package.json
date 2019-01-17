@@ -1,5 +1,6 @@
 {
   "name": "aws-command",
+  "private": true,
   "version": "0.8.0",
   "description": "> TODO: description",
   "main": "index.js",
@@ -11,7 +12,7 @@
     "type": "git",
     "url": "git+https://github.com/briancsparks/ra-ecosystem.git"
   },
-  "author": "Brian C Sparks",
+  "author": "Brian C Sparks <briancsparks@gmail.com>",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/briancsparks/ra-ecosystem/issues"

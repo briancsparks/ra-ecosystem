@@ -3,7 +3,8 @@
   "name": "root",
   "private": true,
   "workspaces":[
-    "packages/*"
+    "packages/*",
+    "apps/*"
   ],
   "author": "Brian C Sparks",
   "license": "MIT",
