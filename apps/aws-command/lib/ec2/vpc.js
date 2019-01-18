@@ -7,15 +7,84 @@ const _                       = require('lodash');
 const sg                      = require('sg-flow');
 const utils                   = require('../utils');
 const ra                      = require('run-anywhere').v2;
+const awsDefs                 = require('../aws-defs');
 const AWS                     = require('aws-sdk');
+const libTag                  = require('./tags');
+const libAws                  = require('../aws');
 
 const mod                     = ra.modSquad(module);
 
+const awsFilters              = libAws.awsFilters;
 const getTag                  = utils.getTag;
+const mkTags                  = libTag.mkTags;
 
-const ec2 = new AWS.EC2({region: 'us-east-1'});
+const tag                     = ra.load(libTag, 'tag');
+
+const ec2 = libAws.awsService('EC2');
 
 var lib = {};
+
+const defaultTags = {
+  Name: true,
+  namespace: true,
+  owner: true
+};
+
+mod.xport({upsertVpc: function(argv, context, callback) {
+
+  return sg.iwrap('awsCommand::upsertVpc', callback, function(abort, calling) {
+    const { describeVpcs, createVpc } = libAws.awsFns(ec2, 'describeVpcs,createVpc', abort);
+
+    const classB            = +argv.classB;
+    const CidrBlock         = argv.cidr     || classB ? `10.${classB}.0.0/16` : `10.111.0.0/16`;
+    const InstanceTenancy   = 'default';
+
+    const AmazonProvidedIpv6CidrBlock = true;
+
+    if (!CidrBlock) {
+      return abort({missing:'CidrBlock'}, 'parsing params');
+    }
+
+    var   vpc;
+
+    return sg.__run2({}, callback, [function(result, next, last) {
+
+      return describeVpcs(awsFilters({cidr:[CidrBlock]}), function(err, data) {
+
+        if (data.Vpcs.length > 1) {
+          return abort({code: 'EAMBIGUOUS', msg:`Too many found (${data.Vpcs.length})`, debug:{vpcs: data.Vpcs}});
+        }
+
+        if (data.Vpcs.length === 1) {         /* We found it */
+          vpc = data.Vpcs[0];
+          result.result = {Vpc:vpc};
+          return next();
+        }
+
+        return next();
+      });
+
+    }, function(result, next, last) {
+      if (vpc)  { return next(); }    /* we already have it */
+
+      return createVpc({CidrBlock, InstanceTenancy, AmazonProvidedIpv6CidrBlock}, function(err, data) {
+
+        vpc = data.Vpc;
+        result.result = data;
+
+        // Tag it
+        return tag({id: vpc.VpcId, rawTags: defaultTags}, context, function(err, data) {
+          if (!sg.ok(err, data))  { console.error(err); }
+
+          return next();
+        });
+      });
+
+    }, function(result, next) {
+      return next();
+    }]);
+  });
+}});
 
 mod.xport({getSubnets: function(argv, context, callback) {
 

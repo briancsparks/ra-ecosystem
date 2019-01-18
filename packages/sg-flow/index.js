@@ -309,7 +309,7 @@ sg.__run2 = function(a,b,c,d) {   // self, fns, last, abort
   var self,fns,last,abort_,abort,privateSelf,noSelf;
 
   // self can only be the first param, if not, use a blank Object
-  self          = isObject(args[0]) && args.shift();
+  self          = sg.isObject(args[0]) && args.shift();
   privateSelf   = !self;                                  // If self is undefined here, it is potentially a private-self
 
   self          = self || _.isArray(args[0]) && args[0].length === 1 && _.isArray(args[0][0]) && args[0][0].length === 1 && args[0][0][0];
@@ -542,7 +542,7 @@ sg.iwrap = function(myname, fncallback /*, abort, body_callback*/) {
 
   abort = abort || function(err, msg) {
     if (msg)  {
-      console.error(myname, msg);
+      console.error(msg);
     }
     return fncallback(err);
   };
@@ -550,9 +550,9 @@ sg.iwrap = function(myname, fncallback /*, abort, body_callback*/) {
   var abortCalling;
   var abortParams;
 
-  var eabort = function(callback, abortCalling2) {
-    return function(err) {
-      if (!err) { return callback.apply(this, arguments); }
+  var eabort = function(err, abortCalling2) {
+    // return function(err) {
+    //   if (!err) { return callback.apply(this, arguments); }
 
       const abortCalling_ = abortCalling || abortCalling2;     abortCalling  = null;
       const abortParams_  = abortParams;                       abortParams   = null;
@@ -560,15 +560,15 @@ sg.iwrap = function(myname, fncallback /*, abort, body_callback*/) {
       var msg = '';
 
       if (abortCalling_) {
-        msg += myname + '__' + abortCalling_;
+        msg += myname + '-->' + abortCalling_;
       }
 
       if (abortParams_) {
-        msg += ': ' + abortParams;
+        msg += ': ' + abortParams_;
       }
 
       return abort(err, msg);
-    };
+    // };
   };
 
   eabort.p = function(params_) {
@@ -586,11 +586,13 @@ sg.iwrap = function(myname, fncallback /*, abort, body_callback*/) {
     }
 
     if (params) {
-      eabort.p(params);
+      return eabort.p(params);
     }
+
+    return params;
   };
 
-  return body_callback(eabort);
+  return body_callback(eabort, eabort.calling);
 };
 
 var example = function(a, b, callback) {

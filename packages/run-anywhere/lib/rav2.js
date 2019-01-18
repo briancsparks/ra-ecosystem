@@ -8,6 +8,7 @@
 const _                         = require('lodash');
 var   utils                     = require('./utils');
 const sg                        = utils.sg;
+const libExpress                = require('./express');
 const libModSquad               = require('./v2/mod-squad');
 const lambdaHandler             = require('./v2/lambda-handler');
 const expressHost               = require('./v2/express-host');
@@ -71,6 +72,14 @@ sanityChecks.push(promisify(function({assert, ...context}, callback) {
     return callback(null, `getExpressApp()`);
   });
 }));
+
+// TODO: also need loadAsync
+module.exports.load = function(mod, fname) {
+  return mod[fname];
+};
+
+module.exports.paramsFromExpress = libExpress.paramsFromExpress;
+
 
 sanityChecksLib.registerSanityChecks(module, __filename, sanityChecks);
 

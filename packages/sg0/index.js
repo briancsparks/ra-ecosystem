@@ -110,7 +110,7 @@ var dottedKv = sg.dottedKv = function(o, k, v) {
  *
  *  Just like kv(), so you can return ap(m, 42) or ap(42)
  */
-var ap = sg.ap = function(a, v) {
+var ap = sg.ap = function(a, v, ...rest) {
   if (arguments.length === 1)   { return sg.ap(null, arguments[0]); }
 
   a = a || [];
@@ -118,6 +118,11 @@ var ap = sg.ap = function(a, v) {
   if (_.isUndefined(v))         { return a; }
 
   a.push(v);
+
+  if (rest.length > 0) {
+    return ap(a, ...rest);
+  }
+
   return a;
 };
 

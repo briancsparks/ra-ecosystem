@@ -1,7 +1,9 @@
-'use strict';
 
-const maxAws = require('..');
+const maxAws                  = require('..');
+const test                    = require('ava');
 
-describe('max-aws', () => {
-    it('needs tests');
+test('works', t => {
+  t.pass();
 });
+
+
