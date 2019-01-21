@@ -95,7 +95,7 @@ mod.xport({upsertVpc: function(argv, context, callback) {
     const { describeVpcs, createVpc } = libAws.awsFns(ec2, 'describeVpcs,createVpc', abort);
 
     const classB            = +argv.classB;
-    const CidrBlock         = argv.cidr;
+    const CidrBlock         = argv.cidr    || classB ? `10.${classB}.0.0/16` : argv.cidr;
     const InstanceTenancy   = 'default';
 
     const AmazonProvidedIpv6CidrBlock = true;
