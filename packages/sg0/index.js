@@ -242,6 +242,44 @@ sg.cleanKey = function(key) {
 };
 
 /**
+ * Returns the word with the first char lowercased.
+ *
+ * @param {*} str
+ */
+sg.toLowerWord = function(str) {
+  return str[0].toLowerCase() + sg.rest(str);
+};
+
+/**
+ * Returns the word with the first char uppercased.
+ *
+ * @param {*} str
+ */
+sg.toUpperWord = function(str) {
+  return str[0].toUpperCase() + sg.rest(str);
+};
+
+/**
+ * Returns if the string or char is lower case.
+ *
+ * @param {*} str
+ * @returns
+ */
+sg.isLowerCase = function(str) {
+  return str === str.toLowerCase();
+};
+
+/**
+ * Returns if the string or char is upper case.
+ *
+ * @param {*} str
+ * @returns
+ */
+sg.isUpperCase = function(str) {
+  return str === str.toUpperCase();
+};
+
+/**
  *  Makes x the right type.
  */
 var smartValue = sg.smartValue = function(value) {

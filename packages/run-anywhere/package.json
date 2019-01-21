@@ -27,6 +27,7 @@
     "mongodb": "^3.1.10",
     "quick-merge": "^1.0.10",
     "redis": "^2.8.0",
+    "sg-flow": "^0.9.7",
     "sgsg": "^0.9.54"
   },
   "devDependencies": {

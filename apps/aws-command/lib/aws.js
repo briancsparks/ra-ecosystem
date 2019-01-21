@@ -23,10 +23,22 @@ const awsFns = function(service, names_, abort) {
     var awsFn = service[fname];
     if (_.isFunction(awsFn)) {
 
-      var protectedFn = function(params, continuation) {
+      // We have found the AWS function `awsFn`. What we want, however, is to return
+      // a function that integrates much better to the sg-flow and run-anywhere style.
+
+      // --------------------------------------------------------------------------
+      var interceptedAwsFn = function(params, ...rest) {
+        const continuation  = rest.pop();
+        var   options       = rest.shift() || {};
+
+        if (options === true)   { options = { debug:true }; }
 
         const callback = function(err, data, ...rest) {
           if (!sg.ok(err, data))  { return abort(err); }
+
+          if (options.debug) {
+            console.log(`AWS::${fname}()`, sg.inspect({params, err, data}));
+          }
 
           // console.log(`hello from con ${fname}`, sg.inspect({err, data}));
 
@@ -36,8 +48,9 @@ const awsFns = function(service, names_, abort) {
         abort.calling(`AWS::${fname}`, params);
         return awsFn.apply(service, [params, callback]);
       };
+      // --------------------------------------------------------------------------
 
-      return sg.kv(m, fname, protectedFn);
+      return sg.kv(m, fname, interceptedAwsFn);
     }
 
     // The passed-in name isnt a function on the AWS class

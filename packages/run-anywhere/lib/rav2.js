@@ -18,7 +18,6 @@ const dbUtils                   = require('./v2/db/db-util');
 const redisUtils                = require('./v2/redis/redis-util');
 const { promisify }             = require('util');
 
-const modSquad                  = libModSquad.modSquad;
 
 // -------------------------------------------------------------------------------------
 //  Data
@@ -30,7 +29,8 @@ var   sanityChecks  = [];
 //  Functions
 //
 
-utils.modSquad                = modSquad;
+utils.modSquad                = libModSquad.modSquad;
+utils.load                    = libModSquad.load;
 utils.registerSanityChecks    = sanityChecksLib.registerSanityChecks;
 utils.runSanityChecksFor      = sanityChecksLib.runSanityChecksFor;
 utils.dbUtils                 = dbUtils;
@@ -43,7 +43,8 @@ _.each(lambdaHandler, function(v,k) {
 
 module.exports.utils                  = utils;
 module.exports.sg                     = utils.sg;
-module.exports.modSquad               = modSquad;
+module.exports.modSquad               = libModSquad.modSquad;
+module.exports.load                   = libModSquad.load;
 module.exports.registerSanityChecks   = sanityChecksLib.registerSanityChecks;
 module.exports.runSanityChecksFor     = sanityChecksLib.runSanityChecksFor;
 module.exports.raExpressMw            = expressHost.raExpressMw;
@@ -72,11 +73,6 @@ sanityChecks.push(promisify(function({assert, ...context}, callback) {
     return callback(null, `getExpressApp()`);
   });
 }));
-
-// TODO: also need loadAsync
-module.exports.load = function(mod, fname) {
-  return mod[fname];
-};
 
 module.exports.paramsFromExpress = libExpress.paramsFromExpress;
 
