@@ -554,8 +554,8 @@ sg.iwrap = function(myname, fncallback /*, abort, body_callback*/) {
     // return function(err) {
     //   if (!err) { return callback.apply(this, arguments); }
 
-      if ('code' in err && !('errno' in err))     { err.errno = err.code; }
-      if ('errno' in err && !('code' in err))     { err.code  = err.errno; }
+      // if ('code' in err && !('errno' in err))     { err.errno = err.code; }
+      // if ('errno' in err && !('code' in err))     { err.code  = err.errno; }
 
       const abortCalling_ = abortCalling || abortCalling2;     abortCalling  = null;
       const abortParams_  = abortParams;                       abortParams   = null;

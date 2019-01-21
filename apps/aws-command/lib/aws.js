@@ -33,14 +33,17 @@ const awsFns = function(service, names_, abort) {
 
         if (options === true)   { options = { debug:true }; }
 
+        // Defaults
+        options.abort   = ('abort' in options) ? options.abort : true;
+
         const callback = function(err, data, ...rest) {
-          if (!sg.ok(err, data))  { return abort(err); }
+          if (options.abort) {
+            if (!sg.ok(err, data))  { return abort(err); }
+          }
 
           if (options.debug) {
             console.log(`AWS::${fname}()`, sg.inspect({params, err, data}));
           }
-
-          // console.log(`hello from con ${fname}`, sg.inspect({err, data}));
 
           return continuation(err, data, ...rest);
         };

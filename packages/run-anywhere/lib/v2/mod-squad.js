@@ -89,6 +89,7 @@ const FuncRa = function(argv, context, callback, origCallback) {
   const self = this;
 
   self.providedAbort    = null;
+  self.argTypes         = {};
   self.argErrs          = null;
 
   self.iwrap = function(fname, b, c /* abort, body_callback*/) {
@@ -126,9 +127,14 @@ const FuncRa = function(argv, context, callback, origCallback) {
   self.arg = function(argv, names_, options = {}) {
     const names     = names_.split(',');
     const required  = options.required || false;
+    const def       = options.def;
 
     for (var i = 0; i < names.length; ++i) {
       const name = names[i];
+
+      if (i === 0) {
+        self.argTypes[name] = {name, names, options};
+      }
 
       if (name in argv)                         { return argv[name]; }
 
@@ -142,10 +148,16 @@ const FuncRa = function(argv, context, callback, origCallback) {
       self.argErrs = sg.ap(self.argErrs, {code: 'ENOARG', name: names[0], names: names_});
     }
 
-    return;
+    return def;
   };
 
-  self.argErrors = function() {
+  self.argErrors = function(args = {}) {
+    _.each(args, function(value, name) {
+      if (sg.isnt(value)) {
+        self.argErrs = sg.ap(self.argErrs, {code: 'ENOARG', ...argTypes[name]});
+      }
+    });
+
     return self.argErrs;
   };
 

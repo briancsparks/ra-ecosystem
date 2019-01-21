@@ -13,15 +13,16 @@ const ec2 = new AWS.EC2({region: 'us-east-1', ...awsDefs.options});
 
 mod.xport({tag: function(argv, context, callback) {
 
+  const type      = argv.type;
   const Resources = sg.ap([...(argv.resources || []), ...(argv.ids || [])], argv.resource, argv.id);
 
-  const tags  = argv.tags || mkTags(argv.rawTags);
-  const Tags  = sg.reduce(argv.tags || {}, [], (m, Value, Key) => {
+  const tags  = argv.tags || exports.mkTags(type, argv.rawTags);
+  const Tags  = sg.reduce(tags || {}, [], (m, Value, Key) => {
     return sg.ap(m, {Key, Value});
   });
 
   return ec2.createTags({Resources, Tags}, function(err, data) {
-    // console.error(`ct`, {Resources, Tags, err, data, callback});
+    // console.error(`ct`, sg.inspect({argv, Resources, Tags, err, data}));
     return callback(err, data);
   });
 
@@ -33,13 +34,13 @@ const gTags = {
   owner:      process.env.OWNER
 };
 
-exports.mkTags = function(seed) {
+exports.mkTags = function(type, seed) {
   if (sg.isnt(seed))      { return; }
 
   var result = sg.reduce(seed || {}, {}, (m, v, k) => {
     // v === true means caller wants us to fill in
     if (v === true) {
-      return sg.kv(m, k, gTags[k.toLowerCase()] || process.env[k.toLowerCase()] || nonsense(k));
+      return sg.kv(m, k, gTags[k.toLowerCase()] || process.env[k.toLowerCase()] || nonsense(k, type));
     }
 
     // v === false means not to include it
@@ -50,10 +51,15 @@ exports.mkTags = function(seed) {
     return sg.kv(m, k, v);
   });
 
-  return {tags: result};
+  return result;
+  // return {tags: result};
 };
 
-function nonsense(str) {
+function nonsense(str, type) {
+  if (str.toLowerCase() === 'name') {
+    return `${superb.random()}-${type}`;
+  }
+
   return `${superb.random()}-${str}`;
 }
 

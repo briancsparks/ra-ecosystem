@@ -115,9 +115,9 @@ var ap = sg.ap = function(a, v, ...rest) {
 
   a = a || [];
 
-  if (_.isUndefined(v))         { return a; }
-
-  a.push(v);
+  if (!_.isUndefined(v)) {
+    a.push(v);
+  }
 
   if (rest.length > 0) {
     return ap(a, ...rest);
