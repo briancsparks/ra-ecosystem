@@ -19,7 +19,7 @@ const callbackify             = utilLib.callbackify;
 //  Functions
 //
 
-const ModSquad = function(otherModule) {
+const ModSquad = function(otherModule, otherModuleName = 'mod') {
   var   self      = this;
 
   self.utils      = {_, ...utilLib};
@@ -29,8 +29,9 @@ const ModSquad = function(otherModule) {
   self.xport = function(fobj) {
     var previousFn;
 
-    _.each(fobj, (fn_,k) => {
-      var fn = fn_;
+    _.each(fobj, (fn_, fname) => {
+      var fn            = fn_;
+      const fullFname   = `${otherModuleName}__${fname}`;
 
       // TODO: wrap `fn` in a safety function that scrubs debug info out of the result
       if (fn) {
@@ -38,7 +39,8 @@ const ModSquad = function(otherModule) {
         // This is the function that will be exported. ----------------------------------------
         fn = function(argv, context, callback_) {
 
-          context.runAnywhere       = context.runAnywhere     || {};
+          context.runAnywhere             = context.runAnywhere             || {};
+          context.runAnywhere[fullFname]  = context.runAnywhere[fullFname]  || {};
 
           const callback = function(err, data, ...rest) {
 
@@ -50,15 +52,16 @@ const ModSquad = function(otherModule) {
             return callback_(err, data, ...rest);
           };
 
-          context.runAnywhere.fra   = context.runAnywhere.fra || new FuncRa(argv, context, callback, callback_);
+          context.runAnywhere[fullFname].fra  = context.runAnywhere[fullFname].fra  || new FuncRa(argv, context, callback, callback_);
+          context.runAnywhere.fra             = context.runAnywhere.fra             || new FuncRa(argv, context, callback, callback_)
 
           return fn_(argv, context, callback);
         };
         // ----------------------------------------
       }
 
-      otherModule.exports[k]        = previousFn = (fn || previousFn);
-      otherModule.exports.async[k]  = promisify(fn || previousFn);
+      otherModule.exports[fname]        = previousFn = (fn || previousFn);
+      otherModule.exports.async[fname]  = promisify(fn || previousFn);
     });
 
     return previousFn;
@@ -85,14 +88,55 @@ module.exports.load = function(mod, fname) {
   return mod[fname];
 };
 
+module.exports.loads = function(mod, fnames, context, options1, abort) {
+  // const loadedFn =  mod[fname];
+
+  return sg.reduce(fnames.split(','), {}, function(m, fname) {
+
+    // ------------------------ The fn that gets called by you
+    const interceptFn = function(argv, options__, continuation) {
+      const options_  = options__ === true ? {debug:true} : (options__ === false ? {debug:false} : options__);
+      var   options   = _.extend({}, options_, options1);
+
+      options.abort   = ('abort' in options ? options.abort : true);
+
+      const callback = function(err, data, ...rest) {
+        var   ok = false;
+        if (arguments.length === 0)     { ok = true; }
+        if (arguments.length > 1)       { ok = sg.ok(err, data, ...rest); }
+
+        if (options.abort) {
+          if (!ok)                      { return abort(err); }
+        }
+
+        if (options.debug) {
+          console.log(`mod::${fname}()`, sg.inspect({argv, err, data, ...rest}));
+        }
+
+        return continuation(err, data, ...rest);
+      };
+
+      abort.calling(`${fname}()`, argv);
+      return mod[fname](argv, context, callback);
+    };
+    // ----------------------------- end
+
+    return sg.kv(m, fname, interceptFn);
+  });
+};
+
 const FuncRa = function(argv, context, callback, origCallback) {
   const self = this;
 
+  self.fname            = null;
   self.providedAbort    = null;
   self.argTypes         = {};
+  self.args             = [];
   self.argErrs          = null;
 
   self.iwrap = function(fname, b, c /* abort, body_callback*/) {
+    self.fname = fname;
+    // console.log(`fra.iwrapping ${self.fname}`);
 
     var body_callback;
     if (arguments.length === 2) {
@@ -129,40 +173,53 @@ const FuncRa = function(argv, context, callback, origCallback) {
     const required  = options.required || false;
     const def       = options.def;
 
+    var   defName;
     for (var i = 0; i < names.length; ++i) {
       const name = names[i];
 
       if (i === 0) {
+        defName = name;
         self.argTypes[name] = {name, names, options};
       }
 
-      if (name in argv)                         { return argv[name]; }
+      if (name in argv)                         { return recordArg(argv[name]); }
 
       if (sg.isUpperCase(name[0]) && name.length > 1) {
-        if (sg.toLowerWord(name) in argv)       { return argv[sg.toLowerWord(name)]; }
+        if (sg.toLowerWord(name) in argv)       { return recordArg(argv[sg.toLowerWord(name)]); }
       }
     }
 
     // If we get here, we did not find it.
     if (required) {
-      self.argErrs = sg.ap(self.argErrs, {code: 'ENOARG', name: names[0], names: names_});
+      self.argErrs = sg.ap(self.argErrs, {code: 'ENOARG', ...self.argTypes[defName]});
     }
 
-    return def;
+    return recordArg(def);
+
+    function recordArg(value) {
+      if (!sg.isnt(value)) {
+        self.args.push({names, options, value});
+      }
+
+      return value;
+    }
   };
 
   self.argErrors = function(args = {}) {
     _.each(args, function(value, name) {
       if (sg.isnt(value)) {
-        self.argErrs = sg.ap(self.argErrs, {code: 'ENOARG', ...argTypes[name]});
+        self.argErrs = sg.ap(self.argErrs, {code: 'ENOARG', ...self.argTypes[name]});
       }
     });
 
+    // console.log(`fra.argErrors ${self.fname} (${(self.argErrs || []).length})`);
     return self.argErrs;
   };
 
-  self.abort = function(...args) {
-    // console.error(`FuncRa aborting`, self);
+  self.abort = function(...abortArgs) {
+    const { fname, argTypes, args } = self;
+
+    console.error(`FuncRa aborting`, sg.inspect({fname, argTypes, args}));
     self.providedAbort(self.argErrs[0], 'missing arg');
   };
 

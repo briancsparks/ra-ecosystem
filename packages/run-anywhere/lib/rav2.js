@@ -31,6 +31,7 @@ var   sanityChecks  = [];
 
 utils.modSquad                = libModSquad.modSquad;
 utils.load                    = libModSquad.load;
+utils.loads                   = libModSquad.loads;
 utils.registerSanityChecks    = sanityChecksLib.registerSanityChecks;
 utils.runSanityChecksFor      = sanityChecksLib.runSanityChecksFor;
 utils.dbUtils                 = dbUtils;
@@ -45,6 +46,7 @@ module.exports.utils                  = utils;
 module.exports.sg                     = utils.sg;
 module.exports.modSquad               = libModSquad.modSquad;
 module.exports.load                   = libModSquad.load;
+module.exports.loads                  = libModSquad.loads;
 module.exports.registerSanityChecks   = sanityChecksLib.registerSanityChecks;
 module.exports.runSanityChecksFor     = sanityChecksLib.runSanityChecksFor;
 module.exports.raExpressMw            = expressHost.raExpressMw;

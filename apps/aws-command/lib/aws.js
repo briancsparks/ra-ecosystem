@@ -48,6 +48,7 @@ const awsFns = function(service, names_, abort) {
           return continuation(err, data, ...rest);
         };
 
+        // console.log(`calling AWS::${fname}`);
         abort.calling(`AWS::${fname}`, params);
         return awsFn.apply(service, [params, callback]);
       };
@@ -71,7 +72,16 @@ const awsFilters = function(kvs) {
   };
 };
 
+const awsFilter = function(kvs) {
+  return {
+    Filter: _.map(_.keys(kvs), (key) => {
+      return {Name: key, Values:kvs[key]};
+    })
+  };
+};
+
 exports.awsService  = awsService;
 exports.awsFns      = awsFns;
 exports.awsFilters  = awsFilters;
+exports.awsFilter   = awsFilter;
 

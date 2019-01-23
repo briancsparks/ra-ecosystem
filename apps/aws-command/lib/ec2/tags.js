@@ -16,7 +16,8 @@ mod.xport({tag: function(argv, context, callback) {
   const type      = argv.type;
   const Resources = sg.ap([...(argv.resources || []), ...(argv.ids || [])], argv.resource, argv.id);
 
-  const tags  = argv.tags || exports.mkTags(type, argv.rawTags);
+  // const tags  = argv.tags || exports.mkTags(type, argv.rawTags);
+  const tags  = { ...(argv.tags || {}), ...exports.mkTags(type, argv.rawTags) };
   const Tags  = sg.reduce(tags || {}, [], (m, Value, Key) => {
     return sg.ap(m, {Key, Value});
   });

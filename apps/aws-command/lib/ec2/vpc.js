@@ -12,9 +12,10 @@ const AWS                     = require('aws-sdk');
 const libTag                  = require('./tags');
 const libAws                  = require('../aws');
 
-const mod                     = ra.modSquad(module);
+const mod                     = ra.modSquad(module, 'awsCommand');
 
 const awsFilters              = libAws.awsFilters;
+const awsFilter               = libAws.awsFilter;
 const getTag                  = utils.getTag;
 const mkTags                  = libTag.mkTags;
 
@@ -22,6 +23,7 @@ const tag                     = ra.load(libTag, 'tag');
 
 const debugAwsCalls           = true;
 const skipAbort               = {abort:false, debug:debugAwsCalls};
+const skipAbortNoDebug        = {abort:false, debug:false};
 
 const ec2 = libAws.awsService('EC2');
 
@@ -38,10 +40,11 @@ mod.xport({upsertSecurityGroupIngress: function(argv, context, callback) {
   // ra invoke lib\ec2\vpc.js upsertSecurityGroupIngress --cidr=10.0.0.0/8 --from=22 --to=22  --desc=from-wide-group  --id=sg-
 
   const ractx     = context.runAnywhere || {};
-  const { fra }   = ractx;
+  // const { fra }   = ractx;
+  const { fra }   = (ractx.awsCommand__upsertSecurityGroupIngress || ractx);
 
   return fra.iwrap('awsCommand::upsertSecurityGroupIngress', function(abort, calling) {
-    const { authorizeSecurityGroupIngress } = libAws.awsFns(ec2, 'authorizeSecurityGroupIngress', abort);
+    const { authorizeSecurityGroupIngress, describeSecurityGroups } = libAws.awsFns(ec2, 'authorizeSecurityGroupIngress,describeSecurityGroups', abort);
 
     const GroupId           = fra.arg(argv, 'GroupId,id', {required:true});
     const IpProtocol        = fra.arg(argv, 'protocol,proto', {required:false, def: 'tcp'});
@@ -58,12 +61,13 @@ mod.xport({upsertSecurityGroupIngress: function(argv, context, callback) {
       const IpPermissions   = [{IpProtocol, FromPort, ToPort, IpRanges}];
       const params          = {GroupId, IpPermissions};
 
-      calling('AWS::authorizeSecurityGroupIngress', params);
-      return ec2.authorizeSecurityGroupIngress(params, function(err, data) {
-        if (debugAwsCalls)    { console.log(`AWS::authorizeSecurityGroupIngress()`, sg.inspect({params, err, data})); }
+      // calling('AWS::authorizeSecurityGroupIngress', params);
+      return authorizeSecurityGroupIngress(params, {abort:false}, function(err, data) {
 
         if (err) {
           if (err.code === 'InvalidPermission.Duplicate') {
+            if (debugAwsCalls)    { console.log(`AWS::authorizeSecurityGroupIngress()`, sg.inspect({params, err: err.code + '--OK', data})); }
+
             my.result = {};
             return next();
 
@@ -72,10 +76,23 @@ mod.xport({upsertSecurityGroupIngress: function(argv, context, callback) {
           }
         }
 
+        if (debugAwsCalls)    { console.log(`AWS::authorizeSecurityGroupIngress()`, sg.inspect({params, err, data})); }
+
         my.result = data;
         return next();
       });
-    }]);
+    }, function(my, next) {
+      return describeSecurityGroups(awsFilters({"group-id":[GroupId]}), debugAwsCalls, function(err, data) {
+
+        /* We found it */
+        my.result = {SecurityGroup: data.SecurityGroups[0]};
+        // my.found  = 1;
+        return next();
+      });
+
+  }, function(my, next) {
+    return next();
+  }]);
   });
 }});
 
@@ -85,7 +102,8 @@ mod.xport({upsertSecurityGroup: function(argv, context, callback) {
   // ra invoke lib\ec2\vpc.js upsertSecurityGroup --name=wide --desc=wide-group --vpc=
 
   const ractx     = context.runAnywhere || {};
-  const { fra }   = ractx;
+  // const { fra }   = ractx;
+  const { fra }   = (ractx.awsCommand__upsertSecurityGroup || ractx);
 
   return fra.iwrap('awsCommand::upsertSecurityGroup', function(abort, calling) {
     const { describeSecurityGroups, createSecurityGroup } = libAws.awsFns(ec2, 'describeSecurityGroups,createSecurityGroup', abort);
@@ -106,23 +124,37 @@ mod.xport({upsertSecurityGroup: function(argv, context, callback) {
 
         /* We found it */
         my.result = {SecurityGroup: data.SecurityGroups[0]};
+        my.found  = 1;
         return next();
       });
 
     }, function(my, next, last) {
       if (my.result.SecurityGroup)  { return next(); }    /* we already have it */
 
-      return createSecurityGroup({VpcId, GroupName, Description}, debugAwsCalls, function(err, data) {
+      return sg.__run2(next, [function(next) {
+        return createSecurityGroup({VpcId, GroupName, Description}, debugAwsCalls, function(err, data) {
 
-        my.result = data;
+          my.result   = data;
+          my.created  = 1;
 
-        // Tag it
-        return tag({type:'SecurityGroup', id: my.result.GroupId, rawTags: defaultTags}, context, function(err, data) {
-          if (!sg.ok(err, data))  { console.error(err); }
+          // Tag it
+          return tag({type:'SecurityGroup', id: my.result.GroupId, rawTags: defaultTags}, context, function(err, data) {
+            if (!sg.ok(err, data))  { console.error(err); }
 
+            return next();
+          });
+        });
+      }, function(next) {
+
+        return describeSecurityGroups(awsFilters({"group-id":[my.result.GroupId]}), debugAwsCalls, function(err, data) {
+
+          /* We found it */
+          my.result = {SecurityGroup: data.SecurityGroups[0]};
+          // my.found  = 1;
           return next();
         });
-      });
+
+      }]);
 
     }, function(my, next) {
       return next();
@@ -134,19 +166,26 @@ mod.xport({upsertSecurityGroup: function(argv, context, callback) {
 mod.xport({upsertSubnet: function(argv, context, callback) {
 
   // ra invoke lib\ec2\vpc.js upsertSubnet --cidr=10.111.0.0/20 --az=us-east-1a --vpc=
+  // ra invoke lib\ec2\vpc.js upsertSubnet --cidr=10.111.0.0/20 --az=us-east-1a --public --vpc=
 
   const ractx     = context.runAnywhere || {};
   const { fra }   = ractx;
 
   return fra.iwrap('awsCommand::upsertSubnet', function(abort, calling) {
-    const { describeSubnets, createSubnet } = libAws.awsFns(ec2, 'describeSubnets,createSubnet', abort);
+    const {
+      describeSubnets,
+      createSubnet,
+      modifySubnetAttribute
+    } = libAws.awsFns(ec2, 'describeSubnets,createSubnet,modifySubnetAttribute', abort);
 
     const CidrBlock         = fra.arg(argv, 'CidrBlock,cidr', {required:true});
     const VpcId             = fra.arg(argv, 'VpcId,vpc', {required:true});
     const AvailabilityZone  = fra.arg(argv, 'AvailabilityZone,az', {required:true});
+    const publicIp          = fra.arg(argv, 'publicIp,public-ip,public');
 
     if (fra.argErrors())    { return fra.abort(); }
 
+    var   SubnetId;
     return sg.__run2({result:{}}, callback, [function(my, next, last) {
 
       return describeSubnets(awsFilters({cidr:[CidrBlock],"vpc-id":[VpcId]}), debugAwsCalls, function(err, data) {
@@ -156,23 +195,48 @@ mod.xport({upsertSubnet: function(argv, context, callback) {
 
         /* We found it */
         my.result = {Subnet: data.Subnets[0]};
+        my.found  = 1;
         return next();
       });
 
     }, function(my, next, last) {
       if (my.result.Subnet)  { return next(); }    /* we already have it */
 
-      return createSubnet({CidrBlock, AvailabilityZone, VpcId}, debugAwsCalls, function(err, data) {
+      return sg.__run2(next, [function(next) {
+        return createSubnet({CidrBlock, AvailabilityZone, VpcId}, debugAwsCalls, function(err, data) {
 
-        my.result = data;
+          SubnetId    = data.Subnet.SubnetId;
+          my.result   = data;
+          my.created  = 1;
 
-        // Tag it
-        return tag({type:'Subnet', id: my.result.Subnet.SubnetId, rawTags: defaultTags}, context, function(err, data) {
-          if (!sg.ok(err, data))  { console.error(err); }
+          // Tag it
+          return tag({type:'Subnet', id: SubnetId, rawTags: defaultTags}, context, function(err, data) {
+            if (!sg.ok(err, data))  { console.error(err); }
 
+            return next();
+          });
+        });
+
+      }, function(next) {
+        var   params = {SubnetId};
+
+        if (publicIp)   { params.MapPublicIpOnLaunch = {Value:true} };
+
+        if (sg.numKeys(params) <= 1)    { return next(); }
+
+        return modifySubnetAttribute(params, skipAbort, function(err, data) {
           return next();
         });
-      });
+
+      }, function(next) {
+        return describeSubnets(awsFilters({"subnet-id":[SubnetId]}), debugAwsCalls, function(err, data) {
+
+          /* We found it */
+          my.result = {Subnet: data.Subnets[0]};
+          // my.found  = 1;
+          return next();
+        });
+      }]);
 
     }, function(my, next) {
       return next();
@@ -184,22 +248,37 @@ mod.xport({upsertSubnet: function(argv, context, callback) {
 // See also modifyVpcEndpoint, modifyVpcEndpointConnectionNotification, modifyVpcEndpointServiceConfiguration, modifyVpcTenancy
 mod.xport({upsertVpc: function(argv, context, callback) {
 
-  return sg.iwrap('awsCommand::upsertVpc', callback, function(abort, calling) {
+  // ra invoke lib\ec2\vpc.js upsertVpc --classB=111
+
+  const ractx     = context.runAnywhere || {};
+  const { fra }   = ractx;
+
+  return fra.iwrap('awsCommand::upsertVpc', function(abort, calling) {
     const { describeVpcs, createVpc } = libAws.awsFns(ec2, 'describeVpcs,createVpc', abort);
 
-    const classB            = +argv.classB;
-    const CidrBlock         = argv.cidr    || classB ? `10.${classB}.0.0/16` : argv.cidr;
+    // const classB            = +argv.classB;
+    // const CidrBlock         = argv.CidrBlock || argv.cidr    || (classB ? `10.${classB}.0.0/16` : argv.cidr);
+    // const InstanceTenancy   = 'default';
+
+    // const AmazonProvidedIpv6CidrBlock = true;
+
+    // if (!CidrBlock) {
+    //   return abort({missing:'cidr'}, 'parsing params');
+    // }
+
+    const classB            = fra.arg(argv, 'classB,class-b');
+    const CidrBlock         = fra.arg(argv, 'CidrBlock,cidr')    || (classB ? `10.${classB}.0.0/16` : argv.cidr);
     const InstanceTenancy   = 'default';
 
     const AmazonProvidedIpv6CidrBlock = true;
 
-    if (!CidrBlock) {
-      return abort({missing:'cidr'}, 'parsing params');
-    }
+    const reqd = { CidrBlock };
+    if (fra.argErrors(reqd))    { return fra.abort(); }
 
     var   vpc;
 
-    return sg.__run2({}, callback, [function(my, next, last) {
+    return sg.__run2({result:{}}, callback, [function(my, next, last) {
+      console.log(`upsertVpc.run`, sg.inspect({CidrBlock, InstanceTenancy, AmazonProvidedIpv6CidrBlock, argv, classB}));
 
       return describeVpcs(awsFilters({cidr:[CidrBlock]}), function(err, data) {
 
@@ -210,6 +289,7 @@ mod.xport({upsertVpc: function(argv, context, callback) {
         if (data.Vpcs.length === 1) {         /* We found it */
           vpc = data.Vpcs[0];
           my.result = {Vpc:vpc};
+          my.found  = 1;
           return next();
         }
 
@@ -222,7 +302,8 @@ mod.xport({upsertVpc: function(argv, context, callback) {
       return createVpc({CidrBlock, InstanceTenancy, AmazonProvidedIpv6CidrBlock}, function(err, data) {
 
         vpc = data.Vpc;
-        my.result = data;
+        my.result   = data;
+        my.created  = 1;
 
         // Tag it
         return tag({type:'Vpc', id: vpc.VpcId, rawTags: defaultTags}, context, function(err, data) {
@@ -325,26 +406,50 @@ mod.xport({allocateAddress: function(argv, context, callback) {
   // ra invoke lib\ec2\vpc.js allocateAddress
 
   const ractx     = context.runAnywhere || {};
-  const { fra }   = ractx;
+  // const { fra }   = ractx;
+  const { fra }   = (ractx.awsCommand__allocateAddress || ractx);
 
   return fra.iwrap('awsCommand::allocateAddress', function(abort, calling) {
-    const { allocateAddress } = libAws.awsFns(ec2, 'allocateAddress', abort);
+    const { allocateAddress, describeAddresses } = libAws.awsFns(ec2, 'allocateAddress,describeAddresses', abort);
 
-    // const IpProtocol        = fra.arg(argv, 'protocol,proto', {required:false, def: 'tcp'});
+    const VpcId               = fra.arg(argv, 'VpcId,vpc', {required:false});
+    const SubnetId            = fra.arg(argv, 'SubnetId,subnet', {required:false});
+
     if (fra.argErrors())    { return fra.abort(); }
 
     return sg.__run2({result:{}}, callback, [function(my, next, last) {
 
+      return describeAddresses(awsFilters({"tag:VpcId":[VpcId],"tag:SubnetId":[SubnetId]}), skipAbort, function(err, data) {
+        if (sg.ok(err, data) && data.Addresses && data.Addresses.length > 0) {
+          my.result = { Address: data.Addresses[0]};
+          return callback(null, my);
+        }
+
+        return next();
+      });
+
+    }, function(my, next) {
       return allocateAddress({Domain:'vpc'}, debugAwsCalls, function(err, data) {
 
-        my.result = data;
+        my.result   = data;
+        my.created  = 1;
 
         // Tag it
-        return tag({type:'ElasticIp', id: my.result.AllocationId, rawTags: defaultTags}, context, function(err, data) {
+        return tag({type:'ElasticIp', id: my.result.AllocationId, rawTags: defaultTags, tags:{VpcId,SubnetId}}, context, function(err, data) {
           if (!sg.ok(err, data))  { console.error(err); }
 
           return next();
         });
+      });
+
+    }, function(my, next) {
+      return describeAddresses(awsFilters({"tag:VpcId":[VpcId],"tag:SubnetId":[SubnetId]}), skipAbort, function(err, data) {
+        if (sg.ok(err, data) && data.Addresses && data.Addresses.length > 0) {
+          AllocationId = data.Addresses[0].AllocationId;
+        }
+
+        my.result = { Address: data.Addresses[0]};
+        return next();
       });
 
     }, function(my, next) {
@@ -361,7 +466,11 @@ mod.xport({createInternetGateway: function(argv, context, callback) {
   const { fra }   = ractx;
 
   return fra.iwrap('awsCommand::createInternetGateway', function(abort, calling) {
-    const { createInternetGateway, attachInternetGateway } = libAws.awsFns(ec2, 'createInternetGateway,attachInternetGateway', abort);
+    const {
+      createInternetGateway,
+      attachInternetGateway,
+      describeInternetGateways
+    } = libAws.awsFns(ec2, 'createInternetGateway,attachInternetGateway,describeInternetGateways', abort);
 
     var   InternetGatewayId;
     const VpcId               = fra.arg(argv, 'VpcId,vpc', {required:true});
@@ -369,25 +478,50 @@ mod.xport({createInternetGateway: function(argv, context, callback) {
     if (fra.argErrors())    { return fra.abort(); }
 
     return sg.__run2({result:{}}, callback, [function(my, next, last) {
+      return describeInternetGateways(awsFilters({"attachment.vpc-id":[VpcId]}), debugAwsCalls, function(err, data) {
 
-      return createInternetGateway({}, debugAwsCalls, function(err, data) {
+        if (data.InternetGateways.length === 0)    { return next(); }
+        if (data.InternetGateways.length > 1)      { return abort({code: 'EAMBIGUOUS', msg:`Too many found (${data.InternetGateways.length})`, debug:{internetGatewayss: data.InternetGateways}}); }
 
-        my.result = data;
-
-        // Tag it
-        InternetGatewayId = my.result.InternetGateway.InternetGatewayId;
-        return tag({type:'InternetGateway', id: InternetGatewayId, rawTags: defaultTags}, context, function(err, data) {
-          if (!sg.ok(err, data))  { console.error(err); }
-
-          return next();
-        });
+        /* We found it */
+        my.result = {InternetGateway: data.InternetGateways[0]};
+        my.found  = 1;
+        return next();
       });
 
     }, function(my, next) {
-      return attachInternetGateway({VpcId, InternetGatewayId}, debugAwsCalls, function(err, data) {
-        // TODO: if an error, delete it
-        return next();
-      });
+      if (my.result.InternetGateway)    { return next(); }
+
+      return sg.__run2(next, [function(next) {
+        return createInternetGateway({}, debugAwsCalls, function(err, data) {
+
+          my.result   = data;
+          my.created  = 1;
+
+          // Tag it
+          InternetGatewayId = my.result.InternetGateway.InternetGatewayId;
+          return tag({type:'InternetGateway', id: InternetGatewayId, rawTags: defaultTags}, context, function(err, data) {
+            if (!sg.ok(err, data))  { console.error(err); }
+
+            return next();
+          });
+        });
+      }, function(next) {
+        return attachInternetGateway({VpcId, InternetGatewayId}, debugAwsCalls, function(err, data) {
+          // TODO: if an error, delete it
+          return next();
+        });
+      }, function(next) {
+        return describeInternetGateways(awsFilters({"internet-gateway-id":[InternetGatewayId]}), debugAwsCalls, function(err, data) {
+
+          my.result = {InternetGateway: data.InternetGateways[0]};
+          // my.found  = 1;
+          return next();
+        });
+      }]);
+
+    }, function(my, next) {
+      return next();
     }]);
   });
 }});
@@ -400,24 +534,51 @@ mod.xport({createNatGateway: function(argv, context, callback) {
   const { fra }   = ractx;
 
   return fra.iwrap('awsCommand::createNatGateway', function(abort, calling) {
-    const { createNatGateway, describeAddresses } = libAws.awsFns(ec2, 'createNatGateway,describeAddresses', abort);
+    const { createNatGateway, describeNatGateways, describeAddresses } = libAws.awsFns(ec2, 'createNatGateway,describeNatGateways,describeAddresses', abort);
 
     const SubnetId            = fra.arg(argv, 'SubnetId,subnet', {required:true});
+    const VpcId               = fra.arg(argv, 'VpcId,vpc', {required:false});
     var   AllocationId        = fra.arg(argv, 'AllocationId,eip-alloc', {required:false});
     const ElasticIp           = fra.arg(argv, 'ElasticIp,eip'); // not required
 
     if (fra.argErrors())    { return fra.abort(); }
 
+    var NatGatewayId;
     return sg.__run2({result:{}}, callback, [function(my, next, last) {
+      return describeNatGateways(awsFilter({"subnet-id":[SubnetId]}), {}, function(err, data) {
+        data.NatGateways = _.filter(data.NatGateways || [], function(gw) {
+          return gw.State in  {pending:true,available:true};
+        });
+
+        if (data.NatGateways.length === 0)  { return next(); }
+        if (data.NatGateways.length > 1)    { return abort({code: 'EAMBIGUOUS', msg:`Too many found (${data.NatGateways.length})`, debug:{natGateways: data.NatGateways}}); }
+
+        const NatGateway = data.NatGateways[0];
+        // if (!(NatGateway.State in {pending:true,available:true}))     { return next(); }
+
+        /* We found it */
+        my.result = {NatGateway};
+        my.found  = 1;
+        return callback(null, my);
+      });
+
+    }, function(my, next) {
       if (AllocationId)   { return next(); }
 
       /* otherwise -- do we have an IP */
       return describeAddresses(awsFilters({"public-ip":[ElasticIp]}), skipAbort, function(err, data) {
         if (sg.ok(err, data) && data.Addresses && data.Addresses.length > 0) {
           AllocationId = data.Addresses[0].AllocationId;
+          return next();
         }
 
-        return next();
+        return describeAddresses(awsFilters({"tag:VpcId":[VpcId],"tag:SubnetId":[SubnetId]}), skipAbort, function(err, data) {
+          if (sg.ok(err, data) && data.Addresses && data.Addresses.length > 0) {
+            AllocationId = data.Addresses[0].AllocationId;
+          }
+
+          return next();
+        });
       });
 
     }, function(my, next) {
@@ -425,15 +586,29 @@ mod.xport({createNatGateway: function(argv, context, callback) {
 
       return createNatGateway({SubnetId, AllocationId}, debugAwsCalls, function(err, data) {
 
-        my.result = data;
+        my.result   = data;
+        my.created  = 1;
 
         // Tag it
-        return tag({type:'NatGateway', id: my.result.NatGateway.NatGatewayId, rawTags: defaultTags}, context, function(err, data) {
+        NatGatewayId = my.result.NatGateway.NatGatewayId;
+        return tag({type:'NatGateway', id: NatGatewayId, rawTags: defaultTags, tags:{SubnetId}}, context, function(err, data) {
           if (!sg.ok(err, data))  { console.error(err); }
 
           return next();
         });
       });
+    }, function(my, next) {
+      return describeNatGateways(awsFilter({"nat-gateway-id":[NatGatewayId]}), {}, function(err, data) {
+        if (data.NatGateways.length === 0)  { return next(); }
+        if (data.NatGateways.length > 1)    { return abort({code: 'EAMBIGUOUS', msg:`Too many found (${data.NatGateways.length})`, debug:{natGateways: data.NatGateways}}); }
+
+
+        /* We found it */
+        my.result = {NatGateway: data.NatGateways[0]};
+        // my.found  = 1;
+        return callback(null, my);
+      });
+
     }]);
   });
 }});
