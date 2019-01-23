@@ -12,7 +12,7 @@ const AWS                     = require('aws-sdk');
 const libTag                  = require('./tags');
 const libAws                  = require('../aws');
 
-const mod                     = ra.modSquad(module, 'awsCommand');
+const mod                     = ra.modSquad(module, 'awsCommandVpc');
 
 const awsFilters              = libAws.awsFilters;
 const awsFilter               = libAws.awsFilter;
@@ -22,6 +22,7 @@ const mkTags                  = libTag.mkTags;
 const tag                     = ra.load(libTag, 'tag');
 
 const debugAwsCalls           = true;
+// const debugAwsCalls           = false;
 const skipAbort               = {abort:false, debug:debugAwsCalls};
 const skipAbortNoDebug        = {abort:false, debug:false};
 
@@ -40,10 +41,9 @@ mod.xport({upsertSecurityGroupIngress: function(argv, context, callback) {
   // ra invoke lib\ec2\vpc.js upsertSecurityGroupIngress --cidr=10.0.0.0/8 --from=22 --to=22  --desc=from-wide-group  --id=sg-
 
   const ractx     = context.runAnywhere || {};
-  // const { fra }   = ractx;
-  const { fra }   = (ractx.awsCommand__upsertSecurityGroupIngress || ractx);
+  const { fra }   = (ractx.awsCommandVpc__upsertSecurityGroupIngress || ractx);
 
-  return fra.iwrap('awsCommand::upsertSecurityGroupIngress', function(abort, calling) {
+  return fra.iwrap(function(abort, calling) {
     const { authorizeSecurityGroupIngress, describeSecurityGroups } = libAws.awsFns(ec2, 'authorizeSecurityGroupIngress,describeSecurityGroups', abort);
 
     const GroupId           = fra.arg(argv, 'GroupId,id', {required:true});
@@ -102,10 +102,9 @@ mod.xport({upsertSecurityGroup: function(argv, context, callback) {
   // ra invoke lib\ec2\vpc.js upsertSecurityGroup --name=wide --desc=wide-group --vpc=
 
   const ractx     = context.runAnywhere || {};
-  // const { fra }   = ractx;
-  const { fra }   = (ractx.awsCommand__upsertSecurityGroup || ractx);
+  const { fra }   = (ractx.awsCommandVpc__upsertSecurityGroup || ractx);
 
-  return fra.iwrap('awsCommand::upsertSecurityGroup', function(abort, calling) {
+  return fra.iwrap(function(abort, calling) {
     const { describeSecurityGroups, createSecurityGroup } = libAws.awsFns(ec2, 'describeSecurityGroups,createSecurityGroup', abort);
 
     const VpcId             = fra.arg(argv, 'VpcId,vpc', {required:true});
@@ -169,9 +168,9 @@ mod.xport({upsertSubnet: function(argv, context, callback) {
   // ra invoke lib\ec2\vpc.js upsertSubnet --cidr=10.111.0.0/20 --az=us-east-1a --public --vpc=
 
   const ractx     = context.runAnywhere || {};
-  const { fra }   = ractx;
+  const { fra }   = (ractx.awsCommandVpc__upsertSubnet || ractx);
 
-  return fra.iwrap('awsCommand::upsertSubnet', function(abort, calling) {
+  return fra.iwrap(function(abort, calling) {
     const {
       describeSubnets,
       createSubnet,
@@ -251,20 +250,10 @@ mod.xport({upsertVpc: function(argv, context, callback) {
   // ra invoke lib\ec2\vpc.js upsertVpc --classB=111
 
   const ractx     = context.runAnywhere || {};
-  const { fra }   = ractx;
+  const { fra }   = (ractx.awsCommandVpc__upsertVpc || ractx);
 
-  return fra.iwrap('awsCommand::upsertVpc', function(abort, calling) {
+  return fra.iwrap(function(abort, calling) {
     const { describeVpcs, createVpc } = libAws.awsFns(ec2, 'describeVpcs,createVpc', abort);
-
-    // const classB            = +argv.classB;
-    // const CidrBlock         = argv.CidrBlock || argv.cidr    || (classB ? `10.${classB}.0.0/16` : argv.cidr);
-    // const InstanceTenancy   = 'default';
-
-    // const AmazonProvidedIpv6CidrBlock = true;
-
-    // if (!CidrBlock) {
-    //   return abort({missing:'cidr'}, 'parsing params');
-    // }
 
     const classB            = fra.arg(argv, 'classB,class-b');
     const CidrBlock         = fra.arg(argv, 'CidrBlock,cidr')    || (classB ? `10.${classB}.0.0/16` : argv.cidr);
@@ -278,7 +267,7 @@ mod.xport({upsertVpc: function(argv, context, callback) {
     var   vpc;
 
     return sg.__run2({result:{}}, callback, [function(my, next, last) {
-      console.log(`upsertVpc.run`, sg.inspect({CidrBlock, InstanceTenancy, AmazonProvidedIpv6CidrBlock, argv, classB}));
+      // console.error(`upsertVpc.run`, sg.inspect({CidrBlock, InstanceTenancy, AmazonProvidedIpv6CidrBlock, argv, classB}));
 
       return describeVpcs(awsFilters({cidr:[CidrBlock]}), function(err, data) {
 
@@ -406,10 +395,9 @@ mod.xport({allocateAddress: function(argv, context, callback) {
   // ra invoke lib\ec2\vpc.js allocateAddress
 
   const ractx     = context.runAnywhere || {};
-  // const { fra }   = ractx;
-  const { fra }   = (ractx.awsCommand__allocateAddress || ractx);
+  const { fra }   = (ractx.awsCommandVpc__allocateAddress || ractx);
 
-  return fra.iwrap('awsCommand::allocateAddress', function(abort, calling) {
+  return fra.iwrap(function(abort, calling) {
     const { allocateAddress, describeAddresses } = libAws.awsFns(ec2, 'allocateAddress,describeAddresses', abort);
 
     const VpcId               = fra.arg(argv, 'VpcId,vpc', {required:false});
@@ -463,9 +451,9 @@ mod.xport({createInternetGateway: function(argv, context, callback) {
   // ra invoke lib\ec2\vpc.js createInternetGateway --vpc=
 
   const ractx     = context.runAnywhere || {};
-  const { fra }   = ractx;
+  const { fra }   = (ractx.awsCommandVpc__createInternetGateway || ractx);
 
-  return fra.iwrap('awsCommand::createInternetGateway', function(abort, calling) {
+  return fra.iwrap(function(abort, calling) {
     const {
       createInternetGateway,
       attachInternetGateway,
@@ -531,9 +519,9 @@ mod.xport({createNatGateway: function(argv, context, callback) {
   // ra invoke lib\ec2\vpc.js createNatGateway --subnet= --eip-alloc= --eip=
 
   const ractx     = context.runAnywhere || {};
-  const { fra }   = ractx;
+  const { fra }   = (ractx.awsCommandVpc__createNatGateway || ractx);
 
-  return fra.iwrap('awsCommand::createNatGateway', function(abort, calling) {
+  return fra.iwrap(function(abort, calling) {
     const { createNatGateway, describeNatGateways, describeAddresses } = libAws.awsFns(ec2, 'createNatGateway,describeNatGateways,describeAddresses', abort);
 
     const SubnetId            = fra.arg(argv, 'SubnetId,subnet', {required:true});
@@ -612,4 +600,231 @@ mod.xport({createNatGateway: function(argv, context, callback) {
     }]);
   });
 }});
+
+mod.xport({createRouteTable: function(argv, context, callback) {
+
+  // ra invoke lib\ec2\vpc.js createRouteTable --subnet= --vpc= --public
+
+  const ractx     = context.runAnywhere || {};
+  const { fra }   = (ractx.awsCommandVpc__createRouteTable || ractx);
+
+  return fra.iwrap(function(abort, calling) {
+    const { createRouteTable, describeRouteTables, associateRouteTable } = libAws.awsFns(ec2, 'createRouteTable,describeRouteTables,associateRouteTable', abort);
+
+    const SubnetId            = fra.arg(argv, 'SubnetId,subnet', {required:false});
+    const VpcId               = fra.arg(argv, 'VpcId,vpc', {required:true});
+    const public              = fra.arg(argv, 'public');
+
+    if (fra.argErrors())    { return fra.abort(); }
+
+    var access = (public? 'public' : 'private');
+    var RouteTableId;
+    return sg.__run2({result:{}}, callback, [function(my, next, last) {
+      var filters = {"vpc-id":[VpcId]};
+      if (SubnetId) {
+        filters["association.subnet-id"] = [SubnetId];
+      } else if (public) {
+        filters["tag:access"] = [access];
+      } else {
+        if (fra.argErrors({SubnetId}))    { return fra.abort(); }
+      }
+
+      return describeRouteTables(awsFilters(filters), {}, function(err, data) {
+
+        if (data.RouteTables.length === 0)  { return next(); }
+        if (data.RouteTables.length > 1)    { return abort({code: 'EAMBIGUOUS', msg:`Too many found (${data.RouteTables.length})`, debug:{routeTables: data.RouteTables}}); }
+
+        const RouteTable = data.RouteTables[0];
+
+        /* We found it */
+        my.result = {RouteTable};
+        my.found  = 1;
+        return callback(null, my);
+      });
+
+    }, function(my, next) {
+
+      return createRouteTable({VpcId}, debugAwsCalls, function(err, data) {
+
+        my.result   = data;
+        my.created  = 1;
+
+        // Tag it
+        var   tags = {};
+        if (SubnetId) { tags = { ...tags, SubnetId }; }
+        if (access)   { tags = { ...tags, access }; }
+
+        RouteTableId = my.result.RouteTable.RouteTableId;
+        return tag({type:'RouteTable', id: RouteTableId, rawTags: defaultTags, tags}, context, function(err, data) {
+          if (!sg.ok(err, data))  { console.error(err); }
+
+          return next();
+        });
+      });
+
+    }, function(my, next) {
+      if (!SubnetId)  { return next(); }
+
+      return associateRouteTable({SubnetId, RouteTableId}, debugAwsCalls, function(err, data) {
+        return next();
+      });
+    }, function(my, next) {
+      return describeRouteTables(awsFilters({"route-table-id":[RouteTableId]}), {}, function(err, data) {
+        my.result = {RouteTable: data.RouteTables[0]};
+        return callback(null, my);
+      });
+
+    }]);
+  });
+}});
+
+mod.xport({associateRouteTable: function(argv, context, callback) {
+
+  // ra invoke lib\ec2\vpc.js associateRouteTable --subnet= --table=
+
+  const ractx     = context.runAnywhere || {};
+  const { fra }   = (ractx.awsCommandVpc__associateRouteTable || ractx);
+
+  return fra.iwrap(function(abort, calling) {
+    const { associateRouteTable } = libAws.awsFns(ec2, 'associateRouteTable', abort);
+
+    const SubnetId            = fra.arg(argv, 'SubnetId,subnet', {required:false});
+    const RouteTableId        = fra.arg(argv, 'RouteTableId,route-table,table', {required:true});
+
+    if (fra.argErrors())    { return fra.abort(); }
+
+    return associateRouteTable({SubnetId, RouteTableId}, debugAwsCalls, function(err, data) {
+      return callback(err, data);
+    });
+  });
+}});
+
+mod.xport({createRoute: function(argv, context, callback) {
+
+  // ra invoke lib\ec2\vpc.js createRoute --cidr=0.0.0.0/0 --gw= --table=
+
+  const ractx     = context.runAnywhere || {};
+  const { fra }   = (ractx.awsCommandVpc__createRoute || ractx);
+
+  return fra.iwrap(function(abort) {
+    const { createRoute }             = libAws.awsFns(ec2, 'createRoute', abort);
+
+    const RouteTableId                = fra.arg(argv, 'RouteTableId,route-table,table', {required:true});
+    const DestinationCidrBlock        = fra.arg(argv, 'DestinationCidrBlock,cidr');
+    const DestinationIpv6CidrBlock    = fra.arg(argv, 'DestinationIpv6CidrBlock,cidr6');
+    const EgressOnlyInternetGatewayId = fra.arg(argv, 'EgressOnlyInternetGatewayId,egress');
+    const GatewayId                   = fra.arg(argv, 'GatewayId,gateway,gw');
+    const InstanceId                  = fra.arg(argv, 'InstanceId,instance');
+    const NatGatewayId                = fra.arg(argv, 'NatGatewayId,nat');
+    const NetworkInterfaceId          = fra.arg(argv, 'NetworkInterfaceId,nic');
+    const TransitGatewayId            = fra.arg(argv, 'TransitGatewayId,transit');
+    const VpcPeeringConnectionId      = fra.arg(argv, 'VpcPeeringConnectionId,peering,peer');
+
+    if (fra.argErrors())              { return fra.abort(); }
+
+    const reqd_   = { RouteTableId };
+    const reqd    = sg.smartExtend({ ...reqd_ });
+
+    const target_  = {
+      DestinationCidrBlock, DestinationIpv6CidrBlock
+    };
+    const target = sg.smartExtend({ ...target_ });
+
+    const dest_ = {
+      EgressOnlyInternetGatewayId, GatewayId, NatGatewayId,
+      InstanceId, NetworkInterfaceId,
+      TransitGatewayId, VpcPeeringConnectionId
+    };
+
+    const dest = sg.smartExtend({ ...dest_ });
+
+    const params = { ...reqd, ...target, ...dest };
+    // console.error(`createRoute`, sg.inspect({reqd_, target_, dest_, reqd, target, dest}));
+
+    if (sg.numKeys(target) === 0 || sg.numKeys(dest) !== 1) {
+      return fra.abort(`Must provide RouteTableId and one or both of [[${sg.keys(target_)}]], and one of [[${sg.keys(dest_)}]]`);
+    }
+
+    return createRoute(params, debugAwsCalls, function(err, data) {
+      return callback(err, data);
+    });
+  });
+}});
+
+// TODO: createVpcEndpointConnectionNotification,createVpcEndpointServiceConfiguration
+mod.xport({createVpcEndpoint: function(argv, context, callback) {
+
+  // ra invoke lib\ec2\vpc.js createVpcEndpoint --vpc= --service= --tables=
+
+  const ractx     = context.runAnywhere || {};
+  const { fra }   = (ractx.awsCommandVpc__createVpcEndpoint || ractx);
+
+  return fra.iwrap(function(abort, calling) {
+    const { createVpcEndpoint,describeVpcEndpoints } = libAws.awsFns(ec2, 'createVpcEndpoint,describeVpcEndpoints', abort);
+
+    const VpcId               = fra.arg(argv, 'VpcId,vpc', {required:true});
+    const ServiceName         = fra.arg(argv, 'ServiceName,service', {required:true});
+    const VpcEndpointType     = fra.arg(argv, 'VpcEndpointType,type', {def:'Gateway'});
+    const ClientToken         = fra.arg(argv, 'ClientToken,token');
+
+    // type === Gateway
+    const RouteTableIds       = fra.arg(argv, 'RouteTableIds,tables', {array:true});
+    const PolicyDocument      = fra.arg(argv, 'PolicyDocument,policy');
+
+    // Type === Interface
+    const PrivateDnsEnabled   = fra.arg(argv, 'PrivateDnsEnabled,dns');
+    const SecurityGroupIds    = fra.arg(argv, 'SecurityGroupIds,sgs', {array:true});
+    const SubnetIds           = fra.arg(argv, 'SubnetIds,subnets', {array:true});
+
+    if (fra.argErrors())    { return fra.abort(); }
+
+    const reqd        = sg.smartExtend({VpcId, ServiceName, VpcEndpointType});
+    const optional    = sg.smartExtend({ClientToken});
+
+    const gateway_    = {PolicyDocument, RouteTableIds};
+    const gateway     = sg.smartExtend({...gateway_});
+    const interface_  = {PrivateDnsEnabled,SecurityGroupIds,SubnetIds};
+    const interface   = sg.smartExtend({...interface_});
+
+    const params  = { ...reqd, ...optional, ...gateway, ...interface };
+
+    // console.error(`createVpcEndpoint`, sg.inspect({interface_, gateway_, interface, gateway, optional, reqd}));
+
+    var   VpcEndpointId;
+    return sg.__run2({result:{}}, callback, [function(my, next, last) {
+
+      return describeVpcEndpoints(awsFilters({'vpc-id':[VpcId],'service-name':[ServiceName]}), debugAwsCalls, function(err, data) {
+        if (data.VpcEndpoints.length === 0)   { return next(); }
+
+        my.result = {VpcEndpoint: data.VpcEndpoints[0]};
+        my.found  = 1;
+
+        return callback(null, my);
+      });
+
+    }, function(my, next) {
+      return createVpcEndpoint(params, debugAwsCalls, function(err, data) {
+        my.result   = data;
+        my.created  = 1;
+        VpcEndpointId = my.result.VpcEndpoint.VpcEndpointId;
+
+        // Cannot tag VpcEndpoints
+
+        return next();
+      });
+    }, function(my, next) {
+
+      return describeVpcEndpoints({VpcEndpointIds:[VpcEndpointId]}, debugAwsCalls, function(err, data) {
+        my.result = {VpcEndpoint: data.VpcEndpoints[0]};
+        // my.found  = 1;
+
+        return next();
+      });
+
+    }, function(my, next) {
+      return next();
+    }]);
+  });
+}});
+
 

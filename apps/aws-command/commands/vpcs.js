@@ -16,18 +16,11 @@ const toCidr                  = libCidr.toCidr;
 const bitsToNetmask           = libCidr.bitsToNetmask;
 
 const debugCalls              = {debug:true};
+// const debugCalls              = {debug:false};
 const skipAbort               = {abort:false, ...debugCalls};
 
 const tag                     = ra.load(libTag, 'tag');
 const mod                     = ra.modSquad(module, 'awsCommand');
-
-// const upsertVpc               = ra.load(libVpc, 'upsertVpc');
-// const upsertSubnet            = ra.load(libVpc, 'upsertSubnet');
-// const allocateAddress         = ra.load(libVpc, 'allocateAddress');
-// const createInternetGateway   = ra.load(libVpc, 'createInternetGateway');
-// const createNatGateway        = ra.load(libVpc, 'createNatGateway');
-// const upsertSecurityGroup     = ra.load(libVpc, 'upsertSecurityGroup');
-// const upsertSecurityGroupIngress     = ra.load(libVpc, 'upsertSecurityGroupIngress');
 
 
 mod.xport({manageVpc: function(argv, context, callback) {
@@ -37,11 +30,13 @@ mod.xport({manageVpc: function(argv, context, callback) {
   const ractx     = context.runAnywhere || {};
   const { fra }   = (ractx.awsCommand__manageVpc || ractx);
 
-  return fra.iwrap('awsCommand::manageVpc', function(abort, calling) {
-    const { upsertVpc,upsertSubnet } = ra.loads(libVpc, 'upsertVpc,upsertSubnet', context, {...debugCalls}, abort);
-    const { upsertSecurityGroup,upsertSecurityGroupIngress } = ra.loads(libVpc, 'upsertSecurityGroup,upsertSecurityGroupIngress', context, {...debugCalls}, abort);
-    const { allocateAddress } = ra.loads(libVpc, 'allocateAddress', context, {...debugCalls}, abort);
-    const { createInternetGateway,createNatGateway } = ra.loads(libVpc, 'createInternetGateway,createNatGateway', context, {...debugCalls}, abort);
+  return fra.iwrap(function(abort, calling) {
+    const { upsertVpc,upsertSubnet } = fra.loads(libVpc, 'upsertVpc,upsertSubnet', {...debugCalls}, abort);
+    const { upsertSecurityGroup,upsertSecurityGroupIngress } = fra.loads(libVpc, 'upsertSecurityGroup,upsertSecurityGroupIngress', {...debugCalls}, abort);
+    const { allocateAddress } = fra.loads(libVpc, 'allocateAddress', {...debugCalls}, abort);
+    const { createInternetGateway,createNatGateway } = fra.loads(libVpc, 'createInternetGateway,createNatGateway', {...debugCalls}, abort);
+    const { createRouteTable,createRoute,associateRouteTable } = fra.loads(libVpc, 'createRouteTable,createRoute,associateRouteTable', {...debugCalls}, abort);
+    const { createVpcEndpoint } = fra.loads(libVpc, 'createVpcEndpoint', {...debugCalls}, abort);
 
     const program           = fra.arg(argv, 'program', {required:true});
     const classB            = fra.arg(argv, 'classB,class-b');
@@ -50,11 +45,18 @@ mod.xport({manageVpc: function(argv, context, callback) {
     const reqd = { CidrBlock };
     if (fra.argErrors(reqd))    { return fra.abort(); }
 
-    var   VpcId           = null;
-    var   vpcCidr         = null;
-    var   publicSubnets   = [];
+    var   VpcId               = null;
+    var   vpcCidr             = null;
+    var   publicRouteTable    = null;
+    var   RouteTableIds       = [];
+    var   internetGateway     = null;
+    var   GatewayId           = null;
+    var   publicSubnets       = [];
+    var   privateSubnets      = [];
 
-    console.log(`manageVpc.run`, sg.inspect({CidrBlock, program, classB}));
+    var   azItems             = {};
+
+    // console.error(`manageVpc.run`, sg.inspect({CidrBlock, program, classB}));
     return sg.__run2({result:{}}, callback, [function(my, next, last) {
       my.resources = [];
 
@@ -80,12 +82,20 @@ mod.xport({manageVpc: function(argv, context, callback) {
       var   paramsList = [];
       var   cidrBits;
 
+      var   subnetKinds = [
+        {name: 'webtier', bits:24, visibility:'public', publicIp:true},
+        {name: 'worker', bits:20, visibility:'private'},
+      ];
+
+      var   azLetters = 'a,b,c'.split(',');
+      // var   azLetters = 'a'.split(',');
+
       my.result.subnets = {};
-      sg.__each([{name:'Public', bits:24, publicIp:true},{name:'worker', bits:20}], function(kind, next) {
+      sg.__each(subnetKinds, function(kind, next) {
         const { publicIp } = kind;
 
         cidrBits = kind.bits;
-        sg.__each('a,b,c'.split(','), function(letter, next) {
+        sg.__each(azLetters, function(letter, next) {
           var   subnet            = {VpcId};
           var   AvailabilityZone  = `us-east-1${letter}`;
 
@@ -95,7 +105,7 @@ mod.xport({manageVpc: function(argv, context, callback) {
             CidrBlock     = toCidr(currCidrFirst, bitsToNetmask(cidrBits));
           }
 
-          subnet = sg.extend(subnet, {CidrBlock, AvailabilityZone});
+          subnet = sg.extend(subnet, {CidrBlock, AvailabilityZone, kind});
           subnet = sg.kv(subnet, 'publicIp', publicIp);
           paramsList.push(subnet);
 
@@ -108,6 +118,14 @@ mod.xport({manageVpc: function(argv, context, callback) {
       }, function() {
 
         sg.__eachll(paramsList, function(params, next) {
+          const {
+            AvailabilityZone,
+            kind
+          }                       = params;
+          const {
+            name,
+            visibility
+          }                       = kind;
 
           // ----- Create the subnets
           return upsertSubnet(params, {}, function(err, data) {
@@ -116,7 +134,11 @@ mod.xport({manageVpc: function(argv, context, callback) {
 
             if (params.publicIp) {
               publicSubnets.push(data.result.Subnet);
+            } else {
+              privateSubnets.push(data.result.Subnet);
             }
+
+            sg.setOna(azItems, [AvailabilityZone, 'subnets', name], data.result.Subnet);
 
             return next();
           });
@@ -171,23 +193,29 @@ mod.xport({manageVpc: function(argv, context, callback) {
     }, function(my, next) {
       // ---------------------------------------- Gateway / NAT ----------
       my.result.natGateways = {};
+      my.result.addresses = {};
       return createInternetGateway({VpcId}, {}, function(err, data) {
         const { InternetGatewayId } = data.result.InternetGateway;
         my.result.internetGateway = data.result;
         my.resources.push(InternetGatewayId);
+
+        GatewayId       = InternetGatewayId;
+        internetGateway = data.result.InternetGateway;
 
         return sg.__eachll(publicSubnets, function(subnet, next) {
           const { SubnetId, AvailabilityZone } = subnet;
 
           return allocateAddress({VpcId, SubnetId}, {}, function(err, data) {
             const { AllocationId } = data.result.Address;
-            my.result.address = data.result;
+            my.result.addresses[AvailabilityZone] = data.result;
             my.resources.push(AllocationId);
 
             return createNatGateway({VpcId, SubnetId}, {}, function(err, data) {
               const { NatGatewayId } = data.result.NatGateway;
               my.result.natGateways[AvailabilityZone] = data.result;
               my.resources.push(NatGatewayId);
+
+              sg.setOn(azItems, [AvailabilityZone,  'NatGateway'], data.result.NatGateway);
 
               return next();
             });
@@ -198,7 +226,68 @@ mod.xport({manageVpc: function(argv, context, callback) {
       });
 
     }, function(my, next) {
+      // ---------------------------------------- Public Route Table ----------
+      return createRouteTable({VpcId, public:true}, {}, function(err, data) {
+        // console.error(`crt`, sg.inspect({err, data, publicSubnets, privateSubnets}));
+
+        const { RouteTableId } = data.result.RouteTable;
+        my.resources.push(RouteTableId);
+        RouteTableIds.push(RouteTableId);
+        publicRouteTable = data.result.RouteTable;
+
+        return createRoute({RouteTableId, GatewayId, DestinationCidrBlock:'0.0.0.0/0'}, {}, function(err, data) {
+          return sg.__eachll(publicSubnets, function(subnet, next) {
+            const { SubnetId, AvailabilityZone } = subnet;
+
+            return associateRouteTable({SubnetId,RouteTableId}, {}, function(err, data) {
+              return next();
+            });
+          }, function() {
+            return next();
+          });
+        });
+      });
+
+    }, function(my, next) {
+      // ---------------------------------------- Private Route Tables ----------
+
+      return sg.__eachll(privateSubnets, function(subnet, next) {
+        const { SubnetId, AvailabilityZone } = subnet;
+
+        return createRouteTable({VpcId, SubnetId}, {}, function(err, data) {
+
+          const { RouteTableId } = data.result.RouteTable;
+          my.resources.push(RouteTableId);
+          RouteTableIds.push(RouteTableId);
+
+          const { NatGatewayId } = sg.deref(azItems, [AvailabilityZone,  'NatGateway']);
+          return createRoute({RouteTableId, NatGatewayId, DestinationCidrBlock:'0.0.0.0/0'}, {}, function(err, data) {
+            return associateRouteTable({SubnetId,RouteTableId}, {}, function(err, data) {
+              return next();
+            });
+            });
+        });
+
+      }, function() {
+        return next();
+      });
+
+    }, function(my, next) {
+      // ---------------------------------------- Vpc Endpoints ----------
+      var   ServiceName = 'com.amazonaws.us-east-1.s3';
+      return createVpcEndpoint({VpcId,ServiceName,RouteTableIds}, {}, function(err, data) {
+
+        var   ServiceName = 'com.amazonaws.us-east-1.dynamodb';
+        return createVpcEndpoint({VpcId,ServiceName,RouteTableIds}, {}, function(err, data) {
+
+          return next();
+        });
+      });
+    }, function(my, next) {
+      // console.error(`intdata`, sg.inspect({VpcId,vpcCidr,publicRouteTable,RouteTableIds,internetGateway,publicSubnets,privateSubnets,azItems}));
+
       return next();
+
     }, function(my, next) {
       const { resources } = my;
       return tag({resources, tags: {program}}, context, function(err, data) {

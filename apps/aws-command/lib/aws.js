@@ -42,13 +42,13 @@ const awsFns = function(service, names_, abort) {
           }
 
           if (options.debug) {
-            console.log(`AWS::${fname}()`, sg.inspect({params, err, data}));
+            console.error(`AWS::${fname}()`, sg.inspect({params, err, data}));
           }
 
           return continuation(err, data, ...rest);
         };
 
-        // console.log(`calling AWS::${fname}`);
+        // console.error(`calling AWS::${fname}`);
         abort.calling(`AWS::${fname}`, params);
         return awsFn.apply(service, [params, callback]);
       };
