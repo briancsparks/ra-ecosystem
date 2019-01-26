@@ -25,7 +25,7 @@ const mod                     = ra.modSquad(module, 'awsCommand');
 
 mod.xport({manageVpc: function(argv, context, callback) {
 
-  // ra invoke commands\vpcs.js manageVpc --program=ratest
+  // ra invoke commands\vpcs.js manageVpc --program=ratest --classB=111
 
   const ractx     = context.runAnywhere || {};
   const { fra }   = (ractx.awsCommand__manageVpc || ractx);
@@ -39,7 +39,7 @@ mod.xport({manageVpc: function(argv, context, callback) {
     const { createVpcEndpoint } = fra.loads(libVpc, 'createVpcEndpoint', {...debugCalls}, abort);
 
     const program           = fra.arg(argv, 'program', {required:true});
-    const classB            = fra.arg(argv, 'classB,class-b');
+    var   classB            = fra.arg(argv, 'classB,class-b');
     const CidrBlock         = fra.arg(argv, 'CidrBlock,cidr')    || (classB ? `10.${classB}.0.0/16` : argv.cidr);
 
     const reqd = { CidrBlock };
@@ -54,11 +54,37 @@ mod.xport({manageVpc: function(argv, context, callback) {
     var   publicSubnets       = [];
     var   privateSubnets      = [];
 
+    var   ids                 = {};
     var   azItems             = {};
 
     // console.error(`manageVpc.run`, sg.inspect({CidrBlock, program, classB}));
     return sg.__run2({result:{}}, callback, [function(my, next, last) {
       my.resources = [];
+
+      const exampleVpcData = {
+        found: 1,
+        result: {
+          Vpc: {
+            CidrBlock: '10.111.0.0/16',
+            DhcpOptionsId: 'dopt-1234567890',
+            State: 'available',
+            VpcId: 'vpc-1234567890',
+            OwnerId: '1234567890',
+            InstanceTenancy: 'default',
+            Ipv6CidrBlockAssociationSet:
+              [ { AssociationId: 'vpc-cidr-assoc-1234567890',
+                  Ipv6CidrBlock: '2600:1f18:376:ee00::/56',
+                  Ipv6CidrBlockState: { State: 'associated' } } ],
+            CidrBlockAssociationSet:
+              [ { AssociationId: 'vpc-cidr-assoc-1234567890',
+                  CidrBlock: '10.111.0.0/16',
+                  CidrBlockState: { State: 'associated' } } ],
+            IsDefault: false,
+            Tags: [],
+          }
+        }
+      };
+
 
       // ---------------------------------------- Vpc ----------
       return upsertVpc({CidrBlock}, {}, function(err, data) {
@@ -66,20 +92,26 @@ mod.xport({manageVpc: function(argv, context, callback) {
 
         VpcId = data.result.Vpc.VpcId;
         my.resources.push(VpcId);
+        ids.VpcId = VpcId;
 
         vpcCidr = CidrBlock;
+
+        if (!classB) {
+          classB = vpcCidr.split('.')[1];
+        }
 
         return next();
       });
 
     }, function(my, next) {
+
       const firstVpcIp            = firstIpInCidr(vpcCidr);
       var   currCidrFirst         = firstVpcIp;
 
       // ---------------------------------------- Subnets ----------
 
       // Calculate the subnet params
-      var   paramsList = [];
+      var   subnetList = [];
       var   cidrBits;
 
       var   subnetKinds = [
@@ -88,7 +120,6 @@ mod.xport({manageVpc: function(argv, context, callback) {
       ];
 
       var   azLetters = 'a,b,c'.split(',');
-      // var   azLetters = 'a'.split(',');
 
       my.result.subnets = {};
       sg.__each(subnetKinds, function(kind, next) {
@@ -96,18 +127,16 @@ mod.xport({manageVpc: function(argv, context, callback) {
 
         cidrBits = kind.bits;
         sg.__each(azLetters, function(letter, next) {
-          var   subnet            = {VpcId};
-          var   AvailabilityZone  = `us-east-1${letter}`;
+          const AvailabilityZone  = `us-east-1${letter}`;
 
+          // Make sure the subnet cidr fits
           var   CidrBlock         = toCidr(currCidrFirst, bitsToNetmask(cidrBits));
           if (currCidrFirst !== firstIpInCidr(CidrBlock)) {
             currCidrFirst = lastIpInCidr(CidrBlock) + 1;
             CidrBlock     = toCidr(currCidrFirst, bitsToNetmask(cidrBits));
           }
 
-          subnet = sg.extend(subnet, {CidrBlock, AvailabilityZone, kind});
-          subnet = sg.kv(subnet, 'publicIp', publicIp);
-          paramsList.push(subnet);
+          subnetList.push({VpcId, CidrBlock, AvailabilityZone, publicIp, kind});
 
           currCidrFirst = lastIpInCidr(CidrBlock) + 1;
           return next();
@@ -117,22 +146,38 @@ mod.xport({manageVpc: function(argv, context, callback) {
         });
       }, function() {
 
-        sg.__eachll(paramsList, function(params, next) {
-          const {
-            AvailabilityZone,
-            kind
-          }                       = params;
-          const {
-            name,
-            visibility
-          }                       = kind;
+        const exampleSubnetData = {
+          found: 1,
+          result: {
+            Subnet: {
+              AvailabilityZone: 'us-east-1b',
+              AvailabilityZoneId: 'use1-az6',
+              AvailableIpAddressCount: 250,
+              CidrBlock: '10.111.1.0/24',
+              DefaultForAz: false,
+              MapPublicIpOnLaunch: true,
+              State: 'available',
+              SubnetId: 'subnet-1234567890',
+              VpcId: 'vpc-1234567890',
+              OwnerId: '1234567890',
+              AssignIpv6AddressOnCreation: false,
+              Ipv6CidrBlockAssociationSet: [],
+              Tags: [],
+              SubnetArn: 'arn:aws:ec2:us-east-1:1234567890:subnet/subnet-1234567890'
+            }
+          }
+        };
+
+        sg.__eachll(subnetList, function(subnet, next) {
+          const { AvailabilityZone, publicIp, kind }  = subnet;
+          const { name, visibility }                  = kind;
 
           // ----- Create the subnets
-          return upsertSubnet(params, {}, function(err, data) {
-            my.result.subnets[params.AvailabilityZone] = data.result;
+          return upsertSubnet(subnet, {}, function(err, data) {
+            my.result.subnets[AvailabilityZone] = data.result;
             my.resources.push(data.result.Subnet.SubnetId);
 
-            if (params.publicIp) {
+            if (publicIp) {
               publicSubnets.push(data.result.Subnet);
             } else {
               privateSubnets.push(data.result.Subnet);

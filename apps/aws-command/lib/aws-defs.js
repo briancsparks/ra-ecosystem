@@ -9,9 +9,9 @@ const localIp     = utils.localIp();
 
 var   defs        = { region };
 
-// if (localIp.startsWith('15')) {
-//   defs = { ...defs, sslEnabled, httpOptions };
-// }
+if (localIp.startsWith('15')) {
+  defs = { ...defs, sslEnabled, httpOptions };
+}
 
 exports.options = defs;
 

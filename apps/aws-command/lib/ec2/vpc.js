@@ -21,9 +21,9 @@ const mkTags                  = libTag.mkTags;
 
 const tag                     = ra.load(libTag, 'tag');
 
-const debugAwsCalls           = true;
-// const debugAwsCalls           = false;
-const skipAbort               = {abort:false, debug:debugAwsCalls};
+const debugAwsCalls           = {debug:true};
+// const debugAwsCalls           = {debug:false};
+const skipAbort               = {abort:false, ...debugAwsCalls};
 const skipAbortNoDebug        = {abort:false, debug:false};
 
 const ec2 = libAws.awsService('EC2');

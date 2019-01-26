@@ -53,8 +53,8 @@ const ModSquad = function(otherModule, otherModuleName = 'mod') {
             return callback_(err, data, ...rest);
           };
 
-          context.runAnywhere[fullFname].fra  = context.runAnywhere[fullFname].fra  || new FuncRa(argv, context, callback, callback_, {otherModuleName, fname});
-          context.runAnywhere.fra             = context.runAnywhere.fra             || new FuncRa(argv, context, callback, callback_, {otherModuleName})
+          context.runAnywhere[fullFname].fra  = context.runAnywhere[fullFname].fra  || new FuncRa(argv, context, callback, callback_, {otherModule: otherModule.exports, otherModuleName, fname});
+          context.runAnywhere.fra             = context.runAnywhere.fra             || new FuncRa(argv, context, callback, callback_, {otherModule: otherModule.exports, otherModuleName})
 
           return fn_(argv, context, callback);
         };
@@ -130,6 +130,7 @@ const FuncRa = function(argv, context, callback, origCallback, options_ = {}) {
   const self = this;
 
   self.options          = options_;
+  self.mod              = self.options.otherModule;
   self.modname          = self.options.otherModuleName || 'mod';
   self.fname            = self.options.fname || null;
   self.providedAbort    = null;
@@ -137,9 +138,12 @@ const FuncRa = function(argv, context, callback, origCallback, options_ = {}) {
   self.args             = [];
   self.argErrs          = null;
 
-  self.fullname = function() {
-    return `${self.modname}__${self.fname || 'fn'}`;
-  };
+  const debug           = argv.debug;
+  const argOptions      = {debug};
+
+  // self.fullname = function() {
+  //   return `${self.modname}__${self.fname || 'fn'}`;
+  // };
 
   self.iwrap = function(a_, b_, c_ /* abort, body_callback*/) {
     var a=a_, b=b_, c=c_;
@@ -182,7 +186,24 @@ const FuncRa = function(argv, context, callback, origCallback, options_ = {}) {
     }
   };
 
-  self.loads = function(mod, fnames, options1, abort) {
+  self.opts = function(options = {}) {
+    return sg.smartExtend({ ...argOptions, ...options});
+  };
+
+  self.loads = function(...args) {
+    const [a,b,c,d] = args;
+
+    if (args.length === 4)        { return self.loads_(...args); }
+    if (args.length === 3) {
+      if (_.isString(args[0]))    { return self.loads_(self.mod, a, b, c); }
+
+      return self.loads_(a, b, {}, c);
+    }
+
+    return self.loads_(...args);
+  };
+
+  self.loads_ = function(mod, fnames, options1, abort) {
 
     return sg.reduce(fnames.split(','), {}, function(m, fname) {
 
@@ -256,8 +277,13 @@ const FuncRa = function(argv, context, callback, origCallback, options_ = {}) {
 
     function recordArg(value) {
       if (!sg.isnt(value)) {
-        if (options.array) {
-          value = (''+value).split(',');
+        if (options.array && !_.isArray(value)) {
+          if (_.isString(value)) {
+            value = (''+value).split(',');
+          } else {
+            value = (''+value).split(',');
+            // value = [value];
+          }
         }
         self.args.push({names, options, value});
       }
