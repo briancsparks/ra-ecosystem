@@ -1,5 +1,5 @@
 
-const cmd                     = require('..');
+const sg                      = require('..');
 const test                    = require('ava');
 
 test('vpc', t => {

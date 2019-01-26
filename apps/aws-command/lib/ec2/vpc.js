@@ -48,17 +48,26 @@ mod.xport({upsertSecurityGroupIngress: function(argv, context, callback) {
 
     const GroupId           = fra.arg(argv, 'GroupId,id', {required:true});
     const IpProtocol        = fra.arg(argv, 'protocol,proto', {required:false, def: 'tcp'});
-    const CidrIp            = fra.arg(argv, 'CidrIp,cidr', {required:true});
+    const CidrIp            = fra.arg(argv, 'CidrIp,cidr', {required:false});
     const FromPort          = fra.arg(argv, 'FromPort,from', {required:true});
     const ToPort            = fra.arg(argv, 'ToPort,to', {required:true});
     const Description       = fra.arg(argv, 'Description,desc', {required:false});
+    const ingressGroupId    = fra.arg(argv, 'ingressGroupId,ingroup,insg');
 
     if (fra.argErrors())    { return fra.abort(); }
 
+    var UserIdGroupPairs, IpRanges;
+    if (CidrIp) {
+      IpRanges = [{CidrIp, Description}];
+    }
+
+    if (ingressGroupId) {
+      UserIdGroupPairs = [{GroupId: ingressGroupId, Description}];
+    }
+
     return sg.__run2({result:{}}, callback, [function(my, next, last) {
 
-      const IpRanges        = [{CidrIp, Description}];
-      const IpPermissions   = [{IpProtocol, FromPort, ToPort, IpRanges}];
+      const IpPermissions   = [{IpProtocol, FromPort, ToPort, IpRanges, UserIdGroupPairs}];
       const params          = {GroupId, IpPermissions};
 
       // calling('AWS::authorizeSecurityGroupIngress', params);
@@ -586,14 +595,29 @@ mod.xport({createNatGateway: function(argv, context, callback) {
         });
       });
     }, function(my, next) {
-      return describeNatGateways(awsFilter({"nat-gateway-id":[NatGatewayId]}), {}, function(err, data) {
-        if (data.NatGateways.length === 0)  { return next(); }
-        if (data.NatGateways.length > 1)    { return abort({code: 'EAMBIGUOUS', msg:`Too many found (${data.NatGateways.length})`, debug:{natGateways: data.NatGateways}}); }
+      return sg.until(function(again, last, count, elapsed) {
+        console.error(`untilnat`, sg.inspect({count, elapsed}));
+        return describeNatGateways(awsFilter({"nat-gateway-id":[NatGatewayId]}), debugAwsCalls, function(err, data) {
+          if (data.NatGateways.length === 0)  { return next(); }
+          if (data.NatGateways.length > 1)    { return abort({code: 'EAMBIGUOUS', msg:`Too many found (${data.NatGateways.length})`, debug:{natGateways: data.NatGateways}}); }
 
 
-        /* We found it */
-        my.result = {NatGateway: data.NatGateways[0]};
-        // my.found  = 1;
+          /* We found it */
+          my.result = {NatGateway: data.NatGateways[0]};
+          // my.found  = 1;
+
+          if (my.result.NatGateway.State === 'pending') {
+            return again(5000);
+          }
+
+          if (my.result.NatGateway.State === 'available') {
+            return last();
+          }
+
+          return abort({code: 'ENATFAILED', msg:`Creation of NAT failed`});
+        });
+
+      }, function done() {
         return callback(null, my);
       });
 

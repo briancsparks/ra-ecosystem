@@ -22,13 +22,44 @@ const skipAbort               = {abort:false, ...debugCalls};
 const tag                     = ra.load(libTag, 'tag');
 const mod                     = ra.modSquad(module, 'awsCommand');
 
+var   sgsPlus = [];
+var   subnetKinds = [
+  {name: 'worker',  bits:20, visibility:'private'},
+  {name: 'webtier', bits:24, visibility:'public',     publicIp:true},
+  {name: 'db',      bits:24, visibility:'private'},
+  {name: 'util',    bits:24, visibility:'private'},
+];
+
+var   securityGroupsById = {};
+const getSecurityGroupId = function(name) {
+  return securityGroupsById[name];
+};
 
 mod.xport({manageVpc: function(argv, context, callback) {
 
-  // ra invoke commands\vpcs.js manageVpc --program=ratest --classB=111
+  // ra invoke commands\vpcs.js manageVpc --program=ratest --az=a,b,c --classB=111
 
   const ractx     = context.runAnywhere || {};
   const { fra }   = (ractx.awsCommand__manageVpc || ractx);
+
+  const sgs = [...sgsPlus, () => ({
+    GroupName:    'wide',
+    Description:  'Available to all within data center',
+    ingress: [{
+      /*GroupId*/
+      IpProtocol:   'tcp',
+      CidrIp:       '10.0.0.0/8',
+      FromPort:     0,
+      ToPort:       65535,
+      Description:  'All TCP from the data center'
+    },{
+      ingressGroupId: getSecurityGroupId('admin'),
+      IpProtocol:   'tcp',
+      FromPort:     22,
+      ToPort:       22,
+      Description:  'SSH from admin instances'
+    }]
+  })];
 
   return fra.iwrap(function(abort, calling) {
     const { upsertVpc,upsertSubnet } = fra.loads(libVpc, 'upsertVpc,upsertSubnet', {...debugCalls}, abort);
@@ -39,11 +70,11 @@ mod.xport({manageVpc: function(argv, context, callback) {
     const { createVpcEndpoint } = fra.loads(libVpc, 'createVpcEndpoint', {...debugCalls}, abort);
 
     const program           = fra.arg(argv, 'program', {required:true});
-    var   classB            = fra.arg(argv, 'classB,class-b');
-    const CidrBlock         = fra.arg(argv, 'CidrBlock,cidr')    || (classB ? `10.${classB}.0.0/16` : argv.cidr);
+    const classB            = fra.arg(argv, 'classB,class-b', {required:true});
+    const azLetters         = fra.arg(argv, 'azLetters,az')                     || 'a,b'.split(',');
+    const CidrBlock         = `10.${classB}.0.0/16`;
 
-    const reqd = { CidrBlock };
-    if (fra.argErrors(reqd))    { return fra.abort(); }
+    if (fra.argErrors())    { return fra.abort(); }
 
     var   VpcId               = null;
     var   vpcCidr             = null;
@@ -96,10 +127,6 @@ mod.xport({manageVpc: function(argv, context, callback) {
 
         vpcCidr = CidrBlock;
 
-        if (!classB) {
-          classB = vpcCidr.split('.')[1];
-        }
-
         return next();
       });
 
@@ -113,13 +140,6 @@ mod.xport({manageVpc: function(argv, context, callback) {
       // Calculate the subnet params
       var   subnetList = [];
       var   cidrBits;
-
-      var   subnetKinds = [
-        {name: 'webtier', bits:24, visibility:'public', publicIp:true},
-        {name: 'worker', bits:20, visibility:'private'},
-      ];
-
-      var   azLetters = 'a,b,c'.split(',');
 
       my.result.subnets = {};
       sg.__each(subnetKinds, function(kind, next) {
@@ -196,29 +216,19 @@ mod.xport({manageVpc: function(argv, context, callback) {
       // ---------------------------------------- Security Groups ----------
       return sg.__run(next, [function(next) {
 
-        const sgs = [{
-          GroupName:    'wide',
-          Description:  'Available to all within data center',
-          ingress: [{
-            /*GroupId*/
-            IpProtocol:   'tcp',
-            CidrIp:       '10.0.0.0/8',
-            FromPort:     0,
-            ToPort:       65535,
-            Description:  'All TCP from the data center'
-          }]
-        }];
-
         my.result.securityGroups = {};
-        return sg.__eachll(sgs, function(secGroup, next) {
+        return sg.__each(sgs, function(getSecGroup, next) {
+          const secGroup = getSecGroup();
           const { GroupName, Description, ingress } = secGroup;
 
           return upsertSecurityGroup({VpcId, GroupName, Description}, {}, function(err, data) {
             const { GroupId } = data.result.SecurityGroup;
             my.result.securityGroups[GroupName] = data.result;
             my.resources.push(GroupId);
+            securityGroupsById[GroupName] = GroupId;
 
             return sg.__each(ingress, function(rule, next) {
+              console.error(`ingress`, sg.inspect({rule, securityGroupsById}));
               return upsertSecurityGroupIngress({GroupId, ...rule}, {}, function(err, data) {
                 return next();
               });
@@ -343,3 +353,47 @@ mod.xport({manageVpc: function(argv, context, callback) {
     }]);
   });
 }});
+
+sgsPlus = [() => ({
+  GroupName:    'admin',
+  Description:  'Open for SSH',
+  ingress: [{
+    /*GroupId*/
+    IpProtocol:   'tcp',
+    CidrIp:       '0.0.0.0/0',
+    FromPort:     22,
+    ToPort:       22,
+    Description:  'SSH'
+  },{
+    /*GroupId*/
+    IpProtocol:   'tcp',
+    CidrIp:       '0.0.0.0/0',
+    FromPort:     443,
+    ToPort:       443,
+    Description:  'SSH over HTTPS'
+  }]
+}), () => ({
+  GroupName:    'web',
+  Description:  'Open for HTTP(S)',
+  ingress: [{
+    /*GroupId*/
+    IpProtocol:   'tcp',
+    CidrIp:       '0.0.0.0/0',
+    FromPort:     80,
+    ToPort:       80,
+    Description:  'All HTTP'
+  },{
+    /*GroupId*/
+    IpProtocol:   'tcp',
+    CidrIp:       '0.0.0.0/0',
+    FromPort:     443,
+    ToPort:       443,
+    Description:  'All HTTPS'
+  },{
+    ingressGroupId: getSecurityGroupId('admin'),
+    IpProtocol:   'tcp',
+    FromPort:     22,
+    ToPort:       22,
+    Description:  'SSH from admin instances'
+  }]
+})];

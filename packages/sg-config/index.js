@@ -1,7 +1,15 @@
-'use strict';
 
-module.exports = sgConfig;
+const { qm, qmResolve }       = require('quick-merge');
+var   sg                      = require('sg0');
+const { _ }                   = sg._;
 
-function sgConfig() {
-    // TODO
-}
+sg.config = function(...configs) {
+  return qmResolve(...configs);
+};
+
+sg.configuration = function(dir, file) {
+};
+
+_.each(sg, (v,k) => {
+  exports[k] = v;
+});
