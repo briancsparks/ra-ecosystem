@@ -1,0 +1,27 @@
+{
+  "name": "sg-config",
+  "version": "1.0.0",
+  "description": "Read configuration",
+  "author": "Brian C Sparks <briancsparks@gmail.com>",
+  "homepage": "https://github.com/briancsparks/ra-ecosystem#readme",
+  "license": "MIT",
+  "main": "index.js",
+  "directories": {
+    "lib": "lib",
+    "test": "__tests__"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/briancsparks/ra-ecosystem.git"
+  },
+  "scripts": {
+    "test": "echo \"Error: run tests from root\" && exit 1"
+  },
+  "bugs": {
+    "url": "https://github.com/briancsparks/ra-ecosystem/issues"
+  },
+  "dependencies": {
+    "quick-merge": "^1.0.10",
+    "sg0": "^0.9.7"
+  }
+}
