@@ -16,6 +16,51 @@ var weeks   = sg.weeks   = sg.week   = 7*days,      week   = weeks;
 var months  = sg.months  = sg.month  = 30*days,     month  = months;
 var years   = sg.years   = sg.year   = 365*days,    year   = years;
 
+var forcedModes_;
+sg.setModes = function(modes) {
+  forcedModes = ','+modes+',';
+};
+
+const getForcedMode = function(name) {
+  return indexOf(forcedModes_, ','+name+',') !== -1;
+};
+
+const isProd = function() {
+  if (sg.argvFlag('prod'))     { return true; }
+  if (forcedModes_)            { return getForcedMode('prod'); }
+
+  return process.env.NODE_ENV === 'production';
+};
+
+const isDebug = function() {
+  if (sg.argvFlag('debug'))     { return true; }
+  if (forcedModes_)             { return getForcedMode('debug'); }
+
+  return process.env.NODE_ENV !== 'production';
+};
+
+const isTest = function() {
+  if (sg.argvFlag('test'))     { return true; }
+  if (forcedModes_)            { return getForcedMode('test'); }
+
+  return false;
+};
+
+sg.modes = function() {
+  const prod            = isProd();
+  const production      = prod;
+  const debug           = isDebug();
+  const development     = debug;
+  const test            = isTest();
+
+  return sg.merge({prod, debug, test, production, development});
+};
+
+sg.mode = function() {
+  if (sg.modes().prod)  { return 'prod'; }
+  if (sg.modes().test)  { return 'test'; }
+  if (sg.modes().debug) { return 'debug'; }
+};
 
 
 /**
@@ -173,6 +218,11 @@ sg.keyMirror = function(x, sep) {
   });
 
   return result;
+};
+
+sg.argvFlag = function(flag) {
+  const target = `--${flag}`;
+  return process.argv.map(x => (x === '--' || x === target))[0] === target;
 };
 
 /**
@@ -440,6 +490,38 @@ var setOna = sg.setOna = function(x, keys_, value) {
 };
 
 /**
+ * Merges `aug` into each top-level property of `all`.
+ *
+ * If `aug` is a string, it is a key into `all`.
+ *
+ * @param {*} aug
+ * @param {*} all
+ * @returns
+ */
+sg.augmentAllWith = function(aug, all) {
+  if (_.isString(aug))  { return sg.augmentAllWith(all[aug], all); }
+
+  return sg.reduce(all, {}, function(m, v, k) {
+    return sg.kv(m, k, sg.merge(aug, v));
+  });
+};
+
+/**
+ * Returns obj[key].
+ *
+ * @param {*} key
+ * @param {*} obj
+ * @returns
+ */
+sg.choose = function(key, obj) {
+  if (_.isArray(obj)) {
+    return sg.choose(key, sg.augmentAllWith(...obj));
+  }
+
+  return sg.deref(obj, key);
+};
+
+/**
  * Converts to boolean.
  *
  * @param {*} value
@@ -565,6 +647,8 @@ sg.smartExtend = function() {
   args.unshift({});
   return _.extend.apply(_, args);
 };
+
+sg.merge = sg.smartExtend;    /* alias */
 
 /**
  * Pulls the item out of the object and returns it.
