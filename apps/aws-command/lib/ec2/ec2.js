@@ -22,8 +22,16 @@ const skipAbortNoDebug        = {abort:false, debug:false};
 // const ec2 = new AWS.EC2({region: 'us-east-1', ...awsDefs.options});
 const ec2 = libAws.awsService('EC2');
 
-// https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/finding-an-ami.html
-
+/**
+ * Gets a list of AMIs.
+ *
+ * @see https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/finding-an-ami.html
+ *
+ * @param {*} argv
+ * @param {*} context
+ * @param {*} callback
+ * @returns
+ */
 mod.xport({getAmis: function(argv, context, callback) {
 
   // ra invoke lib\ec2\ec2.js getAmis  --owners=self
@@ -53,6 +61,9 @@ mod.xport({getAmis: function(argv, context, callback) {
   });
 }});
 
+/**
+ * Returns a list of Amazon Linux AMIs.
+ */
 mod.xport({getAmazonLinuxAmis: function(argv, context, callback) {
 
   // ra invoke lib\ec2\ec2.js getAmazonLinuxAmisv --v2 --latest
@@ -75,6 +86,9 @@ mod.xport({getAmazonLinuxAmis: function(argv, context, callback) {
   });
 }});
 
+/**
+ * Returns a list of Ubuntu LTS AMIs.
+ */
 mod.xport({getUbuntuLtsAmis: function(argv, context, callback) {
 
   // ra invoke lib\ec2\ec2.js getUbuntuLtsAmis --latest
@@ -93,6 +107,9 @@ mod.xport({getUbuntuLtsAmis: function(argv, context, callback) {
   });
 }});
 
+/**
+ * Upsert an instance.
+ */
 mod.xport({upsertInstance: function(argv, context, callback) {
 
   // Ubuntu 16.04 as of 1/25/2019

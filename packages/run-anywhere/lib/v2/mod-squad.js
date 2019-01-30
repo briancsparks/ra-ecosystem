@@ -230,6 +230,9 @@ const FuncRa = function(argv, context, callback, origCallback, options_ = {}) {
           return continuation(err, data, ...rest);
         };
 
+        if (options.verbose) {
+          console.error(`${mod.modname || self.modname || 'modunk'}::${fname}()`, sg.inspect({argv}));
+        }
         abort.calling(`${fname}()`, argv);
         return mod[fname](argv, context, callback);
       };

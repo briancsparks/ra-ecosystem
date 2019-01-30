@@ -71,7 +71,7 @@ mod.xport({manageVpc: function(argv, context, callback) {
 
     const program           = fra.arg(argv, 'program', {required:true});
     const classB            = fra.arg(argv, 'classB,class-b', {required:true});
-    const azLetters         = fra.arg(argv, 'azLetters,az')                     || 'a,b'.split(',');
+    const azLetters         = fra.arg(argv, 'azLetters,az', {array:true})                     || 'a,b'.split(',');
     const CidrBlock         = `10.${classB}.0.0/16`;
 
     if (fra.argErrors())    { return fra.abort(); }

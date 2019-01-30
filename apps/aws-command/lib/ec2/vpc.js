@@ -146,7 +146,7 @@ mod.xport({upsertSecurityGroup: function(argv, context, callback) {
           my.created  = 1;
 
           // Tag it
-          return tag({type:'SecurityGroup', id: my.result.GroupId, rawTags: defaultTags}, context, function(err, data) {
+          return tag({type:'SecurityGroup', id: my.result.GroupId, rawTags: defaultTags, tags:{Name: GroupName}}, context, function(err, data) {
             if (!sg.ok(err, data))  { console.error(err); }
 
             return next();
@@ -190,6 +190,8 @@ mod.xport({upsertSubnet: function(argv, context, callback) {
     const VpcId             = fra.arg(argv, 'VpcId,vpc', {required:true});
     const AvailabilityZone  = fra.arg(argv, 'AvailabilityZone,az', {required:true});
     const publicIp          = fra.arg(argv, 'publicIp,public-ip,public');
+    const kind              = fra.arg(argv, 'kind');
+    const Name              = fra.arg(argv, 'name') || (kind? kind.name : null);
 
     if (fra.argErrors())    { return fra.abort(); }
 
@@ -218,7 +220,8 @@ mod.xport({upsertSubnet: function(argv, context, callback) {
           my.created  = 1;
 
           // Tag it
-          return tag({type:'Subnet', id: SubnetId, rawTags: defaultTags}, context, function(err, data) {
+          var   tags = sg.merge({Name});
+          return tag({type:'Subnet', id: SubnetId, rawTags: defaultTags, tags}, context, function(err, data) {
             if (!sg.ok(err, data))  { console.error(err); }
 
             return next();
@@ -320,8 +323,15 @@ mod.xport({upsertVpc: function(argv, context, callback) {
 
 mod.xport({getSubnets: function(argv, context, callback) {
 
-  const classB = argv.classB;
-  const kind   = argv.kind ? argv.kind.toLowerCase() : argv.kind;
+  // ra invoke lib\ec2\vpc.js getSubnets --classB=111
+  // ra invoke lib\ec2\vpc.js getSubnets --classB=111 --kind   # cf-created
+  // ra invoke lib\ec2\vpc.js getSubnets --classB=111 --sg= --subnet=
+  // ra invoke lib\ec2\vpc.js getSubnets --classB=111 --sg=web --subnet=webtier
+
+  const classB        = argv.classB;
+  const kind          = argv.kind ? argv.kind.toLowerCase() : argv.kind;
+  const sgName        = argv.sg;
+  const subnetName    = argv.subnet;
 
   var   allVpcs, allSubnets, allSecurityGroups;
 
@@ -370,7 +380,11 @@ mod.xport({getSubnets: function(argv, context, callback) {
       subnets = sg.reduce(allSubnets, subnets, function(m, subnet) {
         if (subnet.VpcId === vpc.VpcId) {
 
-          if (!kind || getTag(subnet, 'aws:cloudformation:logical-id').toLowerCase().endsWith(kind)) {
+          if (kind && getTag(subnet, 'aws:cloudformation:logical-id').toLowerCase().endsWith(kind)) {
+            return sg.ap(m, subnet);
+          }
+
+          if (subnetName && (getTag(subnet, 'Name').toLowerCase() === subnetName.toLowerCase())) {
             return sg.ap(m, subnet);
           }
         }
@@ -381,7 +395,12 @@ mod.xport({getSubnets: function(argv, context, callback) {
         if (securityGroup.VpcId === vpc.VpcId) {
           const sgKind = getTag(securityGroup, 'aws:cloudformation:logical-id').toLowerCase();
 
-          if (!kind || sgKind == 'sgwide' || (kind === 'public' && sgKind === 'sgweb')) {
+          if (sgName) {
+            if ((getTag(securityGroup, 'Name').toLowerCase() === sgName.toLowerCase())) {
+              return sg.ap(m, securityGroup);
+            }
+
+          } else if (!kind || sgKind == 'sgwide' || (kind === 'public' && sgKind === 'sgweb')) {
             return sg.ap(m, securityGroup);
           }
         }

@@ -17,7 +17,7 @@ mod.xport({tag: function(argv, context, callback) {
   const Resources = sg.ap([...(argv.resources || []), ...(argv.ids || [])], argv.resource, argv.id);
 
   // const tags  = argv.tags || exports.mkTags(type, argv.rawTags);
-  const tags  = { ...(argv.tags || {}), ...exports.mkTags(type, argv.rawTags) };
+  const tags  = { ...exports.mkTags(type, argv.rawTags),  ...(argv.tags || {}) };
   const Tags  = sg.reduce(tags || {}, [], (m, Value, Key) => {
     return sg.ap(m, {Key, Value});
   });
@@ -42,6 +42,7 @@ exports.mkTags = function(type, seed) {
     // v === true means caller wants us to fill in
     if (v === true) {
       return sg.kv(m, k, gTags[k.toLowerCase()] || process.env[k.toLowerCase()] || nonsense(k, type));
+      // return sg.kv(m, k, gTags[k.toLowerCase()] || process.env[k.toLowerCase()]);
     }
 
     // v === false means not to include it
