@@ -404,16 +404,36 @@ mod.xport({manageVpc: function(argv, context, callback) {
       const VpcEndpointType     = 'Interface';
       const PrivateDnsEnabled   = true;
       const SubnetIds           = sg.pluck(subnetByType.worker, 'SubnetId');
-      const SecurityGroupIds    = [my.result.securityGroups.wide.SecurityGroup.GroupId];
 
-      const endpoints           = 'ecr.api,ecr.dkr'.split(',');
-      return sg.__each(endpoints, function(endpoint, next) {
-        const ServiceName = `com.amazonaws.${region}.${endpoint}`;
-        return createVpcEndpoint({VpcId,VpcEndpointType,ServiceName,SubnetIds,SecurityGroupIds,PrivateDnsEnabled}, {}, function(err, data) {
+      return sg.__run2(next, [function(next) {
+        // ----------------------Vpc Interface Endpoints for ECR
+        const SecurityGroupIds    = [my.result.securityGroups.ECR.SecurityGroup.GroupId];
+        const endpoints           = 'ecr.api,ecr.dkr'.split(',');
 
-          return next();
-        });
-      }, next);
+        return sg.__each(endpoints, function(endpoint, next) {
+          const ServiceName = `com.amazonaws.${region}.${endpoint}`;
+          return createVpcEndpoint({VpcId,VpcEndpointType,ServiceName,SubnetIds,SecurityGroupIds,PrivateDnsEnabled}, {}, function(err, data) {
+
+            return next();
+          });
+        }, next);
+
+      }, function(next) {
+        // ----------------------Vpc Interface Endpoints for ECS
+        const SecurityGroupIds    = [my.result.securityGroups.ECS.SecurityGroup.GroupId];
+        const endpoints           = 'ecs-agent,ecs-telemetry,ecs'.split(',');
+
+        return sg.__each(endpoints, function(endpoint, next) {
+          const ServiceName = `com.amazonaws.${region}.${endpoint}`;
+          return createVpcEndpoint({VpcId,VpcEndpointType,ServiceName,SubnetIds,SecurityGroupIds,PrivateDnsEnabled}, {}, function(err, data) {
+
+            return next();
+          });
+        }, next);
+
+      }, function(next) {
+        return next();
+      }]);
 
     }, function(my, next) {
       // console.error(`intdata`, sg.inspect({VpcId,vpcCidr,publicRouteTable,RouteTableIds,internetGateway,publicSubnets,privateSubnets,azItems}));
@@ -450,6 +470,24 @@ sgsPlus = [() => ({
     Description:  'SSH over HTTPS'
   }]
 }), () => ({
+  GroupName:    'devOps',
+  Description:  'Open for SSH, temp IPs',
+  ingress: [{
+    /*GroupId*/
+    IpProtocol:   'tcp',
+    CidrIp:       '98.176.46.246/24',
+    FromPort:     22,
+    ToPort:       22,
+    Description:  'SSH from my house'
+  },{
+    /*GroupId*/
+    IpProtocol:   'tcp',
+    CidrIp:       '98.176.46.246/24',
+    FromPort:     443,
+    ToPort:       443,
+    Description:  'SSH over HTTPS from my house'
+  }]
+}), () => ({
   GroupName:    'web',
   Description:  'Open for HTTP(S)',
   ingress: [{
@@ -472,5 +510,27 @@ sgsPlus = [() => ({
     FromPort:     22,
     ToPort:       22,
     Description:  'SSH from admin instances'
+  }]
+}), () => ({
+  GroupName:    'ECS',
+  Description:  'Access to ECS Endpoint',
+  ingress: [{
+    /*GroupId*/
+    IpProtocol:   'tcp',
+    CidrIp:       '10.0.0.0/8',
+    FromPort:     443,
+    ToPort:       443,
+    Description:  'ECS Endpoint Access'
+  }]
+}), () => ({
+  GroupName:    'ECR',
+  Description:  'Access to ECR Endpoint',
+  ingress: [{
+    /*GroupId*/
+    IpProtocol:   'tcp',
+    CidrIp:       '10.0.0.0/8',
+    FromPort:     443,
+    ToPort:       443,
+    Description:  'ECR Endpoint Access'
   }]
 })];

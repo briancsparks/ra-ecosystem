@@ -67,7 +67,7 @@ mod.xport({getAmis: function(argv, context, callback) {
  */
 mod.xport({getAmazonLinuxAmis: function(argv, context, callback) {
 
-  // ra invoke lib\ec2\ec2.js getAmazonLinuxAmisv --v2 --latest
+  // ra invoke lib\ec2\ec2.js getAmazonLinuxAmis --v2 --latest
 
   const ractx     = context.runAnywhere || {};
   const { fra }   = ractx.awsCommandEc2__getAmazonLinuxAmis;
@@ -75,8 +75,12 @@ mod.xport({getAmazonLinuxAmis: function(argv, context, callback) {
   return fra.iwrap(function(abort, calling) {
     const { getAmis } = fra.loads('getAmis', fra.opts({}), abort);
 
+    const ecs               = fra.arg(argv, 'ecs');
     const v2                = fra.arg(argv, 'v2');
-    const name              = (v2? 'amzn2-ami-hvm-2.0.????????-x86_64-gp2' : 'amzn-ami-hvm-????.??.?.????????-x86_64-gp2');
+    const name              = (v2 ?
+                                  (ecs ? 'amzn2-ami-ecs-hvm-2.0.20190127-x86_64-ebs'
+                                       : 'amzn2-ami-hvm-2.0.????????-x86_64-gp2')
+                                  : 'amzn-ami-hvm-????.??.?.????????-x86_64-gp2');
     const Owners            = 'amazon';
     const filters           = awsFilters({name:[name],state:['available']});
     const latest            = fra.arg(argv, 'latest');
@@ -115,6 +119,9 @@ mod.xport({upsertInstance: function(argv, context, callback) {
 
   // Ubuntu 16.04 as of 1/25/2019
   // ra invoke lib\ec2\ec2.js upsertInstance --image=ami-03a935aafa6b52b97 --distro=ubuntu --type=t3.small --key= --sgs= --subnet=
+
+  // Amazon Linux 2 with ECS as of 1/25/2019
+  // ra invoke lib\ec2\ec2.js upsertInstance --image=ami-011a85ba0ae2013bf --distro=amazon2ecs --type=t3.small --key= --sgs= --subnet=
 
   const ractx     = context.runAnywhere || {};
   const { fra }   = ractx.awsCommandEc2__upsertInstance;
