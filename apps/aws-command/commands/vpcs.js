@@ -120,6 +120,8 @@ mod.xport({manageVpc: function(argv, context, callback) {
     const classB            = fra.arg(argv, 'classB,class-b', {required:true});
     const azLetters         = fra.arg(argv, 'azLetters,az', {array:true})                     || 'a,b'.split(',');
     const CidrBlock         = `10.${classB}.0.0/16`;
+    const region            = fra.arg(argv, 'region', {def: 'us-east-1'});
+    const skipNat           = fra.arg(argv, 'skip-nat,skipNat,skipNats');
 
     if (fra.argErrors())    { return fra.abort(); }
 
@@ -131,11 +133,13 @@ mod.xport({manageVpc: function(argv, context, callback) {
     var   GatewayId           = null;
     var   publicSubnets       = [];
     var   privateSubnets      = [];
+    var   allSubnets          = [];
+    var   subnetByType        = {};
 
     var   ids                 = {};
     var   azItems             = {};
 
-    // console.error(`manageVpc.run`, sg.inspect({CidrBlock, program, classB}));
+    console.error(`manageVpc.run`, sg.inspect({CidrBlock, program, classB, skipNat}));
     return sg.__run2({result:{}}, callback, [function(my, next, last) {
       my.resources = [];
 
@@ -194,7 +198,7 @@ mod.xport({manageVpc: function(argv, context, callback) {
 
         cidrBits = kind.bits;
         sg.__each(azLetters, function(letter, next) {
-          const AvailabilityZone  = `us-east-1${letter}`;
+          const AvailabilityZone  = `${region}${letter}`;
 
           // Make sure the subnet cidr fits
           var   CidrBlock         = toCidr(currCidrFirst, bitsToNetmask(cidrBits));
@@ -249,8 +253,11 @@ mod.xport({manageVpc: function(argv, context, callback) {
             } else {
               privateSubnets.push(data.result.Subnet);
             }
+            allSubnets.push(data.result.Subnet);
+            subnetByType[name] =  subnetByType[name] || [];
+            subnetByType[name].push(data.result.Subnet);
 
-            sg.setOna(azItems, [AvailabilityZone, 'subnets', name], data.result.Subnet);
+            sg.setOn(azItems, [AvailabilityZone, 'subnets', name], data.result.Subnet);
 
             return next();
           });
@@ -292,6 +299,8 @@ mod.xport({manageVpc: function(argv, context, callback) {
       }]);
 
     }, function(my, next) {
+      if (skipNat)  { return next(); }
+
       // ---------------------------------------- Gateway / NAT ----------
       my.result.natGateways = {};
       my.result.addresses = {};
@@ -327,6 +336,8 @@ mod.xport({manageVpc: function(argv, context, callback) {
       });
 
     }, function(my, next) {
+      if (skipNat)  { return next(); }
+
       // ---------------------------------------- Public Route Table ----------
       return createRouteTable({VpcId, public:true}, {}, function(err, data) {
         // console.error(`crt`, sg.inspect({err, data, publicSubnets, privateSubnets}));
@@ -350,6 +361,8 @@ mod.xport({manageVpc: function(argv, context, callback) {
       });
 
     }, function(my, next) {
+      if (skipNat)  { return next(); }
+
       // ---------------------------------------- Private Route Tables ----------
 
       return sg.__eachll(privateSubnets, function(subnet, next) {
@@ -366,7 +379,7 @@ mod.xport({manageVpc: function(argv, context, callback) {
             return associateRouteTable({SubnetId,RouteTableId}, {}, function(err, data) {
               return next();
             });
-            });
+          });
         });
 
       }, function() {
@@ -374,16 +387,34 @@ mod.xport({manageVpc: function(argv, context, callback) {
       });
 
     }, function(my, next) {
+      if (skipNat)  { return next(); }
+
       // ---------------------------------------- Vpc Endpoints ----------
-      var   ServiceName = 'com.amazonaws.us-east-1.s3';
+      var   ServiceName = `com.amazonaws.${region}.s3`;
       return createVpcEndpoint({VpcId,ServiceName,RouteTableIds}, {}, function(err, data) {
 
-        var   ServiceName = 'com.amazonaws.us-east-1.dynamodb';
+        var   ServiceName = `com.amazonaws.${region}.dynamodb`;
         return createVpcEndpoint({VpcId,ServiceName,RouteTableIds}, {}, function(err, data) {
 
           return next();
         });
       });
+    }, function(my, next) {
+      // ---------------------------------------- Vpc Interface Endpoints ----------
+      const VpcEndpointType     = 'Interface';
+      const PrivateDnsEnabled   = true;
+      const SubnetIds           = sg.pluck(subnetByType.worker, 'SubnetId');
+      const SecurityGroupIds    = [my.result.securityGroups.wide.SecurityGroup.GroupId];
+
+      const endpoints           = 'ecr.api,ecr.dkr'.split(',');
+      return sg.__each(endpoints, function(endpoint, next) {
+        const ServiceName = `com.amazonaws.${region}.${endpoint}`;
+        return createVpcEndpoint({VpcId,VpcEndpointType,ServiceName,SubnetIds,SecurityGroupIds,PrivateDnsEnabled}, {}, function(err, data) {
+
+          return next();
+        });
+      }, next);
+
     }, function(my, next) {
       // console.error(`intdata`, sg.inspect({VpcId,vpcCidr,publicRouteTable,RouteTableIds,internetGateway,publicSubnets,privateSubnets,azItems}));
 

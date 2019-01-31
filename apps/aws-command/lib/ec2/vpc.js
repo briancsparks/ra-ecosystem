@@ -265,7 +265,7 @@ mod.xport({upsertVpc: function(argv, context, callback) {
   const { fra }   = (ractx.awsCommandVpc__upsertVpc || ractx);
 
   return fra.iwrap(function(abort, calling) {
-    const { describeVpcs, createVpc } = libAws.awsFns(ec2, 'describeVpcs,createVpc', abort);
+    const { describeVpcs,createVpc,modifyVpcAttribute } = libAws.awsFns(ec2, 'describeVpcs,createVpc,modifyVpcAttribute', abort);
 
     const classB            = fra.arg(argv, 'classB,class-b');
     const CidrBlock         = fra.arg(argv, 'CidrBlock,cidr')    || (classB ? `10.${classB}.0.0/16` : argv.cidr);
@@ -277,6 +277,7 @@ mod.xport({upsertVpc: function(argv, context, callback) {
     if (fra.argErrors(reqd))    { return fra.abort(); }
 
     var   vpc;
+    var   VpcId;
 
     return sg.__run2({result:{}}, callback, [function(my, next, last) {
       // console.error(`upsertVpc.run`, sg.inspect({CidrBlock, InstanceTenancy, AmazonProvidedIpv6CidrBlock, argv, classB}));
@@ -300,19 +301,42 @@ mod.xport({upsertVpc: function(argv, context, callback) {
     }, function(my, next, last) {
       if (vpc)  { return next(); }    /* we already have it */
 
-      return createVpc({CidrBlock, InstanceTenancy, AmazonProvidedIpv6CidrBlock}, function(err, data) {
+      return sg.__run2(next, [function(next) {
+        return createVpc({CidrBlock, InstanceTenancy, AmazonProvidedIpv6CidrBlock}, function(err, data) {
 
-        vpc = data.Vpc;
-        my.result   = data;
-        my.created  = 1;
+          vpc         = data.Vpc;
+          VpcId       = vpc.VpcId;
+          my.result   = data;
+          my.created  = 1;
 
-        // Tag it
-        return tag({type:'Vpc', id: vpc.VpcId, rawTags: defaultTags}, context, function(err, data) {
-          if (!sg.ok(err, data))  { console.error(err); }
+          // Tag it
+          return tag({type:'Vpc', id: VpcId, rawTags: defaultTags}, context, function(err, data) {
+            if (!sg.ok(err, data))  { console.error(err); }
+
+            return next();
+          });
+        });
+
+      }, function(next) {
+        const EnableDnsSupport    = {Value:true};
+        const EnableDnsHostnames  = {Value:true};
+        return modifyVpcAttribute({VpcId, EnableDnsSupport}, function(err, data) {
+          return modifyVpcAttribute({VpcId, EnableDnsHostnames}, function(err, data) {
+            return next();
+          });
+        });
+
+      }, function(next) {
+        return describeVpcs({VpcIds:[VpcId]}, function(err, data) {
+
+          /* We found it */
+          my.result = {Vpc: data.Vpcs[0]};
+          // my.found  = 1;
 
           return next();
         });
-      });
+      }]);
+
 
     }, function(my, next) {
       return next();
