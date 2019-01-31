@@ -6,6 +6,7 @@ const ra                      = require('run-anywhere').v2;
 const awsDefs                 = require('../aws-defs');
 // const AWS                     = require('aws-sdk');
 const libAws                  = require('../aws');
+const cloudInit               = require('../sh/cloud-init');
 const fs                      = require('fs');
 const path                    = require('path');
 
@@ -180,6 +181,11 @@ mod.xport({upsertInstance: function(argv, context, callback) {
         userdata = userdata_;
         return next();
       });
+
+    // }, function(my, next) {
+    //   userdata = cloudInit.ubuntuLtsUserData({});
+    //   return next();
+
     }, function(my, next) {
       var UserData;
       var params = {};

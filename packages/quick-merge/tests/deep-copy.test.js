@@ -23,3 +23,4 @@ test('deepCopy object', t => {
   t.deepEqual(result, {a:42, c:{d:'foo'}});
 });
 
+
