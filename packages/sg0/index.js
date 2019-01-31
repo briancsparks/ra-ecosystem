@@ -648,7 +648,19 @@ sg.smartExtend = function() {
   return _.extend.apply(_, args);
 };
 
-sg.merge = sg.smartExtend;    /* alias */
+/**
+ *  Merge objects.
+ */
+sg.merge = function() {
+  var args = sg.reduce(arguments, [], function(m, arg) {
+    return sg.ap(m, sg.reduce(arg, {}, function(m, value, key) {
+      return sg.kv(m, key, value);
+    }));
+  });
+
+  args.unshift({});
+  return _.extend.apply(_, args);
+};
 
 /**
  * Pulls the item out of the object and returns it.

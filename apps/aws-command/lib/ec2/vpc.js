@@ -330,8 +330,8 @@ mod.xport({getSubnets: function(argv, context, callback) {
 
   const classB        = argv.classB;
   const kind          = argv.kind ? argv.kind.toLowerCase() : argv.kind;
-  const sgName        = argv.sg;
-  const subnetName    = argv.subnet;
+  const sgName        = argv.sg       || argv.sgName;
+  const subnetName    = argv.subnet   || argv.subnetName;
 
   var   allVpcs, allSubnets, allSecurityGroups;
 
@@ -615,7 +615,6 @@ mod.xport({createNatGateway: function(argv, context, callback) {
       });
     }, function(my, next) {
       return sg.until(function(again, last, count, elapsed) {
-        console.error(`untilnat`, sg.inspect({count, elapsed}));
         return describeNatGateways(awsFilter({"nat-gateway-id":[NatGatewayId]}), debugAwsCalls, function(err, data) {
           if (data.NatGateways.length === 0)  { return next(); }
           if (data.NatGateways.length > 1)    { return abort({code: 'EAMBIGUOUS', msg:`Too many found (${data.NatGateways.length})`, debug:{natGateways: data.NatGateways}}); }

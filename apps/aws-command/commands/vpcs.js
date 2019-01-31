@@ -35,6 +35,53 @@ const getSecurityGroupId = function(name) {
   return securityGroupsById[name];
 };
 
+mod.xport({launchInfo: function(argv, context, callback) {
+
+  // ra invoke commands\vpcs.js launchInfo --classB=111 --sg=web --subnet=webtier
+
+  const ractx     = context.runAnywhere || {};
+  const { fra }   = ractx.awsCommand__launchInfo;
+
+  return fra.iwrap(function(abort) {
+    const { getSubnets } = fra.loads(libVpc, 'getSubnets', fra.opts({}), abort);
+
+    const classB            = ''+fra.arg(argv, 'classB,b', {required:true});
+    const sgName            = fra.arg(argv, 'sgName,sg');
+    const subnetName        = fra.arg(argv, 'subnetName,subnet');
+    const azLetter          = fra.arg(argv, 'azLetter,az');
+
+    if (fra.argErrors())    { return fra.abort(); }
+
+    return sg.__run2({result:{}}, callback, [function(my, next, last) {
+
+      // [[You only need fra.ops on one of these params]]
+      return getSubnets(fra.opts({classB, sgName, subnetName}), fra.opts({}), function(err, data) {
+
+        // my.result = data;
+
+        if (azLetter) {
+          my.result.subnets = sg.reduce(data.subnets, [], (m, subnet) => {
+            if (!subnet.AvailabilityZone.endsWith(azLetter)) { return m; }
+            return sg.ap(m, subnet.SubnetId);
+          });
+        } else {
+          my.result.subnets = sg.reduce(data.subnets, [], (m, subnet) => {
+            return sg.ap(m, {az:subnet.AvailabilityZone, id:subnet.SubnetId});
+          });
+        }
+
+        my.result.securityGroups = sg.reduce(data.securityGroups, [], (m, securityGroup) => {
+          return sg.ap(m, securityGroup.GroupId);
+        });
+
+        return next();
+      });
+    }, function(my, next) {
+      return next();
+    }]);
+  });
+}});
+
 mod.xport({manageVpc: function(argv, context, callback) {
 
   // ra invoke commands\vpcs.js manageVpc --program=ratest --az=a,b,c --classB=111
@@ -228,7 +275,6 @@ mod.xport({manageVpc: function(argv, context, callback) {
             securityGroupsById[GroupName] = GroupId;
 
             return sg.__each(ingress, function(rule, next) {
-              console.error(`ingress`, sg.inspect({rule, securityGroupsById}));
               return upsertSecurityGroupIngress({GroupId, ...rule}, {}, function(err, data) {
                 return next();
               });

@@ -187,7 +187,7 @@ const FuncRa = function(argv, context, callback, origCallback, options_ = {}) {
   };
 
   self.opts = function(options = {}) {
-    return sg.smartExtend({ ...argOptions, ...options});
+    return sg.merge({ ...argOptions, ...options});
   };
 
   self.loads = function(...args) {
