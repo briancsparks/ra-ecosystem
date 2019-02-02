@@ -66,7 +66,7 @@ const awsFns = function(service, names_, abort) {
     }
 
     // The passed-in name isnt a function on the AWS class
-    return abort('ENOTFN');
+    return abort(`ENOTFN: ${fname}`);
   });
 
   return result;

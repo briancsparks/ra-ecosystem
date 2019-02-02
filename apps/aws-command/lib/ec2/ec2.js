@@ -22,6 +22,7 @@ const skipAbortNoDebug        = {abort:false, debug:false};
 
 // const ec2 = new AWS.EC2({region: 'us-east-1', ...awsDefs.options});
 const ec2 = libAws.awsService('EC2');
+const iam = libAws.awsService('IAM');
 
 /**
  * Gets a list of AMIs.
@@ -127,7 +128,8 @@ mod.xport({upsertInstance: function(argv, context, callback) {
   const { fra }   = ractx.awsCommandEc2__upsertInstance;
 
   return fra.iwrap(function(abort, calling) {
-    const { runInstances,describeInstances } = libAws.awsFns(ec2, 'runInstances,describeInstances', abort);
+    // console.error(`aim`, sg.inspect({ec2}), ec2.);
+    const { runInstances,describeInstances }  = libAws.awsFns(ec2, 'runInstances,describeInstances', abort);
 
     const uniqueName            = fra.arg(argv, 'uniqueName,unique');
     const ImageId               = fra.arg(argv, 'ImageId,image', {required:true});
@@ -135,6 +137,7 @@ mod.xport({upsertInstance: function(argv, context, callback) {
     const KeyName               = fra.arg(argv, 'KeyName,key', {required:true});
     const SecurityGroupIds      = fra.arg(argv, 'SecurityGroupIds,sgs', {required:true, array:true});
     const SubnetId              = fra.arg(argv, 'SubnetId,subnet', {required:true});
+    const iamName               = fra.arg(argv, 'iamName,iam')    || 'supercow';
     var   BlockDeviceMappings   = fra.arg(argv, 'BlockDeviceMappings,devices');
     const rootVolumeSize        = fra.arg(argv, 'rootVolumeSize,size', {def:8});
     const count                 = fra.arg(argv, 'count', {def:1});
@@ -151,6 +154,7 @@ mod.xport({upsertInstance: function(argv, context, callback) {
       BlockDeviceMappings = [{DeviceName: 'xvdh', Ebs:{VolumeSize: rootVolumeSize}}];
     }
 
+    var   InstanceId;
     var   userdata;
     return sg.__run2({result:{}}, callback, [function(my, next, last) {
 
@@ -205,14 +209,33 @@ mod.xport({upsertInstance: function(argv, context, callback) {
         UserData = Buffer.from(userdata).toString('base64');
       }
 
+      if (iamName) {
+        params.IamInstanceProfile = {Name: iamName};
+      }
+
       // params = sg.smartExtend(params, {ImageId, InstanceType, KeyName, SecurityGroupIds, SubnetId, MaxCount, MinCount, BlockDeviceMappings});
-      params = sg.smartExtend(params, {ImageId, InstanceType, KeyName, SecurityGroupIds, SubnetId, MaxCount, MinCount, UserData});
+      params = sg.merge(params, {ImageId, InstanceType, KeyName, SecurityGroupIds, SubnetId, MaxCount, MinCount, UserData});
       return runInstances(params, fra.opts({}), function(err, data) {
 
-        my.result = {Instance: data.Instances[0]};
+        my.result   = {Instance: data.Instances[0]};
+        InstanceId  = my.result.Instance.InstanceId;
 
         return next();
       });
+
+    }, function(my, next) {
+      return sg.until(function(again, last, count, elapsed) {
+        return describeInstances({InstanceIds:[InstanceId]}, fra.opts({abort:false}), function(err, data) {
+          if (err) {
+            if (err.code === 'InvalidInstanceID.NotFound')    { return again(250); }
+            return abort(err);
+          }
+
+          my.result = {Instance: data.Reservations[0].Instances[0]};
+          return last();
+        });
+      }, next);
+
     }, function(my, next) {
       return next();
     }]);
