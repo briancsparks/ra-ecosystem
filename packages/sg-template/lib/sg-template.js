@@ -5,20 +5,6 @@ const sg                      = require('sg0');
 const { _ }                   = sg;
 const cleanString             = require('./clean-string');
 
-const indents = ['', '  ', '    ', '      '];
-const indentation = function(level) {
-  if (level < indents.length) {
-    return indents[level];
-  }
-
-  var   result = '';
-  for (var i = 0; i < level ; ++i) {
-    result += indents[1];
-  }
-
-  return result;
-};
-
 var   types = {};
 
 const Template = function(...args) {
@@ -28,11 +14,6 @@ const Template = function(...args) {
   figureOutType(self, filename, options);
   self.lines    = [];
   self.level    = options.indent || options.level || 0;
-
-  // Put the initial line TODO: do she-bang where necessary
-  if (self.level < 1) {
-    self.lines.push('');
-  }
 
   self.append = self.push = function(s, ...rest) {
     if (!_.isArray(s) && !sg.isnt(s))    { return self.append(cleanString('', s), ...rest); }
@@ -48,10 +29,7 @@ const Template = function(...args) {
   };
 
   self.comment = function(s) {
-    const commentStart = '#';
-
-    // TODO: fix for other-than #
-    return self.append(cleanString(commentStart, s));
+    return self.append(cleanString('#', s));
   };
 
   self.indent = function(start, ...rest) {
@@ -59,8 +37,8 @@ const Template = function(...args) {
 
     const [ end, cb ] = rest;
 
-    // const nextLevel       = new Template(filename, {level: (self.level || 0) + 1});
-    const nextLevel       = new Template(filename, {level: 1});
+    const nextLevel       = new Template(filename, { ...options, level: (self.level || 0) + 1});
+    // const nextLevel       = new Template(filename, {level: 1});
     const nextLevelLines  = cb(nextLevel);
 
     nextLevel.append(nextLevelLines);
@@ -85,11 +63,11 @@ const Template = function(...args) {
   // Specific types
   const extend = types[self.type];
   if (_.isFunction(extend)) {
-    extend(self, ...args);
+    extend(self, types, ...args);
   }
 };
 
-const extendTypes = function(...args) {
+const extendTypes = exports.extendTypes = function(...args) {
   if (args.length === 1)        { return extendTypes(args[0].type, args[0]); }
 
   const [type, selfFn] = args;
@@ -97,6 +75,7 @@ const extendTypes = function(...args) {
 };
 
 extendTypes(require('./types/nginx-conf'));
+extendTypes(require('./types/nginx-rproxy-conf'));
 
 
 exports.Template = Template;
@@ -111,13 +90,20 @@ function figureOutType(self, filename, options) {
   if (filename) {
     self.filename = filename;
 
-    var   parts = filename.split(path.sep);
-    self.dirname  = path.join(...sg.initial(parts));
-    self.file     = sg.last(parts)[0];
+    var   parts   = filename.split(path.sep);
+
+    self.file     = parts.pop();
+    self.dirname  = path.join(...parts);
 
     parts           = self.file.split('.');
-    if (sg.last(parts)[0] === 'js' && parts.length > 2) {
-      self.type   = sg.initial(parts).join('.');
+
+    const ext       = parts.pop();
+    if (ext === 'js' && parts.length >= 2) {
+      self.type     = [ parts.pop(), parts.pop() ].reverse().join('.');
+
+      if (parts.length > 0) {
+        self.name = parts.join('.');
+      }
     }
   }
 }
@@ -126,3 +112,11 @@ function arrayify(x) {
   if (_.isArray(x))   { return x; }
   return [x];
 }
+
+function indentation(level) {
+  if (level === 0) {
+    return '';
+  }
+  return '  ';
+}
+

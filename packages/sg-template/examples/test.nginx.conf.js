@@ -1,14 +1,12 @@
 
-const sg                      = require('..');
+const sg                      = require('../lib/sg-template');
 
-exports.template = function(argv = {}, context = {}) {
+const template = function(argv = {}, context = {}) {
 
   const workers     = argv.workers        || 8;
   const connections = argv.connections    || 1024;
 
-  var   t = sg.template(__filename);
-
-  t.comment('vim: filetype=nginx:');
+  var   t = sg.template(__filename, {module, argv, context});
 
   t.append(`
     user scotty staff;
@@ -42,7 +40,9 @@ exports.template = function(argv = {}, context = {}) {
         `);
 
       t.verbs.forEach((verb) => {
-        t.location(`~* ^/rpxi/${verb}/(.*)`, (t) => {
+        const VERB  = verb.toUpperCase();
+
+        t.location(`~* ^/rpxi/${VERB}/(.*)`, (t) => {
           t.append('internal', true);
 
           t.append(`
@@ -62,7 +62,7 @@ exports.template = function(argv = {}, context = {}) {
             proxy_set_header X-Client-S-Dn        $ssl_client_s_dn;
 
             proxy_http_version                    1.1;
-            proxy_method                          ${verb};
+            proxy_method                          ${VERB};
             set $other_uri                        $1;
 
             proxy_pass http://$other_uri$is_args$args;
@@ -108,4 +108,4 @@ exports.template = function(argv = {}, context = {}) {
   return t;
 };
 
-console.log(exports.template().stringify());
+console.log(template().stringify());
