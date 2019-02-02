@@ -34,15 +34,16 @@ const ModSquad = function(otherModule, otherModuleName = 'mod') {
       var fn            = fn_;
       const fullFname   = `${otherModuleName}__${fname}`;
 
-      // TODO: wrap `fn` in a safety function that scrubs debug info out of the result
+      // Wrap `fn` in a safety function that scrubs debug info out of the result
       if (fn) {
 
-        // This is the function that will be exported. ----------------------------------------
+        // This is the function that will be exported and called by those that require() the mod. ----------------------------------------
         fn = function(argv, context, callback_) {
 
           context.runAnywhere             = context.runAnywhere             || {};
           context.runAnywhere[fullFname]  = context.runAnywhere[fullFname]  || {};
 
+          // This will be called when the called function finishes. -----
           const callback = function(err, data, ...rest) {
 
             if (err && ('errno' in err && 'code' in err)) {
@@ -52,15 +53,19 @@ const ModSquad = function(otherModule, otherModuleName = 'mod') {
 
             return callback_(err, data, ...rest);
           };
+          // -----
 
+          // Attach a special run-anywhere object to the context.
           context.runAnywhere[fullFname].fra  = context.runAnywhere[fullFname].fra  || new FuncRa(argv, context, callback, callback_, {otherModule: otherModule.exports, otherModuleName, fname});
           context.runAnywhere.fra             = context.runAnywhere.fra             || new FuncRa(argv, context, callback, callback_, {otherModule: otherModule.exports, otherModuleName})
 
+          // Call the modules function (the original function.)
           return fn_(argv, context, callback);
         };
         // ----------------------------------------
       }
 
+      // Export the modules function (the original function.)
       otherModule.exports[fname]        = previousFn = (fn || previousFn);
       otherModule.exports.async[fname]  = promisify(fn || previousFn);
     });
@@ -126,6 +131,15 @@ module.exports.loads = function(mod, fnames, context, options1, abort) {
   });
 };
 
+/**
+ * An object newed and attached to the context object.
+ *
+ * @param {*} argv
+ * @param {*} context
+ * @param {*} callback
+ * @param {*} origCallback
+ * @param {*} [options_={}]
+ */
 const FuncRa = function(argv, context, callback, origCallback, options_ = {}) {
   const self = this;
 
@@ -138,13 +152,18 @@ const FuncRa = function(argv, context, callback, origCallback, options_ = {}) {
   self.args             = [];
   self.argErrs          = null;
 
-  const debug           = argv.debug;
-  const argOptions      = {debug};
+  const verbose         = argv.verbose;
+  const debug           = argv.debug        || verbose;
+  const argOptions      = sg.merge({debug, verbose});
 
-  // self.fullname = function() {
-  //   return `${self.modname}__${self.fname || 'fn'}`;
-  // };
-
+  /**
+   * Wraps the body of a run-anywhere style function to help reduce complexity handling errors.
+   *
+   * @param {*} [functionName]
+   * @param {*} body_function
+   * @param {*} c_
+   * @returns
+   */
   self.iwrap = function(a_, b_, c_ /* abort, body_callback*/) {
     var a=a_, b=b_, c=c_;
 
@@ -186,11 +205,36 @@ const FuncRa = function(argv, context, callback, origCallback, options_ = {}) {
     }
   };
 
+  /**
+   * Merges any special command-line given args into other objects.
+   *
+   * For example, `--debug` and `--verbose` are both propigated into all `argv` objects, and
+   * all `options` objects.
+   *
+   * @param {*} [options={}]
+   * @returns
+   */
   self.opts = function(options = {}) {
     return sg.merge({ ...argOptions, ...options});
   };
 
+  /**
+   * Loads a run-anywhere style function, so it can be easily called by other run-anywhere
+   * functions.
+   *
+   * 1. Remembers the `context` object, so you do not have to pass it around.
+   * 2. Adds special CLI params like `--debug` and `--verbose` down to all `argv` objects.
+   *
+   * @param {*} module
+   * @param {*} function_names
+   * @param {*} options
+   * @param {*} abort_function
+   * @returns
+   */
   self.loads = function(...args) {
+
+    // This function just cracks the arguments, and calls loads_, which does the real work.
+
     const [a,b,c,d] = args;
 
     if (args.length === 4)        { return self.loads_(...args); }
@@ -205,39 +249,57 @@ const FuncRa = function(argv, context, callback, origCallback, options_ = {}) {
 
   self.loads_ = function(mod, fnames, options1, abort) {
 
+    // Do for each function name
     return sg.reduce(fnames.split(','), {}, function(m, fname) {
 
       // ------------------------ The fn that gets called by you
-      const interceptFn = function(argv, options__, continuation) {
-        const options_  = options__ === true ? {debug:true} : (options__ === false ? {debug:false} : options__);
-        var   options   = _.extend({}, options_, options1);
+      const interceptFn = function(argv_, options_, continuation) {
+
+        // self.opts() propigates --debug and --verbose; options is a combination of options1 and options for this call.
+        const argv      = self.opts(argv_);
+        var   options   = sg.merge({...options1, ...self.opts(options_)});
 
         options.abort   = ('abort' in options ? options.abort : true);
 
+        // This will be called when the called function finishes. -----
         const callback = function(err, data, ...rest) {
+
+          // OK?
           var   ok = false;
           if (arguments.length === 0)     { ok = true; }
           if (arguments.length > 1)       { ok = sg.ok(err, data, ...rest); }
 
-          if (options.abort) {
-            if (!ok)                      { return abort(err); }
+          // Report normal (ok === true) and errors that are aborted (!ok && options.abort)
+          if (options.debug && (ok || (!ok && options.abort))) {
+            console.error(`${mod.modname || self.modname || 'modunk'}::${fname}(23)`, sg.inspect({argv, err, data, ...rest}));
           }
 
-          if (options.debug) {
-            console.error(`${mod.modname || self.modname || 'modunk'}::${fname}()`, sg.inspect({argv, err, data, ...rest}));
+          // Handle errors -- we normally abort, but the caller can tell us not to
+          if (!ok) {
+            if (options.abort)            { return abort(err); }
+
+            // Report, but leave out the verbose error
+            if (options.debug) {
+              console.error(`${mod.modname || self.modname || 'modunk'}::${fname}(42)`, sg.inspect({argv, err:(options.verbose ? err : true), data, ...rest}));
+            }
           }
 
+          // Back into your code
           return continuation(err, data, ...rest);
         };
+        // -----
 
         if (options.verbose) {
-          console.error(`${mod.modname || self.modname || 'modunk'}::${fname}()`, sg.inspect({argv}));
+          console.error(`${mod.modname || self.modname || 'modunk'}::${fname}(99)`, sg.inspect({argv}));
         }
-        abort.calling(`${fname}()`, argv);
+
+        // Invoke the original function
+        abort.calling(`${mod.modname || self.modname || 'modunk'}::${fname}(21)`, argv);
         return mod[fname](argv, context, callback);
       };
       // ----------------------------- end
 
+      // Put the interception function into the object that gets returned.
       return sg.kv(m, fname, interceptFn);
     });
   };
@@ -255,17 +317,23 @@ const FuncRa = function(argv, context, callback, origCallback, options_ = {}) {
     const required  = options.required || false;
     const def       = options.def;
 
+    // The first name in the list is the parameters 'real' name, the others are aliases.
     var   defName;
+
+    // Loop over the names and see if they are in argv
     for (var i = 0; i < names.length; ++i) {
       const name = names[i];
 
+      // Remember the real name
       if (i === 0) {
         defName = name;
         self.argTypes[name] = {name, names, options};
       }
 
+      // If we have it, great!
       if (name in argv)                         { return recordArg(argv[name]); }
 
+      // If the real name starts with Caps, try the camel-case version
       if (sg.isUpperCase(name[0]) && name.length > 1) {
         if (sg.toLowerWord(name) in argv)       { return recordArg(argv[sg.toLowerWord(name)]); }
       }
@@ -278,8 +346,11 @@ const FuncRa = function(argv, context, callback, origCallback, options_ = {}) {
 
     return recordArg(def);
 
+    // Remember the args that were used, for reporting
     function recordArg(value) {
       if (!sg.isnt(value)) {
+
+        // If the caller needs an array, arrayify it
         if (options.array && !_.isArray(value)) {
           if (_.isString(value)) {
             value = (''+value).split(',');
@@ -288,6 +359,8 @@ const FuncRa = function(argv, context, callback, origCallback, options_ = {}) {
             // value = [value];
           }
         }
+
+        // Store it
         self.args.push({names, options, value});
       }
 
@@ -295,6 +368,15 @@ const FuncRa = function(argv, context, callback, origCallback, options_ = {}) {
     }
   };
 
+  /**
+   * Returns whether there was an error (actually returns the errors.)
+   *
+   * * Marking `{required:true}` while getting the value
+   * * Passing in all required values here.
+   *
+   * @param {*} [args={}]
+   * @returns
+   */
   self.argErrors = function(args = {}) {
     _.each(args, function(value, name) {
       if (sg.isnt(value)) {
@@ -306,11 +388,16 @@ const FuncRa = function(argv, context, callback, origCallback, options_ = {}) {
     return self.argErrs;
   };
 
+  /**
+   * Aborts!
+   *
+   * @param {*} msg
+   */
   self.abort = function(msg) {
     const { fname, argTypes, args } = self;
 
     console.error(`FuncRa aborting`, sg.inspect({fname, argTypes, args}));
-    self.providedAbort((self.argErrs || [])[0], msg || 'missing arg');
+    self.providedAbort((self.argErrs || [])[0], null, msg || 'missing arg');
   };
 
 };

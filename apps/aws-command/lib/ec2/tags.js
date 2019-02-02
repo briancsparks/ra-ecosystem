@@ -17,7 +17,7 @@ mod.xport({tag: function(argv, context, callback) {
   const Resources = sg.ap([...(argv.resources || []), ...(argv.ids || [])], argv.resource, argv.id);
 
   // const tags  = argv.tags || exports.mkTags(type, argv.rawTags);
-  const tags  = { ...exports.mkTags(type, argv.rawTags),  ...(argv.tags || {}) };
+  const tags  = { ...exports.mkTags(type, argv.rawTags, argv.adjective),  ...(argv.tags || {}) };
   const Tags  = sg.reduce(tags || {}, [], (m, Value, Key) => {
     return sg.ap(m, {Key, Value});
   });
@@ -35,13 +35,13 @@ const gTags = {
   owner:      process.env.OWNER
 };
 
-exports.mkTags = function(type, seed) {
+exports.mkTags = function(type, seed, adjective) {
   if (sg.isnt(seed))      { return; }
 
   var result = sg.reduce(seed || {}, {}, (m, v, k) => {
     // v === true means caller wants us to fill in
     if (v === true) {
-      return sg.kv(m, k, gTags[k.toLowerCase()] || process.env[k.toLowerCase()] || nonsense(k, type));
+      return sg.kv(m, k, gTags[k.toLowerCase()] || process.env[k.toLowerCase()] || nonsense(k, type, adjective));
       // return sg.kv(m, k, gTags[k.toLowerCase()] || process.env[k.toLowerCase()]);
     }
 
@@ -57,12 +57,14 @@ exports.mkTags = function(type, seed) {
   // return {tags: result};
 };
 
-function nonsense(str, type) {
+function nonsense(str, type, adjective_) {
+  var   adjective = adjective_ || superb.random();
+
   if (str.toLowerCase() === 'name') {
-    return `${superb.random()}-${type}`;
+    return `${adjective}-${type}`;
   }
 
-  return `${superb.random()}-${str}`;
+  return `${adjective}-${str}`;
 }
 
 // (function() {

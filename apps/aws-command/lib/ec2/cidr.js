@@ -111,6 +111,23 @@ const lastIpInSubnet = function(ip_, netmask_) {
 exports.lastIpInSubnet = lastIpInSubnet;
 
 /**
+ * Returns if the string is a valid CIDR format.
+ *
+ * @param {*} cidr
+ */
+const isCidr = function(cidr) {
+  if (sg.isnt(cidr))                          { return false; }
+  const octets    = cidr.split(/[^0-9]+/);
+
+  if (octets.length !== 5)                    { return false; }
+
+  return sg.reduce(octets, true, (m, octet) => {
+    return m && (+octet >= 0 && +octet < 256);
+  });
+};
+exports.isCidr = isCidr;
+
+/**
  * Returns the first valid IP within the CIDR, as a Number.
  *
  * @param {*} cidr

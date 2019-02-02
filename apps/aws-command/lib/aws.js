@@ -16,7 +16,7 @@ const awsService = function(name, options) {
   return service;
 }
 
-const awsFns = function(service, names_, abort) {
+const awsFns = function(service, names_, options1, abort) {
   const names = _.isString(names_) ? names_.split(',') : names_;
 
   var result = sg.reduce(names, {}, (m, fname) => {
@@ -29,26 +29,31 @@ const awsFns = function(service, names_, abort) {
       // --------------------------------------------------------------------------
       var interceptedAwsFn = function(params, ...rest) {
         const continuation  = rest.pop();
-        var   options       = rest.shift() || {};
-
-        if (options === true)   { options = { debug:true }; }
+        var   options_      = rest.shift() || {};
+        var   options       = sg.merge({...options1, ...options_});
 
         // Defaults
-        options.abort   = ('abort' in options) ? options.abort : true;
+        options.abort   = ('abort' in options ? options.abort : true);
 
         const callback = function(err, data, ...rest) {
-          if (!sg.ok(err, data)) {
-            if (options.debug) {
-              console.error(`AWS::${fname}()`, sg.inspect({params, err, data}));
-            }
+          var   ok = false;
+          if (arguments.length === 0)     { ok = true; }
+          if (arguments.length > 1)       { ok = sg.ok(err, data, ...rest); }
 
+          // Report normal (ok === true) and errors that are aborted (!ok && options.abort)
+          if (options.debug && (ok || (!ok && options.abort))) {
+            console.error(`AWS::${fname}(67)`, sg.inspect({params, err, data}));
+          }
+
+          if (!ok) {
             if (options.abort) {
               return abort(err);
             }
-          }
 
-          if (options.debug) {
-            console.error(`AWS::${fname}()`, sg.inspect({params, err, data}));
+            // Report, but leave out the verbose error
+            if (options.debug) {
+              console.error(`AWS::${fname}(23)`, sg.inspect({params, err:(options.verbose ? err : true), data}));
+            }
           }
 
           return continuation(err, data, ...rest);
@@ -57,7 +62,7 @@ const awsFns = function(service, names_, abort) {
         if (options.verbose) {
           console.error(`calling AWS::${fname}`, sg.inspect({params}));
         }
-        abort.calling(`AWS::${fname}`, params);
+        abort.calling(`AWS::${fname}(44)`, params);
         return awsFn.apply(service, [params, callback]);
       };
       // --------------------------------------------------------------------------
@@ -74,8 +79,10 @@ const awsFns = function(service, names_, abort) {
 
 const awsFilters = function(kvs) {
   return {
-    Filters: _.map(_.keys(kvs), (key) => {
-      return {Name: key, Values:kvs[key]};
+    Filters: sg.reduce(_.keys(kvs), [], (m, key) => {
+      const Value = kvs[key];
+      if (sg.isnt(Value))                     { return m; }
+      return [ ...m, {Name: key, Values:kvs[key]}];
     })
   };
 };
@@ -88,8 +95,26 @@ const awsFilter = function(kvs) {
   };
 };
 
+const isId = function(type, str) {
+  if (sg.isnt(str))                     { return false; }
+  if (!str.startsWith(type+'-'))        { return false; }
+
+  var   parts = str.split('-');
+  if (parts.length !== 2)               { return false; }
+
+  const hex = parts[1];
+
+  return hex.match(/^[0-9a-zA-Z]+$/);
+};
+
+const isVpcId = function(str) {
+  return isId('vpc', str);
+};
+
 exports.awsService  = awsService;
 exports.awsFns      = awsFns;
 exports.awsFilters  = awsFilters;
 exports.awsFilter   = awsFilter;
+exports.isId        = isId;
+exports.isVpcId     = isVpcId;
 

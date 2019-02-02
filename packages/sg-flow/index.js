@@ -550,7 +550,7 @@ sg.iwrap = function(myname, fncallback /*, abort, body_callback*/) {
   var abortCalling;
   var abortParams;
 
-  var eabort = function(err, abortCalling2) {
+  var eabort = function(err, abortCalling2, msg_ = '') {
     // return function(err) {
     //   if (!err) { return callback.apply(this, arguments); }
 
@@ -560,7 +560,7 @@ sg.iwrap = function(myname, fncallback /*, abort, body_callback*/) {
       const abortCalling_ = abortCalling || abortCalling2;     abortCalling  = null;
       const abortParams_  = abortParams;                       abortParams   = null;
 
-      var msg = 'Aborting ';
+      var msg = `Aborting ${msg_} `;
 
       if (abortCalling_) {
         msg += myname + '-->' + abortCalling_;

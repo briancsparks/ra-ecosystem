@@ -4,7 +4,6 @@ const sg                      = require('sg-flow');
 const { _ }                   = sg;
 const ra                      = require('run-anywhere').v2;
 const awsDefs                 = require('../aws-defs');
-// const AWS                     = require('aws-sdk');
 const libAws                  = require('../aws');
 const cloudInit               = require('../sh/cloud-init');
 const fs                      = require('fs');
@@ -15,12 +14,6 @@ const mod                     = ra.modSquad(module, 'awsCommandEc2');
 const awsFilters              = libAws.awsFilters;
 const awsFilter               = libAws.awsFilter;
 
-const debugAwsCalls           = {debug:true};
-// const debugAwsCalls           = {debug:false};
-const skipAbort               = {abort:false, ...debugAwsCalls};
-const skipAbortNoDebug        = {abort:false, debug:false};
-
-// const ec2 = new AWS.EC2({region: 'us-east-1', ...awsDefs.options});
 const ec2 = libAws.awsService('EC2');
 const iam = libAws.awsService('IAM');
 
@@ -42,7 +35,7 @@ mod.xport({getAmis: function(argv, context, callback) {
   const { fra }   = ractx.awsCommandEc2__getAmis;
 
   return fra.iwrap(function(abort, calling) {
-    const { describeImages } = libAws.awsFns(ec2, 'describeImages', abort);
+    const { describeImages } = libAws.awsFns(ec2, 'describeImages', fra.opts({}), abort);
 
     const Owners            = fra.arg(argv, 'Owners,owners', {array:true});
     const ExecutableUsers   = fra.arg(argv, 'ExecutableUsers,users', {array:true});
@@ -128,8 +121,7 @@ mod.xport({upsertInstance: function(argv, context, callback) {
   const { fra }   = ractx.awsCommandEc2__upsertInstance;
 
   return fra.iwrap(function(abort, calling) {
-    // console.error(`aim`, sg.inspect({ec2}), ec2.);
-    const { runInstances,describeInstances }  = libAws.awsFns(ec2, 'runInstances,describeInstances', abort);
+    const { runInstances,describeInstances }  = libAws.awsFns(ec2, 'runInstances,describeInstances', fra.opts({}), abort);
 
     const uniqueName            = fra.arg(argv, 'uniqueName,unique');
     const ImageId               = fra.arg(argv, 'ImageId,image', {required:true});
@@ -193,10 +185,6 @@ mod.xport({upsertInstance: function(argv, context, callback) {
         return next();
       });
 
-    // }, function(my, next) {
-    //   userdata = cloudInit.ubuntuLtsUserData({});
-    //   return next();
-
     }, function(my, next) {
       var UserData;
       var params = {};
@@ -213,7 +201,6 @@ mod.xport({upsertInstance: function(argv, context, callback) {
         params.IamInstanceProfile = {Name: iamName};
       }
 
-      // params = sg.smartExtend(params, {ImageId, InstanceType, KeyName, SecurityGroupIds, SubnetId, MaxCount, MinCount, BlockDeviceMappings});
       params = sg.merge(params, {ImageId, InstanceType, KeyName, SecurityGroupIds, SubnetId, MaxCount, MinCount, UserData});
       return runInstances(params, fra.opts({}), function(err, data) {
 
