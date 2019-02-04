@@ -7,4 +7,4 @@ yum install -y nodejs gcc-c++ make
 curl -sL https://dl.yarnpkg.com/rpm/yarn.repo | tee /etc/yum.repos.d/yarn.repo
 yum install -y yarn
 
-npm install -g pm2 run-anywhere
+npm install -g pm2 run-anywhere cli-shezargs

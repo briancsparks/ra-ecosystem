@@ -1,0 +1,8 @@
+
+#!/bin/bash -ex
+
+mkdir -p ~/zz_packages && cd $_
+
+aws s3 cp "s3://${RUN_ANYWHERE_DEPLOY%%:*}/${RUN_ANYWHERE_DEPLOY#*:}/debs/nginx.deb" "./nginx.deb"
+
+sudo dpkg -i "nginx.deb"

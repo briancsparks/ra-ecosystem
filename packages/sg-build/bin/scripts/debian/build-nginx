@@ -1,0 +1,91 @@
+#!/bin/bash -ex
+
+# curl -sSL "https://gist.githubusercontent.com/briancsparks/f5f5bdb872e7da3e28e7f1b4cefca4f5/raw/nginx-checkinstall.sh" | bash -
+
+# TODO upgrade to https://www.howtoforge.com/tutorial/how-to-build-nginx-from-source-on-ubuntu-1804-lts/
+
+sudo apt-get install -y checkinstall curl git
+sudo apt-get install -y libperl-dev
+
+mkdir -p ~/zz_packages && cd $_
+
+curl -sSL "https://nginx.org/download/nginx-1.15.0.tar.gz"        | tar xzvf -
+curl -sSL "https://ftp.pcre.org/pub/pcre/pcre-8.42.tar.gz"        | tar xzvf -
+curl -sSL "https://www.zlib.net/zlib-1.2.11.tar.gz"               | tar xzvf -
+curl -sSL "https://www.openssl.org/source/openssl-1.1.0h.tar.gz"  | tar xzvf -
+
+mv "$(find ./ -maxdepth 1 -type d | egrep 'nginx')" nginx
+
+git clone "https://github.com/vkholodkov/nginx-eval-module.git"
+
+# sudo mkdir -p "/var/log/nginx"
+# sudo touch    "/var/log/nginx/access.log"
+# sudo touch    "/var/log/nginx/error.log"
+
+# sudo chown -R "www-data:www-data /var/log/nginx"
+
+# sudo mkdir -p "/var/cache/nginx && sudo chown -R www-data:www-data $_"
+
+# sudo mkdir -p "/etc/nginx/sites-available"
+# sudo mkdir -p "/etc/nginx/sites-enabled"
+
+cd nginx
+
+./configure \
+  --prefix=/usr \
+  --conf-path=/etc/nginx/nginx.conf \
+  --http-log-path=/var/log/nginx/access.log \
+  --error-log-path=/var/log/nginx/error.log \
+  --pid-path=/var/run/nginx.pid \
+  --lock-path=/var/lock/nginx.lock \
+  --http-client-body-temp-path=/var/cache/nginx/client \
+  --http-proxy-temp-path=/var/cache/nginx/proxy \
+  --user=www-data \
+  --group=www-data \
+  --add-module=${HOME}/zz_packages/nginx/$(find ../ -maxdepth 1 -type d | egrep nginx.eval) \
+  --with-http_realip_module \
+  --with-openssl=${HOME}/zz_packages/nginx/$(find ../ -maxdepth 1 -type d | egrep openssl) \
+  --with-pcre \
+  --with-pcre=${HOME}/zz_packages/nginx/$(find ../ -maxdepth 1 -type d | egrep pcre) \
+  --with-zlib=${HOME}/zz_packages/nginx/$(find ../ -maxdepth 1 -type d | egrep zlib) \
+  --with-http_ssl_module \
+  --with-http_perl_module \
+  --with-http_stub_status_module
+
+make
+
+# ---------- postinstall ----------
+cat <<'EOF' | tee postinstall-pak
+#!/bin/bash -e
+
+mkdir -p /var/log/nginx
+touch    /var/log/nginx/access.log
+touch    /var/log/nginx/error.log
+
+chown -R www-data:www-data /var/log/nginx
+
+mkdir -p /var/cache/nginx && chown -R www-data:www-data $_
+
+mkdir -p /etc/nginx/sites-available
+mkdir -p /etc/nginx/sites-enabled
+
+EOF
+
+eval "$(cat postinstall-pak)"
+
+# ---------- description ----------
+cat <<'EOF' | tee description-pak
+nginx - High performance http server
+EOF
+
+echo "============ checkinstall ============="
+sudo checkinstall -y
+
+echo "============ nginx -t ============="
+sudo nginx -t
+
+echo "============ .debs ============="
+nginx_deb="$(find . type -f | grep '\.deb$' | grep 'nginx')"
+echo $nginx_deb
+
+aws s3 cp $nginx_deb "s3://${RUN_ANYWHERE_DEPLOY%%:*}/${RUN_ANYWHERE_DEPLOY#*:}/debs/nginx.deb"
