@@ -9,28 +9,20 @@ sudo apt-get install -y libperl-dev
 
 mkdir -p ~/zz_packages && cd $_
 
+# Fetch Nginx tarball, and rename the dir to `nginx`
 curl -sSL "https://nginx.org/download/nginx-1.15.0.tar.gz"        | tar xzvf -
-curl -sSL "https://ftp.pcre.org/pub/pcre/pcre-8.42.tar.gz"        | tar xzvf -
-curl -sSL "https://www.zlib.net/zlib-1.2.11.tar.gz"               | tar xzvf -
-curl -sSL "https://www.openssl.org/source/openssl-1.1.0h.tar.gz"  | tar xzvf -
-
 mv "$(find ./ -maxdepth 1 -type d | egrep 'nginx')" nginx
 
+# Fetch OpenSSL, ZLib, and PCRE tarballs
+curl -sSL "https://www.openssl.org/source/openssl-1.1.0h.tar.gz"  | tar xzvf -
+curl -sSL "https://www.zlib.net/zlib-1.2.11.tar.gz"               | tar xzvf -
+curl -sSL "https://ftp.pcre.org/pub/pcre/pcre-8.42.tar.gz"        | tar xzvf -
+
+# Fetch nginx-eval-module
 git clone "https://github.com/vkholodkov/nginx-eval-module.git"
 
-# sudo mkdir -p "/var/log/nginx"
-# sudo touch    "/var/log/nginx/access.log"
-# sudo touch    "/var/log/nginx/error.log"
-
-# sudo chown -R "www-data:www-data /var/log/nginx"
-
-# sudo mkdir -p "/var/cache/nginx && sudo chown -R www-data:www-data $_"
-
-# sudo mkdir -p "/etc/nginx/sites-available"
-# sudo mkdir -p "/etc/nginx/sites-enabled"
-
+# Move into the nginx dir, and do the dance (./configure; make; sudo make install [as checkinstall])
 cd nginx
-
 ./configure \
   --prefix=/usr \
   --conf-path=/etc/nginx/nginx.conf \
@@ -54,6 +46,8 @@ cd nginx
 
 make
 
+# Write the post-install script to the current dir (so checkinstall will include it)
+
 # ---------- postinstall ----------
 cat <<'EOF' | tee postinstall-pak
 #!/bin/bash -e
@@ -71,12 +65,19 @@ mkdir -p /etc/nginx/sites-enabled
 
 EOF
 
+# Also, run the post-install script on this instance
 eval "$(cat postinstall-pak)"
+
+
+# Write the description (so checkinstall will include it)
 
 # ---------- description ----------
 cat <<'EOF' | tee description-pak
 nginx - High performance http server
 EOF
+
+
+# ========================================================================
 
 echo "============ checkinstall ============="
 sudo checkinstall -y
@@ -84,8 +85,9 @@ sudo checkinstall -y
 echo "============ nginx -t ============="
 sudo nginx -t
 
+# Push the .deb file to s3
 echo "============ .debs ============="
 nginx_deb="$(find . type -f | grep '\.deb$' | grep 'nginx')"
-echo $nginx_deb
+ls -l $nginx_deb
 
 aws s3 cp $nginx_deb "s3://${RUN_ANYWHERE_DEPLOY%%:*}/${RUN_ANYWHERE_DEPLOY#*:}/debs/nginx.deb"

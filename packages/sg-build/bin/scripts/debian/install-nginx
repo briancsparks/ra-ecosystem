@@ -1,7 +1,15 @@
 #!/bin/bash -ex
 
+#
+# Install nginx from a pre-built .deb file on s3
+#
+# Just set RUN_ANYWHERE_DEPLOY to your bucket/initialpath, and put your nginx.deb under .../debs/nginx.deb
+#
+
+
 mkdir -p ~/zz_packages && cd $_
-
 aws s3 cp "s3://${RUN_ANYWHERE_DEPLOY%%:*}/${RUN_ANYWHERE_DEPLOY#*:}/debs/nginx.deb" "./nginx.deb"
-
 sudo dpkg -i "nginx.deb"
+
+# Test it
+sudo nginx -t

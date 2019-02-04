@@ -843,6 +843,7 @@ mod.xport({getSubnets: function(argv, context, callback) {
   const kind          = argv.kind ? argv.kind.toLowerCase() : argv.kind;
   const sgName        = argv.sg       || argv.sgName;
   const subnetName    = argv.subnet   || argv.subnetName;
+  const ids           = argv.ids;
 
   var   allVpcs, allSubnets, allSecurityGroups;
 
@@ -920,9 +921,15 @@ mod.xport({getSubnets: function(argv, context, callback) {
 
     });
 
-    result.vpcs = vpcs;
-    result.subnets = subnets;
-    result.securityGroups = securityGroups;
+    if (ids) {
+      result.subnets          = sg.pluck(subnets, 'SubnetId');
+      result.securityGroups   = sg.pluck(securityGroups, 'GroupId');
+    } else {
+      result.vpcs = vpcs;
+      result.subnets = subnets;
+      result.securityGroups = securityGroups;
+    }
+
     return callback(null, result);
   });
 
