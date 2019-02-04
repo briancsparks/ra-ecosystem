@@ -24,6 +24,8 @@ user_docker_conf_dir="${the_home_dir}/.docker"
 
 env
 
+sudo chown -R "${the_user_name}":"${the_user_name}" ~/.config/
+
 # Install apt-over-https
 # DEBIAN_FRONTEND=noninteractive apt-get update
 # DEBIAN_FRONTEND=noninteractive apt-get install -y apt-transport-https ca-certificates curl gnupg-agent software-properties-common
