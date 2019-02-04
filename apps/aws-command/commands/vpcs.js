@@ -6,15 +6,18 @@
 const _                       = require('lodash');
 const sg                      = require('sg-flow');
 const ra                      = require('run-anywhere').v2;
+const utils                   = require('../lib/utils');
 const libTag                  = require('../lib/ec2/tags');
 const libVpc                  = require('../lib/ec2/vpc');
 const libCidr                 = require('../lib/ec2/cidr');
+const libDescribe             = require('../lib/ec2/vpc/describe');
 const superb                  = require('superb');
 
 const firstIpInCidr           = libCidr.firstIpInCidr;
 const lastIpInCidr            = libCidr.lastIpInCidr;
 const toCidr                  = libCidr.toCidr;
 const bitsToNetmask           = libCidr.bitsToNetmask;
+const getTag                  = utils.getTag;
 
 const tag                     = ra.load(libTag, 'tag');
 const mod                     = ra.modSquad(module, 'awsCommand');
@@ -31,51 +34,6 @@ var   securityGroupsById = {};
 const getSecurityGroupId = function(name) {
   return securityGroupsById[name];
 };
-
-mod.xport({launchInfo: function(argv, context, callback) {
-
-  // ra invoke commands\vpcs.js launchInfo --classB=111 --sg=web --subnet=webtier
-
-  const ractx     = context.runAnywhere || {};
-  const { fra }   = ractx.awsCommand__launchInfo;
-
-  return fra.iwrap(function(abort) {
-    const { getSubnets } = fra.loads(libVpc, 'getSubnets', fra.opts({}), abort);
-
-    const classB            = ''+fra.arg(argv, 'classB,b', {required:true});
-    const sgName            = fra.arg(argv, 'sgName,sg');
-    const subnetName        = fra.arg(argv, 'subnetName,subnet');
-    const azLetter          = fra.arg(argv, 'azLetter,az');
-
-    if (fra.argErrors())    { return fra.abort(); }
-
-    return sg.__run2({result:{}}, callback, [function(my, next, last) {
-
-      // [[You only need fra.ops on one of these params]]
-      return getSubnets(fra.opts({classB, sgName, subnetName}), fra.opts({}), function(err, data) {
-
-        if (azLetter) {
-          my.result.subnets = sg.reduce(data.subnets, [], (m, subnet) => {
-            if (!subnet.AvailabilityZone.endsWith(azLetter)) { return m; }
-            return sg.ap(m, subnet.SubnetId);
-          });
-        } else {
-          my.result.subnets = sg.reduce(data.subnets, [], (m, subnet) => {
-            return sg.ap(m, {az:subnet.AvailabilityZone, id:subnet.SubnetId});
-          });
-        }
-
-        my.result.securityGroups = sg.reduce(data.securityGroups, [], (m, securityGroup) => {
-          return sg.ap(m, securityGroup.GroupId);
-        });
-
-        return next();
-      });
-    }, function(my, next) {
-      return next();
-    }]);
-  });
-}});
 
 mod.xport({manageVpc: function(argv, context, callback) {
 
@@ -105,6 +63,8 @@ mod.xport({manageVpc: function(argv, context, callback) {
   })];
 
   return fra.iwrap(function(abort, calling) {
+
+    const { describeVpcs } = fra.loads(libDescribe, 'describeVpcs', fra.opts({}), abort);
     const { upsertVpc,upsertSubnet } = fra.loads(libVpc, 'upsertVpc,upsertSubnet', fra.opts({}), abort);
     const { upsertSecurityGroup,upsertSecurityGroupIngress } = fra.loads(libVpc, 'upsertSecurityGroup,upsertSecurityGroupIngress', fra.opts({}), abort);
     const { allocateAddress } = fra.loads(libVpc, 'allocateAddress', fra.opts({}), abort);
@@ -113,18 +73,20 @@ mod.xport({manageVpc: function(argv, context, callback) {
     const { createRoute } = fra.loads(libVpc, 'createRoute', fra.opts({abort:false}), abort);
     const { createVpcEndpoint } = fra.loads(libVpc, 'createVpcEndpoint', fra.opts({}), abort);
 
-    const program           = fra.arg(argv, 'program', {required:true});
-    const classB            = fra.arg(argv, 'classB,class-b', {required:true});
-    const azLetters         = fra.arg(argv, 'azLetters,az', {array:true})                     || 'a,b'.split(',');
-    const CidrBlock         = `10.${classB}.0.0/16`;
     const region            = fra.arg(argv, 'region', {def: 'us-east-1'});
     const skipNat           = fra.arg(argv, 'skip-nat,skipNat,skipNats');
-    const adjective         = fra.arg(argv, 'adjective,adj')                                  || superb.random();
 
-    if (fra.argErrors())    { return fra.abort(); }
+    var    program           = fra.arg(argv, 'program', {required:true});
+    var    classB            = fra.arg(argv, 'classB,class-b', {required:true});
+    var    VpcId             = fra.arg(argv, 'VpcId,vpc');
+    var    vpcCidr           = fra.arg(argv, 'vpcCidr,cidr');
+    var    azLetters         = fra.arg(argv, 'azLetters,az', {array:true})                     || 'a,b'.split(',');
+    var    CidrBlock         = `10.${classB}.0.0/16`;
+    var    adjective         = fra.arg(argv, 'adjective,adj')                                  || getSuperb();
 
-    var   VpcId               = null;
-    var   vpcCidr             = null;
+    // if (fra.argErrors())    { return fra.abort(); }
+
+    // var   VpcId               = null;
     var   publicRouteTable    = null;
     var   RouteTableIds       = [];
     var   internetGateway     = null;
@@ -137,8 +99,42 @@ mod.xport({manageVpc: function(argv, context, callback) {
     var   ids                 = {};
     var   azItems             = {};
 
-    // console.error(`manageVpc.run`, sg.inspect({CidrBlock, program, classB, skipNat}));
+    var   vpc;
+
     return sg.__run2({result:{}}, callback, [function(my, next, last) {
+
+      // Must figure out what vpc we are working with
+      if (VpcId)           { return next(); }
+
+      return describeVpcs({CidrBlock:vpcCidr, classB, program}, {}, function(err, data) {
+        if (sg.ok(err, data)) {
+          vpc       = data.Vpcs[0];
+          VpcId     = (vpc || {}).VpcId;
+          vpcCidr   = (vpc || {}).CidrBlock;
+          adjective = _.first(getTag(vpc, 'name').split('-')) || adjective;
+        }
+
+        return next();
+      });
+
+    }, function(my, next) {
+
+      // Must figure out what program we are working with
+      if (program)           { return next(); }
+
+      if (vpc) {
+        program = getTag(vpc, 'program');
+      }
+      if (fra.argErrors({program}))    { return fra.abort(); }
+
+      return next();
+
+    }, function(my, next) {
+      // console.error(`init`, sg.inspect({vpc, VpcId, program, classB, vpcCidr, adjective}));
+      // return callback(null, {});
+      return next();
+
+    }, function(my, next) {
       my.resources = [];
 
       const exampleVpcData = {
@@ -429,6 +425,61 @@ mod.xport({manageVpc: function(argv, context, callback) {
           });
         }, next);
 
+
+      }, function(next) {
+        // ----------------------Vpc Interface Endpoints for KMS
+        const SecurityGroupIds    = [my.result.securityGroups.KMS.SecurityGroup.GroupId];
+        const endpoints           = 'kms'.split(',');
+
+        return sg.__each(endpoints, function(endpoint, next) {
+          const ServiceName = `com.amazonaws.${region}.${endpoint}`;
+          return createVpcEndpoint({VpcId,VpcEndpointType,ServiceName,SubnetIds,SecurityGroupIds,PrivateDnsEnabled,adjective}, {}, function(err, data) {
+
+            return next();
+          });
+        }, next);
+
+      }, function(next) {
+        // ----------------------Vpc Interface Endpoints for SNS
+        const SecurityGroupIds    = [my.result.securityGroups.SNS.SecurityGroup.GroupId];
+        const endpoints           = 'sns'.split(',');
+
+        return sg.__each(endpoints, function(endpoint, next) {
+          const ServiceName = `com.amazonaws.${region}.${endpoint}`;
+          return createVpcEndpoint({VpcId,VpcEndpointType,ServiceName,SubnetIds,SecurityGroupIds,PrivateDnsEnabled,adjective}, {}, function(err, data) {
+
+            return next();
+          });
+        }, next);
+
+      }, function(next) {
+        // ----------------------Vpc Interface Endpoints for SQS
+        const SecurityGroupIds    = [my.result.securityGroups.SQS.SecurityGroup.GroupId];
+        const endpoints           = 'sqs'.split(',');
+
+        return sg.__each(endpoints, function(endpoint, next) {
+          const ServiceName = `com.amazonaws.${region}.${endpoint}`;
+          return createVpcEndpoint({VpcId,VpcEndpointType,ServiceName,SubnetIds,SecurityGroupIds,PrivateDnsEnabled,adjective}, {}, function(err, data) {
+
+            return next();
+          });
+        }, next);
+
+      }, function(next) {
+        // ----------------------Vpc Interface Endpoints for SecretsManager
+        const SecurityGroupIds    = [my.result.securityGroups.secretsmanager.SecurityGroup.GroupId];
+        const endpoints           = 'secretsmanager'.split(',');
+
+        return sg.__each(endpoints, function(endpoint, next) {
+          const ServiceName = `com.amazonaws.${region}.${endpoint}`;
+          return createVpcEndpoint({VpcId,VpcEndpointType,ServiceName,SubnetIds,SecurityGroupIds,PrivateDnsEnabled,adjective}, {}, function(err, data) {
+
+            return next();
+          });
+        }, next);
+
+        // TODO: endpoints for: ec2, ec2messages, elastic-inference, elasticloadbalancer, events?, execute-api, kinesis-streams, kms, secretsmanager, sns, sqs
+
       }, function(next) {
         return next();
       }]);
@@ -445,6 +496,51 @@ mod.xport({manageVpc: function(argv, context, callback) {
 
         return next();
       });
+    }]);
+  });
+}});
+
+mod.xport({launchInfo: function(argv, context, callback) {
+
+  // ra invoke commands\vpcs.js launchInfo --classB=111 --sg=web --subnet=webtier
+
+  const ractx     = context.runAnywhere || {};
+  const { fra }   = ractx.awsCommand__launchInfo;
+
+  return fra.iwrap(function(abort) {
+    const { getSubnets } = fra.loads(libVpc, 'getSubnets', fra.opts({}), abort);
+
+    const classB            = ''+fra.arg(argv, 'classB,b', {required:true});
+    const sgName            = fra.arg(argv, 'sgName,sg');
+    const subnetName        = fra.arg(argv, 'subnetName,subnet');
+    const azLetter          = fra.arg(argv, 'azLetter,az');
+
+    if (fra.argErrors())    { return fra.abort(); }
+
+    return sg.__run2({result:{}}, callback, [function(my, next, last) {
+
+      // [[You only need fra.ops on one of these params]]
+      return getSubnets(fra.opts({classB, sgName, subnetName}), fra.opts({}), function(err, data) {
+
+        if (azLetter) {
+          my.result.subnets = sg.reduce(data.subnets, [], (m, subnet) => {
+            if (!subnet.AvailabilityZone.endsWith(azLetter)) { return m; }
+            return sg.ap(m, subnet.SubnetId);
+          });
+        } else {
+          my.result.subnets = sg.reduce(data.subnets, [], (m, subnet) => {
+            return sg.ap(m, {az:subnet.AvailabilityZone, id:subnet.SubnetId});
+          });
+        }
+
+        my.result.securityGroups = sg.reduce(data.securityGroups, [], (m, securityGroup) => {
+          return sg.ap(m, securityGroup.GroupId);
+        });
+
+        return next();
+      });
+    }, function(my, next) {
+      return next();
     }]);
   });
 }});
@@ -531,4 +627,68 @@ sgsPlus = [() => ({
     ToPort:       443,
     Description:  'ECR Endpoint Access'
   }]
+}), () => ({
+  GroupName:    'KMS',
+  Description:  'Access to KMS Endpoint',
+  ingress: [{
+    /*GroupId*/
+    IpProtocol:   'tcp',
+    CidrIp:       '10.0.0.0/8',
+    FromPort:     443,
+    ToPort:       443,
+    Description:  'KMS Endpoint Access'
+  }]
+}), () => ({
+  GroupName:    'STS',
+  Description:  'Access to STS Endpoint',
+  ingress: [{
+    /*GroupId*/
+    IpProtocol:   'tcp',
+    CidrIp:       '10.0.0.0/8',
+    FromPort:     443,
+    ToPort:       443,
+    Description:  'STS Endpoint Access'
+  }]
+}), () => ({
+  GroupName:    'SQS',
+  Description:  'Access to SQS Endpoint',
+  ingress: [{
+    /*GroupId*/
+    IpProtocol:   'tcp',
+    CidrIp:       '10.0.0.0/8',
+    FromPort:     443,
+    ToPort:       443,
+    Description:  'SQS Endpoint Access'
+  }]
+}), () => ({
+  GroupName:    'SNS',
+  Description:  'Access to SNS Endpoint',
+  ingress: [{
+    /*GroupId*/
+    IpProtocol:   'tcp',
+    CidrIp:       '10.0.0.0/8',
+    FromPort:     443,
+    ToPort:       443,
+    Description:  'SNS Endpoint Access'
+  }]
+}), () => ({
+  GroupName:    'secretsmanager',
+  Description:  'Access to SecretsManager Endpoint',
+  ingress: [{
+    /*GroupId*/
+    IpProtocol:   'tcp',
+    CidrIp:       '10.0.0.0/8',
+    FromPort:     443,
+    ToPort:       443,
+    Description:  'SecretsManager Endpoint Access'
+  }]
 })];
+
+
+function getSuperb() {
+  var   adj = superb.random();
+  while (!adj.match(/^[a-z]+$/)) {
+    adj = superb.random();
+  }
+  return adj;
+}

@@ -290,7 +290,7 @@ const FuncRa = function(argv, context, callback, origCallback, options_ = {}) {
         // -----
 
         if (options.verbose) {
-          console.error(`${mod.modname || self.modname || 'modunk'}::${fname}(99)`, sg.inspect({argv}));
+          console.error(`${mod.modname || self.modname || 'modunk'}::${fname}(99)`, sg.inspect({argv, fname}));
         }
 
         // Invoke the original function

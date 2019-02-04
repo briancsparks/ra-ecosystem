@@ -111,10 +111,30 @@ const isVpcId = function(str) {
   return isId('vpc', str);
 };
 
-exports.awsService  = awsService;
-exports.awsFns      = awsFns;
-exports.awsFilters  = awsFilters;
-exports.awsFilter   = awsFilter;
-exports.isId        = isId;
-exports.isVpcId     = isVpcId;
+const AwsFilterObject = function(obj, ...rest) {
+  const result = sg.reduce(obj, {}, (m,v,k) => {
+    if (sg.isnt(k))     { return m; }
+    if (sg.isnt(v))     { return m; }
+
+    if (k[0].toUpperCase() === k[0]) {
+      return sg.kv(m,k,v);
+    }
+
+    return m;
+  });
+
+  if (rest.length > 0) {
+    return sg.merge(result, AwsFilterObject(...rest));
+  }
+
+  return result;
+};
+
+exports.awsService        = awsService;
+exports.awsFns            = awsFns;
+exports.awsFilters        = awsFilters;
+exports.awsFilter         = awsFilter;
+exports.isId              = isId;
+exports.isVpcId           = isVpcId;
+exports.AwsFilterObject   = AwsFilterObject;
 

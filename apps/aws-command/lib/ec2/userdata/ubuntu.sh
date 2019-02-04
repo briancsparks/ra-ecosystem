@@ -67,7 +67,7 @@ fi
 if [ -n $INSTALL_OPS ]; then
   echo "Installing ops"
 
-  apt-get install -y awscli jq
+  apt-get install -y awscli jq libzmq-dev
 
   if [ -n $INSTALL_DOCKER ]; then
     # no sudo for docker commands

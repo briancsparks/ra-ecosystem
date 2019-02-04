@@ -48,6 +48,7 @@ mod.xport({describeVpcs: function(argv, context, callback) {
     const classB            = fra.arg(argv, 'classB,class-b');
     const CidrBlock         = fra.arg(argv, 'CidrBlock,cidr')    || (classB ? `10.${classB}.0.0/16` : argv.cidr);
     const VpcId             = fra.arg(argv, 'VpcId,vpc');
+    const program           = fra.arg(argv, 'program');
 
     if (fra.argErrors())    { return fra.abort(); }
 
@@ -57,6 +58,9 @@ mod.xport({describeVpcs: function(argv, context, callback) {
 
     } else if (CidrBlock) {
       query = awsFilters({cidr:[CidrBlock]});
+
+    } else if (program) {
+      query = awsFilters({"tag:program":[program]});
     }
 
     return sg.__run2({result:{}}, callback, [function(my, next, last) {
