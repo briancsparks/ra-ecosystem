@@ -111,11 +111,14 @@ mod.xport({getUbuntuLtsAmis: function(argv, context, callback) {
  */
 mod.xport({upsertInstance: function(argv, context, callback) {
 
-  // Ubuntu 16.04 as of 1/25/2019
-  // ra invoke lib\ec2\ec2.js upsertInstance --image=ami-03a935aafa6b52b97 --distro=ubuntu --type=t3.small --key= --sgs= --subnet=
+  /*
+    Ubuntu 16.04 as of 1/25/2019
+    ra invoke apps\aws-command\lib\ec2\ec2.js upsertInstance --image=ami-03a935aafa6b52b97 --distro=ubuntu --type=t3.small --key= --sgs= --subnet=
+    ra invoke apps\aws-command\lib\ec2\ec2.js upsertInstance --image=ami-03a935aafa6b52b97 --distro=ubuntu --type=c5.xlarge --key= --sgs= --subnet=
 
-  // Amazon Linux 2 with ECS as of 1/25/2019
-  // ra invoke lib\ec2\ec2.js upsertInstance --image=ami-011a85ba0ae2013bf --distro=amazon2ecs --type=t3.small --key= --sgs= --subnet=
+    Amazon Linux 2 with ECS as of 1/25/2019
+    ra invoke apps\aws-command\lib\ec2\ec2.js upsertInstance --image=ami-011a85ba0ae2013bf --distro=amazon2ecs --type=t3.small --key= --sgs= --subnet=
+  */
 
   const ractx     = context.runAnywhere || {};
   const { fra }   = ractx.awsCommandEc2__upsertInstance;

@@ -828,10 +828,16 @@ mod.xport({createVpcEndpoint: function(argv, context, callback) {
 
 mod.xport({getSubnets: function(argv, context, callback) {
 
-  // ra invoke lib\ec2\vpc.js getSubnets --classB=111
-  // ra invoke lib\ec2\vpc.js getSubnets --classB=111 --kind   # cf-created
-  // ra invoke lib\ec2\vpc.js getSubnets --classB=111 --sg= --subnet=
-  // ra invoke lib\ec2\vpc.js getSubnets --classB=111 --sg=web --subnet=webtier
+  /*
+    ra invoke lib\ec2\vpc.js getSubnets --classB=111
+    ra invoke lib\ec2\vpc.js getSubnets --classB=111 --kind   # cf-created
+    ra invoke lib\ec2\vpc.js getSubnets --classB=111 --sg= --subnet=
+    ra invoke lib\ec2\vpc.js getSubnets --classB=111 --sg=web --subnet=webtier
+
+    Can ssh:
+    ra invoke lib\ec2\vpc.js getSubnets --classB=111 --sg=admin --subnet=webtier
+    ra invoke apps\aws-command\lib\ec2\vpc.js getSubnets --classB=111 --sg=admin --subnet=webtier | jq . | grep Id
+  */
 
   const classB        = argv.classB;
   const kind          = argv.kind ? argv.kind.toLowerCase() : argv.kind;
