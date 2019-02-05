@@ -1,7 +1,8 @@
 
 
-const sg                      = require('sg-flow');
 const ra                      = require('run-anywhere').v2;
+const sg                      = ra.get3rdPartyLib('sg-flow');
+// const { _ }                   = sg;
 const awsDefs                 = require('../aws-defs');
 const AWS                     = require('aws-sdk');
 const superb                  = require('superb');

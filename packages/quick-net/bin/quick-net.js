@@ -11,7 +11,8 @@
 const qnet                    = require('..');
 const ra0                     = require('run-anywhere');
 const ra                      = ra0.v2;
-const sg                      = ra.sg0.merge(ra.sg0, require('sg-argv'));
+const sg0                     = ra.get3rdPartyLib('sg-flow');
+const sg                      = sg0.merge(sg0, require('sg-argv'));
 const { _ }                   = sg;
 
 const {
@@ -92,10 +93,7 @@ function quickNet() {
 
 
 
-  var   params = {params:ARGV};
-
-  var spec      = {};
-  return ra0.invoke(params, spec, fn, function(err) {
+  return ra0.invoke2(ARGV, fn, function(err) {
     var exitCode = 0;
 
     if (err) {

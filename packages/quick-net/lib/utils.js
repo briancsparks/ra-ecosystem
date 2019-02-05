@@ -1,6 +1,7 @@
 
-const sg                      = require('sg0');
-const _                       = sg._;
+const ra                      = require('run-anywhere').v2;
+const sg                      = ra.get3rdPartyLib('sg-flow');
+const { _ }                   = sg;
 const os                      = require('os');
 
 exports.getTag = function(obj = {}, tagName) {

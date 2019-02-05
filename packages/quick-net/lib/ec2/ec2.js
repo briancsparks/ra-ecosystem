@@ -1,8 +1,8 @@
 
 
-const sg                      = require('sg-flow');
-const { _ }                   = sg;
 const ra                      = require('run-anywhere').v2;
+const sg                      = ra.get3rdPartyLib('sg-flow');
+const { _ }                   = sg;
 const awsDefs                 = require('../aws-defs');
 const libAws                  = require('../aws');
 const cloudInit               = require('../sh/cloud-init');

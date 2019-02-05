@@ -74,6 +74,32 @@ exports.invoke = function(params_, spec_, fn, callback) {
 };
 
 /**
+ *  Invoke a single function that adheres to the run-anywhere calling convention.
+ *
+ *      fn(argv, context, callback);
+ *
+ */
+exports.invoke2 = function(argv, fn, callback) {
+  var   args    = [];
+
+  var   context = {
+    isRaInvoked:  true
+  };
+
+  args.push(argv    || {});
+  args.push(context);
+
+  // Wrap the callback
+  var cb = function(err) {
+    return callback.apply(this, arguments);
+  };
+
+  args.push(cb);
+
+  return fn.apply(this, args);
+};
+
+/**
  *  Add meta-info to the function.
  */
 libRa.exportFunction = libRa.raify = function(name, fn_, options_) {
@@ -472,17 +498,12 @@ libRa.errorHandler = function(argv, context, callback) {
 };
 
 // Export all my dependencies, so lambdas do not have to include them
-libRa.v2.loudRejection = libRa.loudRejection = require('loud-rejection');
-libRa.v2.hardRejection = libRa.hardRejection = require('hard-rejection');
-libRa.v2.lodash        = libRa.lodash        = require('lodash');
-libRa.v2._             = libRa._             = libRa.lodash;
-libRa.v2.mongoDb       = libRa.mongoDb       = require('mongodb');
-libRa.v2.quickMerge    = libRa.quickMerge    = require('quick-merge');
-libRa.v2.qm            = libRa.qm            = libRa.quickMerge;
-libRa.v2.redisLib      = libRa.redisLib      = require('redis');
-libRa.v2.sgFlow        = libRa.sgFlow        = require('sg-flow');
-libRa.v2.sg0           = libRa.sg0           = libRa.sgFlow;
-libRa.v2.sg            = libRa.sg            = libRa.sgFlow;
+libRa.mods3rdParty = {};
+
+libRa.v2.get3rdPartyLib = function(name) {
+  libRa.mods3rdParty[name] = libRa.mods3rdParty[name] || require(name);
+  return libRa.mods3rdParty[name];
+};
 
 // Export the libRa object.
 _.each(libRa, function(value, key) {

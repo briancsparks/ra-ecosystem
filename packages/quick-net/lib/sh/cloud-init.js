@@ -8,7 +8,8 @@
 // -------------------------------------------------------------------------------------
 //  Requirements
 //
-const _                       = require('lodash');
+const ra                      = require('run-anywhere').v2;
+const _                       = ra.get3rdPartyLib('lodash');
 const script                  = require('./script');
 
 // -------------------------------------------------------------------------------------

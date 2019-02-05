@@ -16,15 +16,38 @@ var weeks   = sg.weeks   = sg.week   = 7*days,      week   = weeks;
 var months  = sg.months  = sg.month  = 30*days,     month  = months;
 var years   = sg.years   = sg.year   = 365*days,    year   = years;
 
+var   inspectFn = null;
+var cachedModes = null;     /* sg.modes() result cached */
+var forcedTestName;
 var forcedModes_;
-sg.setModes = function(modes) {
-  forcedModes = ','+modes+',';
+sg.setModes = function(modesStr) {
+  cachedModes = null;
+
+  const modesList   = modesStr.split(',').filter(s => {
+    if (!s.startsWith('test:') || s.length < 6)     { return true; }
+
+    forcedTestName = s.split(':')[1];
+    return false;
+  });
+
+  forcedModes = ','+modesList.join(',')+',';
 };
 
 const getForcedMode = function(name) {
+  if (name === 'test' && forcedTestName)    { return forcedTestName; }
+
   return indexOf(forcedModes_, ','+name+',') !== -1;
 };
 
+/**
+ * Is the app currently running in production (or staging?)
+ *
+ * 1. Do NOT leak information.
+ * 2. Short, fast logging.
+ * 3. Permanent, small logs (small by comparison.)
+ *
+ * @returns
+ */
 const isProd = function() {
   if (sg.argvFlag('prod'))     { return true; }
   if (forcedModes_)            { return getForcedMode('prod'); }
@@ -32,34 +55,95 @@ const isProd = function() {
   return process.env.NODE_ENV === 'production';
 };
 
+/**
+ * Is the app currently running in a dev environment, like integration or qa?
+ *
+ * 1. Log 'a lot' of information so that if something needs to be investigated,
+ *    logs are avilable, but dont log as much as debug.
+ * 2. Leaking information isnt good, but is tolerable if necessary.
+ * 3. Log info kept a sprint or two.
+ *
+ * @returns
+ */
+const isDev = function() {
+  if (sg.argvFlag('dev'))       { return true; }
+  if (forcedModes_)             { return getForcedMode('dev'); }
+
+  // Can never do dev things while in prod
+  if (isProd())                 { return false; }
+
+  return process.env.NODE_ENV !== 'debug';
+};
+
+/**
+ * Is the app currently running where someone is actively trying to debug something,
+ * even if not at an interactive terminal?
+ *
+ * 1. Lots of info.
+ * 2. Almost blatant disregard for sensitive info (but no creds, of course.)
+ * 3. Ephemeral durability of debug info.
+ *
+ * @returns
+ */
 const isDebug = function() {
   if (sg.argvFlag('debug'))     { return true; }
   if (forcedModes_)             { return getForcedMode('debug'); }
 
-  return process.env.NODE_ENV !== 'production';
+  // Can never do debug things while in prod
+  if (isProd())                 { return false; }
+
+  return process.env.NODE_ENV === 'development';      /* yes, unfortunate name */
 };
 
+/**
+ * Is the app currently running in a test environment?
+ *
+ * 1. Behave as prod -- do NOT leak information (unless this is a purposeful test to do so.)
+ * 2. Log 'a lot' of information so that if something needs to be investigated,
+ *    logs are avilable, but dont log as much as debug.
+ * 3. Log info kept a sprint or two, unless this is a purposeful test.
+ *
+ * @returns
+ */
 const isTest = function() {
   if (sg.argvFlag('test'))     { return true; }
   if (forcedModes_)            { return getForcedMode('test'); }
 
-  return false;
+  // Can never do testg things while in prod
+  if (isProd())                 { return false; }
+
+  return argvValue('test');
 };
 
+/**
+ * Which modes need to be obeyed?
+ *
+ * @returns
+ */
 sg.modes = function() {
+  if (cachedModes)        { return cachedModes; }
+
   const prod            = isProd();
   const production      = prod;
   const debug           = isDebug();
-  const development     = debug;
+  const dev             = isDev();
+  const development     = dev;
   const test            = isTest();
 
-  return sg.merge({prod, debug, test, production, development});
+  return (cachedModes = sg.merge({prod, debug, test, production, development, dev}));
 };
 
+/**
+ * sg.modes() is preferred, but of you need a string, here you go.
+ *
+ * @returns
+ */
 sg.mode = function() {
-  if (sg.modes().prod)  { return 'prod'; }
-  if (sg.modes().test)  { return 'test'; }
-  if (sg.modes().debug) { return 'debug'; }
+  if (sg.modes().prod)            { return 'prod'; }
+  if (sg.modes().test === true)   { return 'test'; }
+  if (sg.modes().test)            { return sg.modes().test; }
+  if (sg.modes().debug)           { return 'debug'; }
+  return 'dev';
 };
 
 
@@ -71,7 +155,114 @@ sg.mode = function() {
  * @returns
  */
 sg.inspect = function(x, colors) {
-  return util.inspect(x, {depth:null, colors: colors || false});
+  sg.mkInspect();
+  return sg.inspect(x, colors);
+  // var   logFn;
+
+  // if (sg.modes().prod)  {
+  //   (logFn = sg.inspect.prod)(x, colors);
+  //   sg.inspect = logFn;
+  //   return;
+  // }
+
+  // if (sg.modes().test) {
+  //   (logFn = (sg.modes().debug ? sg.inspect.debug : sg.inspect.ndebug))(x, colors);
+  //   sg.inspect = logFn;
+  //   return;
+  // }
+
+  // if (sg.modes().debug) {
+  //   (logFn = sg.modes().debug)(x, colors);
+  //   sg.inspect = logFn;
+  //   return;
+  // }
+
+  // sg.inspect.dev(x, colors);
+};
+
+sg.mkInspect = function() {
+
+  if (sg.modes().prod)  {
+    sg.inspect = sg.inspect.prod;
+    return;
+  }
+
+  if (sg.modes().test) {
+    sg.inspect = (sg.modes().debug ? sg.inspect.debug : sg.inspect.ndebug);
+    return;
+  }
+
+  if (sg.modes().debug) {
+    sg.inspect = sg.inspect.debug;
+    return;
+  }
+
+  sg.inspect = sg.inspect.dev;
+};
+// sg.inspect.current = null;
+sg.inspect.debug = function(x, colors) {
+  return util.inspect(x, {depth:null, colors: true});
+};
+sg.inspect.ndebug = function(x, colors) {
+  return util.inspect(x, {depth:null, colors: false});
+};
+sg.inspect.prod = function(x, colors) {
+  return JSON.stringify(x);
+};
+sg.inspect.dev = function(x, colors) {
+  return util.inspect(x, {depth:null, colors: colors || sg.modes().debug});
+};
+
+/**
+ * Just like console.log, but with inspect by default.
+ *
+ * @param {*} msg
+ * @param {*} args
+ */
+sg.log = function(msg, arg0, ...args) {
+  console.log(msg, sg.inspect({...arg0}), sg.inspect(...(args || [])));
+};
+sg.debugLog = sg.log;
+
+/**
+ * Just like console.log, but with inspect by default.
+ *
+ * @param {*} msg
+ * @param {*} args
+ */
+sg.stdlog = function(msg, arg0, ...args) {
+  console.log(msg, sg.inspect({...arg0}), sg.inspect(...(args || [])));
+};
+
+/**
+ * Just like sg.log(), but to stderr, so stdout is not affected.
+ *
+ * @param {*} msg
+ * @param {*} args
+ */
+sg.elog = function(msg, arg0, ...args) {
+  console.error(msg, sg.inspect({...arg0}), sg.inspect(...(args || [])));
+};
+sg.edebugLog = sg.elog;
+
+/**
+ * Log when a real error happens.
+ *
+ * @param {*} error
+ * @param {*} msg
+ * @param {*} arg0
+ * @param {*} debugArgs
+ */
+sg.logError = function(error, msg, arg0, ...debugArgs) {
+  console.error(msg, error, sg.inspect({...arg0, msg}), sg.inspect(sg.modes().prod ? [] : (debugArgs || [])));
+};
+
+sg.warn = function(msg, arg0, ...args) {
+  console.warn(msg, sg.inspect({...arg0}), sg.inspect([...args]));
+};
+
+sg.nag = function(msg, arg0, ...args) {
+  console.warn(msg, sg.inspect({...arg0}), sg.inspect([...args]));
 };
 
 /**
@@ -222,7 +413,13 @@ sg.keyMirror = function(x, sep) {
 
 sg.argvFlag = function(flag) {
   const target = `--${flag}`;
-  return process.argv.map(x => (x === '--' || x === target))[0] === target;
+  return process.argv.filter(x => (x === '--' || x === target))[0] === target;
+};
+
+sg.argvValue = function(key) {
+  const target = `--${key}=`;
+  const arg    = process.argv.filter(x => (x === '--' || x.startsWith(target)))[0] || '';
+  return arg.split('=')[1];
 };
 
 /**

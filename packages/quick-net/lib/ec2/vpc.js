@@ -3,10 +3,10 @@
  * @file
  */
 
-const _                       = require('lodash');
-const sg                      = require('sg-flow');
-const utils                   = require('../utils');
 const ra                      = require('run-anywhere').v2;
+const sg                      = ra.get3rdPartyLib('sg-flow');
+const { _ }                   = sg;
+const utils                   = require('../utils');
 const awsDefs                 = require('../aws-defs');
 const AWS                     = require('aws-sdk');
 const libTag                  = require('./tags');

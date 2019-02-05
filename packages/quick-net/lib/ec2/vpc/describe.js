@@ -8,9 +8,9 @@
 // -------------------------------------------------------------------------------------
 //  Requirements
 //
-const sg                      = require('sg0');
-const { _ }                   = sg;
 const ra                      = require('run-anywhere').v2;
+const sg                      = ra.get3rdPartyLib('sg-flow');
+const { _ }                   = sg;
 const libAws                  = require('../../aws');
 const libCidr                 = require('../cidr');
 

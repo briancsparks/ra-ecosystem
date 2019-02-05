@@ -2,7 +2,9 @@
 /**
  * @file
  */
-const _                       = require('lodash');
+const ra                      = require('run-anywhere').v2;
+const sg                      = ra.get3rdPartyLib('sg-flow');
+const { _ }                   = sg;
 
 var lib = {};
 

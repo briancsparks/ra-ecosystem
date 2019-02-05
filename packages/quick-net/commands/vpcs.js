@@ -3,9 +3,9 @@
  * @file
  */
 
-const _                       = require('lodash');
-const sg                      = require('sg-flow');
 const ra                      = require('run-anywhere').v2;
+const sg                      = ra.get3rdPartyLib('sg-flow');
+const { _ }                   = sg;
 const utils                   = require('../lib/utils');
 const libTag                  = require('../lib/ec2/tags');
 const libVpc                  = require('../lib/ec2/vpc');

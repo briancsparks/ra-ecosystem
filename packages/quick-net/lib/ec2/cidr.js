@@ -1,5 +1,6 @@
 
-const sg                      = require('sg0');
+const ra                      = require('run-anywhere').v2;
+const sg                      = ra.get3rdPartyLib('sg-flow');
 const { _ }                   = sg;
 
 /**
