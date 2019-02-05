@@ -1,15 +1,64 @@
 
+/**
+ * @file
+ *
+ */
+
+
+// -------------------------------------------------------------------------------------
+//  Requirements
+//
 const { qm, qmResolve }       = require('quick-merge');
 var   sg                      = require('sg0');
 const { _ }                   = sg._;
 
-sg.config = function(...configs) {
-  return qmResolve(...configs);
+
+
+// -------------------------------------------------------------------------------------
+//  Data
+//
+
+
+
+// -------------------------------------------------------------------------------------
+//  Functions
+//
+
+/**
+ * For when you are defining a config.
+ *
+ * @param {*} configs
+ * @returns
+ */
+sg.config = function(...args) {
+  return new Config(...args);
 };
 
-sg.configuration = function(dir, file) {
+/**
+ * For when you want to use/load a configuration.
+ *
+ * @param {*} dir
+ * @param {*} file
+ */
+sg.configuration = function(...args) {
+  return new Configuration(...args);
 };
 
 _.each(sg, (v,k) => {
   exports[k] = v;
 });
+
+
+
+// -------------------------------------------------------------------------------------
+//  Helper Functions
+//
+
+function Config(...configs) {
+  return qmResolve(...configs);
+};
+
+function Configuration(dir, file) {
+};
+
+
