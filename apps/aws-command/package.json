@@ -1,7 +1,7 @@
 {
   "name": "aws-command",
   "private": true,
-  "version": "0.8.2",
+  "version": "0.8.3",
   "description": "> TODO: description",
   "main": "index.js",
   "scripts": {
@@ -29,9 +29,9 @@
     "aws-sdk": "^2.382.0",
     "ip": "^1.1.5",
     "lodash": "^4.17.11",
-    "run-anywhere": "^0.7.5",
-    "sg-flow": "^0.9.8",
-    "sg0": "^0.9.8",
+    "run-anywhere": "^0.7.6",
+    "sg-flow": "^0.9.9",
+    "sg0": "^0.9.9",
     "superb": "^3.0.0"
   }
 }
