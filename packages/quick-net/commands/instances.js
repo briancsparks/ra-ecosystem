@@ -12,6 +12,6 @@ const debugCalls              = {debug:true};
 const skipAbort               = {abort:false, ...debugCalls};
 
 const tag                     = ra.load(libTag, 'tag');
-const mod                     = ra.modSquad(module, 'awsCommandInstances');
+const mod                     = ra.modSquad(module, 'quickNetInstances');
 
 

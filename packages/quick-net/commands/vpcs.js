@@ -20,7 +20,7 @@ const bitsToNetmask           = libCidr.bitsToNetmask;
 const getTag                  = utils.getTag;
 
 const tag                     = ra.load(libTag, 'tag');
-const mod                     = ra.modSquad(module, 'awsCommand');
+const mod                     = ra.modSquad(module, 'quickNet');
 
 var   sgsPlus = [];
 var   subnetKinds = [
@@ -41,7 +41,7 @@ mod.xport({manageVpc: function(argv, context, callback) {
   // ra invoke commands\vpcs.js manageVpc --program=ratest --az=a     --classB=113
 
   const ractx     = context.runAnywhere || {};
-  const { fra }   = (ractx.awsCommand__manageVpc || ractx);
+  const { fra }   = (ractx.quickNet__manageVpc || ractx);
 
   const sgs = [...sgsPlus, () => ({
     GroupName:    'wide',
@@ -505,7 +505,7 @@ mod.xport({launchInfo: function(argv, context, callback) {
   // ra invoke commands\vpcs.js launchInfo --classB=111 --sg=web --subnet=webtier
 
   const ractx     = context.runAnywhere || {};
-  const { fra }   = ractx.awsCommand__launchInfo;
+  const { fra }   = ractx.quickNet__launchInfo;
 
   return fra.iwrap(function(abort) {
     const { getSubnets } = fra.loads(libVpc, 'getSubnets', fra.opts({}), abort);

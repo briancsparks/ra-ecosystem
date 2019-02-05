@@ -9,7 +9,7 @@ const cloudInit               = require('../sh/cloud-init');
 const fs                      = require('fs');
 const path                    = require('path');
 
-const mod                     = ra.modSquad(module, 'awsCommandEc2');
+const mod                     = ra.modSquad(module, 'quickNetEc2');
 
 const awsFilters              = libAws.awsFilters;
 const awsFilter               = libAws.awsFilter;
@@ -32,7 +32,7 @@ mod.xport({getAmis: function(argv, context, callback) {
   // ra invoke lib\ec2\ec2.js getAmis  --owners=self
 
   const ractx     = context.runAnywhere || {};
-  const { fra }   = ractx.awsCommandEc2__getAmis;
+  const { fra }   = ractx.quickNetEc2__getAmis;
 
   return fra.iwrap(function(abort, calling) {
     const { describeImages } = libAws.awsFns(ec2, 'describeImages', fra.opts({}), abort);
@@ -64,7 +64,7 @@ mod.xport({getAmazonLinuxAmis: function(argv, context, callback) {
   // ra invoke lib\ec2\ec2.js getAmazonLinuxAmis --v2 --latest
 
   const ractx     = context.runAnywhere || {};
-  const { fra }   = ractx.awsCommandEc2__getAmazonLinuxAmis;
+  const { fra }   = ractx.quickNetEc2__getAmazonLinuxAmis;
 
   return fra.iwrap(function(abort, calling) {
     const { getAmis } = fra.loads('getAmis', fra.opts({}), abort);
@@ -93,7 +93,7 @@ mod.xport({getUbuntuLtsAmis: function(argv, context, callback) {
   // ra invoke lib\ec2\ec2.js getUbuntuLtsAmis --latest
 
   const ractx     = context.runAnywhere || {};
-  const { fra }   = ractx.awsCommandEc2__getUbuntuLtsAmis;
+  const { fra }   = ractx.quickNetEc2__getUbuntuLtsAmis;
 
   return fra.iwrap(function(abort, calling) {
     const { getAmis } = fra.loads('getAmis', fra.opts({}), abort);
@@ -113,15 +113,15 @@ mod.xport({upsertInstance: function(argv, context, callback) {
 
   /*
     Ubuntu 16.04 as of 1/25/2019
-    ra invoke apps\aws-command\lib\ec2\ec2.js upsertInstance --image=ami-03a935aafa6b52b97 --distro=ubuntu --type=t3.small --key= --sgs= --subnet=
-    ra invoke apps\aws-command\lib\ec2\ec2.js upsertInstance --image=ami-03a935aafa6b52b97 --distro=ubuntu --type=c5.xlarge --key= --sgs= --subnet=
+    ra invoke packages\quick-net\lib\ec2\ec2.js upsertInstance --image=ami-03a935aafa6b52b97 --distro=ubuntu --type=t3.small --key= --sgs= --subnet=
+    ra invoke packages\quick-net\lib\ec2\ec2.js upsertInstance --image=ami-03a935aafa6b52b97 --distro=ubuntu --type=c5.xlarge --key= --sgs= --subnet=
 
     Amazon Linux 2 with ECS as of 1/25/2019
-    ra invoke apps\aws-command\lib\ec2\ec2.js upsertInstance --image=ami-011a85ba0ae2013bf --distro=amazon2ecs --type=t3.small --key= --sgs= --subnet=
+    ra invoke packages\quick-net\lib\ec2\ec2.js upsertInstance --image=ami-011a85ba0ae2013bf --distro=amazon2ecs --type=t3.small --key= --sgs= --subnet=
   */
 
   const ractx     = context.runAnywhere || {};
-  const { fra }   = ractx.awsCommandEc2__upsertInstance;
+  const { fra }   = ractx.quickNetEc2__upsertInstance;
 
   return fra.iwrap(function(abort, calling) {
     const { runInstances,describeInstances }  = libAws.awsFns(ec2, 'runInstances,describeInstances', fra.opts({}), abort);

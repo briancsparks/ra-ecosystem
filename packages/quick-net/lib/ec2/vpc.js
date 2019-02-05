@@ -13,7 +13,7 @@ const libTag                  = require('./tags');
 const libAws                  = require('../aws');
 const libDescribeVpc          = require('./vpc/describe');
 
-const mod                     = ra.modSquad(module, 'awsCommandVpc');
+const mod                     = ra.modSquad(module, 'quickNetVpc');
 
 const awsFilters              = libAws.awsFilters;
 const awsFilter               = libAws.awsFilter;
@@ -39,7 +39,7 @@ mod.xport({upsertVpc: function(argv, context, callback) {
   // ra invoke lib\ec2\vpc.js upsertVpc --classB=111
 
   const ractx     = context.runAnywhere || {};
-  const { fra }   = (ractx.awsCommandVpc__upsertVpc || ractx);
+  const { fra }   = (ractx.quickNetVpc__upsertVpc || ractx);
 
   return fra.iwrap(function(abort) {
     const { createVpc,modifyVpcAttribute } = libAws.awsFns(ec2, 'describeVpcs,createVpc,modifyVpcAttribute', fra.opts({}), abort);
@@ -139,7 +139,7 @@ mod.xport({upsertSubnet: function(argv, context, callback) {
   // ra invoke lib\ec2\vpc.js upsertSubnet --cidr=10.111.0.0/20 --az=us-east-1a --public --vpc=
 
   const ractx     = context.runAnywhere || {};
-  const { fra }   = (ractx.awsCommandVpc__upsertSubnet || ractx);
+  const { fra }   = (ractx.quickNetVpc__upsertSubnet || ractx);
 
   return fra.iwrap(function(abort, calling) {
     const {
@@ -223,7 +223,7 @@ mod.xport({upsertSecurityGroup: function(argv, context, callback) {
   // ra invoke lib\ec2\vpc.js upsertSecurityGroup --name=wide --desc=wide-group --vpc=
 
   const ractx     = context.runAnywhere || {};
-  const { fra }   = (ractx.awsCommandVpc__upsertSecurityGroup || ractx);
+  const { fra }   = (ractx.quickNetVpc__upsertSecurityGroup || ractx);
 
   return fra.iwrap(function(abort, calling) {
     const { describeSecurityGroups, createSecurityGroup } = libAws.awsFns(ec2, 'describeSecurityGroups,createSecurityGroup', fra.opts({}), abort);
@@ -287,7 +287,7 @@ mod.xport({upsertSecurityGroupIngress: function(argv, context, callback) {
   // ra invoke lib\ec2\vpc.js upsertSecurityGroupIngress --cidr=10.0.0.0/8 --from=22 --to=22  --desc=from-wide-group  --id=sg-
 
   const ractx     = context.runAnywhere || {};
-  const { fra }   = (ractx.awsCommandVpc__upsertSecurityGroupIngress || ractx);
+  const { fra }   = (ractx.quickNetVpc__upsertSecurityGroupIngress || ractx);
 
   return fra.iwrap(function(abort) {
     const { authorizeSecurityGroupIngress, describeSecurityGroups } = libAws.awsFns(ec2, 'authorizeSecurityGroupIngress,describeSecurityGroups', fra.opts({}), abort);
@@ -358,7 +358,7 @@ mod.xport({allocateAddress: function(argv, context, callback) {
   // ra invoke lib\ec2\vpc.js allocateAddress
 
   const ractx     = context.runAnywhere || {};
-  const { fra }   = (ractx.awsCommandVpc__allocateAddress || ractx);
+  const { fra }   = (ractx.quickNetVpc__allocateAddress || ractx);
 
   return fra.iwrap(function(abort, calling) {
     const { allocateAddress, describeAddresses } = libAws.awsFns(ec2, 'allocateAddress,describeAddresses', fra.opts({}), abort);
@@ -422,7 +422,7 @@ mod.xport({createInternetGateway: function(argv, context, callback) {
   // ra invoke lib\ec2\vpc.js createInternetGateway --vpc=
 
   const ractx     = context.runAnywhere || {};
-  const { fra }   = (ractx.awsCommandVpc__createInternetGateway || ractx);
+  const { fra }   = (ractx.quickNetVpc__createInternetGateway || ractx);
 
   return fra.iwrap(function(abort) {
     const {
@@ -491,7 +491,7 @@ mod.xport({createNatGateway: function(argv, context, callback) {
   // ra invoke lib\ec2\vpc.js createNatGateway --subnet= --eip-alloc= --eip=
 
   const ractx     = context.runAnywhere || {};
-  const { fra }   = (ractx.awsCommandVpc__createNatGateway || ractx);
+  const { fra }   = (ractx.quickNetVpc__createNatGateway || ractx);
 
   return fra.iwrap(function(abort, calling) {
     const { createNatGateway, describeNatGateways, describeAddresses } = libAws.awsFns(ec2, 'createNatGateway,describeNatGateways,describeAddresses', fra.opts({}), abort);
@@ -595,7 +595,7 @@ mod.xport({createRouteTable: function(argv, context, callback) {
   // ra invoke lib\ec2\vpc.js createRouteTable --subnet= --vpc= --public
 
   const ractx     = context.runAnywhere || {};
-  const { fra }   = (ractx.awsCommandVpc__createRouteTable || ractx);
+  const { fra }   = (ractx.quickNetVpc__createRouteTable || ractx);
 
   return fra.iwrap(function(abort, calling) {
     const { createRouteTable, describeRouteTables, associateRouteTable } = libAws.awsFns(ec2, 'createRouteTable,describeRouteTables,associateRouteTable', fra.opts({}), abort);
@@ -673,7 +673,7 @@ mod.xport({associateRouteTable: function(argv, context, callback) {
   // ra invoke lib\ec2\vpc.js associateRouteTable --subnet= --table=
 
   const ractx     = context.runAnywhere || {};
-  const { fra }   = (ractx.awsCommandVpc__associateRouteTable || ractx);
+  const { fra }   = (ractx.quickNetVpc__associateRouteTable || ractx);
 
   return fra.iwrap(function(abort, calling) {
     const { associateRouteTable } = libAws.awsFns(ec2, 'associateRouteTable', fra.opts({}), abort);
@@ -695,7 +695,7 @@ mod.xport({createRoute: function(argv, context, callback) {
   // ra invoke lib\ec2\vpc.js createRoute --cidr=0.0.0.0/0 --gw= --table=
 
   const ractx     = context.runAnywhere || {};
-  const { fra }   = (ractx.awsCommandVpc__createRoute || ractx);
+  const { fra }   = (ractx.quickNetVpc__createRoute || ractx);
 
   return fra.iwrap(function(abort) {
     const { createRoute }             = libAws.awsFns(ec2, 'createRoute', fra.opts({}), abort);
@@ -757,7 +757,7 @@ mod.xport({createVpcEndpoint: function(argv, context, callback) {
   // ra invoke lib\ec2\vpc.js createVpcEndpoint --vpc= --service= --tables=
 
   const ractx     = context.runAnywhere || {};
-  const { fra }   = (ractx.awsCommandVpc__createVpcEndpoint || ractx);
+  const { fra }   = (ractx.quickNetVpc__createVpcEndpoint || ractx);
 
   return fra.iwrap(function(abort, calling) {
     const { createVpcEndpoint,describeVpcEndpoints } = libAws.awsFns(ec2, 'createVpcEndpoint,describeVpcEndpoints', fra.opts({}), abort);
@@ -836,7 +836,7 @@ mod.xport({getSubnets: function(argv, context, callback) {
 
     Can ssh:
     ra invoke lib\ec2\vpc.js getSubnets --classB=111 --sg=admin --subnet=webtier
-    ra invoke apps\aws-command\lib\ec2\vpc.js getSubnets --classB=111 --sg=admin --subnet=webtier | jq . | grep Id
+    ra invoke packages\quick-net\lib\ec2\vpc.js getSubnets --classB=111 --sg=admin --subnet=webtier | jq . | grep Id
   */
 
   const classB        = argv.classB;

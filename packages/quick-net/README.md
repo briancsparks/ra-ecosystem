@@ -1,11 +1,11 @@
-# `aws-command`
+# `quick-net`
 
 > TODO: description
 
 ## Usage
 
 ```
-const awsCommand = require('aws-command');
+const quickNet = require('quick-net');
 
 // TODO: DEMONSTRATE API
 ```
