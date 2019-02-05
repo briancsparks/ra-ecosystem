@@ -36,7 +36,7 @@ const defaultTags = {
 // See also modifyVpcEndpoint, modifyVpcEndpointConnectionNotification, modifyVpcEndpointServiceConfiguration, modifyVpcTenancy
 mod.xport({upsertVpc: function(argv, context, callback) {
 
-  // ra invoke lib\ec2\vpc.js upsertVpc --classB=111
+  // ra invoke packages\quick-net\lib\ec2\vpc.js upsertVpc --classB=111
 
   const ractx     = context.runAnywhere || {};
   const { fra }   = (ractx.quickNetVpc__upsertVpc || ractx);
@@ -135,8 +135,8 @@ mod.xport({upsertVpc: function(argv, context, callback) {
 
 mod.xport({upsertSubnet: function(argv, context, callback) {
 
-  // ra invoke lib\ec2\vpc.js upsertSubnet --cidr=10.111.0.0/20 --az=us-east-1a --vpc=
-  // ra invoke lib\ec2\vpc.js upsertSubnet --cidr=10.111.0.0/20 --az=us-east-1a --public --vpc=
+  // ra invoke packages\quick-net\lib\ec2\vpc.js upsertSubnet --cidr=10.111.0.0/20 --az=us-east-1a --vpc=
+  // ra invoke packages\quick-net\lib\ec2\vpc.js upsertSubnet --cidr=10.111.0.0/20 --az=us-east-1a --public --vpc=
 
   const ractx     = context.runAnywhere || {};
   const { fra }   = (ractx.quickNetVpc__upsertSubnet || ractx);
@@ -220,7 +220,7 @@ mod.xport({upsertSubnet: function(argv, context, callback) {
 
 mod.xport({upsertSecurityGroup: function(argv, context, callback) {
 
-  // ra invoke lib\ec2\vpc.js upsertSecurityGroup --name=wide --desc=wide-group --vpc=
+  // ra invoke packages\quick-net\lib\ec2\vpc.js upsertSecurityGroup --name=wide --desc=wide-group --vpc=
 
   const ractx     = context.runAnywhere || {};
   const { fra }   = (ractx.quickNetVpc__upsertSecurityGroup || ractx);
@@ -284,7 +284,7 @@ mod.xport({upsertSecurityGroup: function(argv, context, callback) {
 
 mod.xport({upsertSecurityGroupIngress: function(argv, context, callback) {
 
-  // ra invoke lib\ec2\vpc.js upsertSecurityGroupIngress --cidr=10.0.0.0/8 --from=22 --to=22  --desc=from-wide-group  --id=sg-
+  // ra invoke packages\quick-net\lib\ec2\vpc.js upsertSecurityGroupIngress --cidr=10.0.0.0/8 --from=22 --to=22  --desc=from-wide-group  --id=sg-
 
   const ractx     = context.runAnywhere || {};
   const { fra }   = (ractx.quickNetVpc__upsertSecurityGroupIngress || ractx);
@@ -355,7 +355,7 @@ mod.xport({upsertSecurityGroupIngress: function(argv, context, callback) {
 
 mod.xport({allocateAddress: function(argv, context, callback) {
 
-  // ra invoke lib\ec2\vpc.js allocateAddress
+  // ra invoke packages\quick-net\lib\ec2\vpc.js allocateAddress
 
   const ractx     = context.runAnywhere || {};
   const { fra }   = (ractx.quickNetVpc__allocateAddress || ractx);
@@ -419,7 +419,7 @@ mod.xport({allocateAddress: function(argv, context, callback) {
 
 mod.xport({createInternetGateway: function(argv, context, callback) {
 
-  // ra invoke lib\ec2\vpc.js createInternetGateway --vpc=
+  // ra invoke packages\quick-net\lib\ec2\vpc.js createInternetGateway --vpc=
 
   const ractx     = context.runAnywhere || {};
   const { fra }   = (ractx.quickNetVpc__createInternetGateway || ractx);
@@ -488,7 +488,7 @@ mod.xport({createInternetGateway: function(argv, context, callback) {
 
 mod.xport({createNatGateway: function(argv, context, callback) {
 
-  // ra invoke lib\ec2\vpc.js createNatGateway --subnet= --eip-alloc= --eip=
+  // ra invoke packages\quick-net\lib\ec2\vpc.js createNatGateway --subnet= --eip-alloc= --eip=
 
   const ractx     = context.runAnywhere || {};
   const { fra }   = (ractx.quickNetVpc__createNatGateway || ractx);
@@ -592,7 +592,7 @@ mod.xport({createNatGateway: function(argv, context, callback) {
 
 mod.xport({createRouteTable: function(argv, context, callback) {
 
-  // ra invoke lib\ec2\vpc.js createRouteTable --subnet= --vpc= --public
+  // ra invoke packages\quick-net\lib\ec2\vpc.js createRouteTable --subnet= --vpc= --public
 
   const ractx     = context.runAnywhere || {};
   const { fra }   = (ractx.quickNetVpc__createRouteTable || ractx);
@@ -670,7 +670,7 @@ mod.xport({createRouteTable: function(argv, context, callback) {
 
 mod.xport({associateRouteTable: function(argv, context, callback) {
 
-  // ra invoke lib\ec2\vpc.js associateRouteTable --subnet= --table=
+  // ra invoke packages\quick-net\lib\ec2\vpc.js associateRouteTable --subnet= --table=
 
   const ractx     = context.runAnywhere || {};
   const { fra }   = (ractx.quickNetVpc__associateRouteTable || ractx);
@@ -692,7 +692,7 @@ mod.xport({associateRouteTable: function(argv, context, callback) {
 
 mod.xport({createRoute: function(argv, context, callback) {
 
-  // ra invoke lib\ec2\vpc.js createRoute --cidr=0.0.0.0/0 --gw= --table=
+  // ra invoke packages\quick-net\lib\ec2\vpc.js createRoute --cidr=0.0.0.0/0 --gw= --table=
 
   const ractx     = context.runAnywhere || {};
   const { fra }   = (ractx.quickNetVpc__createRoute || ractx);
@@ -754,7 +754,7 @@ mod.xport({createRoute: function(argv, context, callback) {
 // TODO: createVpcEndpointConnectionNotification,createVpcEndpointServiceConfiguration
 mod.xport({createVpcEndpoint: function(argv, context, callback) {
 
-  // ra invoke lib\ec2\vpc.js createVpcEndpoint --vpc= --service= --tables=
+  // ra invoke packages\quick-net\lib\ec2\vpc.js createVpcEndpoint --vpc= --service= --tables=
 
   const ractx     = context.runAnywhere || {};
   const { fra }   = (ractx.quickNetVpc__createVpcEndpoint || ractx);
@@ -829,14 +829,14 @@ mod.xport({createVpcEndpoint: function(argv, context, callback) {
 mod.xport({getSubnets: function(argv, context, callback) {
 
   /*
-    ra invoke lib\ec2\vpc.js getSubnets --classB=111
-    ra invoke lib\ec2\vpc.js getSubnets --classB=111 --kind   # cf-created
-    ra invoke lib\ec2\vpc.js getSubnets --classB=111 --sg= --subnet=
-    ra invoke lib\ec2\vpc.js getSubnets --classB=111 --sg=web --subnet=webtier
+    ra invoke packages\quick-net\lib\ec2\vpc.js getSubnets --classB=111
+    ra invoke packages\quick-net\lib\ec2\vpc.js getSubnets --classB=111 --kind   # cf-created
+    ra invoke packages\quick-net\lib\ec2\vpc.js getSubnets --classB=111 --sg= --subnet=
+    ra invoke packages\quick-net\lib\ec2\vpc.js getSubnets --classB=111 --sg=web --subnet=webtier
 
     Can ssh:
-    ra invoke lib\ec2\vpc.js getSubnets --classB=111 --sg=admin --subnet=webtier
-    ra invoke packages\quick-net\lib\ec2\vpc.js getSubnets --classB=111 --sg=admin --subnet=webtier | jq . | grep Id
+    ra invoke packages\quick-net\lib\ec2\vpc.js getSubnets --classB=111 --sg=admin --subnet=webtier
+    ra invoke packages\quick-net\packages\quick-net\lib\ec2\vpc.js getSubnets --classB=111 --sg=admin --subnet=webtier | jq . | grep Id
   */
 
   const classB        = argv.classB;

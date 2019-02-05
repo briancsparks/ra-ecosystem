@@ -37,8 +37,8 @@ const getSecurityGroupId = function(name) {
 
 mod.xport({manageVpc: function(argv, context, callback) {
 
-  // ra invoke commands\vpcs.js manageVpc --program=ratest --az=a,b,c --classB=111
-  // ra invoke commands\vpcs.js manageVpc --program=ratest --az=a     --classB=113
+  // ra invoke packages\quick-net\commands\vpcs.js manageVpc --program=ratest --az=a,b,c --classB=111
+  // ra invoke packages\quick-net\commands\vpcs.js manageVpc --program=ratest --az=a     --classB=113
 
   const ractx     = context.runAnywhere || {};
   const { fra }   = (ractx.quickNet__manageVpc || ractx);
@@ -502,7 +502,7 @@ mod.xport({manageVpc: function(argv, context, callback) {
 
 mod.xport({launchInfo: function(argv, context, callback) {
 
-  // ra invoke commands\vpcs.js launchInfo --classB=111 --sg=web --subnet=webtier
+  // ra invoke packages\quick-net\commands\vpcs.js launchInfo --classB=111 --sg=web --subnet=webtier
 
   const ractx     = context.runAnywhere || {};
   const { fra }   = ractx.quickNet__launchInfo;

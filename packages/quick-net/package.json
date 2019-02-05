@@ -2,7 +2,7 @@
   "name": "quick-net",
   "private": true,
   "version": "0.8.3",
-  "description": "> TODO: description",
+  "description": "Create quick cloud network",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -27,7 +27,6 @@
   ],
   "dependencies": {
     "aws-sdk": "^2.382.0",
-    "ip": "^1.1.5",
     "lodash": "^4.17.11",
     "run-anywhere": "^0.7.6",
     "sg-flow": "^0.9.9",

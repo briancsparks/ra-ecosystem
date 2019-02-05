@@ -36,8 +36,8 @@ const {
 //
 mod.xport({describeVpcs: function(argv, context, callback) {
 
-  // ra invoke lib\ec2\vpc\describe.js describeVpcs --classB=
-  // ra invoke lib\ec2\vpc\describe.js describeVpcs --vpc=
+  // ra invoke packages\quick-net\lib\ec2\vpc\describe.js describeVpcs --classB=
+  // ra invoke packages\quick-net\lib\ec2\vpc\describe.js describeVpcs --vpc=
 
   const ractx     = context.runAnywhere || {};
   const { fra }   = ractx.vpcDescribe__describeVpcs;
@@ -74,8 +74,8 @@ mod.xport({describeVpcs: function(argv, context, callback) {
 
 mod.xport({describeSubnets: function(argv, context, callback) {
 
-  // ra invoke lib\ec2\vpc\describe.js describeSubnets --classB=
-  // ra invoke lib\ec2\vpc\describe.js describeSubnets --subnet=
+  // ra invoke packages\quick-net\lib\ec2\vpc\describe.js describeSubnets --classB=
+  // ra invoke packages\quick-net\lib\ec2\vpc\describe.js describeSubnets --subnet=
 
   const ractx     = context.runAnywhere || {};
   const { fra }   = ractx.vpcDescribe__describeSubnets;

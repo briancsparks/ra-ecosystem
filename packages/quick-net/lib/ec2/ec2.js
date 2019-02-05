@@ -29,7 +29,7 @@ const iam = libAws.awsService('IAM');
  */
 mod.xport({getAmis: function(argv, context, callback) {
 
-  // ra invoke lib\ec2\ec2.js getAmis  --owners=self
+  // ra invoke packages\quick-net\lib\ec2\ec2.js getAmis  --owners=self
 
   const ractx     = context.runAnywhere || {};
   const { fra }   = ractx.quickNetEc2__getAmis;
@@ -61,7 +61,7 @@ mod.xport({getAmis: function(argv, context, callback) {
  */
 mod.xport({getAmazonLinuxAmis: function(argv, context, callback) {
 
-  // ra invoke lib\ec2\ec2.js getAmazonLinuxAmis --v2 --latest
+  // ra invoke packages\quick-net\lib\ec2\ec2.js getAmazonLinuxAmis --v2 --latest
 
   const ractx     = context.runAnywhere || {};
   const { fra }   = ractx.quickNetEc2__getAmazonLinuxAmis;
@@ -90,7 +90,7 @@ mod.xport({getAmazonLinuxAmis: function(argv, context, callback) {
  */
 mod.xport({getUbuntuLtsAmis: function(argv, context, callback) {
 
-  // ra invoke lib\ec2\ec2.js getUbuntuLtsAmis --latest
+  // ra invoke packages\quick-net\lib\ec2\ec2.js getUbuntuLtsAmis --latest
 
   const ractx     = context.runAnywhere || {};
   const { fra }   = ractx.quickNetEc2__getUbuntuLtsAmis;

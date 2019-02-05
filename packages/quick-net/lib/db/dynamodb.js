@@ -29,8 +29,8 @@ const AwsFilterObject         = libAws.AwsFilterObject;
 
 mod.xport({upsertTable: function(argv, context, callback) {
 
-  // ra invoke lib\db\dynamodb.js upsertTable --table=ratest_table --mode=PAY_PER_REQUEST --stream=new-and-old --hash=type --range=S,value
-  // ra invoke lib\db\dynamodb.js upsertTable --table=ratest_table --mode=PROVISIONED     --stream=new-and-old --hash=type --range=S,value --read=2 --write=2
+  // ra invoke packages\quick-net\lib\db\dynamodb.js upsertTable --table=ratest_table --mode=PAY_PER_REQUEST --stream=new-and-old --hash=type --range=S,value
+  // ra invoke packages\quick-net\lib\db\dynamodb.js upsertTable --table=ratest_table --mode=PROVISIONED     --stream=new-and-old --hash=type --range=S,value --read=2 --write=2
 
   const ractx     = context.runAnywhere || {};
   const { fra }   = ractx.dynamoDb__upsertTable;
