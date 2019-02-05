@@ -50,7 +50,7 @@ exports._200 = function(req, res, result_) {
   res.setHeader('Content-Length', strResult.length);
   res.end(strResult);
 
-  console.log(`200 for ${req.url}`, inspect({result}));
+  // console.log(`200 for ${req.url}`, inspect({result}));
 };
 
 exports._400 = function(req, res, err) {

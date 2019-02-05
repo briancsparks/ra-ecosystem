@@ -46,16 +46,33 @@ const ARGV                    = sg.ARGV();
 //  Functions
 //
 
-if (process.argv[1] === __filename) {
-  quickNet();
-}
+var   commands = {
+  ls: function() {
+    for (let mod of mods) {
+      const keys = Object.keys(mod.async || {});
+      if (keys) {
+        sg.debugLog(`mod`, keys);
+      }
+    }
+  }
+};
+
 
 // -------------------------------------------------------------------------------------
 //  Helper Functions
 //
 
+if (process.argv[1] === __filename) {
+  quickNet();
+}
+
 function quickNet() {
   require('loud-rejection/register');
+
+  const command = commands[ARGV._[0]];
+  if (_.isFunction(command)) {
+    return command();
+  }
 
   const fname = ARGV._[0];
   if (!fname) {
@@ -120,3 +137,5 @@ function quickNet() {
     process.exit(exitCode);
   });
 }
+
+

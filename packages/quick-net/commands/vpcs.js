@@ -562,6 +562,13 @@ sgsPlus = [() => ({
     FromPort:     443,
     ToPort:       443,
     Description:  'SSH over HTTPS'
+  },{
+    /*GroupId*/
+    IpProtocol:   'tcp',
+    CidrIp:       '10.0.0.0/8',
+    FromPort:     80,
+    ToPort:       80,
+    Description:  'HTTP for webtier to expose'
   }]
 }), () => ({
   GroupName:    'devOps',
