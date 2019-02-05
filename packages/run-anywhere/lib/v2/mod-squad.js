@@ -14,13 +14,24 @@ const callbackify             = utilLib.callbackify;
 // -------------------------------------------------------------------------------------
 //  Data
 //
+var loadedModules             = {};
 
 // -------------------------------------------------------------------------------------
 //  Functions
 //
 
+const registerModule = function(mod, name) {
+  if (loadedModules[name]) {
+    name += sg.numKeys(loadedModules);
+  }
+
+  loadedModules[name] = mod;
+};
+
 const ModSquad = function(otherModule, otherModuleName = 'mod') {
   var   self      = this;
+
+  registerModule(otherModule, otherModuleName);
 
   self.utils      = {_, ...utilLib};
 
@@ -83,6 +94,49 @@ const ModSquad = function(otherModule, otherModuleName = 'mod') {
 
     return previousFn;
   };
+
+  self.reqHandler = function(fobj) {
+    var   mod = loadedModules[otherModuleName];
+
+    var previousFn;
+
+    _.each(fobj, (fn_, fname) => {
+      var fn            = fn_;
+      const fullFname   = `${otherModuleName}__${fname}`;
+
+      // Wrap `fn` in a safety function that scrubs debug info out of the result
+      if (fn) {
+
+        // This is the function that will be exported and called by those that require() the mod. ----------------------------------------
+        fn = function(req, res, ...rest) {
+
+
+          // Must create argv, context
+          var   argv              = {};     /* TODO: get from query, body, etc */
+          var   context           = {};
+          const callback          = function(){};
+          const callback_         = function(){};
+
+          var runAnywhere         = res.runAnywhere          =  req.runAnywhere   = context.runAnywhere  || {};
+          runAnywhere[fullFname]  = runAnywhere[fullFname]  ||  {};
+
+          // ------ This is where you apply a middleware function -------
+
+          // Attach a special run-anywhere object to the context.
+          runAnywhere[fullFname].fra  = runAnywhere[fullFname].fra  || new FuncRa(argv, context, callback, callback_, {otherModule: otherModule.exports, otherModuleName, fname});
+
+          // Call the modules function (the original function.)
+          return fn_(req, res, ...rest);
+        };
+      }
+
+      mod.reqHandler         = mod.reqHandler   || {};
+      mod.reqHandler[fname]  = previousFn = (fn || previousFn);
+    });
+
+    return previousFn;
+  };
+
 };
 
 module.exports.modSquad = function(...args) {
@@ -241,7 +295,7 @@ const FuncRa = function(argv, context, callback, origCallback, options_ = {}) {
     if (args.length === 3) {
       if (_.isString(args[0]))    { return self.loads_(self.mod, a, b, c); }
 
-      return self.loads_(a, b, {}, c);
+      if (_.isFunction(args[2]))  { return self.loads_(a, b, {}, c); }
     }
 
     return self.loads_(...args);
@@ -276,7 +330,7 @@ const FuncRa = function(argv, context, callback, origCallback, options_ = {}) {
 
           // Handle errors -- we normally abort, but the caller can tell us not to
           if (!ok) {
-            if (options.abort)            { return abort(err); }
+            if (options.abort && abort)            { return abort(err); }
 
             // Report, but leave out the verbose error
             if (options.debug) {
@@ -294,7 +348,7 @@ const FuncRa = function(argv, context, callback, origCallback, options_ = {}) {
         }
 
         // Invoke the original function
-        abort.calling(`${mod.modname || self.modname || 'modunk'}::${fname}(21)`, argv);
+        if (abort)  { abort.calling(`${mod.modname || self.modname || 'modunk'}::${fname}(21)`, argv); }
         return mod[fname](argv, context, callback);
       };
       // ----------------------------- end
@@ -377,12 +431,22 @@ const FuncRa = function(argv, context, callback, origCallback, options_ = {}) {
    * @param {*} [args={}]
    * @returns
    */
-  self.argErrors = function(args = {}) {
-    _.each(args, function(value, name) {
-      if (sg.isnt(value)) {
-        self.argErrs = sg.ap(self.argErrs, {code: 'ENOARG', ...self.argTypes[name]});
+  self.argErrors = function(args_ = {}) {
+    var args  = args_;
+
+    if (args.oneOf) {
+      let keys = Object.keys(args.oneOf);
+      if (keys.filter((name) => !sg.isnt(args.oneOf[name])).length === 0) {
+        self.argErrs = sg.ap(self.argErrs, {code: 'ENEEDONEOF', params: keys.map(key => self.argTypes[key])});
       }
-    });
+    } else {
+      _.each(args, function(value, name) {
+        if (sg.isnt(value)) {
+          self.argErrs = sg.ap(self.argErrs, {code: 'ENOARG', ...self.argTypes[name]});
+        }
+      });
+    }
+
 
     // console.error(`fra.argErrors ${self.fname} (${(self.argErrs || []).length})`);
     return self.argErrs;

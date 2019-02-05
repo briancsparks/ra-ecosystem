@@ -3,4 +3,7 @@
  * @file
  */
 
-exports.ec2 = require('./lib/ec2');
+exports.libAws                = require('./lib/aws');
+exports.libHttp               = require('./lib/http');
+
+

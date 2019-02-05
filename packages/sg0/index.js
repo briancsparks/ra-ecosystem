@@ -94,6 +94,7 @@ const isDebug = function() {
 
   return process.env.NODE_ENV === 'development';      /* yes, unfortunate name */
 };
+exports.isDebug = isDebug;
 
 /**
  * Is the app currently running in a test environment?
@@ -112,7 +113,7 @@ const isTest = function() {
   // Can never do testg things while in prod
   if (isProd())                 { return false; }
 
-  return argvValue('test');
+  return sg.argvValue('test');
 };
 
 /**
@@ -155,8 +156,12 @@ sg.mode = function() {
  * @returns
  */
 sg.inspect = function(x, colors) {
-  sg.mkInspect();
-  return sg.inspect(x, colors);
+  return sg.inspect.debug(x, colors);
+
+
+
+  // sg.mkInspect();
+  // return sg.inspect(x, colors);
   // var   logFn;
 
   // if (sg.modes().prod)  {

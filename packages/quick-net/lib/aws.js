@@ -11,7 +11,7 @@ const mod                     = ra.modSquad(module);
 const ec2 = new AWS.EC2({region: 'us-east-1', ...awsDefs.options});
 
 const awsService = function(name, options) {
-  const service = new AWS[name](awsDefs.options);
+  const service = new AWS[name](sg.merge(awsDefs.options, options));
 
   return service;
 }
@@ -137,4 +137,4 @@ exports.awsFilter         = awsFilter;
 exports.isId              = isId;
 exports.isVpcId           = isVpcId;
 exports.AwsFilterObject   = AwsFilterObject;
-
+exports.AWS               = AWS;
