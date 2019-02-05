@@ -11,7 +11,6 @@ const debugCalls              = {debug:true};
 // const debugCalls              = {debug:false};
 const skipAbort               = {abort:false, ...debugCalls};
 
-const tag                     = ra.load(libTag, 'tag');
 const mod                     = ra.modSquad(module, 'quickNetInstances');
 
 

@@ -4,6 +4,10 @@
   "version": "0.8.3",
   "description": "Create quick cloud network",
   "main": "index.js",
+  "bin": {
+    "quick-net": "bin/quick-net.js",
+    "quicknet": "bin/quick-net.js"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -29,6 +33,7 @@
     "aws-sdk": "^2.382.0",
     "lodash": "^4.17.11",
     "run-anywhere": "^0.7.6",
+    "sg-argv": "^0.9.10",
     "sg-flow": "^0.9.9",
     "sg0": "^0.9.9",
     "superb": "^3.0.0"
