@@ -471,6 +471,19 @@ libRa.errorHandler = function(argv, context, callback) {
   return new libRa.ErrorHandler(argv, context, callback);
 };
 
+// Export all my dependencies, so lambdas do not have to include them
+libRa.v2.loudRejection = libRa.loudRejection = require('loud-rejection');
+libRa.v2.hardRejection = libRa.hardRejection = require('hard-rejection');
+libRa.v2.lodash        = libRa.lodash        = require('lodash');
+libRa.v2._             = libRa._             = libRa.lodash;
+libRa.v2.mongoDb       = libRa.mongoDb       = require('mongodb');
+libRa.v2.quickMerge    = libRa.quickMerge    = require('quick-merge');
+libRa.v2.qm            = libRa.qm            = libRa.quickMerge;
+libRa.v2.redisLib      = libRa.redisLib      = require('redis');
+libRa.v2.sgFlow        = libRa.sgFlow        = require('sg-flow');
+libRa.v2.sg0           = libRa.sg0           = libRa.sgFlow;
+libRa.v2.sg            = libRa.sg            = libRa.sgFlow;
+
 // Export the libRa object.
 _.each(libRa, function(value, key) {
   exports[key] = value;

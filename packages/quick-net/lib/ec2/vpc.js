@@ -839,7 +839,7 @@ mod.xport({getSubnets: function(argv, context, callback) {
     ra invoke packages\quick-net\packages\quick-net\lib\ec2\vpc.js getSubnets --classB=111 --sg=admin --subnet=webtier | jq . | grep Id
   */
 
-  const classB        = argv.classB;
+  const classB        = ''+argv.classB;
   const kind          = argv.kind ? argv.kind.toLowerCase() : argv.kind;
   const sgName        = argv.sg       || argv.sgName;
   const subnetName    = argv.subnet   || argv.subnetName;
