@@ -43,7 +43,6 @@ const ModSquad = function(otherModule, otherModuleName = 'mod') {
 
     _.each(fobj, (fn_, fname) => {
       var fn            = fn_;
-      const fullFname   = `${otherModuleName}__${fname}`;
 
       // Wrap `fn` in a safety function that scrubs debug info out of the result
       if (fn) {
@@ -51,8 +50,7 @@ const ModSquad = function(otherModule, otherModuleName = 'mod') {
         // This is the function that will be exported and called by those that require() the mod. ----------------------------------------
         fn = function(argv, context, callback_) {
 
-          context.runAnywhere             = context.runAnywhere             || {};
-          context.runAnywhere[fullFname]  = context.runAnywhere[fullFname]  || {};
+          var   ractx             = upsertRaContextForX(context, otherModuleName, fname);
 
           // This will be called when the called function finishes. -----
           const callback = function(err, data, ...rest) {
@@ -67,8 +65,7 @@ const ModSquad = function(otherModule, otherModuleName = 'mod') {
           // -----
 
           // Attach a special run-anywhere object to the context.
-          context.runAnywhere[fullFname].fra  = context.runAnywhere[fullFname].fra  || new FuncRa(argv, context, callback, callback_, {otherModule: otherModule.exports, otherModuleName, fname});
-          context.runAnywhere.fra             = context.runAnywhere.fra             || new FuncRa(argv, context, callback, callback_, {otherModule: otherModule.exports, otherModuleName})
+          setRax(context, new FuncRa(argv, context, callback, callback_, {otherModule: otherModule.exports, otherModuleName, fname}));
 
           // Call the modules function (the original function.)
           return fn_(argv, context, callback);
@@ -102,7 +99,6 @@ const ModSquad = function(otherModule, otherModuleName = 'mod') {
 
     _.each(fobj, (fn_, fname) => {
       var fn            = fn_;
-      const fullFname   = `${otherModuleName}__${fname}`;
 
       // Wrap `fn` in a safety function that scrubs debug info out of the result
       if (fn) {
@@ -117,13 +113,12 @@ const ModSquad = function(otherModule, otherModuleName = 'mod') {
           const callback          = function(){};
           const callback_         = function(){};
 
-          var runAnywhere         = res.runAnywhere          =  req.runAnywhere   = context.runAnywhere  || {};
-          runAnywhere[fullFname]  = runAnywhere[fullFname]  ||  {};
+          var   ractx             = res.runAnywhere          =  req.runAnywhere   = upsertRaContextForX(context, otherModuleName, fname);
 
           // ------ This is where you apply a middleware function -------
 
           // Attach a special run-anywhere object to the context.
-          runAnywhere[fullFname].fra  = runAnywhere[fullFname].fra  || new FuncRa(argv, context, callback, callback_, {otherModule: otherModule.exports, otherModuleName, fname});
+          setRax(context, new FuncRa(argv, context, callback, callback_, {otherModule: otherModule.exports, otherModuleName, fname}));
 
           // Call the modules function (the original function.)
           return fn_(req, res, ...rest);
@@ -476,4 +471,43 @@ const FuncRa = function(argv, context, callback, origCallback, options_ = {}) {
 //  Helper functions
 //
 
+exports.getRaContext          = getRaContext;
+exports.upsertRaContextForX   = upsertRaContextForX;
+
+function getRaContext(context) {
+  return context.runAnywhere;
+}
+
+function upsertRaContextForX(context, modname, fname) {
+  // if (getRaContext(context))          { return getRaContext(context); }
+
+  const fullFname           = `${modname}__${fname}`;
+  var   ractx               = context.runAnywhere = context.runAnywhere || {current: {}};
+
+  ractx[fullFname]          = {};
+  ractx.current.modname     = modname;
+  ractx.current.fname       = fname;
+  ractx.current.fullFname   = fullFname;
+
+  sg.setOn(ractx, ['mod', modname, 'func', fname], {fullFname, rax: null, fra:null});
+
+  return ractx;
+}
+
+function setRax(context, rax) {
+  var   ractx                 = context.runAnywhere;
+  const {
+    modname, fname, fullFname
+  }                           = ractx.current;
+
+  ractx.current.rax           = rax;
+  ractx[fullFname].rax        = rax;
+  ractx[fullFname].fra        = rax;
+
+  sg.setOn(ractx, ['mod', modname, 'func', fname, 'rax'], rax);
+
+  // sg.debugLog(`setRax`, {ractx});
+
+  return ractx;
+}
 
