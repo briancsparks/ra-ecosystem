@@ -512,8 +512,19 @@ libRa.errorHandler = function(argv, context, callback) {
 libRa.mods3rdParty = {};
 
 libRa.v2.get3rdPartyLib = function(name) {
-  libRa.mods3rdParty[name] = libRa.mods3rdParty[name] || require(name);
-  return libRa.mods3rdParty[name];
+  if (name !== 'sg-config') {
+    libRa.mods3rdParty[name] = libRa.mods3rdParty[name] || require(name);
+    return libRa.mods3rdParty[name];
+  }
+
+  // Wrap sg-config
+  const sgConfig = require(name);
+  const oldConfiguration = sgConfig.configuration;
+  sgConfig.configuration = function(...args) {
+    return oldConfiguration.call(sgConfig, ...args);
+  };
+
+  return sgConfig;
 };
 
 // Export the libRa object.

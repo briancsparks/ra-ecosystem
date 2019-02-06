@@ -12,6 +12,7 @@ const ra                      = require('run-anywhere').v2;
 const sg                      = ra.get3rdPartyLib('sg-flow');
 const { _ }                   = sg;
 const express                 = ra.get3rdPartyLib('express');
+const sgConfig                = ra.get3rdPartyLib('sg-config');
 const router                  = express.Router();
 const mod                     = ra.modSquad(module, 'uploadRoute');
 const quickNet                = require('quick-net');
@@ -22,6 +23,8 @@ const {
   initialReqParams,
   _400, _200
 }                             = quickNet.libHttp;
+const config                  = sgConfig.configuration(process.env.HOME, 'upload_endpoint');
+
 
 // -------------------------------------------------------------------------------------
 //  Data
@@ -38,9 +41,16 @@ mod.reqHandler({uploadHandler: function(req, res) {
 
   const ractx     = req.runAnywhere || {};
   const { fra }   = (ractx.uploadRoute__uploadHandler || ractx);
-  var   argv      = initialReqParams(req, res);
+  // var   argv      = initialReqParams(req, res);
 
-  argv.Body       = req;
+  const Bucket    = config('Bucket');
+  const path      = config('path');
+
+  const ext       = 'bin';
+  const checksum  = ''+Date.now();
+  const Key       = `${path}/${checksum}.${ext}`;
+
+  var   argv      = sg.merge({Bucket, Key, Body: req});
 
   const { uploadStreamToS3 }      = fra.loads(s3put, 'uploadStreamToS3', fra.opts({}));
 
@@ -49,6 +59,8 @@ mod.reqHandler({uploadHandler: function(req, res) {
 
     const payloadCount = 0;
     sg.debugLog(`uploadHandler (${payloadCount} items): ${req.url}`);
+
+    data = _.pick(data, 'code', 'ok', 'ETag');
     return _200(req, res, data || {});
   });
 

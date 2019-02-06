@@ -11,7 +11,7 @@
 const { qm, qmResolve }       = require('quick-merge');
 var   sg                      = require('sg0');
 const { _ }                   = sg._;
-
+const path                    = require('path');
 
 
 // -------------------------------------------------------------------------------------
@@ -58,7 +58,12 @@ function Config(...configs) {
   return qmResolve(...configs);
 };
 
-function Configuration(dir, file) {
+function Configuration(dir, name) {
+  var json = require(path.join(dir, name)+'.json');
+
+  return function(key) {
+    return json[key];
+  }
 };
 
 
