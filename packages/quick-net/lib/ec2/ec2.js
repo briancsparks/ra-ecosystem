@@ -14,6 +14,7 @@ const mod                     = ra.modSquad(module, 'quickNetEc2');
 
 const awsFilters              = libAws.awsFilters;
 const awsFilter               = libAws.awsFilter;
+const awsKey                  = libAws.awsKey;
 
 const ec2 = libAws.awsService('EC2');
 const iam = libAws.awsService('IAM');
@@ -33,19 +34,19 @@ mod.xport({getAmis: function(argv, context, callback) {
   // ra invoke packages\quick-net\lib\ec2\ec2.js getAmis  --owners=self
 
   const ractx     = context.runAnywhere || {};
-  const { fra }   = ractx.quickNetEc2__getAmis;
+  const { rax }   = ractx.quickNetEc2__getAmis;
 
-  return fra.iwrap(function(abort, calling) {
-    const { describeImages } = libAws.awsFns(ec2, 'describeImages', fra.opts({}), abort);
+  return rax.iwrap(function(abort, calling) {
+    const { describeImages } = libAws.awsFns(ec2, 'describeImages', rax.opts({}), abort);
 
-    const Owners            = fra.arg(argv, 'Owners,owners', {array:true});
-    const ExecutableUsers   = fra.arg(argv, 'ExecutableUsers,users', {array:true});
-    const Filters           = fra.arg(argv, 'Filters');
-    const ImageIds          = fra.arg(argv, 'ImageIds,images', {array:true});
-    const latest            = fra.arg(argv, 'latest');
+    const Owners            = rax.arg(argv, 'Owners,owners', {array:true});
+    const ExecutableUsers   = rax.arg(argv, 'ExecutableUsers,users', {array:true});
+    const Filters           = rax.arg(argv, 'Filters');
+    const ImageIds          = rax.arg(argv, 'ImageIds,images', {array:true});
+    const latest            = rax.arg(argv, 'latest');
 
     const params = sg.smartExtend({Owners, ExecutableUsers, Filters, ImageIds});
-    return describeImages(params, fra.opts({}), function(err, data, ...rest) {
+    return describeImages(params, rax.opts({}), function(err, data, ...rest) {
       var   result = data;
 
       if (latest) {
@@ -65,22 +66,22 @@ mod.xport({getAmazonLinuxAmis: function(argv, context, callback) {
   // ra invoke packages\quick-net\lib\ec2\ec2.js getAmazonLinuxAmis --v2 --latest
 
   const ractx     = context.runAnywhere || {};
-  const { fra }   = ractx.quickNetEc2__getAmazonLinuxAmis;
+  const { rax }   = ractx.quickNetEc2__getAmazonLinuxAmis;
 
-  return fra.iwrap(function(abort, calling) {
-    const { getAmis } = fra.loads('getAmis', fra.opts({}), abort);
+  return rax.iwrap(function(abort, calling) {
+    const { getAmis } = rax.loads('getAmis', rax.opts({}), abort);
 
-    const ecs               = fra.arg(argv, 'ecs');
-    const v2                = fra.arg(argv, 'v2');
+    const ecs               = rax.arg(argv, 'ecs');
+    const v2                = rax.arg(argv, 'v2');
     const name              = (v2 ?
                                   (ecs ? 'amzn2-ami-ecs-hvm-2.0.20190127-x86_64-ebs'
                                        : 'amzn2-ami-hvm-2.0.????????-x86_64-gp2')
                                   : 'amzn-ami-hvm-????.??.?.????????-x86_64-gp2');
     const Owners            = 'amazon';
     const filters           = awsFilters({name:[name],state:['available']});
-    const latest            = fra.arg(argv, 'latest');
+    const latest            = rax.arg(argv, 'latest');
 
-    return getAmis(fra.opts({Owners, ...filters, latest}), fra.opts({}), function(err, data) {
+    return getAmis(rax.opts({Owners, ...filters, latest}), rax.opts({}), function(err, data) {
       return callback(err, data);
     });
   });
@@ -94,16 +95,16 @@ mod.xport({getUbuntuLtsAmis: function(argv, context, callback) {
   // ra invoke packages\quick-net\lib\ec2\ec2.js getUbuntuLtsAmis --latest
 
   const ractx     = context.runAnywhere || {};
-  const { fra }   = ractx.quickNetEc2__getUbuntuLtsAmis;
+  const { rax }   = ractx.quickNetEc2__getUbuntuLtsAmis;
 
-  return fra.iwrap(function(abort, calling) {
-    const { getAmis } = fra.loads('getAmis', fra.opts({}), abort);
+  return rax.iwrap(function(abort, calling) {
+    const { getAmis } = rax.loads('getAmis', rax.opts({}), abort);
 
     const Owners            = ['099720109477'];
     const filters           = awsFilters({name:['ubuntu/images/hvm-ssd/ubuntu-xenial-16.04-amd64-server-????????'],state:['available']});
-    const latest            = fra.arg(argv, 'latest');
+    const latest            = rax.arg(argv, 'latest');
 
-    return getAmis(fra.opts({Owners, ...filters, latest}), fra.opts({}), callback);
+    return getAmis(rax.opts({Owners, ...filters, latest}), rax.opts({}), callback);
   });
 }});
 
@@ -122,43 +123,46 @@ mod.xport({upsertInstance: function(argv, context, callback) {
   */
 
   const ractx     = context.runAnywhere || {};
-  const { fra }   = ractx.quickNetEc2__upsertInstance;
+  const { rax }   = ractx.quickNetEc2__upsertInstance;
 
-  return fra.iwrap(function(abort, calling) {
-    const { runInstances,describeInstances }  = libAws.awsFns(ec2, 'runInstances,describeInstances', fra.opts({}), abort);
-    const { getSubnets }                      = fra.loads(libVpc, 'getSubnets', fra.opts({}), abort);
+  return rax.iwrap(function(abort, calling) {
+    const { runInstances,describeInstances }  = libAws.awsFns(ec2, 'runInstances,describeInstances', rax.opts({}), abort);
+    const { getSubnets }                      = rax.loads(libVpc, 'getSubnets', rax.opts({}), abort);
 
-    const uniqueName            = fra.arg(argv, 'uniqueName,unique');
-    const ImageId               = fra.arg(argv, 'ImageId,image', {required:true});
-    const InstanceType          = fra.arg(argv, 'InstanceType,type', {required:true});
-    const classB                = fra.arg(argv, 'classB,b');
-    var   az                    = fra.arg(argv, 'AvailabilityZone,az');
-    const KeyName               = fra.arg(argv, 'KeyName,key', {required:true});
-    var   SecurityGroupIds      = fra.arg(argv, 'SecurityGroupIds,sgs', {required:true, array:true});
-    var   SubnetId              = fra.arg(argv, 'SubnetId,subnet', {required:true});
-    const iamName               = fra.arg(argv, 'iamName,iam')    || 'supercow';
-    var   BlockDeviceMappings   = fra.arg(argv, 'BlockDeviceMappings,devices');
-    const rootVolumeSize        = fra.arg(argv, 'rootVolumeSize,size', {def:8});
-    const count                 = fra.arg(argv, 'count', {def:1});
-    var   MaxCount              = fra.arg(argv, 'MaxCount,max') || count;
-    var   MinCount              = fra.arg(argv, 'MinCount,min') || count;
-    const distro                = fra.arg(argv, 'distro', {required:true});
+    var   AllAwsParams          = sg.reduce(argv, {}, (m,v,k) => ( sg.kv(m, awsKey(k), v) || m ));
 
-    if (fra.argErrors())    { return fra.abort(); }
+    const uniqueName            = rax.arg(argv, 'uniqueName,unique');
+    const ImageId               = rax.arg(argv, 'ImageId,image', {required:true});
+    const InstanceType          = rax.arg(argv, 'InstanceType,type', {required:true});
+    const classB                = rax.arg(argv, 'classB,b');
+    var   az                    = rax.arg(argv, 'AvailabilityZone,az');
+    const KeyName               = rax.arg(argv, 'KeyName,key', {required:true});
+    var   SecurityGroupIds      = rax.arg(argv, 'SecurityGroupIds,sgs', {required:true, array:true});
+    var   SubnetId              = rax.arg(argv, 'SubnetId,subnet', {required:true});
+    const iamName               = rax.arg(argv, 'iamName,iam')    || 'supercow';
+    var   BlockDeviceMappings   = rax.arg(argv, 'BlockDeviceMappings,devices');
+    const rootVolumeSize        = rax.arg(argv, 'rootVolumeSize,size', {def:8});
+    const count                 = rax.arg(argv, 'count', {def:1});
+    var   MaxCount              = rax.arg(argv, 'MaxCount,max') || count;
+    var   MinCount              = rax.arg(argv, 'MinCount,min') || count;
+    const DryRun                = rax.arg(argv, 'DryRun');
+    const distro                = rax.arg(argv, 'distro', {required:true});
+
+    if (rax.argErrors())    { return rax.abort(); }
 
     if (!BlockDeviceMappings) {
       if (!rootVolumeSize)  {
-        return fra.abort(`Must provide BlockDeviceMappings or rootVolumeSize.`);
+        return rax.abort(`Must provide BlockDeviceMappings or rootVolumeSize.`);
       }
       BlockDeviceMappings = [{DeviceName: 'xvdh', Ebs:{VolumeSize: rootVolumeSize}}];
     }
 
     var   InstanceId;
     var   userdata;
-    return sg.__run2({result:{}}, callback, [function(my, next, last) {
+    return rax.__run2({result:{}}, callback, [function(my, next, last) {
 
       if (!uniqueName)  { return next(); }
-      return describeInstances(awsFilters({"tag:uniqueName":[uniqueName]}), fra.opts({}), function(err, data) {
+      return describeInstances(awsFilters({"tag:uniqueName":[uniqueName]}), rax.opts({}), function(err, data) {
 
         var   theInstance;
         const count = sg.reduce(data.Reservations || [], 0, function(m0, reservations) {
@@ -183,7 +187,7 @@ mod.xport({upsertInstance: function(argv, context, callback) {
     }, function(my, next) {
       if (SecurityGroupIds[0].startsWith('sg-') || SubnetId.startsWith('subnet-'))   { return next(); }
 
-      if (fra.argErrors({classB}))    { return fra.abort(); }
+      if (rax.argErrors({classB}))    { return rax.abort(); }
 
       return getSubnets({classB, SecurityGroupIds: SecurityGroupIds[0], SubnetId}, {}, function(err, data) {
         if (sg.ok(err, data)) {
@@ -225,8 +229,8 @@ mod.xport({upsertInstance: function(argv, context, callback) {
         params.IamInstanceProfile = {Name: iamName};
       }
 
-      params = sg.merge(params, {ImageId, InstanceType, KeyName, SecurityGroupIds, SubnetId, MaxCount, MinCount, UserData});
-      return runInstances(params, fra.opts({}), function(err, data) {
+      params = sg.merge(AllAwsParams, params, {ImageId, InstanceType, KeyName, SecurityGroupIds, SubnetId, MaxCount, MinCount, UserData});
+      return runInstances(params, rax.opts({}), function(err, data) {
 
         my.result   = {Instance: data.Instances[0]};
         InstanceId  = my.result.Instance.InstanceId;
@@ -236,7 +240,7 @@ mod.xport({upsertInstance: function(argv, context, callback) {
 
     }, function(my, next) {
       return sg.until(function(again, last, count, elapsed) {
-        return describeInstances({InstanceIds:[InstanceId]}, fra.opts({abort:false}), function(err, data) {
+        return describeInstances({InstanceIds:[InstanceId]}, rax.opts({abort:false}), function(err, data) {
           if (err) {
             if (err.code === 'InvalidInstanceID.NotFound')    { return again(250); }
             return abort(err);

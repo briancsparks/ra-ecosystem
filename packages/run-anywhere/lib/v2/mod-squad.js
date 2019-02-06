@@ -254,6 +254,10 @@ const FuncRa = function(argv, context, callback, origCallback, options_ = {}) {
     }
   };
 
+  self.__run2 = function(...args) {
+    return sg.__run2(...args);
+  };
+
   /**
    * Merges any special command-line given args into other objects.
    *

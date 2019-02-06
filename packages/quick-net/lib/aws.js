@@ -111,6 +111,19 @@ const isVpcId = function(str) {
   return isId('vpc', str);
 };
 
+const isAwsProp = function(key, obj) {
+  if (sg.isnt(key))     { return false; }
+
+  // Can look at other things.
+
+  return key[0].match(/[A-Z]/);
+};
+
+const awsKey = function(key, obj) {
+  if (!isAwsProp(key, obj))   { return; }
+  return key;
+};
+
 const AwsFilterObject = function(obj, ...rest) {
   const result = sg.reduce(obj, {}, (m,v,k) => {
     if (sg.isnt(k))     { return m; }
@@ -137,4 +150,6 @@ exports.awsFilter         = awsFilter;
 exports.isId              = isId;
 exports.isVpcId           = isVpcId;
 exports.AwsFilterObject   = AwsFilterObject;
+exports.isAwsProp         = isAwsProp;
+exports.awsKey            = awsKey;
 exports.AWS               = AWS;

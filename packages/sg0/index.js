@@ -230,6 +230,24 @@ sg.log = function(msg, arg0, ...args) {
 sg.debugLog = sg.log;
 
 /**
+ * Inspect variables while in active development.
+ *
+ * @param {*} msg
+ * @param {*} level
+ * @param {*} arg0
+ * @param {*} args
+ */
+sg.dump = function(msg_, level, arg0, ...args) {
+  // var   msg = `\n\n     _____     _____     ${msg_}     _____     _____\n\n`;
+
+  var lines = sg.reduce(_.range(level), '', m => `\n`);
+  msg = `${lines}     ` + sg.reduce(_.range(level), msg_, (m) => { return `_____     ${m}     _____` }) + lines;
+
+  console.error(..._.compact([msg, arg0 &&  sg.inspect({...arg0}), (args.length > 0) && sg.inspect([...args])]));
+  console.error(msg);
+};
+
+/**
  * Just like console.log, but with inspect by default.
  *
  * @param {*} msg
