@@ -79,29 +79,14 @@ exports.invoke = function(params_, spec_, fn, callback) {
  *      fn(argv, context, callback);
  *
  */
-exports.invoke2 = function(argv, mod, fname, fn, callback) {
+exports.invoke2 = function(argv, mod, fname, callback) {
 
   // Get args
   const debug   = argv.debug;
   const verbose = argv.verbose;
 
-  // var   args    = [];
-
   var   context = {
     isRaInvoked:  true
-  };
-
-  // args.push(argv    || {});
-  // args.push(context);
-
-  // // Wrap the callback
-  // var cb = function(err) {
-  //   return callback.apply(this, arguments);
-  // };
-
-  // args.push(cb);
-
-  const abort   = function(...args) {
   };
 
   // Load up the function
@@ -116,7 +101,6 @@ exports.invoke2 = function(argv, mod, fname, fn, callback) {
       const fns = fra.loads(mod, fname, sg0.merge({debug, verbose}), abort);
       const fn  = fns[fname];
 
-      // return fn.apply(this, args);
       return fn(argv, context, callback);
     });
   }});

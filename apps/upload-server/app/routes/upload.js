@@ -61,8 +61,6 @@ mod.reqHandler({fileHandler: function(req, res) {
   const { fra }   = (ractx.uploadRoute__fileHandler || ractx);
   var   argv      = initialReqParams(req, res);
 
-  // argv.filename   = req;
-
   const { uploadStreamToS3 }      = fra.loads(s3put, 'uploadStreamToS3', fra.opts({}));
 
   sg.debugLog(`calling uploadStreamToS3 on file ${argv.filename}`, {argv});

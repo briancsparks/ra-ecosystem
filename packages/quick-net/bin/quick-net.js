@@ -15,9 +15,8 @@ const sg0                     = ra.get3rdPartyLib('sg-flow');
 const sg                      = sg0.merge(sg0, require('sg-argv'));
 const { _ }                   = sg;
 
-const {
-  hardRejection
-}                             = ra;
+const { hardRejection }       = ra;
+const { argvGet }             = sg;
 
 var   mods = [];
 
@@ -69,6 +68,10 @@ if (process.argv[1] === __filename) {
 function quickNet() {
   require('loud-rejection/register');
 
+  const silent    = argvGet(ARGV, 'silent,s');
+  const debug     = argvGet(ARGV, 'debug,d');
+  const machine   = argvGet(ARGV, 'machine,m');
+
   const command = commands[ARGV._[0]];
   if (_.isFunction(command)) {
     return command();
@@ -85,7 +88,6 @@ function quickNet() {
   const mod = sg.reduce(mods, null, (m, theMod) => {
 
     let fn = theMod[fname];
-    // console.log(`mod`, sg.inspect({theMod, fn}));
     if (_.isFunction(fn)) {
       if (m) {
         console.warn(`Duplicate ${fname} functions in ${theMod.modname || 'some_mod'} and ${m.modname || 'some_other_mod'}`);
@@ -102,39 +104,42 @@ function quickNet() {
   }
 
   // Otherwise, run it
-  // const fn = fra.loads(mod, fname, fra.opts({}), abort);
-  const fn = mod[fname];
-
-
-
-
-
-
-  return ra0.invoke2(ARGV, mod, fname, fn, function(err) {
+  return ra0.invoke2(ARGV, mod, fname, function(err, ...rest) {
     var exitCode = 0;
 
+    // Is there an error?
     if (err) {
+
       exitCode = 1;
-      console.error(err, "Error invoking: "+fname);
+
+      // Log it unless silent
+      if (!silent) {
+        console.error(err);
+      }
     }
 
+    // If we only got an error object, were done
     if (arguments.length === 1) {
       process.exit(exitCode);
       return;
     }
 
-    if (arguments.length === 2) {
-      if (_.isString(arguments[1])) {
-        process.stdout.write(arguments[1]+'\n');
-      } else {
-        process.stdout.write(JSON.stringify(arguments[1])+'\n');
-      }
+    // Machine output?
+    if (machine) {
+      _.each(rest, (result) => {
+        if (!_.isString(result)) {
+          process.stdout.write(JSON.stringify(result) + '\n');
+          return;
+        }
+
+        process.stdout.write(result + '\n');
+      });
+
       return;
     }
 
-    /* otherwise */
-    process.stdout.write(JSON.stringify(_.drop(arguments))+'\n');
-    process.exit(exitCode);
+    // For humans
+    sg.debugLog(fname, ...rest);
   });
 }
 
