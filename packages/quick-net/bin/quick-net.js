@@ -102,7 +102,7 @@ function quickNet() {
   }
 
   // Otherwise, run it
-  // const fn = fra.loads(libDescribe, 'describeVpcs', fra.opts({}), abort);
+  // const fn = fra.loads(mod, fname, fra.opts({}), abort);
   const fn = mod[fname];
 
 
@@ -110,12 +110,12 @@ function quickNet() {
 
 
 
-  return ra0.invoke2(ARGV, fn, function(err) {
+  return ra0.invoke2(ARGV, mod, fname, fn, function(err) {
     var exitCode = 0;
 
     if (err) {
       exitCode = 1;
-      console.error(err, "Error invoking: "+msg);
+      console.error(err, "Error invoking: "+fname);
     }
 
     if (arguments.length === 1) {

@@ -24,7 +24,8 @@ user_docker_conf_dir="${the_home_dir}/.docker"
 
 env
 
-sudo chown -R "${the_user_name}":"${the_user_name}" ~/.config/
+mkdir -p "${the_home_dir}/.config/"
+sudo chown -R "${the_user_name}":"${the_user_name}" "${the_home_dir}/.config/"
 
 # Install apt-over-https
 # DEBIAN_FRONTEND=noninteractive apt-get update

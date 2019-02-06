@@ -262,12 +262,14 @@ sg.logError = function(error, msg, arg0, ...debugArgs) {
   console.error(msg, error, sg.inspect({...arg0, msg}), sg.inspect(sg.modes().prod ? [] : (debugArgs || [])));
 };
 
-sg.warn = function(msg, arg0, ...args) {
-  console.warn(msg, sg.inspect({...arg0}), sg.inspect([...args]));
+sg.warn = function(msg_, arg0, ...args) {
+  const msg = `\n\n     #####     #####     ${msg_}     #####     #####\n\n`;
+  console.warn(..._.compact([msg, arg0 &&  sg.inspect({...arg0}), (args.length > 0) && sg.inspect([...args])]));
 };
 
-sg.nag = function(msg, arg0, ...args) {
-  console.warn(msg, sg.inspect({...arg0}), sg.inspect([...args]));
+sg.nag = function(msg_, arg0, ...args) {
+  const msg = `\n\n     .....     .....     ${msg_}     .....     .....\n\n`;
+  console.warn(..._.compact([msg, arg0 &&  sg.inspect({...arg0}), (args.length > 0) && sg.inspect([...args])]));
 };
 
 /**

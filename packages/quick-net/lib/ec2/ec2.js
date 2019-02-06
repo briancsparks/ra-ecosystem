@@ -5,6 +5,7 @@ const sg                      = ra.get3rdPartyLib('sg-flow');
 const { _ }                   = sg;
 const awsDefs                 = require('../aws-defs');
 const libAws                  = require('../aws');
+const libVpc                  = require('./vpc');
 const cloudInit               = require('../sh/cloud-init');
 const fs                      = require('fs');
 const path                    = require('path');
@@ -125,13 +126,16 @@ mod.xport({upsertInstance: function(argv, context, callback) {
 
   return fra.iwrap(function(abort, calling) {
     const { runInstances,describeInstances }  = libAws.awsFns(ec2, 'runInstances,describeInstances', fra.opts({}), abort);
+    const { getSubnets }                      = fra.loads(libVpc, 'getSubnets', fra.opts({}), abort);
 
     const uniqueName            = fra.arg(argv, 'uniqueName,unique');
     const ImageId               = fra.arg(argv, 'ImageId,image', {required:true});
     const InstanceType          = fra.arg(argv, 'InstanceType,type', {required:true});
+    const classB                = fra.arg(argv, 'classB,b');
+    var   az                    = fra.arg(argv, 'AvailabilityZone,az');
     const KeyName               = fra.arg(argv, 'KeyName,key', {required:true});
-    const SecurityGroupIds      = fra.arg(argv, 'SecurityGroupIds,sgs', {required:true, array:true});
-    const SubnetId              = fra.arg(argv, 'SubnetId,subnet', {required:true});
+    var   SecurityGroupIds      = fra.arg(argv, 'SecurityGroupIds,sgs', {required:true, array:true});
+    var   SubnetId              = fra.arg(argv, 'SubnetId,subnet', {required:true});
     const iamName               = fra.arg(argv, 'iamName,iam')    || 'supercow';
     var   BlockDeviceMappings   = fra.arg(argv, 'BlockDeviceMappings,devices');
     const rootVolumeSize        = fra.arg(argv, 'rootVolumeSize,size', {def:8});
@@ -177,6 +181,19 @@ mod.xport({upsertInstance: function(argv, context, callback) {
       });
 
     }, function(my, next) {
+      if (SecurityGroupIds[0].startsWith('sg-') || SubnetId.startsWith('subnet-'))   { return next(); }
+
+      if (fra.argErrors({classB}))    { return fra.abort(); }
+
+      return getSubnets({classB, SecurityGroupIds: SecurityGroupIds[0], SubnetId}, {}, function(err, data) {
+        if (sg.ok(err, data)) {
+          SecurityGroupIds  = sg.pluck(data.securityGroups, 'GroupId');
+          SubnetId          = (data.subnets.filter(s => s.AvailabilityZone.startsWith(az))[0]   || data.subnets[0] || {}).SubnetId;
+        }
+        return next();
+      });
+
+    }, function(my, next) {
 
       const userdataFilename = path.join(__dirname, 'userdata', `${distro}.sh`);
 
@@ -185,6 +202,10 @@ mod.xport({upsertInstance: function(argv, context, callback) {
         if (!sg.ok(err, userdata_))    { return abort(err, `fail reading ${distro}`); }
 
         userdata = userdata_;
+        userdata  += `\n`;
+        userdata  += `echo UserData script is done for ${uniqueName || 'instance'}`;
+        userdata  += `\n`;
+
         return next();
       });
 
@@ -197,7 +218,7 @@ mod.xport({upsertInstance: function(argv, context, callback) {
       }
 
       if (userdata) {
-        UserData = Buffer.from(userdata).toString('base64');
+        UserData   = Buffer.from(userdata).toString('base64');
       }
 
       if (iamName) {

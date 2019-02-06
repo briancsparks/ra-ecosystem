@@ -841,8 +841,8 @@ mod.xport({getSubnets: function(argv, context, callback) {
 
   const classB        = ''+argv.classB;
   const kind          = argv.kind ? argv.kind.toLowerCase() : argv.kind;
-  const sgName        = argv.sg       || argv.sgName;
-  const subnetName    = argv.subnet   || argv.subnetName;
+  const sgName        = argv.sg       || argv.sgs   || argv.sgName  || argv.SecurityGroupIds;
+  const subnetName    = argv.subnet   || argv.subnetName            || argv.SubnetId;
   const ids           = argv.ids;
 
   var   allVpcs, allSubnets, allSecurityGroups;
@@ -922,7 +922,7 @@ mod.xport({getSubnets: function(argv, context, callback) {
     });
 
     if (ids) {
-      result.subnets          = sg.pluck(subnets, 'SubnetId');
+      result.subnets          = _.map(subnets, ({SubnetId, AvailabilityZone}) => ({SubnetId, AvailabilityZone}));
       result.securityGroups   = sg.pluck(securityGroups, 'GroupId');
     } else {
       result.vpcs = vpcs;

@@ -302,21 +302,27 @@ const FuncRa = function(argv, context, callback, origCallback, options_ = {}) {
   };
 
   self.loads_ = function(mod, fnames, options1, abort) {
+    // const fnames = (_.isArray(fnames_) ? fnames_ : [fnames_]);
 
     // Do for each function name
     return sg.reduce(fnames.split(','), {}, function(m, fname) {
 
-      // ------------------------ The fn that gets called by you
-      const interceptFn = function(argv_, options_, continuation) {
+      // ------------------------ The proxy for the function that was loaded
+      const interceptFn = function(argv_, options2, continuation) {
 
-        // self.opts() propigates --debug and --verbose; options is a combination of options1 and options for this call.
+        if (!_.isFunction(continuation))    { sg.warn(`continuation for ${fname} is not a function`); }
+
+        // self.opts() propigates --debug and --verbose; options is a combination of options1 and options2 for this call.
         const argv      = self.opts(argv_);
-        var   options   = sg.merge({...options1, ...self.opts(options_)});
+        var   options   = sg.merge({...options1, ...self.opts(options2)});
 
         options.abort   = ('abort' in options ? options.abort : true);
 
         // This will be called when the called function finishes. -----
         const callback = function(err, data, ...rest) {
+
+          // The called function just finished, and we will call the callers continuation soon, but first
+          //    check for errors and do some logging.
 
           // OK?
           var   ok = false;
@@ -338,8 +344,8 @@ const FuncRa = function(argv, context, callback, origCallback, options_ = {}) {
             }
           }
 
-          // Back into your code
-          return continuation(err, data, ...rest);
+          // Continue with the callers code
+          return continuation(err, data, ...rest);   /* ... not a function === 3rd param to loads()-loaded function wasnt a function */
         };
         // -----
 
