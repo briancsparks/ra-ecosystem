@@ -40,7 +40,7 @@ mod.reqHandler({uploadHandler: function(req, res) {
   const { fra }   = (ractx.uploadRoute__uploadHandler || ractx);
   var   argv      = initialReqParams(req, res);
 
-  // argv.Body       = req;
+  argv.Body       = req;
 
   const { uploadStreamToS3 }      = fra.loads(s3put, 'uploadStreamToS3', fra.opts({}));
 

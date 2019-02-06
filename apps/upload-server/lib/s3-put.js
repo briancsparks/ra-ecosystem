@@ -46,7 +46,7 @@ mod.xport({uploadStreamToS3: function(argv, context, callback) {
     const Bucket            = fra.arg(argv, 'Bucket,bucket', {required:true});
     const Key               = fra.arg(argv, 'Key,key', {required:true});
     var   Body              = fra.arg(argv, 'Body');
-    const filename          = fra.arg(argv, 'file');
+    const filename          = fra.arg(argv, 'filename');
 
     if (fra.argErrors({oneOf:{Body,filename}}))    { return fra.abort(); }
 
