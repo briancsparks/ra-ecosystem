@@ -79,7 +79,7 @@ exports.invoke = function(params_, spec_, fn, callback) {
  *      fn(argv, context, callback);
  *
  */
-exports.invoke2 = function(argv, mod, fname, callback) {
+libRa.v2.invoke2 = exports.invoke2 = function(argv, mod, fname, callback) {
 
   // Get args
   const debug   = argv.debug;
