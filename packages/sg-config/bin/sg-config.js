@@ -58,8 +58,9 @@ async function sg_config_link_with_file() {
     const updatePackagePath = path.join(workdir, pkgDir, 'package.json');
     const package = readPkg.sync({cwd: packagePath, normalize:false});
     const packageFilePath = `file:${resolvePkg(package.name, {cwd:workdir})}`;
-    // const dirname = pkgDir.split(/[/\\]/g)[1];
-    return sg.kv(m, package.name, {updatePackage: package, updatePackagePath, packageFilePath});
+    const origPackage   = fs.readFileSync(updatePackagePath, 'utf8');
+
+    return sg.kv(m, package.name, {updatePackage: package, origPackage, updatePackagePath, packageFilePath});
   });
 
   console.log({updatePackageList});
@@ -69,10 +70,11 @@ async function sg_config_link_with_file() {
   });
 
   const updatedPackages = sg.reduce(updatePackageList, {}, (m, data, npmName) => {
-    var updatedPackage = data.updatePackage;
+    const { origPackage }   = data;
+    const updatedPackage    = JSON.parse(JSON.stringify(data.updatePackage));
 
     updatedPackage.dependencies = replace(updatedPackage.dependencies, dependencies);
-    return sg.kv(m, npmName, {updatedPackage, updatedPackagePath: data.updatePackagePath, packageFilePath:data.packageFilePath});
+    return sg.kv(m, npmName, {origPackage, updatedPackage, updatedPackagePath: data.updatePackagePath, packageFilePath:data.packageFilePath});
   });
   console.log(sg.inspect({updatedPackages}));
 
@@ -88,8 +90,8 @@ async function sg_config_link_with_file() {
   sg.setTimeout(10 * 1000, () => {
     console.log(`restoring...`);
     _.each(updatedPackages, (data, npmName) => {
-      const { updatedPackage } = data;
-      fs.writeFileSync(data.updatedPackagePath, JSON.stringify(updatedPackage));
+      const { origPackage } = data;
+      fs.writeFileSync(data.updatedPackagePath, origPackage);
     });
 
     console.log(`done...`);
