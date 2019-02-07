@@ -117,7 +117,7 @@ async function sg_config_link_with_file() {
 
   } else {
     console_info(`\n------------------------------------`);
-    console_info(`Recover with:\n`);
+    console_info(`Using PowerShell or bash (not cmd), recover with:\n`);
     console_info(`cd ${process.cwd()}`);
     _.each(updatedPackages, (data, npmName) => {
       console_info(`git checkout ${data.updatedPackagePath}`);
