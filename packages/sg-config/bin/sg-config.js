@@ -4,6 +4,7 @@ const sg          = require('sg0');
 const { _ }       = sg;
 const util        = require('util');
 const path        = require('path');
+const fs          = require('fs');
 const pkgUp       = require('pkg-up');
 const readPkg     = require('read-pkg');
 // const glob        = util.promisify(require('glob'));
@@ -76,6 +77,25 @@ async function sg_config_link_with_file() {
   console.log(sg.inspect({updatedPackages}));
 
   console.log({dependencies});
+
+  _.each(updatedPackages, (data, npmName) => {
+    const { updatedPackage } = data;
+    fs.writeFileSync(data.updatedPackagePath, JSON.stringify(updatedPackage));
+  });
+
+  console.log(`updated... take a look`);
+
+  sg.setTimeout(10 * 1000, () => {
+    console.log(`restoring...`);
+    _.each(updatedPackages, (data, npmName) => {
+      const { updatedPackage } = data;
+      fs.writeFileSync(data.updatedPackagePath, JSON.stringify(updatedPackage));
+    });
+
+    console.log(`done...`);
+  });
+
+
 }
 
 function dirOf(file) {
