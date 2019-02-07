@@ -8,7 +8,6 @@
   "main": "index.js",
   "bin": {
     "sg-config": "bin/sg-config.js",
-    "sg-config-link-with-file": "bin/sg-config.js",
     "sg-link-file": "bin/sg-link-file.js"
   },
   "directories": {
