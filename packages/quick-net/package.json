@@ -4,8 +4,7 @@
   "description": "Create quick cloud network",
   "main": "index.js",
   "bin": {
-    "quick-net": "bin/quick-net.js",
-    "quicknet": "bin/quick-net.js"
+    "quick-net": "bin/quick-net.js"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
