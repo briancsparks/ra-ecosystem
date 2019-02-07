@@ -1,5 +1,6 @@
 {
   "name": "upload-server",
+  "private":true,
   "version": "1.0.2",
   "description": "A server using run-anywhere that receives a file uplaod from the client and stores on S3",
   "main": "index.js",
