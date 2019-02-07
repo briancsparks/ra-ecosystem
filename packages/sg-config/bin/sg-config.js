@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const sg          = require('sg0');
+const sg          = require('sg-argv');
 const { _ }       = sg;
 const util        = require('util');
 const path        = require('path');
@@ -11,7 +11,9 @@ const readPkg     = require('read-pkg');
 const glob        = require('glob');
 const resolvePkg  = require('resolve-pkg');
 
-console.log(process.argv, process.argv0);
+const ARGV        = sg.ARGV();
+
+console.log(process.argv, process.argv0, {ARGV});
 
 (async function() {
 
@@ -43,62 +45,98 @@ async function sg_config_link_with_file() {
     return;
   }
 
-  console.log({workspace});
+  console_log({workspace});
+  console_info(`Using workspace file at ${workdir}...`);
 
   var packageList = sg.reduce(workspace.workspaces, [], (m, glb) => {
     return [ ...m, ...glob.sync(glb, {cwd: workdir}) ];
   });
 
-  // packageList = packageList.map(p => `${p}/package.json`);
-
-  console.log({packageList});
+  console_log({packageList});
 
   var updatePackageList = sg.reduce(packageList, {}, (m, pkgDir) => {
-    const packagePath = `${workdir}/${pkgDir}`;
-    const updatePackagePath = path.join(workdir, pkgDir, 'package.json');
-    const package = readPkg.sync({cwd: packagePath, normalize:false});
-    const packageFilePath = `file:${resolvePkg(package.name, {cwd:workdir})}`;
-    const origPackage   = fs.readFileSync(updatePackagePath, 'utf8');
+    const packagePath             = `${workdir}/${pkgDir}`;
 
-    return sg.kv(m, package.name, {updatePackage: package, origPackage, updatePackagePath, packageFilePath});
+    const origPackagePath         = path.join(workdir, pkgDir, 'package.json');
+    const origPackageJson         = fs.readFileSync(origPackagePath, 'utf8');
+
+    const package                 = readPkg.sync({cwd: packagePath, normalize:false});      /* the formally-read in package.json contents */
+    const dependencyReplacement   = `file:${resolvePkg(package.name, {cwd:workdir})}`;
+
+    console_info(`  Package ${package.name} is at ${dependencyReplacement}`);
+
+    return sg.kv(m, package.name, {updatePackage: package, origPackageJson, origPackagePath, dependencyReplacement});
   });
 
-  console.log({updatePackageList});
+  console_log({updatePackageList});
 
   var dependencies = sg.reduce(updatePackageList, {}, (m, data, npmName) => {
-    return sg.kv(m, npmName, data.packageFilePath);
+    return sg.kv(m, npmName, data.dependencyReplacement);
   });
 
   const updatedPackages = sg.reduce(updatePackageList, {}, (m, data, npmName) => {
-    const { origPackage }   = data;
-    const updatedPackage    = JSON.parse(JSON.stringify(data.updatePackage));
+    const { origPackageJson }   = data;
+    const updatedPackage        = JSON.parse(JSON.stringify(data.updatePackage));
 
     updatedPackage.dependencies = replace(updatedPackage.dependencies, dependencies);
-    return sg.kv(m, npmName, {origPackage, updatedPackage, updatedPackagePath: data.updatePackagePath, packageFilePath:data.packageFilePath});
-  });
-  console.log(sg.inspect({updatedPackages}));
 
-  console.log({dependencies});
+    return sg.kv(m, npmName, {origPackageJson, updatedPackage, updatedPackagePath: data.origPackagePath, dependencyReplacement: data.dependencyReplacement});
+  });
+  console_log(sg.inspect({updatedPackages}));
+
+  console_log({dependencies});
 
   _.each(updatedPackages, (data, npmName) => {
     const { updatedPackage } = data;
-    fs.writeFileSync(data.updatedPackagePath, JSON.stringify(updatedPackage));
-  });
 
-  console.log(`updated... take a look`);
-
-  sg.setTimeout(10 * 1000, () => {
-    console.log(`restoring...`);
-    _.each(updatedPackages, (data, npmName) => {
-      const { origPackage } = data;
-      fs.writeFileSync(data.updatedPackagePath, origPackage);
+    console_info(`\n  Writing ${data.updatedPackagePath}`);
+    _.each(updatedPackage.dependencies, (v,k) => {
+      console_info(`    ${k}:${v}`);
     });
 
-    console.log(`done...`);
+    if (!ARGV.dry_run) {
+      // fs.writeFileSync(data.updatedPackagePath, JSON.stringify(updatedPackage));
+    }
   });
 
+  console_log(`updated... take a look`);
 
+  if (ARGV.restore) {
+    sg.setTimeout(10 * 1000, () => {
+      console_info(`\nRestoring...`);
+      _.each(updatedPackages, (data, npmName) => {
+        const { origPackageJson } = data;
+        console_info(`  ${data.updatedPackagePath}`);
+        if (!ARGV.dry_run) {
+          // fs.writeFileSync(data.updatedPackagePath, origPackageJson);
+        }
+      });
+
+      console_log(`done...`);
+    });
+
+  } else {
+    console_info(`\n------------------------------------`);
+    console_info(`Recover with:\n`);
+    console_info(`cd ${process.cwd()}`);
+    _.each(updatedPackages, (data, npmName) => {
+      console_info(`git checkout ${data.updatedPackagePath}`);
+    });
+  }
 }
+
+function console_log(...args) {
+  if (ARGV.debug || ARGV.verbose) {
+    return console.error(...args);
+  }
+}
+
+function console_info(...args) {
+  if (!ARGV.quiet) {
+    return console.info(...args);
+  }
+}
+
 
 function dirOf(file) {
   return _.initial(file.split(/[/\\]/g)).join(path.sep);

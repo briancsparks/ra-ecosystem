@@ -7,6 +7,7 @@
   "license": "MIT",
   "main": "index.js",
   "bin": {
+    "sg-config": "bin/sg-config.js",
     "sg-config-link-with-file": "bin/sg-config.js",
     "sg-link-file": "bin/sg-link-file.js"
   },
@@ -30,6 +31,6 @@
     "quick-merge": "^1.0.10",
     "read-pkg": "^4.0.1",
     "resolve-pkg": "^1.0.0",
-    "sg0": "^0.9.11"
+    "sg-argv": "^0.9.12"
   }
 }
