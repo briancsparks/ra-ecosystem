@@ -1,13 +1,13 @@
 {
   "name": "sg-config",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Read configuration",
   "author": "Brian C Sparks <briancsparks@gmail.com>",
   "homepage": "https://github.com/briancsparks/ra-ecosystem#readme",
   "license": "MIT",
   "main": "index.js",
   "bin": {
-    "sg-config-link-with-file":"bin/sg-config.js"
+    "sg-config-link-with-file": "bin/sg-config.js"
   },
   "directories": {
     "lib": "lib",
@@ -25,6 +25,6 @@
   },
   "dependencies": {
     "quick-merge": "^1.0.10",
-    "sg0": "^0.9.10"
+    "sg0": "^0.9.11"
   }
 }
