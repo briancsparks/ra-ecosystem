@@ -95,7 +95,7 @@ async function sg_config_link_with_file() {
     });
 
     if (!ARGV.dry_run) {
-      // fs.writeFileSync(data.updatedPackagePath, JSON.stringify(updatedPackage));
+      fs.writeFileSync(data.updatedPackagePath, JSON.stringify(updatedPackage));
     }
   });
 
@@ -108,7 +108,7 @@ async function sg_config_link_with_file() {
         const { origPackageJson } = data;
         console_info(`  ${data.updatedPackagePath}`);
         if (!ARGV.dry_run) {
-          // fs.writeFileSync(data.updatedPackagePath, origPackageJson);
+          fs.writeFileSync(data.updatedPackagePath, origPackageJson);
         }
       });
 
