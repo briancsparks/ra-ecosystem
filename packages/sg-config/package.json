@@ -8,7 +8,7 @@
   "main": "index.js",
   "bin": {
     "sg-config-link-with-file": "bin/sg-config.js",
-    "sg-link-file": "bin/sg-config.js"
+    "sg-link-file": "bin/sg-link-file.js"
   },
   "directories": {
     "lib": "lib",
@@ -25,7 +25,11 @@
     "url": "https://github.com/briancsparks/ra-ecosystem/issues"
   },
   "dependencies": {
+    "glob": "^7.1.3",
+    "pkg-up": "^2.0.0",
     "quick-merge": "^1.0.10",
+    "read-pkg": "^4.0.1",
+    "resolve-pkg": "^1.0.0",
     "sg0": "^0.9.11"
   }
 }
