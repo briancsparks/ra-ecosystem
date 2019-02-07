@@ -1,6 +1,6 @@
 {
   "name": "quick-net",
-  "version": "0.8.7",
+  "version": "0.8.8",
   "description": "Create quick cloud network",
   "main": "index.js",
   "bin": {
@@ -29,7 +29,7 @@
   ],
   "dependencies": {
     "aws-sdk": "^2.382.0",
-    "run-anywhere": "^0.7.10",
+    "run-anywhere": "^0.7.11",
     "sg-argv": "^0.9.12",
     "superb": "^3.0.0"
   }
