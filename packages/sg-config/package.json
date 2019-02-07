@@ -6,6 +6,9 @@
   "homepage": "https://github.com/briancsparks/ra-ecosystem#readme",
   "license": "MIT",
   "main": "index.js",
+  "bin": {
+    "sg-config-link-with-file":"bin/sg-config.js"
+  },
   "directories": {
     "lib": "lib",
     "test": "__tests__"
