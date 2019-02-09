@@ -25,6 +25,7 @@ const getSubnets = 'getSubnets';
 
 // console.log({ra});
 
+const output =
 (function() {
   const mod = quickNet.getMod(getSubnets);
 
@@ -33,53 +34,65 @@ const getSubnets = 'getSubnets';
   const SubnetId          = 'webtier';
   const SecurityGroupIds  = 'admin';
   const classB            = 111;
-  const az                = ARGV.az;
+  const az                = argvGet(ARGV, 'AvailabilityZone,az');
+  const ZipFile           = argvGet(ARGV, 'ZipFile,zip');
+  // const ZipFile           = ARGV.ZipFile || ARGV.zip;
+  const S3Bucket          = argvGet(ARGV, 'S3Bucket,bucket');
+  const S3Key             = argvGet(ARGV, 'S3Key,key');
+  var   S3ObjectVersion;
 
   return ra.invoke2({SecurityGroupIds,SubnetId,classB,debug,verbose}, mod, getSubnets, function(err, data, ...rest) {
+    // console.log({data, rest});
 
-    const jsonData = {
+    const required = {
       "FunctionName": argvGet(ARGV, 'FunctionName,name', {required:true}),
       "Runtime": "nodejs8.10",
-      "Role": "supercow",
-      "Handler": "lamba.handler",
-      "Timeout": 10,
-      "MemorySize": 64,
+      "Role": `arn::iam::${process.env.AWS_ACCOUNT}:role/supercow`,
+      "Handler": "lambda.handler"
+    };
+
+    const optional = {
+      "Timeout": 40,
+      "MemorySize": 128,
       "Description": sg.deref(require('../package.json'), 'description'),
-      "Code": {
-          "ZipFile": null,
-          "S3Bucket": "",
-          "S3Key": "",
-          "S3ObjectVersion": ""
-      },
+
+      Code: sg.merge({ ZipFile, S3Bucket, S3Key, S3ObjectVersion }),
+
       "Publish": argvGet(ARGV, "Publish") || false,
       "VpcConfig": {
-          "SubnetIds": sg.pluck(data.subnets.filter(s => s.AvailabilityZone.endsWith(az)), 'SubnetId'),
-          "SecurityGroupIds": sg.pluck(data.securityGroups, 'GroupId'),
-      },
-      "DeadLetterConfig": {
-          "TargetArn": ""
+        "SubnetIds": sg.pluck(data.subnets, 'SubnetId'),
+        "SecurityGroupIds": sg.pluck(data.securityGroups, 'GroupId'),
       },
       "Environment": {
           "Variables": {
               "KeyName": ""
           }
       },
-      "KMSKeyArn": "",
       "TracingConfig": {
           "Mode": "Active"
       },
       "Tags": {
           "KeyName": ""
+      }
+    };
+
+    const rare = {
+      "DeadLetterConfig": {
+          "TargetArn": ""
       },
+      "KMSKeyArn": "",
       "Layers": [
           ""
       ]
     };
 
-    sg.debugLog(`json`, {jsonData});
+    // const jsonData = { ...required, ...optional, ...rare };
+    const jsonData = qm({ ...required, ...optional, ...rare });
 
+    // sg.debugLog(`json`, {jsonData});
+
+    console.log(JSON.stringify(jsonData));
     return jsonData;
   });
 })();
-
 

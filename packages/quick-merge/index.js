@@ -3,8 +3,62 @@
  * Implementation of quick-merge merging algorithm.
  */
 
+ var g_prune = true;
+
 // Forward declarations
 var merge, appendArrays, appendToArray, awins, bwins;
+
+const pruneObj = function(strategy, x) {
+  if (!g_prune) {
+    return x;
+  }
+
+  strategy.pruneFalsy = true;
+
+  var   out         = {};
+  const keys        = Object.keys(x);
+  const len         = keys.length;
+
+  if (len === 0 && strategy.pruneFalsy) {
+    return /* undefined */;
+  }
+
+  var   missed = 0;
+  var   copied = 0;
+  for (var i = 0; i < len; ++i) {
+    let   key = keys[i];
+
+    if (x[key] === void 0) {
+      missed += 1;
+    } else if (x[key] === false) {
+      out[key] = x[key];
+      copied += 1;
+    } else if (x[key] === 0) {
+      out[key] = x[key];
+      copied += 1;
+    } else if (!x[key]) {
+      if (strategy.pruneFalsy) {
+        missed += 1;
+      } else {
+        out[key] = x[key];
+        copied += 1;
+      }
+    } else {
+      out[key] = x[key];
+      copied += 1;
+    }
+  }
+
+  if (copied === 0 && strategy.pruneFalsy) {
+    return /* undefined */;
+  }
+
+  if (missed === 0) {
+    return x;
+  }
+
+  return out;
+};
 
 const mergeObjects = function(strategy, a, b) {
   var   [aKeys, len, keys]    = keyMirrorFromObject(a);
@@ -29,7 +83,7 @@ const mergeObjects = function(strategy, a, b) {
     result[key] = merge(strategy, a[key], b[key]);
   }
 
-  return result;
+  return pruneObj(strategy, result);
 };
 
 function deepCopyAny(strategy, a) {
@@ -52,12 +106,20 @@ function deepCopyAny(strategy, a) {
 
 // Is the deepCopyArray function when b is []
 appendArrays = function(strategy, a, b) {
-  return [ ...a.map(x => {
+  const catenated = [ ...a.map(x => {
     return strategy.deepCopy(strategy, x);
   }),
   ...b.map(x => {
     return strategy.deepCopy(strategy, x);
-  })]
+  })];
+
+  if (g_prune) {
+    if (catenated.reduce((m, x) => [...m, ...(x ? [x] : [])], []).length === 0) {
+      return /* undefined */;
+    }
+  }
+
+  return catenated;
 };
 
 appendToArray = function(strategy, a, b) {

@@ -21,6 +21,7 @@
   "homepage": "https://github.com/briancsparks/ra-ecosystem/tree/master/packages/run-anywhere#readme",
   "dependencies": {
     "aws-serverless-express": "^3.3.5",
+    "difflet": "^1.0.1",
     "express": "^4.16.4",
     "hard-rejection": "^1.0.0",
     "lodash": "^4.17.11",
@@ -33,7 +34,6 @@
     "sgsg": "^0.9.54"
   },
   "devDependencies": {
-    "ava": "^1.0.1",
-    "difflet": "^1.0.1"
+    "ava": "^1.0.1"
   }
 }

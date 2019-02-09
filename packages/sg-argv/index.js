@@ -144,7 +144,8 @@ function argvGet(argv, names, options) {
     if (m)  { return m; }
 
     if (name in argv) {
-      return sg.kv(m, name, argv[name]);
+      // return sg.kv(m, name, argv[name]);
+      return argv[name];
     }
   });
 }
