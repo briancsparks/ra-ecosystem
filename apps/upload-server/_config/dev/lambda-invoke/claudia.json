@@ -1,0 +1,8 @@
+{
+  "lambda": {
+    "role": "arn:aws:iam::084075158741:role/supercow",
+    "name": "upload",
+    "region": "us-east-1",
+    "sharedRole": true
+  }
+}
