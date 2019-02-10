@@ -41,7 +41,7 @@ const binaryMimeTypes = [
 //
 
 // Hook into host
-app.use(awsServerlessExpressMiddleware.eventContext());
+app.use(awsServerlessExpressMw.eventContext());
 //app.use(ra.raExpressMw(dbName, collNames));
 
 routes.addRoutes(app);
