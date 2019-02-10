@@ -26,8 +26,8 @@ const {
 const expressApp              = require('./express-lambda');
 const api_builder             = require('./api-builder');
 
-const claudiaPrivateConfig    = require(`./_config/${process.env.AWS_ACCT_TYPE}/private/claudia.json`);
-const claudiaPublicConfig     = require(`./_config/${process.env.AWS_ACCT_TYPE}/public/claudia.json`);
+const claudiaPrivateConfig    = require(`./_config/${process.env.AWS_ACCT_TYPE || 'dev'}/private/claudia.json`);
+const claudiaPublicConfig     = require(`./_config/${process.env.AWS_ACCT_TYPE || 'dev'}/public/claudia.json`);
 
 
 // -------------------------------------------------------------------------------------
