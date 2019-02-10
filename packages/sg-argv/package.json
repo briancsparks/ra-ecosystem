@@ -1,6 +1,6 @@
 {
   "name": "sg-argv",
-  "version": "0.9.12",
+  "version": "0.9.13",
   "description": "Parameter parsing.",
   "main": "index.js",
   "scripts": {

@@ -1,7 +1,7 @@
 {
   "name": "upload-server",
   "private": true,
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "A server using run-anywhere that receives a file uplaod from the client and stores on S3",
   "main": "index.js",
   "scripts": {
@@ -10,7 +10,7 @@
   "author": "Brian C Sparks <briancsparks@gmail.com",
   "license": "MIT",
   "dependencies": {
-    "quick-net": "^0.8.8",
-    "run-anywhere": "^0.7.11"
+    "quick-net": "^0.8.9",
+    "run-anywhere": "^0.7.12"
   }
 }
