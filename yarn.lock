@@ -1972,6 +1972,11 @@ class-utils@^0.3.5:
     isobject "^3.0.0"
     static-extend "^0.1.1"
 
+claudia-api-builder@^4.1.2:
+  version "4.1.2"
+  resolved "https://registry.yarnpkg.com/claudia-api-builder/-/claudia-api-builder-4.1.2.tgz#a44479ee44d41936c0bf68c2fe9c8d30f3f31daf"
+  integrity sha512-xXS9ew32KRJSMQGHMTEsvSkd1FTs9GK3JjiBIuxk9EJz2hubryrWiTzsJQvcVcfBYE0fb7bO+ZhH2/fqqG7Acg==
+
 clean-stack@^1.1.1:
   version "1.3.0"
   resolved "https://registry.yarnpkg.com/clean-stack/-/clean-stack-1.3.0.tgz#9e821501ae979986c46b1d66d2d432db2fd4ae31"
@@ -5296,6 +5301,16 @@ quick-lru@^1.0.0:
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/quick-lru/-/quick-lru-1.1.0.tgz#4360b17c61136ad38078397ff11416e186dcfbb8"
 
+quick-net@^0.8.9:
+  version "0.8.9"
+  resolved "https://registry.yarnpkg.com/quick-net/-/quick-net-0.8.9.tgz#6fd7ebce7798503f7aad7aa1243c682fc051318e"
+  integrity sha512-uuClTpH5JvpQgTuq4vdezhv40uQeGAOX7R++Mlpr3XvbOjJzjk76LSC83+QKu31I0hftABRiTVXsZz8F/V+Xsw==
+  dependencies:
+    aws-sdk "^2.382.0"
+    run-anywhere "^0.7.12"
+    sg-argv "^0.9.13"
+    superb "^3.0.0"
+
 randomatic@^3.0.0:
   version "3.1.1"
   resolved "https://registry.yarnpkg.com/randomatic/-/randomatic-3.1.1.tgz#b776efc59375984e36c537b2f51a1f0aff0da1ed"
@@ -5687,6 +5702,24 @@ rimraf@2, rimraf@^2.2.8, rimraf@^2.5.2, rimraf@^2.5.4, rimraf@^2.6.1, rimraf@^2.
   dependencies:
     glob "^7.1.3"
 
+run-anywhere@^0.7.12:
+  version "0.7.12"
+  resolved "https://registry.yarnpkg.com/run-anywhere/-/run-anywhere-0.7.12.tgz#2adb9b227c09bd44cc4e76657aa651e381a71b3b"
+  integrity sha512-UOr+I/JWT1xLcWBQuw/s5K/JCeiqCBYFa3aMG8jN01dLnuDgFelmnZdU0KBXvILzQ4P+qQRfKh3oUtgH+sQhGQ==
+  dependencies:
+    aws-serverless-express "^3.3.5"
+    difflet "^1.0.1"
+    express "^4.16.4"
+    hard-rejection "^1.0.0"
+    lodash "^4.17.11"
+    loud-rejection "^1.6.0"
+    mongodb "^3.1.10"
+    quick-merge "^1.0.11"
+    redis "^2.8.0"
+    sg-config "^1.0.8"
+    sg-flow "^0.9.11"
+    sgsg "^0.9.54"
+
 run-async@^2.2.0:
   version "2.3.0"
   resolved "https://registry.yarnpkg.com/run-async/-/run-async-2.3.0.tgz#0371ab4ae0bdd720d4166d7dfda64ff7a445a6c0"
@@ -5803,6 +5836,14 @@ set-value@^2.0.0:
 setprototypeof@1.1.0:
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/setprototypeof/-/setprototypeof-1.1.0.tgz#d0bd85536887b6fe7c0d818cb962d9d91c54e656"
+
+sg-argv@^0.9.13:
+  version "0.9.13"
+  resolved "https://registry.yarnpkg.com/sg-argv/-/sg-argv-0.9.13.tgz#e68e6e1fd28500311a258960afbdaee435d2c853"
+  integrity sha512-gMK6/ucM2etVY3+KYroeV5BMsDEgjRqsOFryKlPK3S7LEYzz7K0kzOV2+CBJ2oAp9E7AgBynDGyI+wY2kriOpg==
+  dependencies:
+    minimist "^1.2.0"
+    sg0 "^0.9.11"
 
 sgsg@^0.9.54:
   version "0.9.56"
@@ -6161,6 +6202,7 @@ superagent@^3.8.3:
 superb@^3.0.0:
   version "3.0.0"
   resolved "https://registry.yarnpkg.com/superb/-/superb-3.0.0.tgz#d29a17cf090f4658813c8debbb89033d3f1cf5bb"
+  integrity sha512-2N5f/nIVjOM5NimhLr9+KPPRo2OAtTVIxxshyOrBQsteUhCZJo7a+0I5TG/yt32v0hzOjXuxnUiHEWwYiPpVfg==
   dependencies:
     unique-random-array "^1.0.0"
 

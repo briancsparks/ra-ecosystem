@@ -836,7 +836,7 @@ mod.xport({getSubnets: function(argv, context, callback) {
 
     Can ssh:
     ra invoke packages\quick-net\lib\ec2\vpc.js getSubnets --classB=111 --sg=admin --subnet=webtier
-    ra invoke packages\quick-net\packages\quick-net\lib\ec2\vpc.js getSubnets --classB=111 --sg=admin --subnet=webtier | jq . | grep Id
+    ra invoke\packages\quick-net\lib\ec2\vpc.js getSubnets --classB=111 --sg=admin --subnet=webtier | jq . | grep Id
   */
 
   const classB        = ''+argv.classB;

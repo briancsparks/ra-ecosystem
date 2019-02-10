@@ -28,6 +28,7 @@ curl -sSL "https://deb.nodesource.com/gpgkey/nodesource.gpg.key" | apt-key add -
 echo "deb https://deb.nodesource.com/node_8.x ${osversion} main" | tee /etc/apt/sources.list.d/nodesource.list
 APT_PACKAGES="${APT_PACKAGES} nodejs"
 NODE_UTILS="${NODE_UTILS} pm2 run-anywhere cli-shezargs"
+echo 'NODE_ENV="production"' | tee /etc/environment
 
 # Add docker
 if [ -n $INSTALL_DOCKER ]; then

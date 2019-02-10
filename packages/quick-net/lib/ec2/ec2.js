@@ -131,7 +131,7 @@ mod.xport({upsertInstance: function(argv, context, callback) {
 
     var   AllAwsParams          = sg.reduce(argv, {}, (m,v,k) => ( sg.kv(m, awsKey(k), v) || m ));
 
-    const uniqueName            = rax.arg(argv, 'uniqueName,unique');
+    const uniqueName            = rax.arg(argv, 'uniqueName,unique', {required: sg.modes().production});
     const ImageId               = rax.arg(argv, 'ImageId,image', {required:true});
     const InstanceType          = rax.arg(argv, 'InstanceType,type', {required:true});
     const classB                = rax.arg(argv, 'classB,b');
@@ -218,7 +218,7 @@ mod.xport({upsertInstance: function(argv, context, callback) {
       var params = {};
 
       if (uniqueName) {
-        params.TagSpecifications = [{ResourceType:'instance', Tags:[{Key:'uniqueName', Value:uniqueName}]}];
+        params.TagSpecifications = [{ResourceType:'instance', Tags:[{Key:'uniqueName', Value:uniqueName},{Key:'Name', Value:uniqueName}]}];
       }
 
       if (userdata) {

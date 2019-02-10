@@ -10,7 +10,9 @@
   "author": "Brian C Sparks <briancsparks@gmail.com",
   "license": "MIT",
   "dependencies": {
+    "claudia-api-builder": "^4.1.2",
     "quick-net": "^0.8.9",
-    "run-anywhere": "^0.7.12"
+    "run-anywhere": "^0.7.12",
+    "superb": "^3.0.0"
   }
 }

@@ -28,7 +28,7 @@ exports.isAws = function() {
 };
 
 exports.raContext = function(context = {}) {
-  return context.runAnywhereContext    = context.runAnywhereContext  || {};
+  return context.runAnywhere    = context.runAnywhere  || {};
 };
 
 const isSanityCheck = exports.isSanityCheck = function(context) {
@@ -75,7 +75,7 @@ exports.getQuiet = function(context) {
       return g_quiet;
     }
 
-    } else {
+  } else {
 
     // Quiet during sanity checks
     if ((result = isSanityCheck(context))) {
@@ -89,9 +89,9 @@ exports.getQuiet = function(context) {
   }
 
   // TODO: putttt back
-  // if (sg.numKeys(context) && context.runAnywhereContext) {
-  //   if ('quiet' in context.runAnywhereContext) {
-  //     return context.runAnywhereContext.quiet;
+  // if (sg.numKeys(context) && context.runAnywhere) {
+  //   if ('quiet' in context.runAnywhere) {
+  //     return context.runAnywhere.quiet;
   //   }
   // }
 
@@ -117,9 +117,9 @@ exports.getDQuiet = function(context) {
     return g_dquiet;
   }
 
-  if (sg.numKeys(context) && context.runAnywhereContext) {
-    if ('dquiet' in context.runAnywhereContext) {
-      return context.runAnywhereContext.dquiet;
+  if (sg.numKeys(context) && context.runAnywhere) {
+    if ('dquiet' in context.runAnywhere) {
+      return context.runAnywhere.dquiet;
     }
   }
 

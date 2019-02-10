@@ -478,7 +478,20 @@ mod.xport({manageVpc: function(argv, context, callback) {
           });
         }, next);
 
-        // TODO: endpoints for: ec2, ec2messages, elastic-inference, elasticloadbalancer, events?, execute-api, kinesis-streams, kms, secretsmanager, sns, sqs
+      }, function(next) {
+        // ----------------------Vpc Interface Endpoints for ec2, ec2-messages
+        const SecurityGroupIds    = [my.result.securityGroups.ec2.SecurityGroup.GroupId];
+        const endpoints           = 'ec2,ec2messages'.split(',');
+
+        return sg.__each(endpoints, function(endpoint, next) {
+          const ServiceName = `com.amazonaws.${region}.${endpoint}`;
+          return createVpcEndpoint({VpcId,VpcEndpointType,ServiceName,SubnetIds,SecurityGroupIds,PrivateDnsEnabled,adjective}, {}, function(err, data) {
+
+            return next();
+          });
+        }, next);
+
+        // TODO: endpoints for: elastic-inference, elasticloadbalancer, events?, execute-api, kinesis-streams, kms
 
       }, function(next) {
         return next();
@@ -613,7 +626,7 @@ sgsPlus = [() => ({
     Description:  'SSH from admin instances'
   }]
 }), () => ({
-  GroupName:    'ECS',
+  GroupName:    'ECS-endpoint',
   Description:  'Access to ECS Endpoint',
   ingress: [{
     /*GroupId*/
@@ -624,7 +637,7 @@ sgsPlus = [() => ({
     Description:  'ECS Endpoint Access'
   }]
 }), () => ({
-  GroupName:    'ECR',
+  GroupName:    'ECR-endpoint',
   Description:  'Access to ECR Endpoint',
   ingress: [{
     /*GroupId*/
@@ -635,7 +648,7 @@ sgsPlus = [() => ({
     Description:  'ECR Endpoint Access'
   }]
 }), () => ({
-  GroupName:    'KMS',
+  GroupName:    'KMS-endpoint',
   Description:  'Access to KMS Endpoint',
   ingress: [{
     /*GroupId*/
@@ -646,7 +659,7 @@ sgsPlus = [() => ({
     Description:  'KMS Endpoint Access'
   }]
 }), () => ({
-  GroupName:    'STS',
+  GroupName:    'STS-endpoint',
   Description:  'Access to STS Endpoint',
   ingress: [{
     /*GroupId*/
@@ -657,7 +670,7 @@ sgsPlus = [() => ({
     Description:  'STS Endpoint Access'
   }]
 }), () => ({
-  GroupName:    'SQS',
+  GroupName:    'SQS-endpoint',
   Description:  'Access to SQS Endpoint',
   ingress: [{
     /*GroupId*/
@@ -668,7 +681,7 @@ sgsPlus = [() => ({
     Description:  'SQS Endpoint Access'
   }]
 }), () => ({
-  GroupName:    'SNS',
+  GroupName:    'SNS-endpoint',
   Description:  'Access to SNS Endpoint',
   ingress: [{
     /*GroupId*/
@@ -679,7 +692,7 @@ sgsPlus = [() => ({
     Description:  'SNS Endpoint Access'
   }]
 }), () => ({
-  GroupName:    'secretsmanager',
+  GroupName:    'secretsmanager-endpoint',
   Description:  'Access to SecretsManager Endpoint',
   ingress: [{
     /*GroupId*/
@@ -688,6 +701,17 @@ sgsPlus = [() => ({
     FromPort:     443,
     ToPort:       443,
     Description:  'SecretsManager Endpoint Access'
+  }]
+}), () => ({
+  GroupName:    'ec2-endpoint',
+  Description:  'Access to ec2,ec2-messages Endpoints',
+  ingress: [{
+    /*GroupId*/
+    IpProtocol:   'tcp',
+    CidrIp:       '10.0.0.0/8',
+    FromPort:     443,
+    ToPort:       443,
+    Description:  'ec2 Endpoint Access'
   }]
 })];
 

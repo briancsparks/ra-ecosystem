@@ -44,10 +44,10 @@ var   xyzDbs        = {};
  */
 const getXyzDb = async function(collName, context, dbName) {
   const quiet           = getQuiet(context || {});
-  var   raCtx           = context.runAnywhereContext    = context.runAnywhereContext  || {};
-  var   connections     = raCtx.dbs                     = raCtx.dbs                   || {};
+  var   raCtx           = context.runAnywhere     = context.runAnywhere   || {};
+  var   connections     = raCtx.dbs               = raCtx.dbs             || {};
 
-  raCtx.now             = raCtx.now                                                   || new Date();
+  raCtx.now             = raCtx.now                                       || new Date();
 
   // These two are returned
   var   close           = function(){};

@@ -1,0 +1,11 @@
+{
+  "lambda": {
+    "role": "arn:aws:iam::084075158741:role/supercow",
+    "name": "upload-public-express",
+    "region": "us-east-1",
+    "sharedRole": true
+  },
+  "api": {
+    "id": "q0puwpj89f"
+  }
+}
