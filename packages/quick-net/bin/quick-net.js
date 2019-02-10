@@ -62,9 +62,7 @@ var   commands = {
 //  Helper Functions
 //
 
-if (process.argv[1] === __filename) {
-  quickNet();
-}
+quickNet();
 
 function quickNet() {
   require('loud-rejection/register');
