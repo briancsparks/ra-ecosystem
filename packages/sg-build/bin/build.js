@@ -10,8 +10,12 @@
 // -------------------------------------------------------------------------------------
 //  Requirements
 //
-const sg                      = require('sg0');
+const sg0                     = require('sg-argv');
+const sg                      = sg0.merge(sg0, require('sg-template'));
 const { _ }                   = sg;
+const glob                    = require('glob');
+
+const ARGV                    = sg.ARGV();
 
 
 // -------------------------------------------------------------------------------------
@@ -23,8 +27,23 @@ const { _ }                   = sg;
 // -------------------------------------------------------------------------------------
 //  Functions
 //
+const main = function() {
+  const type      = ARGV._.shift();
+  const templates = glob.sync(`templates/**/build-${type}*.js`, {cwd: __dirname}) || [];
+  const template  = templates[0]
 
+  if (!template) {
+    console.error(`Cannot find ${type}`);
+    process.exit(2);
+    return;
+  }
 
+  // console.log(templates, ARGV, template);
+
+  sg.generate(sg.path.join(__dirname, template));
+};
+
+main();
 
 // -------------------------------------------------------------------------------------
 //  Helper Functions

@@ -11,12 +11,9 @@
     "sg-install": "bin/install.js"
   },
   "directories": {
-    "lib": "bin",
+    "lib": "lib",
     "test": "__tests__"
   },
-  "files": [
-    "bin"
-  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/briancsparks/ra-ecosystem.git"
@@ -28,6 +25,9 @@
     "url": "https://github.com/briancsparks/ra-ecosystem/issues"
   },
   "dependencies": {
+    "glob": "^7.1.3",
+    "sg-argv": "^0.9.12",
+    "sg-template": "^1.0.3",
     "sg0": "^0.9.11"
   }
 }

@@ -130,6 +130,8 @@ const nginx_reverseproxy_conf = function(self, types, ...args) {
     t.append(t.block(...args));
   };
 
+  self.type_filename = 'nginx';
+
 };
 nginx_reverseproxy_conf.type = 'nginxrproxy.conf';
 

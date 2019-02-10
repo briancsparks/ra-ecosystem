@@ -24,9 +24,6 @@
     "lib": "lib",
     "test": "__tests__"
   },
-  "files": [
-    "lib"
-  ],
   "dependencies": {
     "aws-sdk": "^2.382.0",
     "run-anywhere": "^0.7.11",

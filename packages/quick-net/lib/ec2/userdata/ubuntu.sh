@@ -1,20 +1,12 @@
 #!/bin/bash -ex
 
 # Things to install
-APT_PACKAGES="ntp tree htop"
+APT_PACKAGES="ntp tree htop zip unzip"
 NODE_UTILS=""
 
 # What utils should be installed?
 INSTALL_DOCKER="1"
 INSTALL_OPS="1"                   # Make easier to use day-to-day
-
-# TODO: put back
-unset INSTALL_DOCKER
-
-# AAAArrrrrrggggggghhhhhhh!!!!!!!!!!!
-if ! grep `hostname` /etc/hosts; then
-  echo "127.0.0.1 `hostname`" >> /etc/hosts
-fi
 
 # Some macros
 osversion="$(lsb_release -c | awk '{print $2}')"
@@ -35,7 +27,6 @@ sudo chown -R "${the_user_name}":"${the_user_name}" "${the_home_dir}/.config/"
 curl -sSL "https://deb.nodesource.com/gpgkey/nodesource.gpg.key" | apt-key add -
 echo "deb https://deb.nodesource.com/node_8.x ${osversion} main" | tee /etc/apt/sources.list.d/nodesource.list
 APT_PACKAGES="${APT_PACKAGES} nodejs"
-# NODE_UTILS="${NODE_UTILS} pm2 aws-sdk run-anywhere sg0 sg-flow sg-argv quick-merge lodash"
 NODE_UTILS="${NODE_UTILS} pm2 run-anywhere cli-shezargs"
 
 # Add docker
@@ -70,7 +61,11 @@ fi
 if [ -n $INSTALL_OPS ]; then
   echo "Installing ops"
 
-  apt-get install -y awscli jq libzmq-dev
+  apt-get install -y jq python-pip
+
+  # pip install --upgrade pip
+  # pip install awscli --upgrade --user
+  pip install awscli --upgrade
 
   if [ -n $INSTALL_DOCKER ]; then
     # no sudo for docker commands
