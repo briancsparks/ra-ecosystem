@@ -1,6 +1,6 @@
 #!/bin/bash -e
 
-eval "$(cli-shezargs __f 100 $0 $@)"
+eval "$(cli-shezargs __f $$ $0 $@)"
 
 # We dont need the helper files in the tmp dir, just the dir
 rm $TMP_DIR/*
@@ -71,15 +71,23 @@ rm -rf opt/
 
 # ----- Should we push the results?
 if [[ -n $push_layer ]]; then
-  aws lambda publish-layer-version --layer-name deps-layer-for-${name} --description "dependencies for ${name} function" --zip-file fileb://deps-layer-for-${name}.zip --compatible-runtimes nodejs8.10 > layer-result.json
-  layer_arn="$(cat layer-resut.json | jq -r '.LayerVersionArn')"
+  printf "\nPublishing layer\n"
+  echo     "----------------"
+  aws lambda publish-layer-version --layer-name deps-layer-for-${name} --description "dependencies for ${name} function" --zip-file fileb://deps-layer-for-${name}.zip --compatible-runtimes nodejs8.10 > layer-publish-result.json
+  layer_arn="$(cat layer-publish-result.json | jq -r '.LayerVersionArn')"
+
+  echo "  $layer_arn"
 fi
 
 if [[ -n $push ]]; then
-  aws lambda update-function-code             --function-name ${name} --zip-file fileb://${name}.zip
+  printf "\nPublishing code\n"
+  echo     "---------------"
+  aws lambda update-function-code             --function-name ${name} --zip-file fileb://${name}.zip > update-fn-code-result.json
 
   if [[ -n $layer_arn ]]; then
-    aws lambda update-function-configuration --function-name ${name} --layers $layer_arn
+    printf "\nUpdating function layer\n"
+    echo     "-----------------------"
+    aws lambda update-function-configuration --function-name ${name} --layers $layer_arn > update-fn-conf-result.json
   fi
 fi
 
@@ -90,7 +98,7 @@ cd $start_dir
 
 printf "\nResult:\n"
 echo "-------"
-fn /tmp/binlayerdeps-100 . | xargs ls -l
+fn $TMP_DIR . | xargs ls -l
 
 #cli_shezargs_cleanup
 pwd
