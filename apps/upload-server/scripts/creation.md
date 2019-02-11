@@ -56,7 +56,57 @@ claudia create --handler lambda.handler --deploy-proxy-api --name upload-public-
 3. Copy the private `claudia.json` file into `lambda-invoke/claudia.json`, so you can push new code without messing up all the sources
 
 an update:
-claudia update  --config _config\dev\lambda-invoke\claudia.json --use-s3-bucket netlab-dev --keep
-```sh
 
+```sh
+claudia update  --config _config\dev\lambda-invoke\claudia.json --use-s3-bucket netlab-dev --keep
+```
+
+
+```json
+{
+  "FunctionName": "upload",
+  "FunctionArn": "arn:aws:lambda:us-east-1:084075158741:function:upload:2",
+  "Runtime": "nodejs8.10",
+  "Role": "arn:aws:iam::084075158741:role/supercow",
+  "Handler": "lambda.handler",
+  "CodeSize": 11308165,
+  "Description": "A server using run-anywhere that receives a file uplaod from the client and stores on S3",
+  "Timeout": 30,
+  "MemorySize": 128,
+  "LastModified": "2019-02-10T23:02:30.618+0000",
+  "CodeSha256": "B2Tbo+KPcKL22WvP3PtlnoVg49facEfw3/+I8HjLM4M=",
+  "Version": "2",
+  "VpcConfig": {
+    "SubnetIds": [
+      "subnet-0a01766491ff4091b",
+      "subnet-038ade74fb771f294"
+    ],
+    "SecurityGroupIds": [
+      "sg-097d5424b2bd94f7d"
+    ],
+    "VpcId": "vpc-05acf72c049370751"
+  },
+  "Environment": {
+    "Variables": {
+      "AWS_ACCT_TYPE": "dev",
+      "Bucket": "netlab-dev-ingest",
+      "NAMESPACE": "uploader",
+      "NS": "up"
+    }
+  },
+  "KMSKeyArn": null,
+  "TracingConfig": {
+    "Mode": "PassThrough"
+  },
+  "MasterArn": null,
+  "RevisionId": "b582b3ba-80cf-492c-aefc-77a4b1540b3f",
+  "Layers": [
+    {
+      "Arn": "arn:aws:lambda:us-east-1:084075158741:layer:run-anywhere-layer:2",
+      "CodeSize": 9442385
+    }
+  ],
+  "s3key": "4888fc48-6246-4e2b-b326-372914e8004f.zip",
+  "archive": "C:\\Users\\sparksb\\AppData\\Local\\Temp\\4888fc48-6246-4e2b-b326-372914e8004f.zip"
+}
 ```

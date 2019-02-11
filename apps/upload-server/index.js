@@ -18,7 +18,6 @@ const {
   setDQuiet,
 }                             = utils;
 
-
 // -------------------------------------------------------------------------------------
 //  Data
 //
@@ -29,6 +28,9 @@ const ARGV                  = sg.ARGV();
 // -------------------------------------------------------------------------------------
 //  Functions
 //
+
+// Turn on fancy debug, maybe
+sg.mkInspect(ARGV);
 
 const main = function() {
   if (ARGV.express) {

@@ -59,10 +59,16 @@ function Config(...configs) {
 };
 
 function Configuration(dir, name) {
-  var json = require(path.join(dir, name)+'.json');
+  var fileJson = {};
+
+  try {
+    fileJson = require(path.join(dir, name)+'.json');
+  } catch(error) {
+    fileJson = {};
+  }
 
   return function(key) {
-    return json[key];
+    return fileJson[key] || process.env[key];
   }
 };
 

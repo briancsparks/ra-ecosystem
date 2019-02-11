@@ -156,7 +156,7 @@ sg.mode = function() {
  * @returns
  */
 sg.inspect = function(x, colors) {
-  return sg.inspect.debug(x, colors);
+  return sg.inspect.prod(x, colors);
 
 
 
@@ -185,7 +185,14 @@ sg.inspect = function(x, colors) {
   // sg.inspect.dev(x, colors);
 };
 
-sg.mkInspect = function() {
+sg.mkInspect = function(argv) {
+
+  if (argv) {
+    if (argv.fancy) {
+      sg.inspect = sg.inspect.debug;
+      return;
+    }
+  }
 
   if (sg.modes().prod)  {
     sg.inspect = sg.inspect.prod;

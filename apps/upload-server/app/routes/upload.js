@@ -43,12 +43,12 @@ mod.reqHandler({uploadHandler: function(req, res) {
   const { fra }   = (ractx.uploadRoute__uploadHandler || ractx);
   // var   argv      = initialReqParams(req, res);
 
-  const Bucket    = config('Bucket');
-  const path      = config('path');
+  const Bucket    = config('UploadBucket') || config('Bucket');
+  const subKey    = config('UploadSubKey') || config('Subkey');
 
   const ext       = 'bin';
   const checksum  = ''+Date.now();
-  const Key       = `${path}/${checksum}.${ext}`;
+  const Key       = `${subKey}/${checksum}.${ext}`;
 
   var   argv      = sg.merge({Bucket, Key, Body: req});
 
