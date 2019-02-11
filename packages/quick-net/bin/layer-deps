@@ -11,6 +11,8 @@ hash jq      || die "Cannot find jq"
 package_file="${package}/package.json"
 test -f $package_file || die "--package= must point to a package.json file"
 
+[[ -n $push_both ]] && push="1"
+[[ -n $push_both ]] && push_layer="1"
 
 [[ -n $name ]] || name="$(cat $package_file | jq -r .name)"
 
@@ -66,10 +68,25 @@ rm -rf opt/
 
 #------------------------------------------------------------
 # ----- Done packaging...
-cd $start_dir
 
-#echo "$TMP_DIR"
-#ls -l $TMP_DIR
+# ----- Should we push the results?
+if [[ -n $push_layer ]]; then
+  aws lambda publish-layer-version --layer-name deps-layer-for-${name} --description "dependencies for ${name} function" --zip-file fileb://deps-layer-for-${name}.zip --compatible-runtimes nodejs8.10 > layer-result.json
+  layer_arn="$(cat layer-resut.json | jq -r '.LayerVersionArn')"
+fi
+
+if [[ -n $push ]]; then
+  aws lambda update-function-code             --function-name ${name} --zip-file fileb://${name}.zip
+
+  if [[ -n $layer_arn ]]; then
+    aws lambda update-function-configuration --function-name ${name} --layers $layer_arn
+  fi
+fi
+
+#------------------------------------------------------------
+# ----- Done.
+
+cd $start_dir
 
 printf "\nResult:\n"
 echo "-------"
