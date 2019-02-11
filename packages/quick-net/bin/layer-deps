@@ -1,0 +1,80 @@
+#!/bin/bash -e
+
+eval "$(cli-shezargs __f 100 $0 $@)"
+
+# We dont need the helper files in the tmp dir, just the dir
+rm $TMP_DIR/*
+
+hash claudia || die "Cannot find claudia. Install it with 'npm i -g claudia'"
+hash jq      || die "Cannot find jq"
+
+package_file="${package}/package.json"
+test -f $package_file || die "--package= must point to a package.json file"
+
+
+[[ -n $name ]] || name="$(cat $package_file | jq -r .name)"
+
+# ----- Put the project src in the tmp dir -----
+printf "\nCopying source to $TMP_DIR/opt/nodejs...\n"
+echo "----------------------------------------------"
+mkdir -p $TMP_DIR/opt/nodejs
+cp -r $package/* $TMP_DIR/opt/nodejs/
+
+# Go there
+cd $TMP_DIR/opt/nodejs
+
+# Save package.json
+cp package.json ../
+
+#------------------------------------------------------------
+# ----- Make small zip file of just the source, sans the deps
+printf "\nMaking deployable zip for just the $name project...\n"
+echo "----------------------------------------------------------"
+
+# Clobber the deps
+test -d node_modules && rm -rf node_modules
+
+# Get new package.json, without the deps
+cat ../package.json | jq 'del(.dependencies) + {dependencies:{}}' > ./package.json
+
+# Package it up TODO: support `claudia update`?
+claudia pack --output ../../$name.zip --force
+
+#echo "Created deployable in ${PWD}/.. :"
+#ls -l ../../$name.zip
+
+#------------------------------------------------------------
+# ----- Make a zip usable as a layer that is just the deps
+printf "\nMaking layer zip for the dependencies...\n"
+echo "---------------------------------------------"
+
+cd ..
+rm -rf nodejs/
+mkdir -p nodejs && cd $_
+cp ../package.json ./
+
+# ----- Pull in the deps -----
+yarn --production
+
+# ----- zip up the layer file
+cd ..
+zip -r ../deps-layer-for-$name.zip nodejs
+
+# Clean up
+cd ..
+rm -rf opt/
+
+#------------------------------------------------------------
+# ----- Done packaging...
+cd $start_dir
+
+#echo "$TMP_DIR"
+#ls -l $TMP_DIR
+
+printf "\nResult:\n"
+echo "-------"
+fn /tmp/binlayerdeps-100 . | xargs ls -l
+
+#cli_shezargs_cleanup
+pwd
+
