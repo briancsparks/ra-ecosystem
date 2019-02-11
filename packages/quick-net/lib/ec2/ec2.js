@@ -147,6 +147,8 @@ mod.xport({upsertInstance: function(argv, context, callback) {
     var   MinCount              = rax.arg(argv, 'MinCount,min') || count;
     const DryRun                = rax.arg(argv, 'DryRun');
     const distro                = rax.arg(argv, 'distro', {required:true});
+    const envJsonFile           = rax.arg(argv, 'envjson');
+    var   userdataOpts          = rax.arg(argv, 'userdata_opts');   // An object
 
     if (rax.argErrors())    { return rax.abort(); }
 
@@ -192,14 +194,15 @@ mod.xport({upsertInstance: function(argv, context, callback) {
       return getSubnets({classB, SecurityGroupIds: SecurityGroupIds[0], SubnetId}, {}, function(err, data) {
         if (sg.ok(err, data)) {
           SecurityGroupIds  = sg.pluck(data.securityGroups, 'GroupId');
-          SubnetId          = (data.subnets.filter(s => s.AvailabilityZone.startsWith(az))[0]   || data.subnets[0] || {}).SubnetId;
+          SubnetId          = (data.subnets.filter(s => s.AvailabilityZone.endsWith(az))[0]   || data.subnets[0] || {}).SubnetId;
         }
         return next();
       });
 
     }, function(my, next) {
 
-      const userdataFilename = path.join(__dirname, 'userdata', `${distro}.sh`);
+      const userdataEnv       = readJsonFile(envJsonFile) || {};
+      const userdataFilename  = path.join(__dirname, 'userdata', `${distro}.sh`);
 
       calling(`fs.readFile ${userdataFilename}`);
       return fs.readFile(userdataFilename, 'utf8', function(err, userdata_) {
@@ -209,6 +212,28 @@ mod.xport({upsertInstance: function(argv, context, callback) {
         userdata  += `\n`;
         userdata  += `echo UserData script is done for ${uniqueName || 'instance'}`;
         userdata  += `\n`;
+
+        userdata = sg.reduce(userdata.split('\n'), [], (m, line) => {
+          if (!line.match(/quicknetuserdataenvcursor/i)) { return [...m, line]; }
+
+          var newlines = sg.reduce(_.isObject(userdataOpts) ? userdataOpts : {}, [], (m, v, k) => {
+            var   newline = `${k}="${v === true ? '1' : v}"`;
+            if (v === false) {
+              newline = `unset ${k}`;
+            }
+
+            return [...m, newline];
+          });
+
+          newlines = sg.reduce(userdataEnv, newlines, (m, v, k) => {
+            const newline = `echo '${k}="${v === true ? '1' : v === false ? '0' : v}"' >> /etc/environment`;
+
+            return [...m, newline];
+          });
+          newlines.push(line);
+
+          return [ ...m, ...newlines ];
+        }).join('\n');
 
         return next();
       });
@@ -257,3 +282,10 @@ mod.xport({upsertInstance: function(argv, context, callback) {
   });
 }});
 
+function readJsonFile(filename_) {
+  const filename = path.join(process.cwd(), filename_);
+  // console.error(`rjf`, {filename});
+  if (!fs.existsSync(filename)) { return; }
+
+  return require(filename);
+}

@@ -111,7 +111,7 @@ mod.xport({manageVpc: function(argv, context, callback) {
           vpc       = data.Vpcs[0];
           VpcId     = (vpc || {}).VpcId;
           vpcCidr   = (vpc || {}).CidrBlock;
-          adjective = _.first(getTag(vpc, 'name').split('-')) || adjective;
+          adjective = _.first((getTag(vpc, 'name') || '').split('-')) || adjective;
         }
 
         return next();
@@ -401,7 +401,7 @@ mod.xport({manageVpc: function(argv, context, callback) {
 
       return sg.__run2(next, [function(next) {
         // ----------------------Vpc Interface Endpoints for ECR
-        const SecurityGroupIds    = [my.result.securityGroups.ECR.SecurityGroup.GroupId];
+        const SecurityGroupIds    = [my.result.securityGroups.ECR_endpoint.SecurityGroup.GroupId];
         const endpoints           = 'ecr.api,ecr.dkr'.split(',');
 
         return sg.__each(endpoints, function(endpoint, next) {
@@ -414,7 +414,7 @@ mod.xport({manageVpc: function(argv, context, callback) {
 
       }, function(next) {
         // ----------------------Vpc Interface Endpoints for ECS
-        const SecurityGroupIds    = [my.result.securityGroups.ECS.SecurityGroup.GroupId];
+        const SecurityGroupIds    = [my.result.securityGroups.ECS_endpoint.SecurityGroup.GroupId];
         const endpoints           = 'ecs-agent,ecs-telemetry,ecs'.split(',');
 
         return sg.__each(endpoints, function(endpoint, next) {
@@ -428,7 +428,7 @@ mod.xport({manageVpc: function(argv, context, callback) {
 
       }, function(next) {
         // ----------------------Vpc Interface Endpoints for KMS
-        const SecurityGroupIds    = [my.result.securityGroups.KMS.SecurityGroup.GroupId];
+        const SecurityGroupIds    = [my.result.securityGroups.KMS_endpoint.SecurityGroup.GroupId];
         const endpoints           = 'kms'.split(',');
 
         return sg.__each(endpoints, function(endpoint, next) {
@@ -441,7 +441,7 @@ mod.xport({manageVpc: function(argv, context, callback) {
 
       }, function(next) {
         // ----------------------Vpc Interface Endpoints for SNS
-        const SecurityGroupIds    = [my.result.securityGroups.SNS.SecurityGroup.GroupId];
+        const SecurityGroupIds    = [my.result.securityGroups.SNS_endpoint.SecurityGroup.GroupId];
         const endpoints           = 'sns'.split(',');
 
         return sg.__each(endpoints, function(endpoint, next) {
@@ -454,7 +454,7 @@ mod.xport({manageVpc: function(argv, context, callback) {
 
       }, function(next) {
         // ----------------------Vpc Interface Endpoints for SQS
-        const SecurityGroupIds    = [my.result.securityGroups.SQS.SecurityGroup.GroupId];
+        const SecurityGroupIds    = [my.result.securityGroups.SQS_endpoint.SecurityGroup.GroupId];
         const endpoints           = 'sqs'.split(',');
 
         return sg.__each(endpoints, function(endpoint, next) {
@@ -467,7 +467,7 @@ mod.xport({manageVpc: function(argv, context, callback) {
 
       }, function(next) {
         // ----------------------Vpc Interface Endpoints for SecretsManager
-        const SecurityGroupIds    = [my.result.securityGroups.secretsmanager.SecurityGroup.GroupId];
+        const SecurityGroupIds    = [my.result.securityGroups.secretsmanager_endpoint.SecurityGroup.GroupId];
         const endpoints           = 'secretsmanager'.split(',');
 
         return sg.__each(endpoints, function(endpoint, next) {
@@ -480,7 +480,7 @@ mod.xport({manageVpc: function(argv, context, callback) {
 
       }, function(next) {
         // ----------------------Vpc Interface Endpoints for ec2, ec2-messages
-        const SecurityGroupIds    = [my.result.securityGroups.ec2.SecurityGroup.GroupId];
+        const SecurityGroupIds    = [my.result.securityGroups.ec2_endpoint.SecurityGroup.GroupId];
         const endpoints           = 'ec2,ec2messages'.split(',');
 
         return sg.__each(endpoints, function(endpoint, next) {
@@ -559,6 +559,10 @@ mod.xport({launchInfo: function(argv, context, callback) {
 }});
 
 sgsPlus = [() => ({
+  GroupName:    'lambda',
+  Description:  'An sg to identify lambda fns',
+  ingress: []
+}), () => ({
   GroupName:    'admin',
   Description:  'Open for SSH',
   ingress: [{
@@ -626,7 +630,41 @@ sgsPlus = [() => ({
     Description:  'SSH from admin instances'
   }]
 }), () => ({
-  GroupName:    'ECS-endpoint',
+  GroupName:    'worker',
+  Description:  'Open at many high ports',
+  ingress: [{
+    /*GroupId*/
+    IpProtocol:   'tcp',
+    CidrIp:       '10.0.0.0/8',
+    FromPort:     7000,
+    ToPort:       9999,
+    Description:  'All HTTP'
+  },{
+    ingressGroupId: getSecurityGroupId('admin'),
+    IpProtocol:   'tcp',
+    FromPort:     22,
+    ToPort:       22,
+    Description:  'SSH from admin instances'
+  }]
+}), () => ({
+  GroupName:    'container_hosts',
+  Description:  'Open at many high ports',
+  ingress: [{
+    /*GroupId*/
+    IpProtocol:   'tcp',
+    CidrIp:       '10.0.0.0/8',
+    FromPort:     7000,
+    ToPort:       9999,
+    Description:  'All HTTP'
+  },{
+    ingressGroupId: getSecurityGroupId('admin'),
+    IpProtocol:   'tcp',
+    FromPort:     22,
+    ToPort:       22,
+    Description:  'SSH from admin instances'
+  }]
+}), () => ({
+  GroupName:    'ECS_endpoint',
   Description:  'Access to ECS Endpoint',
   ingress: [{
     /*GroupId*/
@@ -637,7 +675,7 @@ sgsPlus = [() => ({
     Description:  'ECS Endpoint Access'
   }]
 }), () => ({
-  GroupName:    'ECR-endpoint',
+  GroupName:    'ECR_endpoint',
   Description:  'Access to ECR Endpoint',
   ingress: [{
     /*GroupId*/
@@ -648,7 +686,7 @@ sgsPlus = [() => ({
     Description:  'ECR Endpoint Access'
   }]
 }), () => ({
-  GroupName:    'KMS-endpoint',
+  GroupName:    'KMS_endpoint',
   Description:  'Access to KMS Endpoint',
   ingress: [{
     /*GroupId*/
@@ -659,7 +697,7 @@ sgsPlus = [() => ({
     Description:  'KMS Endpoint Access'
   }]
 }), () => ({
-  GroupName:    'STS-endpoint',
+  GroupName:    'STS_endpoint',
   Description:  'Access to STS Endpoint',
   ingress: [{
     /*GroupId*/
@@ -670,7 +708,7 @@ sgsPlus = [() => ({
     Description:  'STS Endpoint Access'
   }]
 }), () => ({
-  GroupName:    'SQS-endpoint',
+  GroupName:    'SQS_endpoint',
   Description:  'Access to SQS Endpoint',
   ingress: [{
     /*GroupId*/
@@ -681,7 +719,7 @@ sgsPlus = [() => ({
     Description:  'SQS Endpoint Access'
   }]
 }), () => ({
-  GroupName:    'SNS-endpoint',
+  GroupName:    'SNS_endpoint',
   Description:  'Access to SNS Endpoint',
   ingress: [{
     /*GroupId*/
@@ -692,7 +730,7 @@ sgsPlus = [() => ({
     Description:  'SNS Endpoint Access'
   }]
 }), () => ({
-  GroupName:    'secretsmanager-endpoint',
+  GroupName:    'secretsmanager_endpoint',
   Description:  'Access to SecretsManager Endpoint',
   ingress: [{
     /*GroupId*/
@@ -703,7 +741,7 @@ sgsPlus = [() => ({
     Description:  'SecretsManager Endpoint Access'
   }]
 }), () => ({
-  GroupName:    'ec2-endpoint',
+  GroupName:    'ec2_endpoint',
   Description:  'Access to ec2,ec2-messages Endpoints',
   ingress: [{
     /*GroupId*/
