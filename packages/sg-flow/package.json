@@ -1,6 +1,6 @@
 {
   "name": "sg-flow",
-  "version": "0.9.14",
+  "version": "0.9.15",
   "description": "Provides several functions for handling the top-level control flow in continuation-style functions.",
   "main": "index.js",
   "scripts": {
