@@ -962,6 +962,11 @@ sg.jsonify = function(x) {
   return safeJSONParse(x);
 };
 
+/**
+ * Make sure x is an Array.
+ *
+ *
+ */
 sg.arrayify = function(x, skipSplitStrings) {
   if (Array.isArray(x)) {
     return x;
