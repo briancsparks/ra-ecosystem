@@ -24,7 +24,7 @@ sg.okv = function(err /*, [argN]*/) { /* verbose */
 
   var result = true;
   _.each(_.drop(arguments), function(value, index) {
-    var is = !isnt(value);
+    var is = !sg.isnt(value);
 
     result = result && is;
     if (!is) {
@@ -53,7 +53,7 @@ sg.ok = function(err /*, [argN]*/) {
 
   var result = true;
   _.each(_.drop(arguments), function(value, index) {
-    var is = !isnt(value);
+    var is = !sg.isnt(value);
     result = result && is;
   });
 
