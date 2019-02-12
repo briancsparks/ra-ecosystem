@@ -1,6 +1,7 @@
 
 /**
  * Implementation of quick-merge merging algorithm.
+ *
  */
 
  var g_prune = true;
