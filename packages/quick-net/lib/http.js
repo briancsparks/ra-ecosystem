@@ -208,6 +208,7 @@ exports._500 = function(req, res, err, dbg) {
 };
 
 // --------------------------------------------------------------------
+const getEnvName =
 exports.getEnvName = function(req) {
   var   result;
 
