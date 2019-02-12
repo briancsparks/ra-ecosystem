@@ -89,7 +89,7 @@ exports.decodeJSONBody = function(req) {
   }
 
   if (bodyStr) {
-    return (req.body = safeJSONParse(bodyStr));
+    return (req.body = sg.safeJSONParse(bodyStr));
   }
 };
 
@@ -125,7 +125,7 @@ exports.getHttpParams = module.exports.getHttpParams = function(req, normalizeBo
 
   var   ezHeaders = sg.reduce(req.headers, {}, (m, value, k) => {
     const key = k.toLowerCase().replace(/[^a-z0-9]/gi, '_');
-    return kv(m, key, value);
+    return sg.kv(m, key, value);
   });
 
   // Get parameters, event, context from API Gateway
