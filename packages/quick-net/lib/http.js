@@ -13,9 +13,6 @@ const sg                      = ra.get3rdPartyLib('sg-flow');
 const { _ }                   = sg;
 const libUrl                  = require('url');
 
-const inspect                 = sg.inspect;
-const isDebug                 = sg.isDebug;
-
 // -------------------------------------------------------------------------------------
 //  Data
 //
@@ -26,9 +23,80 @@ const isDebug                 = sg.isDebug;
 //  Functions
 //
 
+// --------------------------------------------------------------------
 /**
- * Gets the parameters that are available on first server request, so, no callback,
- * and no body.
+ *  Gets the raw (Buffer) body of the request.
+ *
+ * @param {*} req
+ * @param {*} callback
+ * @returns
+ */
+exports.getRawBody = function(req, callback) {
+
+  // req.end might have already been called
+  if (req.bufferChunks) {
+    return callback(null, req.bufferChunks);
+  }
+
+  const onEnd = function() {
+    req.bufferChunks = req.bufferChunks || Buffer.concat(req.rawChunks);
+    return callback(null, req.bufferChunks);
+  };
+
+  req.on('end', onEnd);
+
+  // Only collect the data once
+  if (req.rawChunks) {
+    return;
+  }
+
+  /* otherwise */
+  req.rawChunks = [];
+  req.on('data', function(chunk) {
+    req.rawChunks.push(chunk);
+  });
+};
+
+// --------------------------------------------------------------------
+/**
+ * Turns the body into JSON.
+ *
+ * @param {*} req
+ */
+exports.decodeJSONBody = function(req) {
+  var bodyStr;
+
+  if (req.body) {
+    if (typeof req.body === 'string') {
+      bodyStr = req.body;
+    }
+
+    if (typeof req.body === 'object') {
+      return req.body;
+    }
+  }
+
+  if (req.bufferChunks) {
+    const apiGateway        = req.apiGateway                        || {};
+    const event             = apiGateway.event                      || {};
+
+    var stringBuffer = req.bufferChunks;
+    if (event.isBase64Encoded) {
+      stringBuffer = Buffer.from(req.bufferChunks, 'base64');
+    }
+
+    bodyStr = stringBuffer.toString();
+  }
+
+  if (bodyStr) {
+    return (req.body = safeJSONParse(bodyStr));
+  }
+};
+
+// --------------------------------------------------------------------
+/**
+ * Gets the parameters that are available on first server request, so
+ * no body, and a callback is not needed.
  *
  * @param {*} req
  * @param {*} res
@@ -39,10 +107,62 @@ exports.initialReqParams = function(req, res) {
   return url.query;
 };
 
-exports._200 = function(req, res, result_) {
-  var result = {code:200, ok:true, ...result_};
+// -------------------------------------------------------------------------------------
+/**
+ *  Gets stuff that is usually gotten from the req/res (HTTP) elements.
+ *
+ * @param {*} req
+ * @returns
+ */
+exports.getHttpParams = module.exports.getHttpParams = function(req, normalizeBodyFn = _.identity) {
 
-  console.log(`200 for ${req.url}`, inspect({result}));
+  const url       = libUrl.parse(req.url, true);
+
+  // These are the parameters that are returned (along with headers, ezHeaders)
+  var   event, context, body, query, orig_path, stage, real_ip, protocol, host, pathname, search;
+
+  var   headers   = {...req.headers};
+
+  var   ezHeaders = sg.reduce(req.headers, {}, (m, value, k) => {
+    const key = k.toLowerCase().replace(/[^a-z0-9]/gi, '_');
+    return kv(m, key, value);
+  });
+
+  // Get parameters, event, context from API Gateway
+  const apiGateway        = req.apiGateway                        || {};
+
+        event             = apiGateway.event                      || {};
+        query             = event.queryStringParameters           || {};
+  const requestContext    = event.requestContext                  || {};
+        orig_path         = requestContext.path;
+        context           = apiGateway.context                    || {};
+        stage             = getEnvName(req);
+        real_ip           = ezHeaders.x_real_ip                   || (ezHeaders.x_forwarded_for || '').split(', ')[0]
+                                                                  || sg.deref(requestContext, ['identity', 'sourceIp']);
+  _.extend(query, url.query);
+
+        host              = url.host                              || headers.host || '';
+        pathname          = url.pathname                          || orig_path;
+        search            = url.search                            || makeSearch(query)    || '';
+
+        protocol          = colonify(url.protocol  || ezHeaders.x_forwarded_proto  || ezHeaders.cloudfront_forwarded_proto);
+
+        body              = normalizeBodyFn(req.body || {}, {}, query || url.query || {});
+
+  return {
+    /* complex  */ event, context,
+    /* headers  */ headers, ezHeaders,
+    /* req data */ body, query, orig_path,
+    /* names    */ stage, real_ip,
+    /* urlparts */ protocol, host, pathname, search
+  };
+};
+
+// --------------------------------------------------------------------
+exports._200 = function(req, res, result_, dbg) {
+  var result = {code:200, ok:true, ...result_, ...sg.debugInfo(dbg)};
+
+  console.log(`200 for ${req.url}`, sg.inspect({result}));
 
   const strResult = JSON.stringify(result);
   res.statusCode = 200;
@@ -50,15 +170,16 @@ exports._200 = function(req, res, result_) {
   res.setHeader('Content-Length', strResult.length);
   res.end(strResult);
 
-  // console.log(`200 for ${req.url}`, inspect({result}));
+  // console.log(`200 for ${req.url}`, sg.inspect({result}));
 };
 
-exports._400 = function(req, res, err) {
-  var result = {code:400, ok:false};
+// --------------------------------------------------------------------
+exports._400 = function(req, res, err, dbg) {
+  var result = {code:400, ok:false, ...sg.debugInfo(dbg)};
 
-  console.error(`400 for ${req.url}`, inspect({result, err}));
+  console.error(`400 for ${req.url}`, sg.inspect({result, err}));
 
-  if (isDebug()) {
+  if (sg.modes().debug) {
     result.error = err;
   }
 
@@ -69,12 +190,13 @@ exports._400 = function(req, res, err) {
   res.end(strResult);
 };
 
-exports._500 = function(req, res, err) {
-  var result = {code:500, ok:false};
+// --------------------------------------------------------------------
+exports._500 = function(req, res, err, dbg) {
+  var result = {code:500, ok:false, ...sg.debugInfo(dbg)};
 
-  console.error(`500 for ${req.url}`, inspect({result, err}));
+  console.error(`500 for ${req.url}`, sg.inspect({result, err}));
 
-  if (isDebug()) {
+  if (sg.modes().debug) {
     result.error = err;
   }
 
@@ -85,6 +207,7 @@ exports._500 = function(req, res, err) {
   res.end(strResult);
 };
 
+// --------------------------------------------------------------------
 exports.getEnvName = function(req) {
   var   result;
 
@@ -119,5 +242,20 @@ exports.getEnvName = function(req) {
 // -------------------------------------------------------------------------------------
 //  Helper Functions
 //
+
+function colonify(protocol) {
+  if (!protocol.endsWith(':')) {
+    return protocol + ':';
+  }
+  return protocol;
+}
+
+function makeSearch(query = {}) {
+  const str = reduce(query, [], (arr,v,k) => {
+    return [...arr, _.compact([k,v]).join('=')];
+  }).join('&');
+
+  return ['', ..._.compact([str])].join('?');
+}
 
 

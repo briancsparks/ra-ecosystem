@@ -6,6 +6,8 @@
 var _                         = require('lodash');
 var util                      = require('util');
 
+var isnt, anyIsnt, is;
+
 var   sg = {_:_};
 
 var seconds = sg.seconds = sg.second = 1000,        second = seconds;
@@ -23,7 +25,7 @@ var forcedModes_;
 sg.setModes = function(modesStr) {
   cachedModes = null;
 
-  const modesList   = modesStr.split(',').filter(s => {
+  var modesList   = modesStr.split(',').filter(s => {
     if (!s.startsWith('test:') || s.length < 6)     { return true; }
 
     forcedTestName = s.split(':')[1];
@@ -33,7 +35,7 @@ sg.setModes = function(modesStr) {
   forcedModes = ','+modesList.join(',')+',';
 };
 
-const getForcedMode = function(name) {
+var getForcedMode = function(name) {
   if (name === 'test' && forcedTestName)    { return forcedTestName; }
 
   return indexOf(forcedModes_, ','+name+',') !== -1;
@@ -48,7 +50,7 @@ const getForcedMode = function(name) {
  *
  * @returns
  */
-const isProd = function() {
+var isProd = function() {
   if (sg.argvFlag('prod'))     { return true; }
   if (forcedModes_)            { return getForcedMode('prod'); }
 
@@ -65,7 +67,7 @@ const isProd = function() {
  *
  * @returns
  */
-const isDev = function() {
+var isDev = function() {
   if (sg.argvFlag('dev'))       { return true; }
   if (forcedModes_)             { return getForcedMode('dev'); }
 
@@ -85,7 +87,7 @@ const isDev = function() {
  *
  * @returns
  */
-const isDebug = function() {
+var isDebug = function() {
   if (sg.argvFlag('debug'))     { return true; }
   if (forcedModes_)             { return getForcedMode('debug'); }
 
@@ -106,7 +108,7 @@ exports.isDebug = isDebug;
  *
  * @returns
  */
-const isTest = function() {
+var isTest = function() {
   if (sg.argvFlag('test'))     { return true; }
   if (forcedModes_)            { return getForcedMode('test'); }
 
@@ -124,12 +126,12 @@ const isTest = function() {
 sg.modes = function() {
   if (cachedModes)        { return cachedModes; }
 
-  const prod            = isProd();
-  const production      = prod;
-  const debug           = isDebug();
-  const dev             = isDev();
-  const development     = dev;
-  const test            = isTest();
+  var prod            = isProd();
+  var production      = prod;
+  var debug           = isDebug();
+  var dev             = isDev();
+  var development     = dev;
+  var test            = isTest();
 
   return (cachedModes = sg.merge({prod, debug, test, production, development, dev}));
 };
@@ -147,6 +149,19 @@ sg.mode = function() {
   return 'dev';
 };
 
+/**
+ * Returns input object only if we are in debug mode.
+ *
+ * @param {*} dbg
+ * @returns
+ */
+sg.debugInfo = function(dbg) {
+  if (!sg.modes().debug) {
+    return {};
+  }
+
+  return dbg;
+};
 
 /**
  * Returns an inspected object.
@@ -157,32 +172,6 @@ sg.mode = function() {
  */
 sg.inspect = function(x, colors) {
   return sg.inspect.prod(x, colors);
-
-
-
-  // sg.mkInspect();
-  // return sg.inspect(x, colors);
-  // var   logFn;
-
-  // if (sg.modes().prod)  {
-  //   (logFn = sg.inspect.prod)(x, colors);
-  //   sg.inspect = logFn;
-  //   return;
-  // }
-
-  // if (sg.modes().test) {
-  //   (logFn = (sg.modes().debug ? sg.inspect.debug : sg.inspect.ndebug))(x, colors);
-  //   sg.inspect = logFn;
-  //   return;
-  // }
-
-  // if (sg.modes().debug) {
-  //   (logFn = sg.modes().debug)(x, colors);
-  //   sg.inspect = logFn;
-  //   return;
-  // }
-
-  // sg.inspect.dev(x, colors);
 };
 
 sg.mkInspect = function(argv) {
@@ -288,12 +277,12 @@ sg.logError = function(error, msg, arg0, ...debugArgs) {
 };
 
 sg.warn = function(msg_, arg0, ...args) {
-  const msg = `\n\n     #####     #####     ${msg_}     #####     #####\n\n`;
+  var msg = `\n\n     #####     #####     ${msg_}     #####     #####\n\n`;
   console.warn(..._.compact([msg, arg0 &&  sg.inspect({...arg0}), (args.length > 0) && sg.inspect([...args])]));
 };
 
 sg.nag = function(msg_, arg0, ...args) {
-  const msg = `\n\n     .....     .....     ${msg_}     .....     .....\n\n`;
+  var msg = `\n\n     .....     .....     ${msg_}     .....     .....\n\n`;
   console.warn(..._.compact([msg, arg0 &&  sg.inspect({...arg0}), (args.length > 0) && sg.inspect([...args])]));
 };
 
@@ -403,7 +392,7 @@ var ap = sg.ap = function(a, v, ...rest) {
 sg.push = function(arr, x) {
   if (_.isUndefined(x))     { return x; }
 
-  const length = arr.length;
+  var length = arr.length;
 
   arr.push(x);
 
@@ -444,13 +433,13 @@ sg.keyMirror = function(x, sep) {
 };
 
 sg.argvFlag = function(flag) {
-  const target = `--${flag}`;
+  var target = `--${flag}`;
   return process.argv.filter(x => (x === '--' || x === target))[0] === target;
 };
 
 sg.argvValue = function(key) {
-  const target = `--${key}=`;
-  const arg    = process.argv.filter(x => (x === '--' || x.startsWith(target)))[0] || '';
+  var target = `--${key}=`;
+  var arg    = process.argv.filter(x => (x === '--' || x.startsWith(target)))[0] || '';
   return arg.split('=')[1];
 };
 
@@ -480,11 +469,14 @@ var isPod = sg.isPod = function(x) {
 };
 
 /**
- *  Returns true if the argument === null or === undefined.
+ *  Returns `true` if the item is one of the things in JavaScript that cannot
+ *  be manipulated (`null`, `undefined`, `NaN`).
  *
+ * @param {*} x
+ * @returns true or false
  */
 isnt = sg.isnt = function(x) {
-  return _.isNull(x) || _.isUndefined(x);
+  return _.isNull(x) || _.isUndefined(x) || _.isNaN(x);
 };
 
 /**
@@ -496,6 +488,16 @@ anyIsnt = sg.anyIsnt = function(argv) {
     if (m !== false) { return m; }
     return sg.isnt(arg);
   });
+};
+
+/**
+ *  Returns true if the item is a valid item (that you can manipulate and use the value.)
+ *
+ * @param {*} x
+ * @returns true or false
+ */
+is = exports.is = function(x) {
+  return x || (x===0) || (x==='') || (x===false);
 };
 
 /**
@@ -830,6 +832,16 @@ sg.min = function() {
   return _.minBy.apply(_, arguments);
 };
 
+/**
+ * Restore compact.
+ *
+ * @param {*} arr
+ * @returns
+ */
+sg.compact = function(arr) {
+  return arr.filter(Boolean);
+};
+
 // From https://github.com/lodash/lodash/wiki/Migrating
 sg.pluck        = _.map;
 sg.head         = _.take;
@@ -932,7 +944,7 @@ sg.toArray = function(x) {
   return [x];
 };
 
-var safeJSONParse = sg.safeJSONParse = function(str) {
+sg.safeJSONParse = function(str) {
   if (str !== '') {
     try {
       return JSON.parse(str);
@@ -942,6 +954,23 @@ var safeJSONParse = sg.safeJSONParse = function(str) {
   }
 };
 
+sg.jsonify = function(x) {
+  if (typeof x !== 'string') {
+    return x;
+  }
+
+  return safeJSONParse(x);
+};
+
+sg.arrayify = function(x, skipSplitStrings) {
+  if (Array.isArray(x)) {
+    return x;
+  }
+  if (!skipSplitStrings && typeof x === 'string') {
+    return x.split(',');
+  }
+  return [x];
+};
 
 
 

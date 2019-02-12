@@ -36,7 +36,7 @@ mod.xport({getAmis: function(argv, context, callback) {
   const ractx     = context.runAnywhere || {};
   const { rax }   = ractx.quickNetEc2__getAmis;
 
-  return rax.iwrap(function(abort, calling) {
+  return rax.iwrap(function(abort) {
     const { describeImages } = libAws.awsFns(ec2, 'describeImages', rax.opts({}), abort);
 
     const Owners            = rax.arg(argv, 'Owners,owners', {array:true});
