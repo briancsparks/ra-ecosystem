@@ -62,8 +62,27 @@ const awsFns = function(service, names_, options1, abort) {
         if (options.verbose) {
           console.error(`calling AWS::${fname}`, sg.inspect({params}));
         }
+
         abort.calling(`AWS::${fname}(44)`, params);
-        return awsFn.apply(service, [params, callback]);
+        // return awsFn.apply(service, [params, callback]);
+        return sg.until(function(again /*, lastX, count, elapsed*/) {
+          return awsFn.apply(service, [params, function(err, data, ...rest) {
+            if (sg.ok(err, data))   { return callback(err, data, ...rest); }
+
+            /* otherwise -- is it a retryable error? */
+            if (err.retryable) {
+              return again(250);
+            }
+
+            /* otherwise -- is it one of the known to say not retryable, but really is? */
+            if (err.RequestLimitExceeded) {
+              return again(1000);
+            }
+
+            /* otherwise -- give up, let caller retry on their own, if they want */
+            return callback(err, data, ...rest);
+          }]);
+        }, function(){});
       };
       // --------------------------------------------------------------------------
 

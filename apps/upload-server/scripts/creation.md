@@ -1,7 +1,18 @@
 # Creation
 
 ```sh
-claudia create --api-module api-builder --name upload --config _config\dev\private\claudia.json --role arn:aws:iam::084075158741:role/supercow --memory 128 --timeout 30 --security-group-ids sg-097d5424b2bd94f7d --subnet-ids subnet-0a01766491ff4091b,subnet-038ade74fb771f294 --set-env-from-json _config\dev\env.json --layers arn:aws:lambda:us-east-1:084075158741:layer:run-anywhere-layer:2 --region us-east-1 --use-s3-bucket netlab-dev --keep
+claudia create --api-module api-builder \
+    --name upload \
+    --config _config\dev\private\claudia.json \
+    --role arn:aws:iam::084075158741:role/supercow \
+    --memory 128 \
+    --timeout 30 \
+    --security-group-ids sg-097d5424b2bd94f7d \
+    --subnet-ids subnet-0a01766491ff4091b,subnet-038ade74fb771f294 \
+    --set-env-from-json _config\dev\env.json \
+    --layers arn:aws:lambda:us-east-1:084075158741:layer:run-anywhere-layer:2 \
+    --region us-east-1 \
+    --use-s3-bucket netlab-dev --keep
 
 npm install -q --no-audit --production
 npm dedupe -q --no-package-lock

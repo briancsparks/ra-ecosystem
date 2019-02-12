@@ -2,7 +2,7 @@
 
 const ra                      = require('run-anywhere').v2;
 const sg                      = ra.get3rdPartyLib('sg-flow');
-// const { _ }                   = sg;
+const { _ }                   = sg;
 const awsDefs                 = require('../aws-defs');
 const AWS                     = require('aws-sdk');
 const superb                  = require('superb');
@@ -18,7 +18,7 @@ mod.xport({tag: function(argv, context, callback) {
   const Resources = sg.ap([...(argv.resources || []), ...(argv.ids || [])], argv.resource, argv.id);
 
   // const tags  = argv.tags || exports.mkTags(type, argv.rawTags);
-  const tags  = { ...exports.mkTags(type, argv.rawTags, argv.adjective),  ...(argv.tags || {}) };
+  const tags  = { ...exports.mkTags(type, argv.rawTags, argv.adjective, argv.suffix),  ...(argv.tags || {}) };
   const Tags  = sg.reduce(tags || {}, [], (m, Value, Key) => {
     return sg.ap(m, {Key, Value});
   });
@@ -36,13 +36,13 @@ const gTags = {
   owner:      process.env.OWNER
 };
 
-exports.mkTags = function(type, seed, adjective) {
+exports.mkTags = function(type, seed, adjective, suffix) {
   if (sg.isnt(seed))      { return; }
 
   var result = sg.reduce(seed || {}, {}, (m, v, k) => {
     // v === true means caller wants us to fill in
     if (v === true) {
-      return sg.kv(m, k, gTags[k.toLowerCase()] || process.env[k.toLowerCase()] || nonsense(k, type, adjective));
+      return sg.kv(m, k, gTags[k.toLowerCase()] || process.env[k.toLowerCase()] || nonsense(k, type, adjective, suffix));
       // return sg.kv(m, k, gTags[k.toLowerCase()] || process.env[k.toLowerCase()]);
     }
 
@@ -58,11 +58,11 @@ exports.mkTags = function(type, seed, adjective) {
   // return {tags: result};
 };
 
-function nonsense(str, type, adjective_) {
+function nonsense(str, type, adjective_, suffix) {
   var   adjective = adjective_ || superb.random();
 
   if (str.toLowerCase() === 'name') {
-    return `${adjective}-${type}`;
+    return _.compact([adjective, type, suffix]).join('-');
   }
 
   return `${adjective}-${str}`;

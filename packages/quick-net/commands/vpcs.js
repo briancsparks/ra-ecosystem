@@ -83,6 +83,7 @@ mod.xport({manageVpc: function(argv, context, callback) {
     var    azLetters         = fra.arg(argv, 'azLetters,az', {array:true})                     || 'a,b'.split(',');
     var    CidrBlock         = `10.${classB}.0.0/16`;
     var    adjective         = fra.arg(argv, 'adjective,adj')                                  || getSuperb();
+    var    suffix            = fra.arg(argv, 'suffix');
 
     // if (fra.argErrors())    { return fra.abort(); }
 
@@ -201,7 +202,8 @@ mod.xport({manageVpc: function(argv, context, callback) {
             CidrBlock     = toCidr(currCidrFirst, bitsToNetmask(cidrBits));
           }
 
-          subnetList.push({VpcId, CidrBlock, AvailabilityZone, publicIp, kind, adjective});
+          const suffix = `zone${letter.toUpperCase()}`;
+          subnetList.push({VpcId, CidrBlock, AvailabilityZone, publicIp, kind, adjective, suffix});
 
           currCidrFirst = lastIpInCidr(CidrBlock) + 1;
           return next();
@@ -307,14 +309,15 @@ mod.xport({manageVpc: function(argv, context, callback) {
         internetGateway = data.result.InternetGateway;
 
         return sg.__eachll(publicSubnets, function(subnet, next) {
-          const { SubnetId, AvailabilityZone } = subnet;
+          const { SubnetId, AvailabilityZone }  = subnet;
+          const   suffix                        = zoneSuffix(AvailabilityZone);
 
-          return allocateAddress({VpcId, SubnetId, adjective}, {}, function(err, data) {
+          return allocateAddress({VpcId, SubnetId, adjective, suffix}, {}, function(err, data) {
             const { AllocationId } = data.result.Address;
             my.result.addresses[AvailabilityZone] = data.result;
             my.resources.push(AllocationId);
 
-            return createNatGateway({VpcId, SubnetId, adjective}, {}, function(err, data) {
+            return createNatGateway({VpcId, SubnetId, adjective, suffix}, {}, function(err, data) {
               const { NatGatewayId } = data.result.NatGateway;
               my.result.natGateways[AvailabilityZone] = data.result;
               my.resources.push(NatGatewayId);
@@ -333,7 +336,7 @@ mod.xport({manageVpc: function(argv, context, callback) {
       if (skipNat)  { return next(); }
 
       // ---------------------------------------- Public Route Table ----------
-      return createRouteTable({VpcId, public:true, adjective}, {}, function(err, data) {
+      return createRouteTable({VpcId, public:true, adjective, suffix:'public'}, {}, function(err, data) {
         // console.error(`crt`, sg.inspect({err, data, publicSubnets, privateSubnets}));
 
         const { RouteTableId } = data.result.RouteTable;
@@ -360,9 +363,10 @@ mod.xport({manageVpc: function(argv, context, callback) {
       // ---------------------------------------- Private Route Tables ----------
 
       return sg.__eachll(privateSubnets, function(subnet, next) {
-        const { SubnetId, AvailabilityZone } = subnet;
+        const { SubnetId, AvailabilityZone }  = subnet;
+        const   suffix                        = zoneSuffix(AvailabilityZone);
 
-        return createRouteTable({VpcId, SubnetId, adjective}, {}, function(err, data) {
+        return createRouteTable({VpcId, SubnetId, adjective, suffix}, {}, function(err, data) {
 
           const { RouteTableId } = data.result.RouteTable;
           my.resources.push(RouteTableId);
@@ -760,4 +764,8 @@ function getSuperb() {
     adj = superb.random();
   }
   return adj;
+}
+
+function zoneSuffix(AvailabilityZone) {
+  return `zone${(_.last(AvailabilityZone) || 'z').toUpperCase()}`;
 }

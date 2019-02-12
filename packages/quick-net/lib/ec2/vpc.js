@@ -39,21 +39,22 @@ mod.xport({upsertVpc: function(argv, context, callback) {
   // ra invoke packages\quick-net\lib\ec2\vpc.js upsertVpc --classB=111
 
   const ractx     = context.runAnywhere || {};
-  const { fra }   = (ractx.quickNetVpc__upsertVpc || ractx);
+  const { rax }   = (ractx.quickNetVpc__upsertVpc || ractx);
 
-  return fra.iwrap(function(abort) {
-    const { createVpc,modifyVpcAttribute } = libAws.awsFns(ec2, 'describeVpcs,createVpc,modifyVpcAttribute', fra.opts({}), abort);
-    const { describeVpcs }                 = fra.loads(libDescribeVpc, 'describeVpcs', fra.opts({}), abort);
+  return rax.iwrap(function(abort) {
+    const { createVpc,modifyVpcAttribute } = libAws.awsFns(ec2, 'describeVpcs,createVpc,modifyVpcAttribute', rax.opts({}), abort);
+    const { describeVpcs }                 = rax.loads(libDescribeVpc, 'describeVpcs', rax.opts({}), abort);
 
-    const classB            = fra.arg(argv, 'classB,class-b');
-    const CidrBlock         = fra.arg(argv, 'CidrBlock,cidr')    || (classB ? `10.${classB}.0.0/16` : argv.cidr);
-    const adjective         = fra.arg(argv, 'adjective,adj');
+    const classB            = rax.arg(argv, 'classB,class-b');
+    const CidrBlock         = rax.arg(argv, 'CidrBlock,cidr')    || (classB ? `10.${classB}.0.0/16` : argv.cidr);
+    const adjective         = rax.arg(argv, 'adjective,adj');
+    const suffix            = rax.arg(argv, 'suffix');
     const InstanceTenancy   = 'default';
 
     const AmazonProvidedIpv6CidrBlock = true;
 
     const reqd = { CidrBlock };
-    if (fra.argErrors(reqd))    { return fra.abort(); }
+    if (rax.argErrors(reqd))    { return rax.abort(); }
 
     var   vpc;
     var   VpcId;
@@ -61,7 +62,7 @@ mod.xport({upsertVpc: function(argv, context, callback) {
     return sg.__run2({result:{}}, callback, [function(my, next, last) {
 
       // See if we already have it
-      return describeVpcs({classB, CidrBlock}, fra.opts({}), function(err, data) {
+      return describeVpcs({classB, CidrBlock}, rax.opts({}), function(err, data) {
 
         // Must be unique CIDR block
         if (data.Vpcs.length > 1) {
@@ -95,7 +96,7 @@ mod.xport({upsertVpc: function(argv, context, callback) {
           my.created  = 1;
 
           // Tag it
-          return tag({type:'Vpc', id: VpcId, rawTags: defaultTags, adjective}, context, function(err, data) {
+          return tag({type:'Vpc', id: VpcId, rawTags: defaultTags, adjective, suffix}, context, function(err, data) {
             if (!sg.ok(err, data))  { console.error(err); }
 
             return next();
@@ -116,7 +117,7 @@ mod.xport({upsertVpc: function(argv, context, callback) {
       }, function(next) {
 
         // We want to return the complete object, not the limited one you get back from create()
-        return describeVpcs({VpcId}, fra.opts({}), function(err, data) {
+        return describeVpcs({VpcId}, rax.opts({}), function(err, data) {
 
           /* We found it */
           my.result = {Vpc: data.Vpcs[0]};
@@ -139,29 +140,30 @@ mod.xport({upsertSubnet: function(argv, context, callback) {
   // ra invoke packages\quick-net\lib\ec2\vpc.js upsertSubnet --cidr=10.111.0.0/20 --az=us-east-1a --public --vpc=
 
   const ractx     = context.runAnywhere || {};
-  const { fra }   = (ractx.quickNetVpc__upsertSubnet || ractx);
+  const { rax }   = (ractx.quickNetVpc__upsertSubnet || ractx);
 
-  return fra.iwrap(function(abort, calling) {
+  return rax.iwrap(function(abort, calling) {
     const {
       createSubnet,
       modifySubnetAttribute
-    }                             = libAws.awsFns(ec2, 'createSubnet,modifySubnetAttribute', fra.opts({}), abort);
-    const { describeSubnets }     = fra.loads(libDescribeVpc, 'describeSubnets', fra.opts({}), abort);
+    }                             = libAws.awsFns(ec2, 'createSubnet,modifySubnetAttribute', rax.opts({}), abort);
+    const { describeSubnets }     = rax.loads(libDescribeVpc, 'describeSubnets', rax.opts({}), abort);
 
-    const CidrBlock         = fra.arg(argv, 'CidrBlock,cidr', {required:true});
-    const VpcId             = fra.arg(argv, 'VpcId,vpc');
-    const AvailabilityZone  = fra.arg(argv, 'AvailabilityZone,az', {required:true});
-    const publicIp          = fra.arg(argv, 'publicIp,public-ip,public');
-    const kind              = fra.arg(argv, 'kind');
-    const Name              = fra.arg(argv, 'name') || (kind? kind.name : null);
-    const adjective         = fra.arg(argv, 'adjective,adj');
+    const CidrBlock         = rax.arg(argv, 'CidrBlock,cidr', {required:true});
+    const VpcId             = rax.arg(argv, 'VpcId,vpc');
+    const AvailabilityZone  = rax.arg(argv, 'AvailabilityZone,az', {required:true});
+    const publicIp          = rax.arg(argv, 'publicIp,public-ip,public');
+    const kind              = rax.arg(argv, 'kind');
+    const Name              = rax.arg(argv, 'name') || (kind? _.compact([kind.name, zoneSuffix(AvailabilityZone)]).join('-') : null);
+    const adjective         = rax.arg(argv, 'adjective,adj');
+    const suffix            = rax.arg(argv, 'suffix');
 
-    if (fra.argErrors())    { return fra.abort(); }
+    if (rax.argErrors())    { return rax.abort(); }
 
     var   SubnetId;
     return sg.__run2({result:{}}, callback, [function(my, next, last) {
 
-      return describeSubnets(fra.opts({CidrBlock, VpcId}), fra.opts({}), function(err, data) {
+      return describeSubnets(rax.opts({CidrBlock, VpcId}), rax.opts({}), function(err, data) {
 
         if (data.Subnets.length === 0)    { return next(); }
         if (data.Subnets.length > 1)      { return abort({code: 'EAMBIGUOUS', msg:`Too many found (${data.Subnets.length})`, debug:{subnets: data.Subnets}}); }
@@ -184,7 +186,7 @@ mod.xport({upsertSubnet: function(argv, context, callback) {
 
           // Tag it
           var   tags = sg.merge({Name});
-          return tag({type:'Subnet', id: SubnetId, rawTags: defaultTags, tags, adjective}, context, function(err, data) {
+          return tag({type:'Subnet', id: SubnetId, rawTags: defaultTags, tags, adjective, suffix}, context, function(err, data) {
             if (!sg.ok(err, data))  { console.error(err); }
 
             return next();
@@ -203,7 +205,7 @@ mod.xport({upsertSubnet: function(argv, context, callback) {
         });
 
       }, function(next) {
-        return describeSubnets({SubnetId}, fra.opts({}), function(err, data) {
+        return describeSubnets({SubnetId}, rax.opts({}), function(err, data) {
 
           /* We found it */
           my.result = {Subnet: data.Subnets[0]};
@@ -223,17 +225,18 @@ mod.xport({upsertSecurityGroup: function(argv, context, callback) {
   // ra invoke packages\quick-net\lib\ec2\vpc.js upsertSecurityGroup --name=wide --desc=wide-group --vpc=
 
   const ractx     = context.runAnywhere || {};
-  const { fra }   = (ractx.quickNetVpc__upsertSecurityGroup || ractx);
+  const { rax }   = (ractx.quickNetVpc__upsertSecurityGroup || ractx);
 
-  return fra.iwrap(function(abort, calling) {
-    const { describeSecurityGroups, createSecurityGroup } = libAws.awsFns(ec2, 'describeSecurityGroups,createSecurityGroup', fra.opts({}), abort);
+  return rax.iwrap(function(abort, calling) {
+    const { describeSecurityGroups, createSecurityGroup } = libAws.awsFns(ec2, 'describeSecurityGroups,createSecurityGroup', rax.opts({}), abort);
 
-    const VpcId             = fra.arg(argv, 'VpcId,vpc', {required:true});
-    const GroupName         = fra.arg(argv, 'GroupName,name', {required:true});
-    const Description       = fra.arg(argv, 'Description,desc', {required:false});
-    const adjective         = fra.arg(argv, 'adjective,adj');
+    const VpcId             = rax.arg(argv, 'VpcId,vpc', {required:true});
+    const GroupName         = rax.arg(argv, 'GroupName,name', {required:true});
+    const Description       = rax.arg(argv, 'Description,desc', {required:false});
+    const adjective         = rax.arg(argv, 'adjective,adj');
+    const suffix            = rax.arg(argv, 'suffix');
 
-    if (fra.argErrors())    { return fra.abort(); }
+    if (rax.argErrors())    { return rax.abort(); }
 
     return sg.__run2({result:{}}, callback, [function(my, next, last) {
 
@@ -258,7 +261,7 @@ mod.xport({upsertSecurityGroup: function(argv, context, callback) {
           my.created  = 1;
 
           // Tag it
-          return tag({type:'SecurityGroup', id: my.result.GroupId, rawTags: defaultTags, tags:{Name: GroupName}, adjective}, context, function(err, data) {
+          return tag({type:'SecurityGroup', id: my.result.GroupId, rawTags: defaultTags, tags:{Name: GroupName}, adjective, suffix}, context, function(err, data) {
             if (!sg.ok(err, data))  { console.error(err); }
 
             return next();
@@ -287,21 +290,22 @@ mod.xport({upsertSecurityGroupIngress: function(argv, context, callback) {
   // ra invoke packages\quick-net\lib\ec2\vpc.js upsertSecurityGroupIngress --cidr=10.0.0.0/8 --from=22 --to=22  --desc=from-wide-group  --id=sg-
 
   const ractx     = context.runAnywhere || {};
-  const { fra }   = (ractx.quickNetVpc__upsertSecurityGroupIngress || ractx);
+  const { rax }   = (ractx.quickNetVpc__upsertSecurityGroupIngress || ractx);
 
-  return fra.iwrap(function(abort) {
-    const { authorizeSecurityGroupIngress, describeSecurityGroups } = libAws.awsFns(ec2, 'authorizeSecurityGroupIngress,describeSecurityGroups', fra.opts({}), abort);
+  return rax.iwrap(function(abort) {
+    const { authorizeSecurityGroupIngress, describeSecurityGroups } = libAws.awsFns(ec2, 'authorizeSecurityGroupIngress,describeSecurityGroups', rax.opts({}), abort);
 
-    const GroupId           = fra.arg(argv, 'GroupId,id', {required:true});
-    const IpProtocol        = fra.arg(argv, 'protocol,proto', {required:false, def: 'tcp'});
-    const CidrIp            = fra.arg(argv, 'CidrIp,cidr', {required:false});
-    const FromPort          = fra.arg(argv, 'FromPort,from', {required:true});
-    const ToPort            = fra.arg(argv, 'ToPort,to', {required:true});
-    const Description       = fra.arg(argv, 'Description,desc', {required:false});
-    const ingressGroupId    = fra.arg(argv, 'ingressGroupId,ingroup,insg');
-    const adjective         = fra.arg(argv, 'adjective,adj');
+    const GroupId           = rax.arg(argv, 'GroupId,id', {required:true});
+    const IpProtocol        = rax.arg(argv, 'protocol,proto', {required:false, def: 'tcp'});
+    const CidrIp            = rax.arg(argv, 'CidrIp,cidr', {required:false});
+    const FromPort          = rax.arg(argv, 'FromPort,from', {required:true});
+    const ToPort            = rax.arg(argv, 'ToPort,to', {required:true});
+    const Description       = rax.arg(argv, 'Description,desc', {required:false});
+    const ingressGroupId    = rax.arg(argv, 'ingressGroupId,ingroup,insg');
+    const adjective         = rax.arg(argv, 'adjective,adj');
+    const suffix            = rax.arg(argv, 'suffix');
 
-    if (fra.argErrors())    { return fra.abort(); }
+    if (rax.argErrors())    { return rax.abort(); }
 
     var UserIdGroupPairs, IpRanges;
     if (CidrIp) {
@@ -358,16 +362,17 @@ mod.xport({allocateAddress: function(argv, context, callback) {
   // ra invoke packages\quick-net\lib\ec2\vpc.js allocateAddress
 
   const ractx     = context.runAnywhere || {};
-  const { fra }   = (ractx.quickNetVpc__allocateAddress || ractx);
+  const { rax }   = (ractx.quickNetVpc__allocateAddress || ractx);
 
-  return fra.iwrap(function(abort, calling) {
-    const { allocateAddress, describeAddresses } = libAws.awsFns(ec2, 'allocateAddress,describeAddresses', fra.opts({}), abort);
+  return rax.iwrap(function(abort, calling) {
+    const { allocateAddress, describeAddresses } = libAws.awsFns(ec2, 'allocateAddress,describeAddresses', rax.opts({}), abort);
 
-    const VpcId               = fra.arg(argv, 'VpcId,vpc', {required:false});
-    const SubnetId            = fra.arg(argv, 'SubnetId,subnet', {required:false});
-    const adjective         = fra.arg(argv, 'adjective,adj');
+    const VpcId               = rax.arg(argv, 'VpcId,vpc', {required:false});
+    const SubnetId            = rax.arg(argv, 'SubnetId,subnet', {required:false});
+    const adjective           = rax.arg(argv, 'adjective,adj');
+    const suffix              = rax.arg(argv, 'suffix');
 
-    if (fra.argErrors())    { return fra.abort(); }
+    if (rax.argErrors())    { return rax.abort(); }
 
     return sg.__run2({result:{}}, callback, [function(my, next, last) {
 
@@ -390,7 +395,7 @@ mod.xport({allocateAddress: function(argv, context, callback) {
         my.created  = 1;
 
         // Tag it
-        return tag({type:'ElasticIp', id: my.result.AllocationId, rawTags: defaultTags, tags:{VpcId,SubnetId}, adjective}, context, function(err, data) {
+        return tag({type:'ElasticIp', id: my.result.AllocationId, rawTags: defaultTags, tags:{VpcId,SubnetId}, adjective, suffix}, context, function(err, data) {
           if (!sg.ok(err, data))  { console.error(err); }
 
           return next();
@@ -422,20 +427,21 @@ mod.xport({createInternetGateway: function(argv, context, callback) {
   // ra invoke packages\quick-net\lib\ec2\vpc.js createInternetGateway --vpc=
 
   const ractx     = context.runAnywhere || {};
-  const { fra }   = (ractx.quickNetVpc__createInternetGateway || ractx);
+  const { rax }   = (ractx.quickNetVpc__createInternetGateway || ractx);
 
-  return fra.iwrap(function(abort) {
+  return rax.iwrap(function(abort) {
     const {
       createInternetGateway,
       attachInternetGateway,
       describeInternetGateways
-    } = libAws.awsFns(ec2, 'createInternetGateway,attachInternetGateway,describeInternetGateways', fra.opts({}), abort);
+    } = libAws.awsFns(ec2, 'createInternetGateway,attachInternetGateway,describeInternetGateways', rax.opts({}), abort);
 
     var   InternetGatewayId;
-    const VpcId             = fra.arg(argv, 'VpcId,vpc', {required:true});
-    const adjective         = fra.arg(argv, 'adjective,adj');
+    const VpcId             = rax.arg(argv, 'VpcId,vpc', {required:true});
+    const adjective         = rax.arg(argv, 'adjective,adj');
+    const suffix            = rax.arg(argv, 'suffix');
 
-    if (fra.argErrors())    { return fra.abort(); }
+    if (rax.argErrors())    { return rax.abort(); }
 
     return sg.__run2({result:{}}, callback, [function(my, next, last) {
       return describeInternetGateways(awsFilters({"attachment.vpc-id":[VpcId]}), function(err, data) {
@@ -460,7 +466,7 @@ mod.xport({createInternetGateway: function(argv, context, callback) {
 
           // Tag it
           InternetGatewayId = my.result.InternetGateway.InternetGatewayId;
-          return tag({type:'InternetGateway', id: InternetGatewayId, rawTags: defaultTags, adjective}, context, function(err, data) {
+          return tag({type:'InternetGateway', id: InternetGatewayId, rawTags: defaultTags, adjective, suffix}, context, function(err, data) {
             if (!sg.ok(err, data))  { console.error(err); }
 
             return next();
@@ -491,18 +497,19 @@ mod.xport({createNatGateway: function(argv, context, callback) {
   // ra invoke packages\quick-net\lib\ec2\vpc.js createNatGateway --subnet= --eip-alloc= --eip=
 
   const ractx     = context.runAnywhere || {};
-  const { fra }   = (ractx.quickNetVpc__createNatGateway || ractx);
+  const { rax }   = (ractx.quickNetVpc__createNatGateway || ractx);
 
-  return fra.iwrap(function(abort, calling) {
-    const { createNatGateway, describeNatGateways, describeAddresses } = libAws.awsFns(ec2, 'createNatGateway,describeNatGateways,describeAddresses', fra.opts({}), abort);
+  return rax.iwrap(function(abort, calling) {
+    const { createNatGateway, describeNatGateways, describeAddresses } = libAws.awsFns(ec2, 'createNatGateway,describeNatGateways,describeAddresses', rax.opts({}), abort);
 
-    const SubnetId            = fra.arg(argv, 'SubnetId,subnet', {required:true});
-    const VpcId               = fra.arg(argv, 'VpcId,vpc', {required:false});
-    var   AllocationId        = fra.arg(argv, 'AllocationId,eip-alloc', {required:false});
-    const ElasticIp           = fra.arg(argv, 'ElasticIp,eip'); // not required
-    const adjective           = fra.arg(argv, 'adjective,adj');
+    const SubnetId            = rax.arg(argv, 'SubnetId,subnet', {required:true});
+    const VpcId               = rax.arg(argv, 'VpcId,vpc', {required:false});
+    var   AllocationId        = rax.arg(argv, 'AllocationId,eip-alloc', {required:false});
+    const ElasticIp           = rax.arg(argv, 'ElasticIp,eip'); // not required
+    const adjective           = rax.arg(argv, 'adjective,adj');
+    const suffix              = rax.arg(argv, 'suffix');
 
-    if (fra.argErrors())    { return fra.abort(); }
+    if (rax.argErrors())    { return rax.abort(); }
 
     var NatGatewayId;
     return sg.__run2({result:{}}, callback, [function(my, next, last) {
@@ -542,7 +549,7 @@ mod.xport({createNatGateway: function(argv, context, callback) {
       });
 
     }, function(my, next) {
-      if (fra.argErrors({AllocationId}))    { return fra.abort(); }
+      if (rax.argErrors({AllocationId}))    { return rax.abort(); }
 
       return createNatGateway({SubnetId, AllocationId}, function(err, data) {
 
@@ -551,7 +558,7 @@ mod.xport({createNatGateway: function(argv, context, callback) {
 
         // Tag it
         NatGatewayId = my.result.NatGateway.NatGatewayId;
-        return tag({type:'NatGateway', id: NatGatewayId, rawTags: defaultTags, tags:{SubnetId}, adjective}, context, function(err, data) {
+        return tag({type:'NatGateway', id: NatGatewayId, rawTags: defaultTags, tags:{SubnetId}, adjective, suffix}, context, function(err, data) {
           if (!sg.ok(err, data))  { console.error(err); }
 
           return next();
@@ -595,17 +602,18 @@ mod.xport({createRouteTable: function(argv, context, callback) {
   // ra invoke packages\quick-net\lib\ec2\vpc.js createRouteTable --subnet= --vpc= --public
 
   const ractx     = context.runAnywhere || {};
-  const { fra }   = (ractx.quickNetVpc__createRouteTable || ractx);
+  const { rax }   = (ractx.quickNetVpc__createRouteTable || ractx);
 
-  return fra.iwrap(function(abort, calling) {
-    const { createRouteTable, describeRouteTables, associateRouteTable } = libAws.awsFns(ec2, 'createRouteTable,describeRouteTables,associateRouteTable', fra.opts({}), abort);
+  return rax.iwrap(function(abort, calling) {
+    const { createRouteTable, describeRouteTables, associateRouteTable } = libAws.awsFns(ec2, 'createRouteTable,describeRouteTables,associateRouteTable', rax.opts({}), abort);
 
-    const SubnetId            = fra.arg(argv, 'SubnetId,subnet', {required:false});
-    const VpcId               = fra.arg(argv, 'VpcId,vpc', {required:true});
-    const public              = fra.arg(argv, 'public');
-    const adjective           = fra.arg(argv, 'adjective,adj');
+    const SubnetId            = rax.arg(argv, 'SubnetId,subnet', {required:false});
+    const VpcId               = rax.arg(argv, 'VpcId,vpc', {required:true});
+    const public              = rax.arg(argv, 'public');
+    const adjective           = rax.arg(argv, 'adjective,adj');
+    const suffix              = rax.arg(argv, 'suffix');
 
-    if (fra.argErrors())    { return fra.abort(); }
+    if (rax.argErrors())    { return rax.abort(); }
 
     var access = (public? 'public' : 'private');
     var RouteTableId;
@@ -616,7 +624,7 @@ mod.xport({createRouteTable: function(argv, context, callback) {
       } else if (public) {
         filters["tag:access"] = [access];
       } else {
-        if (fra.argErrors({SubnetId}))    { return fra.abort(); }
+        if (rax.argErrors({SubnetId}))    { return rax.abort(); }
       }
 
       return describeRouteTables(awsFilters(filters), {}, function(err, data) {
@@ -645,7 +653,7 @@ mod.xport({createRouteTable: function(argv, context, callback) {
         if (access)   { tags = { ...tags, access }; }
 
         RouteTableId = my.result.RouteTable.RouteTableId;
-        return tag({type:'RouteTable', id: RouteTableId, rawTags: defaultTags, tags, adjective}, context, function(err, data) {
+        return tag({type:'RouteTable', id: RouteTableId, rawTags: defaultTags, tags, adjective, suffix}, context, function(err, data) {
           if (!sg.ok(err, data))  { console.error(err); }
 
           return next();
@@ -673,16 +681,17 @@ mod.xport({associateRouteTable: function(argv, context, callback) {
   // ra invoke packages\quick-net\lib\ec2\vpc.js associateRouteTable --subnet= --table=
 
   const ractx     = context.runAnywhere || {};
-  const { fra }   = (ractx.quickNetVpc__associateRouteTable || ractx);
+  const { rax }   = (ractx.quickNetVpc__associateRouteTable || ractx);
 
-  return fra.iwrap(function(abort, calling) {
-    const { associateRouteTable } = libAws.awsFns(ec2, 'associateRouteTable', fra.opts({}), abort);
+  return rax.iwrap(function(abort, calling) {
+    const { associateRouteTable } = libAws.awsFns(ec2, 'associateRouteTable', rax.opts({}), abort);
 
-    const SubnetId            = fra.arg(argv, 'SubnetId,subnet', {required:false});
-    const RouteTableId        = fra.arg(argv, 'RouteTableId,route-table,table', {required:true});
-    const adjective           = fra.arg(argv, 'adjective,adj');
+    const SubnetId            = rax.arg(argv, 'SubnetId,subnet', {required:false});
+    const RouteTableId        = rax.arg(argv, 'RouteTableId,route-table,table', {required:true});
+    const adjective           = rax.arg(argv, 'adjective,adj');
+    const suffix              = rax.arg(argv, 'suffix');
 
-    if (fra.argErrors())    { return fra.abort(); }
+    if (rax.argErrors())    { return rax.abort(); }
 
     return associateRouteTable({SubnetId, RouteTableId}, function(err, data) {
       return callback(err, data);
@@ -695,24 +704,25 @@ mod.xport({createRoute: function(argv, context, callback) {
   // ra invoke packages\quick-net\lib\ec2\vpc.js createRoute --cidr=0.0.0.0/0 --gw= --table=
 
   const ractx     = context.runAnywhere || {};
-  const { fra }   = (ractx.quickNetVpc__createRoute || ractx);
+  const { rax }   = (ractx.quickNetVpc__createRoute || ractx);
 
-  return fra.iwrap(function(abort) {
-    const { createRoute }             = libAws.awsFns(ec2, 'createRoute', fra.opts({}), abort);
+  return rax.iwrap(function(abort) {
+    const { createRoute }             = libAws.awsFns(ec2, 'createRoute', rax.opts({}), abort);
 
-    const RouteTableId                = fra.arg(argv, 'RouteTableId,route-table,table', {required:true});
-    const DestinationCidrBlock        = fra.arg(argv, 'DestinationCidrBlock,cidr');
-    const DestinationIpv6CidrBlock    = fra.arg(argv, 'DestinationIpv6CidrBlock,cidr6');
-    const EgressOnlyInternetGatewayId = fra.arg(argv, 'EgressOnlyInternetGatewayId,egress');
-    const GatewayId                   = fra.arg(argv, 'GatewayId,gateway,gw');
-    const InstanceId                  = fra.arg(argv, 'InstanceId,instance');
-    const NatGatewayId                = fra.arg(argv, 'NatGatewayId,nat');
-    const NetworkInterfaceId          = fra.arg(argv, 'NetworkInterfaceId,nic');
-    const TransitGatewayId            = fra.arg(argv, 'TransitGatewayId,transit');
-    const VpcPeeringConnectionId      = fra.arg(argv, 'VpcPeeringConnectionId,peering,peer');
-    const adjective                   = fra.arg(argv, 'adjective,adj');
+    const RouteTableId                = rax.arg(argv, 'RouteTableId,route-table,table', {required:true});
+    const DestinationCidrBlock        = rax.arg(argv, 'DestinationCidrBlock,cidr');
+    const DestinationIpv6CidrBlock    = rax.arg(argv, 'DestinationIpv6CidrBlock,cidr6');
+    const EgressOnlyInternetGatewayId = rax.arg(argv, 'EgressOnlyInternetGatewayId,egress');
+    const GatewayId                   = rax.arg(argv, 'GatewayId,gateway,gw');
+    const InstanceId                  = rax.arg(argv, 'InstanceId,instance');
+    const NatGatewayId                = rax.arg(argv, 'NatGatewayId,nat');
+    const NetworkInterfaceId          = rax.arg(argv, 'NetworkInterfaceId,nic');
+    const TransitGatewayId            = rax.arg(argv, 'TransitGatewayId,transit');
+    const VpcPeeringConnectionId      = rax.arg(argv, 'VpcPeeringConnectionId,peering,peer');
+    const adjective                   = rax.arg(argv, 'adjective,adj');
+    const suffix                      = rax.arg(argv, 'suffix');
 
-    if (fra.argErrors())              { return fra.abort(); }
+    if (rax.argErrors())              { return rax.abort(); }
 
     const reqd_   = { RouteTableId };
     const reqd    = sg.smartExtend({ ...reqd_ });
@@ -733,7 +743,7 @@ mod.xport({createRoute: function(argv, context, callback) {
     const params = { ...reqd, ...target, ...dest };
 
     if (sg.numKeys(target) === 0 || sg.numKeys(dest) !== 1) {
-      return fra.abort(`Must provide RouteTableId and one or both of [[${sg.keys(target_)}]], and one of [[${sg.keys(dest_)}]]`);
+      return rax.abort(`Must provide RouteTableId and one or both of [[${sg.keys(target_)}]], and one of [[${sg.keys(dest_)}]]`);
     }
 
     return createRoute(params, {abort:false}, function(err, data) {
@@ -757,27 +767,28 @@ mod.xport({createVpcEndpoint: function(argv, context, callback) {
   // ra invoke packages\quick-net\lib\ec2\vpc.js createVpcEndpoint --vpc= --service= --tables=
 
   const ractx     = context.runAnywhere || {};
-  const { fra }   = (ractx.quickNetVpc__createVpcEndpoint || ractx);
+  const { rax }   = (ractx.quickNetVpc__createVpcEndpoint || ractx);
 
-  return fra.iwrap(function(abort, calling) {
-    const { createVpcEndpoint,describeVpcEndpoints } = libAws.awsFns(ec2, 'createVpcEndpoint,describeVpcEndpoints', fra.opts({}), abort);
+  return rax.iwrap(function(abort, calling) {
+    const { createVpcEndpoint,describeVpcEndpoints } = libAws.awsFns(ec2, 'createVpcEndpoint,describeVpcEndpoints', rax.opts({}), abort);
 
-    const VpcId               = fra.arg(argv, 'VpcId,vpc', {required:true});
-    const ServiceName         = fra.arg(argv, 'ServiceName,service', {required:true});
-    const VpcEndpointType     = fra.arg(argv, 'VpcEndpointType,type', {def:'Gateway'});
-    const ClientToken         = fra.arg(argv, 'ClientToken,token');
-    const adjective           = fra.arg(argv, 'adjective,adj');
+    const VpcId               = rax.arg(argv, 'VpcId,vpc', {required:true});
+    const ServiceName         = rax.arg(argv, 'ServiceName,service', {required:true});
+    const VpcEndpointType     = rax.arg(argv, 'VpcEndpointType,type', {def:'Gateway'});
+    const ClientToken         = rax.arg(argv, 'ClientToken,token');
+    const adjective           = rax.arg(argv, 'adjective,adj');
+    const suffix              = rax.arg(argv, 'suffix');
 
     // type === Gateway
-    const RouteTableIds       = fra.arg(argv, 'RouteTableIds,tables', {array:true});
-    const PolicyDocument      = fra.arg(argv, 'PolicyDocument,policy');
+    const RouteTableIds       = rax.arg(argv, 'RouteTableIds,tables', {array:true});
+    const PolicyDocument      = rax.arg(argv, 'PolicyDocument,policy');
 
     // Type === Interface
-    const PrivateDnsEnabled   = fra.arg(argv, 'PrivateDnsEnabled,dns');
-    const SecurityGroupIds    = fra.arg(argv, 'SecurityGroupIds,sgs', {array:true});
-    const SubnetIds           = fra.arg(argv, 'SubnetIds,subnets', {array:true});
+    const PrivateDnsEnabled   = rax.arg(argv, 'PrivateDnsEnabled,dns');
+    const SecurityGroupIds    = rax.arg(argv, 'SecurityGroupIds,sgs', {array:true});
+    const SubnetIds           = rax.arg(argv, 'SubnetIds,subnets', {array:true});
 
-    if (fra.argErrors())    { return fra.abort(); }
+    if (rax.argErrors())    { return rax.abort(); }
 
     const reqd        = sg.smartExtend({VpcId, ServiceName, VpcEndpointType});
     const optional    = sg.smartExtend({ClientToken});
@@ -835,7 +846,7 @@ mod.xport({getSubnets: function(argv, context, callback) {
     ra invoke packages\quick-net\lib\ec2\vpc.js getSubnets --classB=111 --sg=web --subnet=webtier
 
     Can ssh:
-    ra invoke packages\quick-net\lib\ec2\vpc.js getSubnets --classB=111 --sg=admin --subnet=webtier
+    ra invoke packages\quick-net\lib\ec2\vpc.js getSubnets --classB=111 --sg=admin --subnet=webtier --id
     ra invoke\packages\quick-net\lib\ec2\vpc.js getSubnets --classB=111 --sg=admin --subnet=webtier | jq . | grep Id
   */
 
@@ -935,4 +946,7 @@ mod.xport({getSubnets: function(argv, context, callback) {
 
 }});
 
+function zoneSuffix(AvailabilityZone) {
+  return `zone${(_.last(AvailabilityZone) || 'z').toUpperCase()}`;
+}
 
