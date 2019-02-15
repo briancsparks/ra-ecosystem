@@ -1,6 +1,14 @@
 #!/bin/bash -e
 
-eval "$(cli-shezargs __f $$ $0 $@)"
+#
+#   --package=dir-that-holds-package.json
+#   --name=What AWS Lambda knows as the name
+#   --push
+#   --push-layer
+#   --push-both
+#
+
+eval "$(cli-shezargs __f 100 $0 $@)"
 
 # We dont need the helper files in the tmp dir, just the dir
 rm $TMP_DIR/*
@@ -42,25 +50,27 @@ cat ../package.json | jq 'del(.dependencies) + {dependencies:{}}' > ./package.js
 # Package it up TODO: support `claudia update`?
 claudia pack --output ../../$name.zip --force
 
-#echo "Created deployable in ${PWD}/.. :"
-#ls -l ../../$name.zip
-
-#------------------------------------------------------------
-# ----- Make a zip usable as a layer that is just the deps
-printf "\nMaking layer zip for the dependencies...\n"
-echo "---------------------------------------------"
-
 cd ..
-rm -rf nodejs/
-mkdir -p nodejs && cd $_
-cp ../package.json ./
 
-# ----- Pull in the deps -----
-yarn --production
 
-# ----- zip up the layer file
-cd ..
-zip -r ../deps-layer-for-$name.zip nodejs
+if [[ -n $push_layer || -z $push ]]; then
+  #------------------------------------------------------------
+  # ----- Make a zip usable as a layer that is just the deps
+  printf "\nMaking layer zip for the dependencies...\n"
+  echo "---------------------------------------------"
+
+  #cd opt
+  rm -rf nodejs/
+  mkdir -p nodejs && cd $_
+  cp ../package.json ./
+
+  # ----- Pull in the deps -----
+  yarn --production
+
+  # ----- zip up the layer file
+  cd ..
+  zip -r ../deps-layer-for-$name.zip nodejs
+fi
 
 # Clean up
 cd ..
@@ -82,12 +92,14 @@ fi
 if [[ -n $push ]]; then
   printf "\nPublishing code\n"
   echo     "---------------"
-  aws lambda update-function-code             --function-name ${name} --zip-file fileb://${name}.zip > update-fn-code-result.json
+  aws lambda update-function-code             --function-name "${name}" --zip-file fileb://${name}.zip > update-fn-code-result.json
+  aws lambda update-function-code             --function-name "${name}-public-express" --zip-file fileb://${name}.zip > update-public-fn-code-result.json
 
   if [[ -n $layer_arn ]]; then
     printf "\nUpdating function layer\n"
     echo     "-----------------------"
-    aws lambda update-function-configuration --function-name ${name} --layers $layer_arn > update-fn-conf-result.json
+    aws lambda update-function-configuration --function-name "${name}" --layers $layer_arn > update-fn-conf-result.json
+    aws lambda update-function-configuration --function-name "${name}-public-express" --layers $layer_arn > update-public-fn-conf-result.json
   fi
 fi
 
