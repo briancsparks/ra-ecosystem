@@ -25,9 +25,26 @@ sudo chown -R "${the_user_name}":"${the_user_name}" "${the_home_dir}/.config/"
 # DEBIAN_FRONTEND=noninteractive apt-get update
 # DEBIAN_FRONTEND=noninteractive apt-get install -y apt-transport-https ca-certificates curl gnupg-agent software-properties-common
 
+# ----------------------------------------------------------------------------------------------
+# Update pointers to package repos for packages that are mostly kept outside the official repos
+
 # Add nodesource to our sources
 curl -sSL "https://deb.nodesource.com/gpgkey/nodesource.gpg.key" | apt-key add -
 echo "deb https://deb.nodesource.com/node_8.x ${osversion} main" | tee /etc/apt/sources.list.d/nodesource.list
+
+# Docker
+curl -sSL "https://download.docker.com/linux/ubuntu/gpg" | apt-key add -
+echo "deb https://download.docker.com/linux/ubuntu ${osversion} stable" | tee /etc/apt/sources.list.d/docker.list
+
+# MongoDB
+sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 9DA31620334BD75D9DCB49F368818C72E52529D4
+echo "deb https://repo.mongodb.org/apt/ubuntu ${osversion}/mongodb-org/4.0 multiverse" | tee /etc/apt/sources.list.d/mongodb-org-4.0.list
+
+# ----------------------------------------------------------------------------------------------
+
+
+
+# Add nodesource to our sources
 APT_PACKAGES="${APT_PACKAGES} nodejs"
 NODE_UTILS="${NODE_UTILS} pm2 run-anywhere cli-shezargs"
 echo 'NODE_ENV="production"' | tee -a /etc/environment
@@ -39,8 +56,6 @@ if [ -n $INSTALL_DOCKER ]; then
   chown "${the_user_name}":"${the_user_name}" "${user_docker_conf_dir}"
   chmod ug+rwx  "${user_docker_conf_dir}"
 
-  curl -sSL "https://download.docker.com/linux/ubuntu/gpg" | apt-key add -
-  echo "deb https://download.docker.com/linux/ubuntu ${osversion} stable" | tee /etc/apt/sources.list.d/docker.list
   APT_PACKAGES="${APT_PACKAGES} docker-ce"
 fi
 

@@ -563,11 +563,11 @@ mod.xport({launchInfo: function(argv, context, callback) {
 }});
 
 sgsPlus = [() => ({
-  GroupName:    'lambda',
+  GroupName:    'lambda',     // <-------------------------------------------------------
   Description:  'An sg to identify lambda fns',
   ingress: []
 }), () => ({
-  GroupName:    'admin',
+  GroupName:    'admin',      // <-------------------------------------------------------
   Description:  'Open for SSH',
   ingress: [{
     /*GroupId*/
@@ -592,7 +592,7 @@ sgsPlus = [() => ({
     Description:  'HTTP for webtier to expose'
   }]
 }), () => ({
-  GroupName:    'devOps',
+  GroupName:    'devOps',      // <-------------------------------------------------------
   Description:  'Open for SSH, temp IPs',
   ingress: [{
     /*GroupId*/
@@ -610,7 +610,55 @@ sgsPlus = [() => ({
     Description:  'SSH over HTTPS from my house'
   }]
 }), () => ({
-  GroupName:    'web',
+  GroupName:    'db',      // <-------------------------------------------------------
+  Description:  'Open for MongoDB ports',
+  ingress: [{
+    /*GroupId*/
+    IpProtocol:   'tcp',
+    CidrIp:       '10.0.0.0/8',
+    FromPort:     27017,
+    ToPort:       27017,
+    Description:  'All db access'
+  },{
+    /*GroupId*/
+    ingressGroupId: getSecurityGroupId('admin'),
+    IpProtocol:   'tcp',
+    FromPort:     28017,
+    ToPort:       28017,
+    Description:  'HTTP db access'
+  },{
+    ingressGroupId: getSecurityGroupId('admin'),
+    IpProtocol:   'tcp',
+    FromPort:     22,
+    ToPort:       22,
+    Description:  'SSH from admin instances'
+  }]
+}), () => ({
+  GroupName:    'util',      // <-------------------------------------------------------
+  Description:  'Open for things like Redis and/or memcachced',
+  ingress: [{
+    /*GroupId*/
+    IpProtocol:   'tcp',
+    CidrIp:       '10.0.0.0/8',
+    FromPort:     6379,
+    ToPort:       6379,
+    Description:  'All Redis access'
+  },{
+    /*GroupId*/
+    IpProtocol:   'tcp',
+    CidrIp:       '10.0.0.0/8',
+    FromPort:     11211,
+    ToPort:       11211,
+    Description:  'All memcached access'
+  },{
+    ingressGroupId: getSecurityGroupId('admin'),
+    IpProtocol:   'tcp',
+    FromPort:     22,
+    ToPort:       22,
+    Description:  'SSH from admin instances'
+  }]
+}), () => ({
+  GroupName:    'web',      // <-------------------------------------------------------
   Description:  'Open for HTTP(S)',
   ingress: [{
     /*GroupId*/
@@ -634,7 +682,7 @@ sgsPlus = [() => ({
     Description:  'SSH from admin instances'
   }]
 }), () => ({
-  GroupName:    'worker',
+  GroupName:    'worker',      // <-------------------------------------------------------
   Description:  'Open at many high ports',
   ingress: [{
     /*GroupId*/
@@ -651,7 +699,7 @@ sgsPlus = [() => ({
     Description:  'SSH from admin instances'
   }]
 }), () => ({
-  GroupName:    'container_hosts',
+  GroupName:    'container_hosts',      // <-------------------------------------------------------
   Description:  'Open at many high ports',
   ingress: [{
     /*GroupId*/
@@ -668,7 +716,7 @@ sgsPlus = [() => ({
     Description:  'SSH from admin instances'
   }]
 }), () => ({
-  GroupName:    'ECS_endpoint',
+  GroupName:    'ECS_endpoint',      // <-------------------------------------------------------
   Description:  'Access to ECS Endpoint',
   ingress: [{
     /*GroupId*/
@@ -679,7 +727,7 @@ sgsPlus = [() => ({
     Description:  'ECS Endpoint Access'
   }]
 }), () => ({
-  GroupName:    'ECR_endpoint',
+  GroupName:    'ECR_endpoint',      // <-------------------------------------------------------
   Description:  'Access to ECR Endpoint',
   ingress: [{
     /*GroupId*/
@@ -690,7 +738,7 @@ sgsPlus = [() => ({
     Description:  'ECR Endpoint Access'
   }]
 }), () => ({
-  GroupName:    'KMS_endpoint',
+  GroupName:    'KMS_endpoint',      // <-------------------------------------------------------
   Description:  'Access to KMS Endpoint',
   ingress: [{
     /*GroupId*/
@@ -701,7 +749,7 @@ sgsPlus = [() => ({
     Description:  'KMS Endpoint Access'
   }]
 }), () => ({
-  GroupName:    'STS_endpoint',
+  GroupName:    'STS_endpoint',      // <-------------------------------------------------------
   Description:  'Access to STS Endpoint',
   ingress: [{
     /*GroupId*/
@@ -712,7 +760,7 @@ sgsPlus = [() => ({
     Description:  'STS Endpoint Access'
   }]
 }), () => ({
-  GroupName:    'SQS_endpoint',
+  GroupName:    'SQS_endpoint',      // <-------------------------------------------------------
   Description:  'Access to SQS Endpoint',
   ingress: [{
     /*GroupId*/
@@ -723,7 +771,7 @@ sgsPlus = [() => ({
     Description:  'SQS Endpoint Access'
   }]
 }), () => ({
-  GroupName:    'SNS_endpoint',
+  GroupName:    'SNS_endpoint',      // <-------------------------------------------------------
   Description:  'Access to SNS Endpoint',
   ingress: [{
     /*GroupId*/
@@ -734,7 +782,7 @@ sgsPlus = [() => ({
     Description:  'SNS Endpoint Access'
   }]
 }), () => ({
-  GroupName:    'secretsmanager_endpoint',
+  GroupName:    'secretsmanager_endpoint',      // <-------------------------------------------------------
   Description:  'Access to SecretsManager Endpoint',
   ingress: [{
     /*GroupId*/
@@ -745,7 +793,7 @@ sgsPlus = [() => ({
     Description:  'SecretsManager Endpoint Access'
   }]
 }), () => ({
-  GroupName:    'ec2_endpoint',
+  GroupName:    'ec2_endpoint',      // <-------------------------------------------------------
   Description:  'Access to ec2,ec2-messages Endpoints',
   ingress: [{
     /*GroupId*/
