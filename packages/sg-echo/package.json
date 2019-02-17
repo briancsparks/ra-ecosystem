@@ -24,6 +24,6 @@
     "url": "https://github.com/briancsparks/ra-ecosystem/issues"
   },
   "dependencies": {
-    "sg0": "^0.9.14"
+    "sg0": "^1.0.0"
   }
 }

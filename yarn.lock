@@ -5302,16 +5302,6 @@ quick-lru@^1.0.0:
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/quick-lru/-/quick-lru-1.1.0.tgz#4360b17c61136ad38078397ff11416e186dcfbb8"
 
-quick-net@^0.8.9:
-  version "0.8.9"
-  resolved "https://registry.yarnpkg.com/quick-net/-/quick-net-0.8.9.tgz#6fd7ebce7798503f7aad7aa1243c682fc051318e"
-  integrity sha512-uuClTpH5JvpQgTuq4vdezhv40uQeGAOX7R++Mlpr3XvbOjJzjk76LSC83+QKu31I0hftABRiTVXsZz8F/V+Xsw==
-  dependencies:
-    aws-sdk "^2.382.0"
-    run-anywhere "^0.7.12"
-    sg-argv "^0.9.13"
-    superb "^3.0.0"
-
 randomatic@^3.0.0:
   version "3.1.1"
   resolved "https://registry.yarnpkg.com/randomatic/-/randomatic-3.1.1.tgz#b776efc59375984e36c537b2f51a1f0aff0da1ed"
@@ -5838,13 +5828,20 @@ setprototypeof@1.1.0:
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/setprototypeof/-/setprototypeof-1.1.0.tgz#d0bd85536887b6fe7c0d818cb962d9d91c54e656"
 
-sg-argv@^0.9.13:
-  version "0.9.13"
-  resolved "https://registry.yarnpkg.com/sg-argv/-/sg-argv-0.9.13.tgz#e68e6e1fd28500311a258960afbdaee435d2c853"
-  integrity sha512-gMK6/ucM2etVY3+KYroeV5BMsDEgjRqsOFryKlPK3S7LEYzz7K0kzOV2+CBJ2oAp9E7AgBynDGyI+wY2kriOpg==
+sg-flow@^0.9.11:
+  version "0.9.15"
+  resolved "https://registry.yarnpkg.com/sg-flow/-/sg-flow-0.9.15.tgz#1608f54cc54518842a0868cfd760c4a385ed9d7d"
+  integrity sha512-GmrWkwlifauuCzZC2h39j84GHLlrKgSRQp5jxitpNtpt9Tm61EZiP+JciCxS442WzNYDggdEMC2Cs3SdmsQ2iw==
   dependencies:
-    minimist "^1.2.0"
-    sg0 "^0.9.11"
+    lodash "^4.17.11"
+    sg0 "^0.9.14"
+
+sg0@^0.9.14:
+  version "0.9.14"
+  resolved "https://registry.yarnpkg.com/sg0/-/sg0-0.9.14.tgz#4ae6c47f13d9984d6e9116552615e1523f8667c8"
+  integrity sha512-zWX6fVsQrcZoHTjpji4MfKfGNwnr+HcMNcTOrHkVBX6fi1IlZracVwyYXS6V8Jo+NpTKojqxVVr3noLYFUi6EA==
+  dependencies:
+    lodash "^4.17.11"
 
 sgsg@^0.9.54:
   version "0.9.56"

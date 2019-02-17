@@ -163,6 +163,7 @@ sg.debugInfo = function(dbg) {
   return dbg;
 };
 
+var inspectorName = 'prod';
 /**
  * Returns an inspected object.
  *
@@ -171,14 +172,15 @@ sg.debugInfo = function(dbg) {
  * @returns
  */
 sg.inspect = function(x, colors) {
-  return sg.inspect.prod(x, colors);
+  return sg.inspect[inspectorName](x, colors);
 };
 
 sg.mkInspect = function(argv) {
 
   if (argv) {
     if (argv.fancy) {
-      sg.inspect = sg.inspect.debug;
+      inspectorName = 'debug';
+      // sg.inspect = sg.inspect.debug;
       return;
     }
   }

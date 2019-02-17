@@ -30,7 +30,7 @@
     "quick-merge": "^1.0.12",
     "redis": "^2.8.0",
     "sg-config": "^1.0.10",
-    "sg-flow": "^0.9.15",
+    "sg-flow": "^1.0.0",
     "sgsg": "^0.9.54"
   },
   "devDependencies": {

@@ -56,6 +56,15 @@ function ARGV(input = process.argv) {
   // Let `minimist` add what it does best
   argv    = sg.smartExtend(argv, require('minimist')(args));
 
+  // Verbose implies debug
+  if (argv.verbose) {
+    argv.debug = true;
+  }
+
+  if (argv.debug) {
+    sg.mkInspect({fancy:true});
+  }
+
   // Add snake-cased keys
   const keys = sg.keys(argv);
   for (var i = 0; i < keys.length; ++i) {
@@ -66,6 +75,31 @@ function ARGV(input = process.argv) {
       argv[snaked] = argv[key];
     }
   }
+
+  // Augment
+  argv._get = function(...args) {
+    return argvGet(argv, ...args);
+  };
+
+  argv.d = function(msg, one='', two='', ...args) {
+    if (!argv.debug) { return; }
+    return sg.log(msg, one, two, ...args);
+  };
+
+  argv.d_if = function(test, msg, one='', two='', ...args) {
+    if (!argv.debug || !test) { return; }
+    return sg.log(msg, one, two, ...args);
+  };
+
+  argv.v = function(msg, one='', two='', ...args) {
+    if (!argv.verbose) { return; }
+    return sg.log(msg, one, two, ...args);
+  };
+
+  argv.v_if = function(test, msg, one='', two='', ...args) {
+    if (!argv.verbose || !test) { return; }
+    return sg.log(msg, one, two, ...args);
+  };
 
   return argv;
 }

@@ -30,6 +30,6 @@
     "quick-merge": "^1.0.12",
     "read-pkg": "^4.0.1",
     "resolve-pkg": "^1.0.0",
-    "sg-argv": "^0.9.13"
+    "sg-argv": "^1.0.0"
   }
 }
