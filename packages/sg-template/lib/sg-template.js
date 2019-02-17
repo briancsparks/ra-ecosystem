@@ -117,13 +117,25 @@ exports.load = function(argv, context = {}) {
 
 exports.generate = function(...args) {
   var   [ argv, context = {} ] = args;
+
+  // For generate(filename, {options}) [[Below, generate({filename, ...options}) is expected]]
   if (_.isString(args[0]))   { return exports.generate(sg.merge(args[1] || {}, {filename: args[0]})); }
 
-  const { filename } = argv;
+  const { filename, output } = argv;
 
   var contents = require(filename)(argv, context);
 
-  console.log(contents.stringify());
+  const result = contents.stringify()
+
+  if (output) {
+    if (output === '-') {
+      console.log(result);
+    } else {
+      fs.writeFileSync(output, result);
+    }
+  }
+
+  return result;
 };
 
 function figureOutType(self, filename, options) {

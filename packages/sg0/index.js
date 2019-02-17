@@ -523,6 +523,16 @@ sg.cleanKey = function(key) {
 };
 
 /**
+ * Split on newline for both *nix and Windows.
+ *
+ * @param {*} string
+ * @returns
+ */
+sg.splitLn = function(string) {
+  return string.split(/\r?\n/g);
+};
+
+/**
  * Returns the word with the first char lowercased.
  *
  * @param {*} str

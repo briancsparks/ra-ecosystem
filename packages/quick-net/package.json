@@ -4,7 +4,9 @@
   "description": "Create quick cloud network",
   "main": "index.js",
   "bin": {
-    "quick-net": "bin/quick-net.js"
+    "quick-net": "bin/quick-net.js",
+    "quick-lambda": "bin/quick-lambda.js",
+    "latest-lambda-layers": "bin/latest-lambda-layers"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -26,8 +28,11 @@
   },
   "dependencies": {
     "aws-sdk": "^2.382.0",
+    "execa": "^1.0.0",
+    "get-stream": "^4.1.0",
     "run-anywhere": "^0.7.12",
     "sg-argv": "^0.9.13",
+    "shelljs": "^0.8.3",
     "superb": "^3.0.0"
   }
 }
