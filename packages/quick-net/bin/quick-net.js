@@ -13,7 +13,7 @@ const qnet                    = require('..');
 const ra0                     = require('run-anywhere');
 const ra                      = ra0.v2;
 const sg0                     = ra.get3rdPartyLib('sg-flow');
-const sg                      = sg0.merge(sg0, require('sg-argv'));
+const sg                      = sg0.merge(sg0, require('sg-clihelp'));
 const { _ }                   = sg;
 
 const { hardRejection }       = ra;

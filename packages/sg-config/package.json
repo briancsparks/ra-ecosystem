@@ -30,6 +30,6 @@
     "quick-merge": "^1.0.13",
     "read-pkg": "^4.0.1",
     "resolve-pkg": "^1.0.0",
-    "sg-argv": "^1.0.6"
+    "sg-clihelp": "^1.0.1"
   }
 }

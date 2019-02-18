@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const sg          = require('sg-argv');
+const sg          = require('sg-clihelp');
 const { _ }       = sg;
 const util        = require('util');
 const path        = require('path');

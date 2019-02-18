@@ -27,7 +27,7 @@
     "url": "https://github.com/briancsparks/ra-ecosystem/issues"
   },
   "dependencies": {
-    "sg-argv": "^1.0.6",
+    "sg-clihelp": "^1.0.1",
     "sg0": "^1.0.1"
   }
 }

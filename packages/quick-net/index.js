@@ -3,7 +3,7 @@
  * @file
  *
  */
-const sg                      = require('sg-argv');
+const sg                      = require('sg-clihelp');
 const { _ }                   = sg;
 
 var lib = {};

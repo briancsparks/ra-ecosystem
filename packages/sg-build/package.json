@@ -26,7 +26,7 @@
   },
   "dependencies": {
     "glob": "^7.1.3",
-    "sg-argv": "^1.0.6",
+    "sg-clihelp": "^1.0.1",
     "sg-template": "^1.0.9",
     "sg0": "^1.0.1"
   }
