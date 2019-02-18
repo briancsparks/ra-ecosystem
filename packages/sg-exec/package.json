@@ -1,6 +1,6 @@
 {
   "name": "sg-exec",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Help to spawn and run executables",
   "main": "index.js",
   "scripts": {
