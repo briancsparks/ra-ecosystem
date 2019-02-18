@@ -1,0 +1,15 @@
+{
+  "name": "sg-clihelp",
+  "version": "1.0.0",
+  "description": "Utilities for writing cli apps",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Brian C Sparks <briancsparks@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "sg-argv": "^1.0.5",
+    "shelljs": "^0.8.3"
+  }
+}

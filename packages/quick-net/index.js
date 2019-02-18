@@ -6,7 +6,9 @@
 const sg                      = require('sg-argv');
 const { _ }                   = sg;
 
- var lib = {};
+var lib = {};
+
+lib.sg                        = sg;
 
 exports.libAws                = require('./lib/aws');
 exports.libHttp               = require('./lib/http');

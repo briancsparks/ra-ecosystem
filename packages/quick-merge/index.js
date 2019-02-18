@@ -232,6 +232,9 @@ exports.deepCopy              = deepCopy;
 exports.keyMirrorFromObject   = keyMirrorFromObject;
 exports.realTypeof            = realTypeof;
 
+const libStitch               = require('./lib/stitch');
+exports.stitch                = libStitch.stitch;
+
 merge = function(strategy, a, b) {
   const { merges }  = strategy;
 
