@@ -39,8 +39,9 @@ sg._.each(sg, (v, k) => {
  * `minimist` does the heavy-lifting, but we pre-process the args first, to provide
  * some added functionality.
  *
- * @param {*} [input=process.argv]
- * @returns
+ * @param {string[]} [input=process.argv] - The parameters to be parsed.
+ *
+ * @returns {Object} The ARGV Object, which has the parameters.
  */
 function ARGV(input = process.argv) {
   var args = [], argv = {};
@@ -76,6 +77,16 @@ function ARGV(input = process.argv) {
     return argvGet(argv, ...args);
   };
 
+  argv.i = function(msg, one='', two='', ...args) {
+    if (argv.quiet) { return; }
+    return sg.log(msg, one, two, ...args);
+  };
+
+  argv.i_if = function(test, msg, one='', two='', ...args) {
+    if (argv.quiet || !test) { return; }
+    return sg.log(msg, one, two, ...args);
+  };
+
   argv.d = function(msg, one='', two='', ...args) {
     if (!argv.debug) { return; }
     return sg.log(msg, one, two, ...args);
@@ -107,9 +118,10 @@ function ARGV(input = process.argv) {
  *      --a-list= one two three
  * ```
  *
- * @param {*} args
- * @param {*} argv
- * @returns
+ * @param {string[]} args - A list of cli-parameters, like from `process.argv`.
+ * @param {Object}   argv - Output Object of any parameters found, that `minimist` cannot parse.
+ *
+ * @returns {string[]} The remainder parameters.
  */
 function preProcess(args, argv) {
   var   result = [];
@@ -164,9 +176,11 @@ function snake_case(key) {
 /**
  * Get an option from the args.
  *
- * @param {*} argv
- * @param {*} names
- * @param {*} options
+ * @param {Object}   argv     - The Object-ified ARGV-like object to get a parameter from.
+ * @param {string[]} names    - The list of names to look up. Only the first one found is returned.
+ * @param {Object}   options  - Options to control what is gotten.
+ *
+ * @returns {string|Object}     The looked-up value, which will be whatever type it is, but usually a String when handling cli-parameters.
  */
 function argvGet(argv, names, options) {
   return sg.reduce(names.split(','), null, (m, name) => {

@@ -1,6 +1,7 @@
 #!/bin/bash -e
 
-[[ -z $LAMBDA_NAME ]] && (echo "Must provide LAMBDA_NAME" && exit 2)
+[[ -z $LAMBDA_NAME ]] && (echo "Must provide LAMBDA_NAME" && exit 113)
+[[ -z $BUCKET_NAME ]] && (echo "Must provide BUCKET_NAME" && exit 113)
 
 LAYER_NAME="layer-for-$LAMBDA_NAME"
 
@@ -9,6 +10,7 @@ export AWS_CONFIG_FILE="/aws/config"
 
 cd /work/opt
 
+# -------------------------------------------------------------------------------
 # ----- Build the function -----
 cp -r   /src/*              /work/opt/nodejs/
 rm -rf                      /work/opt/nodejs/node_modules
@@ -18,8 +20,8 @@ cat     /src/package.json \
 # Pack it into zip file
 (cd nodejs && claudia pack --output /work/package.zip)
 
-# So says Davey Jones
-# ----- Build the dep layer -----
+# -------------------------------------------------------------------------------
+# ----- Build the dependency layer -----
 if [[ -z $SKIP_LAYER ]]; then
   rm -rf                    /work/opt/nodejs   && mkdir -p $_
   cp    /src/package.json   /work/opt/nodejs
@@ -29,8 +31,9 @@ if [[ -z $SKIP_LAYER ]]; then
   # Pack it into zip file
   zip -r /work/layer-for-package.zip nodejs
 
-  # aws s3 cp /work/layer-for-package.zip   s3://netlab-dev/lookieame-layer-for-package.zip
+  aws s3 cp /work/layer-for-package.zip   "s3://${BUCKET_NAME}/quick-net/lambda-layers/${LAYER_NAME}/"
 
+  # ---------------------------------
   # ----- Publish the dep layer -----
   printf "\nPublishing layer file\n"
   ls -l /work/layer-for-package.zip
@@ -43,16 +46,16 @@ if [[ -z $SKIP_LAYER ]]; then
   layer_arn="$(cat publish-layer-version-result.json | jq -r '.LayerVersionArn')"
   echo "$layer_arn"
 
-  aws s3 cp /src/package.json "s3://netlab-dev/quick-net/lambda-layers/${LAYER_NAME}/package.json"
+  aws s3 cp /src/package.json "s3://${BUCKET_NAME}/quick-net/lambda-layers/${LAYER_NAME}/"
 fi
 
 
-
+# -------------------------------------------------------------------------------
 # ----- Publish the functions -----
 printf "\nPublishing source file\n"
 ls -l /work/package.zip
 
-# aws s3 cp /work/package.zip             s3://netlab-dev/lookieame-package.zip
+aws s3 cp /work/package.zip             "s3://${BUCKET_NAME}/quick-net/lambda-layers/${LAYER_NAME}/"
 
 aws lambda update-function-code  --function-name "$LAMBDA_NAME-public-express"  --zip-file "fileb:///work/package.zip" | jq -r '.FunctionArn'
 aws lambda update-function-code  --function-name "$LAMBDA_NAME"                 --zip-file "fileb:///work/package.zip" | jq -r '.FunctionArn'

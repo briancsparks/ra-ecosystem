@@ -1,5 +1,21 @@
 #!/usr/bin/env node
 
+/*
+
+    _ = [<dir=[.]>]
+
+    --name=
+    --stage=[dev]
+    --Bucket=[from _config/[stage]/env.json : DeployBucket]
+
+    --prod            (stage=prod)
+    --skip-layer
+    --skip-push
+    --dry-run
+
+
+*/
+
 const ra                      = require('run-anywhere').v2;
 ra.get3rdPartyLib('loud-rejection/register');
 
@@ -14,7 +30,8 @@ const s3                      = new AWS.S3({region:'us-east-1'});
 const ARGV                    = sg.ARGV();
 
 var   skipLayer               = ARGV._get('skip-layer');
-var   skipPush                = ARGV._get('skip-push')  || ARGV._get('dry-run');
+var   skipPush                = ARGV._get('skip-push')    || ARGV._get('dry-run');
+var   stage                   = ARGV._get('stage')        || (ARGV._get('prod') ? 'prod' : 'dev');
 
 
 (async function() {
@@ -31,13 +48,16 @@ var   skipPush                = ARGV._get('skip-push')  || ARGV._get('dry-run');
 
   if (!name)  { return sg.die(`Must provide the name of the lambda function as --name=`); }
 
+  // ...and the bucket
+  var   Bucket = ARGV._get('Bucket,bucket') || sg.from([packageDir, '_config', stage, 'env.json'], "DeployBucket");
+
   // ------------------------------------------------------------------------------------
   // ----- Have the dependencies changed since we last pushed the underlying layer? -----
   const packageDeps       = sg.from(packageDir, 'package.json', 'dependencies');
   const layerPackageJson  = await getLayerPackageJson(name);
 
   skipLayer = skipLayer || deepEqual(layerPackageJson.dependencies, packageDeps) || skipLayer;  /* final skipLayer makes it be undefined, not false */
-  ARGV.d_if(skipLayer, `Will skip creating the layer`);
+  ARGV.d_if(!skipLayer, `Will create the layer -----`);
 
   // ------------------------------------------------------------------------------------
   // ----- Does the docker image (quick-lambda) need to be built? -----
@@ -64,7 +84,7 @@ var   skipPush                = ARGV._get('skip-push')  || ARGV._get('dry-run');
     }
   }
 
-  ARGV.d(`laj`, {haveImage, skipLayer, shouldBuild});
+  ARGV.i(`quick-lambda: going with: `, {LambdaName: name, shouldBuild, haveImage, Bucket, skipLayer, skipPush});
 
   // Build the image?
   if (shouldBuild) {
@@ -82,12 +102,13 @@ var   skipPush                = ARGV._get('skip-push')  || ARGV._get('dry-run');
       [`-v`, `${process.cwd()}:/src`],
       [`-e`, [`LAMBDA_NAME=`, name]],
       [`-e`, [`SKIP_LAYER=`,  skipLayer]],
+      [`-e`, [`BUCKET_NAME=`, Bucket]],
       `quick-lambda`
     ];
 
     if (skipPush) { console.log(`Dry run`, {runArgs});  return; }
 
-    ARGV.d(`docker run`, {name, skipLayer});
+    ARGV.i(`docker run`, {LambdaName: name, Bucket, skipLayer});
     return execz(null,  runArgs);
   }
 })();
@@ -95,8 +116,22 @@ var   skipPush                = ARGV._get('skip-push')  || ARGV._get('dry-run');
 
 
 // ------------------------------------------------------------------------------------
-function earlierThan(a, b) {
-  if (b instanceof sg.fs.Stats)   { return earlierThan(a, b.mtime || ''+(new Date(b.mtimeMs))); }
+function earlierThan(a_, b_) {
+  if (b_ instanceof sg.fs.Stats) {
+    // console.log(`earlierThan`, sg.inspect({a_,b_,bt:typeof b_.mtime,id:b_.mtime instanceof Date,k:Object.keys(b_.mtime),t:b_.mtime.getTime(),bmtime:b_.mtime,bmtimems:b_.mtimeMs}), (new Date(b_.mtimeMs)));
+    return earlierThan(a_, b_.mtime);
+  }
+
+  var   a = a_;
+  var   b = b_;
+
+  if (a instanceof Date) {
+    a = a.toISOString();
+  }
+
+  if (b instanceof Date) {
+    b = b.toISOString();
+  }
 
   if (typeof a === 'string' && typeof b === 'string') {
     let aTime = new Date(a).getTime();
@@ -104,9 +139,9 @@ function earlierThan(a, b) {
     let diff  = bTime - aTime;
 
     if (diff > 0) {
-      console.log(`${a} happened ${diff/1000} seconds before ${b}`);
+      ARGV.v(`${a} happened ${diff/1000} seconds before ${b}`);
     } else {
-      console.log(`${a} happened ${-diff/1000} seconds after ${b}`);
+      ARGV.v(`${a} happened ${-diff/1000} seconds after ${b}`);
     }
 
     return diff > 0;
