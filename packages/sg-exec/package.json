@@ -1,6 +1,6 @@
 {
   "name": "sg-exec",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Help to spawn and run executables",
   "main": "index.js",
   "scripts": {
@@ -9,6 +9,6 @@
   "author": "Brian C Sparks <briancsparks@gmail.com>",
   "license": "MIT",
   "dependencies": {
-    "sg0": "^1.0.1"
+    "sg0": "^1.0.2"
   }
 }
