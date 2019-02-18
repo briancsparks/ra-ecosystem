@@ -907,7 +907,7 @@ mod.xport({getSubnets: function(argv, context, callback) {
             return sg.ap(m, subnet);
           }
 
-          if (subnetName && (getTag(subnet, 'Name').toLowerCase() === subnetName.toLowerCase())) {
+          if (subnetName && (getTag(subnet, 'Name').toLowerCase().startsWith(subnetName.toLowerCase()))) {
             return sg.ap(m, subnet);
           }
         }

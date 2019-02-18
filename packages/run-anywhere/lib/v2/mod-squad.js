@@ -466,6 +466,14 @@ const FuncRa = function(argv, context, callback, origCallback, options_ = {}) {
     const { fname, argTypes, args } = self;
 
     console.error(`FuncRa aborting`, sg.inspect({fname, argTypes, args}));
+
+    if (args.length === 0) {
+      // No args, show available args
+      console.error('');
+      console.error(`Available args: ${sg.keys(argTypes).join(', ')}`);
+      console.error('');
+    }
+
     self.providedAbort((self.argErrs || [])[0], null, msg || 'missing arg');
   };
 
