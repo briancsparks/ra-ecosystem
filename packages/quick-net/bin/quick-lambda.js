@@ -47,9 +47,12 @@ var   stage                   = ARGV._get('stage')        || (ARGV._get('prod') 
                sg.from(packageDir, 'quick-net.json', 'lambdaName');
 
   if (!name)  { return sg.die(`Must provide the name of the lambda function as --name=`); }
+  if (!stage) { return sg.die(`Must provide the stage name (like 'dev' or 'prod') as --name=`); }
 
   // ...and the bucket
   var   Bucket = ARGV._get('Bucket,bucket') || sg.from([packageDir, '_config', stage, 'env.json'], "DeployBucket");
+
+  if (!Bucket) { return sg.die(`Cannot find the deploy bucket name (should be in ${sg.path.join(packageDir, '_config', stage, 'env.json')})`); }
 
   // ------------------------------------------------------------------------------------
   // ----- Have the dependencies changed since we last pushed the underlying layer? -----

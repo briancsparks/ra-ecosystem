@@ -1,0 +1,15 @@
+# Web Servers
+
+## Launching
+
+```sh
+quick-net upsertInstance --distro=ubuntu \
+    --image=ami-03a935aafa6b52b97 \
+    --type=c5n.xlarge \
+    --key=example \
+    --classB=13 \
+    --az=c \
+    --envjson="_config/dev/env.json" \
+    --sgs=web \
+    --subnet=webtier
+```
