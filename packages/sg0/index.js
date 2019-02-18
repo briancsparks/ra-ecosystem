@@ -32,13 +32,13 @@ sg.setModes = function(modesStr) {
     return false;
   });
 
-  forcedModes = ','+modesList.join(',')+',';
+  forcedModes_ = ','+modesList.join(',')+',';
 };
 
 var getForcedMode = function(name) {
   if (name === 'test' && forcedTestName)    { return forcedTestName; }
 
-  return indexOf(forcedModes_, ','+name+',') !== -1;
+  return forcedModes_.indexOf(','+name+',') !== -1;
 };
 
 /**
@@ -216,14 +216,32 @@ sg.inspect.dev = function(x, colors) {
   return util.inspect(x, {depth:null, colors: colors || sg.modes().debug});
 };
 
+const logParams = function(msg, arg0, ...args) {
+  var logged = [msg];
+
+  if (!sg.isnt(arg0)) {
+    if (Array.isArray(arg0)) {
+      logged.push(sg.inspect(arg0));
+    } else {
+      logged.push(sg.inspect({...arg0}));
+    }
+  }
+
+  if (args.length > 0) {
+    logged.push(sg.inspect(...args));
+  }
+
+  return logged;
+};
+
 /**
  * Just like console.log, but with inspect by default.
  *
  * @param {*} msg
  * @param {*} args
  */
-sg.log = function(msg, arg0, ...args) {
-  console.log(msg, sg.inspect({...arg0}), sg.inspect(...(args || [])));
+sg.log = function(...args /*msg, arg0, ...args*/) {
+  console.log(...logParams(...args));
 };
 sg.debugLog = sg.log;
 
@@ -238,8 +256,8 @@ sg.debugLog = sg.log;
 sg.dump = function(msg_, level, arg0, ...args) {
   // var   msg = `\n\n     _____     _____     ${msg_}     _____     _____\n\n`;
 
-  var lines = sg.reduce(_.range(level), '', m => `\n`);
-  msg = `${lines}     ` + sg.reduce(_.range(level), msg_, (m) => { return `_____     ${m}     _____` }) + lines;
+  var   lines = sg.reduce(_.range(level), '', m => `\n`);
+  const msg   = `${lines}     ` + sg.reduce(_.range(level), msg_, (m) => { return `_____     ${m}     _____`; }) + lines;
 
   console.error(..._.compact([msg, arg0 &&  sg.inspect({...arg0}), (args.length > 0) && sg.inspect([...args])]));
   console.error(msg);
@@ -252,7 +270,7 @@ sg.dump = function(msg_, level, arg0, ...args) {
  * @param {*} args
  */
 sg.stdlog = function(msg, arg0, ...args) {
-  console.log(msg, sg.inspect({...arg0}), sg.inspect(...(args || [])));
+  console.log(...logParams(...args));
 };
 
 /**
@@ -262,7 +280,7 @@ sg.stdlog = function(msg, arg0, ...args) {
  * @param {*} args
  */
 sg.elog = function(msg, arg0, ...args) {
-  console.error(msg, sg.inspect({...arg0}), sg.inspect(...(args || [])));
+  console.error(...logParams(...args));
 };
 sg.edebugLog = sg.elog;
 
@@ -299,7 +317,7 @@ sg.firstKey = function(obj) {
   for (var k in obj) {
     return k;
   }
-  return ;
+  return;
 };
 
 sg.numKeys = function(obj) {
@@ -584,7 +602,7 @@ var smartValue = sg.smartValue = function(value) {
     if (/^[0-9]+$/.exec(value)) { return parseInt(value, 10); }
 
     // 2018-12-31T10:08:56.016Z
-    if (value.length >= 24 && value[10] == 'T') {
+    if (value.length >= 24 && value[10] === 'T') {
       if (value.match(/\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d.\d\d\d/)) {
         return new Date(value);
       }
@@ -620,7 +638,7 @@ var kvSmart = sg.kvSmart = function(o, k, v) {
   o = o || {};
 
   if (!isnt(k) && !isnt(v)) {
-    o[cleanKey(k)] = smartValue(v);
+    o[sg.cleanKey(k)] = smartValue(v);
   }
 
   return o;
@@ -630,8 +648,8 @@ var kvSmart = sg.kvSmart = function(o, k, v) {
  *  Gets a sub-sub-key.
  */
 var deref = sg.deref = function(x, keys_) {
-  if (isnt(x))      { return /* undefined */; }
-  if (isnt(keys_))  { return /* undefined */; }
+  if (isnt(x))      { return; /* undefined */ }
+  if (isnt(keys_))  { return; /* undefined */ }
 
   var keys    = _.isArray(keys_) ? keys_.slice() : keys_.split('.'), key;
   var result  = x;
@@ -644,7 +662,7 @@ var deref = sg.deref = function(x, keys_) {
       if (keys.length === 0) { return result; }
 
       /* otherwise -- return undefined */
-      return /* undefined */;
+      return; /* undefined */
     }
   }
 
@@ -659,7 +677,7 @@ var deref = sg.deref = function(x, keys_) {
 var _setOnIt = function(x, keys_, value) {
   if (isnt(x) || isnt(keys_) || isnt(value))  { return false; }
 
-  var keys  = _.isArray(keys_) ? keys_ : keys_.split('.').map(function(x) {return x==='' ? null: x});
+  var keys  = _.isArray(keys_) ? keys_ : keys_.split('.').map(function(x) { return x==='' ? null: x; });
 
   if (anyIsnt(keys))                          { return false; }
 
@@ -826,7 +844,7 @@ sg.rest = function() {
  * @returns
  */
 sg.max = function() {
-  if (arguments.length == 1) {
+  if (arguments.length === 1) {
     return _.max.apply(_, arguments);
   }
   return _.maxBy.apply(_, arguments);
@@ -838,7 +856,7 @@ sg.max = function() {
  * @returns
  */
 sg.min = function() {
-  if (arguments.length == 1) {
+  if (arguments.length === 1) {
     return _.min.apply(_, arguments);
   }
   return _.minBy.apply(_, arguments);
@@ -971,7 +989,7 @@ sg.jsonify = function(x) {
     return x;
   }
 
-  return safeJSONParse(x);
+  return sg.safeJSONParse(x);
 };
 
 /**

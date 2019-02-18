@@ -50,8 +50,8 @@ var   commands = {
   ls: function() {
     for (let mod of mods) {
       const keys = Object.keys(mod.async || {});
-      if (keys) {
-        sg.debugLog(`mod`, keys);
+      if (keys && keys.length > 0) {
+        sg.debugLog(keys.join('\n'));
       }
     }
   }

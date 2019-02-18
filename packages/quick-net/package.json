@@ -5,8 +5,7 @@
   "main": "index.js",
   "bin": {
     "quick-net": "bin/quick-net.js",
-    "quick-lambda": "bin/quick-lambda.js",
-    "latest-lambda-layers": "bin/latest-lambda-layers"
+    "quick-lambda": "bin/quick-lambda.js"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
