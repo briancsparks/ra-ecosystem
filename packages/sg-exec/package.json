@@ -1,0 +1,14 @@
+{
+  "name": "sg-exec",
+  "version": "1.0.0",
+  "description": "Help to spawn and run executables",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Brian C Sparks <briancsparks@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "sg0": "^1.0.1"
+  }
+}
