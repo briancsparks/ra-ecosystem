@@ -11,13 +11,20 @@ var sg                        = require('sg0');
  *
  *  When you get a callback: `function(err, result1, result2) {...}` you can call
  *
+ *  @example
  *          if (ok(err, result1, result2)) {
  *            // result1 and 2 are valid
  *          }
  *
  *  or:
  *
+ *  @example
  *          if (!ok(err, result1, result2)) { return err; }
+ *
+ * @param {Object} err      - A typical err object
+ * @param {Object[]} arg1 - The first data object returned
+ *
+ * @returns {Boolean}     Err / arg0 are OK.
  */
 sg.okv = function(err /*, [argN]*/) { /* verbose */
   if (err)  { console.error(err); return false; }
@@ -386,7 +393,7 @@ sg.replaceResult = function(result /*, ...replaces*/) {
       result[key] = value;
     });
   });
-}
+};
 
 
 /**
@@ -554,6 +561,10 @@ sg.iwrap = function(myname, fncallback /*, abort, body_callback*/) {
     // return function(err) {
     //   if (!err) { return callback.apply(this, arguments); }
 
+      if (_.isString(err)) {
+        err = {msg:err};
+      }
+
       // if ('code' in err && !('errno' in err))     { err.errno = err.code; }
       // if ('errno' in err && !('code' in err))     { err.code  = err.errno; }
 
@@ -599,6 +610,8 @@ sg.iwrap = function(myname, fncallback /*, abort, body_callback*/) {
 };
 
 var example = function(a, b, callback) {
+  const s3put = function(){};
+
   return sg.iwrap('example', callback, function(abort) {
 
     return sg.__run2({}, callback, [function(result, next, last) {

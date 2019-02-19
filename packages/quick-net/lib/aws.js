@@ -14,7 +14,7 @@ const awsService = function(name, options) {
   const service = new AWS[name](sg.merge(awsDefs.options, options));
 
   return service;
-}
+};
 
 const awsFns = function(service, names_, options1, abort) {
   const names = _.isString(names_) ? names_.split(',') : names_;
