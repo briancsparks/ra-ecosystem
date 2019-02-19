@@ -29,9 +29,11 @@ var   ARGV;
 //  Functions
 //
 
-sg.die      = die;
-sg.include  = include;
-sg.from     = from;
+sg.die          = die;
+sg.grepLines    = grepLines;
+sg.include      = include;
+sg.from         = from;
+sg.startupDone  = startupDone;
 
 // -------------------------------------------------------------------------------------
 // routes
@@ -61,6 +63,43 @@ function die(msg, code = 113) {
   console.error(msg);
   process.exit(code);
   return code;
+}
+
+/**
+ * Prints the captured parts of the lines to stdout.
+ *
+ * @param {RegExp} regex    - The re to match against.
+ * @param {String} filename - The filename to search through.
+ */
+function grepLines(regex, filename) {
+  const lines = sg.splitLn(sh.grep(regex, filename));
+
+  lines.forEach(line => {
+    let m = line.match(regex);
+    if (m) {
+      if (m[1]) {
+        process.stdout.write(m[1]+'\n');
+      } else {
+        process.stdout.write('\n');
+      }
+    }
+  });
+}
+
+function startupDone(ARGV, modfilename, failed, msg) {
+  if (ARGV.help) {
+    grepLines(/^#==(.*)/, modfilename);
+    process.exit(0);
+    return true;
+  }
+
+  if (failed) {
+    console.error(msg);
+    process.exit(113);
+    return true;
+  }
+
+  return false;
 }
 
 function from(...args) {

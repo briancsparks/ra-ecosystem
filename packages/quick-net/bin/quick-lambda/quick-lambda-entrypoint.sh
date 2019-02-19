@@ -1,5 +1,7 @@
 #!/bin/bash -e
 
+# echo "qlep profile profile: $AWS_PROFILE verbose: $VERBOSE skipLayer: $SKIP_LAYER ========================================================================================"
+
 [[ -z $LAMBDA_NAME ]] && (echo "Must provide LAMBDA_NAME" && exit 113)
 [[ -z $BUCKET_NAME ]] && (echo "Must provide BUCKET_NAME" && exit 113)
 
@@ -10,8 +12,11 @@ export AWS_CONFIG_FILE="/aws/config"
 
 cd /work/opt
 
+
 # -------------------------------------------------------------------------------
 # ----- Build the function -----
+[[ -n $VERBOSE ]] && echo "Building main function..." 2>&1
+
 cp -r   /src/*              /work/opt/nodejs/
 rm -rf                      /work/opt/nodejs/node_modules
 cat     /src/package.json \
@@ -22,7 +27,11 @@ cat     /src/package.json \
 
 # -------------------------------------------------------------------------------
 # ----- Build the dependency layer -----
+[[ -n $VERBOSE ]] && echo "Building layer? ${SKIP_LAYER}" 2>&1
+
 if [[ -z $SKIP_LAYER ]]; then
+  [[ -n $VERBOSE ]] && echo "Building layer." 2>&1
+
   rm -rf                    /work/opt/nodejs   && mkdir -p $_
   cp    /src/package.json   /work/opt/nodejs
 
@@ -55,7 +64,7 @@ fi
 printf "\nPublishing source file\n"
 ls -l /work/package.zip
 
-aws s3 cp /work/package.zip             "s3://${BUCKET_NAME}/quick-net/lambda-layers/${LAYER_NAME}/"
+aws s3 cp /work/package.zip             "s3://${BUCKET_NAME}/quick-net/lambdas/${LAMBDA_NAME}/"
 
 aws lambda update-function-code  --function-name "$LAMBDA_NAME-public-express"  --zip-file "fileb:///work/package.zip" | jq -r '.FunctionArn'
 aws lambda update-function-code  --function-name "$LAMBDA_NAME"                 --zip-file "fileb:///work/package.zip" | jq -r '.FunctionArn'

@@ -2,17 +2,21 @@
 
 /*
 
-    _ = [<dir=[.]>]
-
-    --name=
-    --stage=[dev]
-    --Bucket=[from _config/[stage]/env.json : DeployBucket]
-
-    --prod            (stage=prod)
-    --skip-layer
-    --skip-push
-    --dry-run
-
+#==
+#== Usage:
+#==
+#==    _ = [<dir=[.]>]
+#==
+#==    --name=[@json_from(package.json).config.quickNet.lambdaName]
+#==    --Bucket=[@json_from(_config/[stage]/env.json).DeployBucket]
+#==    --stage=[dev]
+#==
+#==    --prod             (stage=prod)
+#==    --dev              (stage=dev)
+#==    --skip-layer
+#==    --skip-push
+#==    --dry-run
+#==
 
 */
 
@@ -31,10 +35,13 @@ const ARGV                    = sg.ARGV();
 
 var   skipLayer               = ARGV._get('skip-layer');
 var   skipPush                = ARGV._get('skip-push')    || ARGV._get('dry-run');
+var   dryRun                  = ARGV._get('dry-run');
 var   stage                   = ARGV._get('stage')        || (ARGV._get('prod') ? 'prod' : 'dev');
 
+if (sg.startupDone(ARGV, __filename))  { /* return; */ }
 
 (async function() {
+  var   AWS_PROFILE;
 
   var   packageDir    = sg.path.join(process.cwd(), ARGV._[0] || '.');
 
@@ -54,12 +61,19 @@ var   stage                   = ARGV._get('stage')        || (ARGV._get('prod') 
 
   if (!Bucket) { return sg.die(`Cannot find the deploy bucket name (should be in ${sg.path.join(packageDir, '_config', stage, 'env.json')})`); }
 
+  if (stage !== 'dev') {
+    AWS_PROFILE=`quicknet${stage}`;
+  }
+
   // ------------------------------------------------------------------------------------
   // ----- Have the dependencies changed since we last pushed the underlying layer? -----
   const packageDeps       = sg.from(packageDir, 'package.json', 'dependencies');
-  const layerPackageJson  = await getLayerPackageJson(name);
+  const layerPackageJson  = await getLayerPackageJson(name, Bucket);
 
   skipLayer = skipLayer || deepEqual(layerPackageJson.dependencies, packageDeps) || skipLayer;  /* final skipLayer makes it be undefined, not false */
+  if (!('dependencies' in layerPackageJson)) {
+    skipLayer = null;
+  }
   ARGV.d_if(!skipLayer, `Will create the layer -----`);
 
   // ------------------------------------------------------------------------------------
@@ -78,21 +92,25 @@ var   stage                   = ARGV._get('stage')        || (ARGV._get('prod') 
     epStats       = sg.fs.statSync(sg.path.join(__dirname, 'quick-lambda', 'quick-lambda-entrypoint.sh'))   || epStats;
 
     if ((shouldBuild = earlierThan((imageInfo[0] || {}).Created, epStats))) {
+      if (!dryRun) {
+        // We need to clobber the image
+        const clobber  = await execa.stdout('docker', ['image', 'rm', 'quick-lambda']);
+        const clobber2 = await execa.stdout('docker', ['image', 'prune', '--force']);
 
-      // We need to clobber the image
-      const clobber  = await execa.stdout('docker', ['image', 'rm', 'quick-lambda']);
-      const clobber2 = await execa.stdout('docker', ['image', 'prune', '--force']);
-
-      ARGV.v(`clobber`, {clobber:sg.splitLn(clobber), clobber2:sg.splitLn(clobber2)});
+        ARGV.v(`clobber`, {clobber:sg.splitLn(clobber), clobber2:sg.splitLn(clobber2)});
+      }
     }
   }
 
-  ARGV.i(`quick-lambda: going with: `, {LambdaName: name, shouldBuild, haveImage, Bucket, skipLayer, skipPush});
+  ARGV.i(`quick-lambda: going with: `, {LambdaName: name, dryRun, shouldBuild, haveImage, Bucket, skipLayer, skipPush});
 
   // Build the image?
   if (shouldBuild) {
     ARGV.d(`Rebuilding the quick-lambda image`, {haveImage});
-    return execz(dockerRun, 'docker', `build`, `-t quick-lambda --progress tty -f ${__dirname}/quick-lambda/Dockerfile ${__dirname}`.split(/[ \t]+/g));
+
+    if (!dryRun) {
+      return execz(dockerRun, 'docker', `build`, `-t quick-lambda --progress tty -f ${__dirname}/quick-lambda/Dockerfile ${__dirname}`.split(/[ \t]+/g));
+    }
   }
 
   // ------------------------------------------------------------------------------------
@@ -106,12 +124,14 @@ var   stage                   = ARGV._get('stage')        || (ARGV._get('prod') 
       [`-e`, [`LAMBDA_NAME=`, name]],
       [`-e`, [`SKIP_LAYER=`,  skipLayer]],
       [`-e`, [`BUCKET_NAME=`, Bucket]],
+      [`-e`, [`AWS_PROFILE=`, AWS_PROFILE]],
+      [`-e`, [`VERBOSE=`,     ARGV.verbose]],
       `quick-lambda`
     ];
 
-    if (skipPush) { console.log(`Dry run`, {runArgs});  return; }
+    if (skipPush || dryRun) { console.log(`Dry run`, sg.inspect({runArgs}));  return; }
 
-    ARGV.i(`docker run`, {LambdaName: name, Bucket, skipLayer});
+    ARGV.i(`docker run`, {LambdaName: name, Bucket, skipLayer, runArgs});
     return execz(null,  runArgs);
   }
 })();
@@ -153,9 +173,8 @@ function earlierThan(a_, b_) {
   // We cannot say that a happened before b, so undefined (which is flasy)
 }
 
-async function getLayerPackageJson(name) {
+async function getLayerPackageJson(name, Bucket) {
   const layerName         = `layer-for-${name}`;
-  const Bucket            = `netlab-dev`;
   const Key               = `quick-net/lambda-layers/${layerName}/package.json`;
 
   try {
