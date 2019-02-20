@@ -33,6 +33,7 @@ const { execz, execa }        = require('./quick-lambda/utils');
 const s3                      = new AWS.S3({region:'us-east-1'});
 const ARGV                    = sg.ARGV();
 
+var   forceLayer              = ARGV._get('force-layer');
 var   skipLayer               = ARGV._get('skip-layer');
 var   skipPush                = ARGV._get('skip-push')    || ARGV._get('dry-run');
 var   dryRun                  = ARGV._get('dry-run');
@@ -123,6 +124,7 @@ if (sg.startupDone(ARGV, __filename))  { /* return; */ }
       [`-v`, `${process.cwd()}:/src`],
       [`-e`, [`LAMBDA_NAME=`, name]],
       [`-e`, [`SKIP_LAYER=`,  skipLayer]],
+      [`-e`, [`FORCE_LAYER=`, forceLayer]],
       [`-e`, [`BUCKET_NAME=`, Bucket]],
       [`-e`, [`AWS_PROFILE=`, AWS_PROFILE]],
       [`-e`, [`VERBOSE=`,     ARGV.verbose]],

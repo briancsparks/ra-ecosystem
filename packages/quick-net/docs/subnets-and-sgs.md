@@ -7,11 +7,9 @@ what security group(s) that will be applied.
 
 * All the subnets in the general worker area, all zones.
 * The `lambda` sg, and the `wide` sg.
-  * You have to run twice to get both sgs.
 
 ```sh
-quick-net getSubnets --classB=113 --sgName=lambda --subnetName=worker --azLetter=a,c,e --ids --machine | jq '.'
-quick-net getSubnets --classB=113 --sgName=wide --subnetName=worker --azLetter=a,c,e --ids --machine | jq '.'
+quick-net getSubnets --classB=113 --sgName lambda wide --subnetName=worker --azLetter=a,c,e --ids --machine | jq '.'
 ```
 
 ## The response
@@ -33,7 +31,8 @@ quick-net getSubnets --classB=113 --sgName=wide --subnetName=worker --azLetter=a
     }
   ],
   "securityGroups": [
-    "sg-123abc4567890def"
+    "sg-123abc4567890def",
+    "sg-123abc4567890de1"
   ]
 }
 ```

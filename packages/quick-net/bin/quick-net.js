@@ -70,6 +70,7 @@ function quickNet() {
   const silent    = argvGet(ARGV, 'silent,s');
   const debug     = argvGet(ARGV, 'debug,d');
   const machine   = argvGet(ARGV, 'machine,m');
+  const human     = ARGV._get('human,r');
 
   const command = commands[ARGV._[0]];
   if (_.isFunction(command)) {
@@ -123,6 +124,12 @@ function quickNet() {
       return;
     }
 
+    // For humans
+    if (human) {
+      sg.debugLog(fname, ...rest);
+      return;
+    }
+
     // Machine output?
     if (machine) {
       _.each(rest, (result) => {
@@ -137,8 +144,15 @@ function quickNet() {
       return;
     }
 
-    // For humans
-    sg.debugLog(fname, ...rest);
+    /* otherwise -- machine-ish */
+    _.each(rest, (result) => {
+      if (!_.isString(result)) {
+        process.stdout.write(JSON.stringify(result, null, 2) + '\n');
+        return;
+      }
+
+      process.stdout.write(result + '\n');
+    });
   });
 }
 

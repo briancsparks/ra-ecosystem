@@ -145,7 +145,7 @@ mod.xport({upsertInstance: function(argv, context, callback) {
     const count                 = rax.arg(argv, 'count', {def:1});
     var   MaxCount              = rax.arg(argv, 'MaxCount,max') || count;
     var   MinCount              = rax.arg(argv, 'MinCount,min') || count;
-    const DryRun                = rax.arg(argv, 'DryRun');
+    const DryRun                = rax.arg(argv, 'DryRun,dry-run');
     const distro                = rax.arg(argv, 'distro', {required:true});
     const envJsonFile           = rax.arg(argv, 'envjson');
     var   userdataOpts          = rax.arg(argv, 'userdata_opts');   // An object

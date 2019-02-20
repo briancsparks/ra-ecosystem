@@ -852,9 +852,9 @@ mod.xport({getSubnets: function(argv, context, callback) {
 
   const classB        = ''+argv.classB;
   const kind          = argv.kind ? argv.kind.toLowerCase() : argv.kind;
-  const sgName        = argv.sg       || argv.sgs   || argv.sgName  || argv.SecurityGroupIds;
   const subnetName    = argv.subnet   || argv.subnetName            || argv.SubnetId;
   const ids           = argv.ids;
+  const sgNames       = sg.arrayify(argv.sg       || argv.sgs   || argv.sgName  || argv.SecurityGroupIds);
 
   var   allVpcs, allSubnets, allSecurityGroups;
 
@@ -917,9 +917,10 @@ mod.xport({getSubnets: function(argv, context, callback) {
       securityGroups = sg.reduce(allSecurityGroups, securityGroups, function(m, securityGroup) {
         if (securityGroup.VpcId === vpc.VpcId) {
           const sgKind = getTag(securityGroup, 'aws:cloudformation:logical-id').toLowerCase();
+          const sgtag  = getTag(securityGroup, 'Name').toLowerCase();
 
-          if (sgName) {
-            if ((getTag(securityGroup, 'Name').toLowerCase() === sgName.toLowerCase())) {
+          if (sgNames) {
+            if (sgNames.indexOf(sgtag) !== -1) {
               return sg.ap(m, securityGroup);
             }
 
@@ -929,7 +930,6 @@ mod.xport({getSubnets: function(argv, context, callback) {
         }
         return m;
       });
-
     });
 
     if (ids) {

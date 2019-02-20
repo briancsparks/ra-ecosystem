@@ -6,7 +6,7 @@ Web servers
 
 ```sh
 quick-net upsertInstance --distro=ubuntu \
-    --image=ami-03a935aafa6b52b97 \
+    --image="ami-0565af6e282977273" \
     --type=c5n.xlarge \
     --key=example \
     --classB=13 \
@@ -20,7 +20,7 @@ Admin machines
 
 ```sh
 quick-net upsertInstance --distro=ubuntu \
-    --image=ami-03a935aafa6b52b97 \
+    --image="ami-0565af6e282977273" \
     --type=t3.medium \
     --key=example \
     --classB=13 \
