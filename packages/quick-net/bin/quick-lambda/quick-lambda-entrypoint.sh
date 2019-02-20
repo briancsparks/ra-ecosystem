@@ -59,20 +59,56 @@ if [[ -z $SKIP_LAYER ]]; then
 fi
 
 
-# -------------------------------------------------------------------------------
-# ----- Publish the functions -----
-printf "\nPublishing source file\n"
-ls -l /work/package.zip
+if [[ -z $CLAUDIA_DEPLOY ]]; then
+  # -------------------------------------------------------------------------------
+  # ----- Publish the functions -----
+  printf "\nPublishing source file\n"
+  ls -l /work/package.zip
 
-aws s3 cp /work/package.zip             "s3://${BUCKET_NAME}/quick-net/lambdas/${LAMBDA_NAME}/"
+  aws s3 cp /work/package.zip             "s3://${BUCKET_NAME}/quick-net/lambdas/${LAMBDA_NAME}/"
 
-aws lambda update-function-code  --function-name "$LAMBDA_NAME-public-express"  --zip-file "fileb:///work/package.zip" | jq -r '.FunctionArn'
-aws lambda update-function-code  --function-name "$LAMBDA_NAME"                 --zip-file "fileb:///work/package.zip" | jq -r '.FunctionArn'
+  aws lambda update-function-code  --function-name "$LAMBDA_NAME-public-express"  --zip-file "fileb:///work/package.zip" | jq -r '.FunctionArn'
+  aws lambda update-function-code  --function-name "$LAMBDA_NAME"                 --zip-file "fileb:///work/package.zip" | jq -r '.FunctionArn'
 
-if [[ -n $layer_arn ]]; then
-  printf "\nAttaching layer ${layer_arn} to:\n"
-  aws lambda update-function-configuration --function-name "$LAMBDA_NAME-public-express"   --layers $layer_arn | jq -r '.FunctionArn'
-  aws lambda update-function-configuration --function-name "$LAMBDA_NAME"                  --layers $layer_arn | jq -r '.FunctionArn'
+  if [[ -n $layer_arn ]]; then
+    printf "\nAttaching layer ${layer_arn} to:\n"
+    aws lambda update-function-configuration --function-name "$LAMBDA_NAME-public-express"   --layers $layer_arn | jq -r '.FunctionArn'
+    aws lambda update-function-configuration --function-name "$LAMBDA_NAME"                  --layers $layer_arn | jq -r '.FunctionArn'
+  fi
+
+else
+
+  # -------------------------------------------------------------------------------
+  # ----- Build the function -----
+  [[ -n $VERBOSE ]] && echo "Building main function again..." 2>&1
+  printf "\nDeploying with Claudia\n"
+
+  rm -rf                      /work/opt/nodejs   && mkdir -p $_
+
+  cp -r   /src/*              /work/opt/nodejs/
+  rm -rf                      /work/opt/nodejs/node_modules
+  cat     /src/package.json \
+            | jq 'del(.dependencies) + {dependencies:{}}' > /work/opt/nodejs/package.json
+
+  EXTRA_ARGS=""
+  [[ -n $layer_arn ]] && EXTRA_ARGS="$EXTRA_ARGS --layers $layer_arn"
+
+  # Update
+  echo claudia update --config _config/${STAGE_NAME}/public/claudia.json  --set-env-from-json _config/${STAGE_NAME}/env.json $EXTRA_ARGS
+  cat nodejs/_config/${STAGE_NAME}/public/claudia.json
+  cat nodejs/_config/${STAGE_NAME}/env.json
+
+  (cd nodejs && claudia update --config _config/${STAGE_NAME}/public/claudia.json  --set-env-from-json _config/${STAGE_NAME}/env.json $EXTRA_ARGS)
+  echo "Just done with first claudia update"
+
+  # Update
+  echo claudia update --config /src/_config/${STAGE_NAME}/private/claudia.json  --set-env-from-json /src/_config/${STAGE_NAME}/env.json $EXTRA_ARGS
+  cat nodejs/_config/${STAGE_NAME}/private/claudia.json
+  cat nodejs/_config/${STAGE_NAME}/env.json
+
+  (cd nodejs && claudia update --config /src/_config/${STAGE_NAME}/private/claudia.json --set-env-from-json /src/_config/${STAGE_NAME}/env.json $EXTRA_ARGS)
 fi
+
+
 
 # exec "$@"

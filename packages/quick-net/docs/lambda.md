@@ -1,72 +1,69 @@
 # Managing Lambdas
 
-## Using Claudia.js to Build Out
+See [the Lambda Buildout](lambda-buildout.md) instructions for instructions on the
+initial setup of the lambda functions.
 
-You end up making 4 lambdas, each with 2 stages. The lambdas are managed by AWS
-lambda, and the stages are managed by AWS API Gateway.
+## Overview and Special Nuances
 
-* Development account
-  * private
-    * `/dev` endpoint
-    * `/latest` endpoint
-  * public
-    * `/dev` endpoint
-    * `/latest` endpoint
-* Prod account
-  * private
-    * `/prod` endpoint
-    * `/latest` endpoint
-  * public
-    * `/prod` endpoint
-    * `/latest` endpoint
+It is good to know the following about how AWS Lambda / API Gateway and ClaudiaJs work.
+AWS tries to get close to the industry standards, but there are some nuances to
+the implementation details that have to be dealth with. `quick-net` deals with them,
+so you don't have to, but you need to know them.
 
-### Development, Private `/latest`
+* In the industry, `stage` means something special.
+  * At AWS, it is a best practice to have separate AWS accounts for prod and non-prod.
+    therefore, manipulating your `prod` stage requires you to switch your credentials
+    to that account. This is quick, but not easy.
+  * In Lambda, there is a special stage called `latest` (the under-the-hood name is
+    `$LATEST`.) This is the ONLY stage that can be updated in place, and is used only
+    for current, in development changes. Then, when you publish a 'real' stage like
+    `dev`, Lambda creates an immutable Lambda function, which has an increasing integer
+    ID. The `quick-lambda` script is made to update this mutable `latest` stage.
 
-Claudia calls their API endpoint manager "api-builder". To create the development
-private `/latest` endpoint:
+## Updating
 
-```sh
-claudia create --api-module api-builder \
-    --name Example \
-    --config "_config/dev/private/claudia.json" \
-    --role arn:aws:iam::1234567890:role/example-instance-role \
-    --memory 128 \
-    --timeout 30 \
-    --security-group-ids sg-123abc4567890def,sg-123abc4567890de1 \
-    --subnet-ids subnet-123abc4567890def,subnet-123abc4567890de1,subnet-123abc4567890de2 \
-    --set-env-from-json "_config/dev/env.json" \
-    --region us-east-1
-```
+There are three situations you will be in when you want to push updates to Lambda.
 
-### Development, Private `/dev`
+1. Normal, everyday pushes to new functionality in order to test the changes.
+   * Updating `latest`.
+2. Everyday pushes to new functionality that change _special_ things, and
+   hence require more sophistication to the push, and cannot be done with
+   the simple, and fast `quick-lambda`.
+3. Full, comprehensive pushes that update 'real' stages.
 
-```sh
-claudia update --config "_config/dev/private/claudia.json" --version dev
-```
+### Everyday Fast Updates
 
-### Development, Public `/latest`
+When you only change your own core code (not the parts that deal with routing, for
+example) you can push a very small zip file of your code, that points to a separate layer for all
+of the dependencies. The dependencies layer is usually huge (10 MB), while the core code for
+your module is usually in the KB size range, and you can edit the function in the
+AWS Lambda console.
 
 ```sh
-claudia create --handler lambda.handler \
-    --deploy-proxy-api \
-    --name Netlab3-public-express \
-    --config "_config/dev/public/claudia.json" \
-    --role arn:aws:iam::1234567890:role/example-instance-role \
-    --memory 128 \
-    --timeout 30 \
-    --keep \
-    --security-group-ids sg-123abc4567890def,sg-123abc4567890de1 \
-    --subnet-ids subnet-123abc4567890def,subnet-123abc4567890de1,subnet-123abc4567890de2 \
-    --set-env-from-json "_config/dev/env.json" \
-    --region us-east-1
+quick-lambda --stage=dev --debug
+quick-lambda --stage=dev --force-layer --debug              # (1)
+quick-lambda --stage=dev --skip-layer --skip-push --debug   # Helps debug quick-lamda, itself
 ```
 
-### Development, Public `/dev`
+(1) - Sometimes `quick-lambda` cannot determine that the dependencies layer needs to be updated.
+You can force its building and deployment with `--force-layer`.
+
+### Everyday Updates without `quick-lambda`
+
+When you cannot use `quick-lambda` because changes have been made outside your
+module's zip file deployment, you must use ClaudiaJs directly. For example, if you add
+a new path entry to the Claudia 'API Builder' set of functions, you must use ClaudiaJs
+directly, so that you get new routes in AWS API Gateway.
+
+#### Updates
+
+To update the `dev` stage (actually updates the `dev` function's `latest` 'stage.)
 
 ```sh
-claudia update --config "_config/dev/public/claudia.json" --version dev
+claudia update --config ./_config/dev/private/claudia.json
+claudia update --config ./_config/dev/private/claudia.json --set-env-from-json ./_config/dev/env.json
 ```
 
-### Production
+### Full Updates
 
-The commands for the production account is very similar.
+TBD

@@ -11,8 +11,11 @@
 #==    --Bucket=[@json_from(_config/[stage]/env.json).DeployBucket]
 #==    --stage=[dev]
 #==
+#==    --claudia-deploy
+#==
 #==    --prod             (stage=prod)
 #==    --dev              (stage=dev)
+#==    --force-layer
 #==    --skip-layer
 #==    --skip-push
 #==    --dry-run
@@ -33,6 +36,7 @@ const { execz, execa }        = require('./quick-lambda/utils');
 const s3                      = new AWS.S3({region:'us-east-1'});
 const ARGV                    = sg.ARGV();
 
+var   claudiaDeploy           = ARGV._get('claudia-deploy,claudia');
 var   forceLayer              = ARGV._get('force-layer');
 var   skipLayer               = ARGV._get('skip-layer');
 var   skipPush                = ARGV._get('skip-push')    || ARGV._get('dry-run');
@@ -122,12 +126,14 @@ if (sg.startupDone(ARGV, __filename))  { /* return; */ }
     const runArgs = ['docker', 'run', '--rm',
       [`-v`, `${sg.os.homedir()}/.aws:/aws`],
       [`-v`, `${process.cwd()}:/src`],
-      [`-e`, [`LAMBDA_NAME=`, name]],
-      [`-e`, [`SKIP_LAYER=`,  skipLayer]],
-      [`-e`, [`FORCE_LAYER=`, forceLayer]],
-      [`-e`, [`BUCKET_NAME=`, Bucket]],
-      [`-e`, [`AWS_PROFILE=`, AWS_PROFILE]],
-      [`-e`, [`VERBOSE=`,     ARGV.verbose]],
+      [`-e`, [`LAMBDA_NAME=`,     name]],
+      [`-e`, [`SKIP_LAYER=`,      skipLayer]],
+      [`-e`, [`FORCE_LAYER=`,     forceLayer]],
+      [`-e`, [`BUCKET_NAME=`,     Bucket]],
+      [`-e`, [`AWS_PROFILE=`,     AWS_PROFILE]],
+      [`-e`, [`CLAUDIA_DEPLOY=`,  claudiaDeploy]],
+      [`-e`, [`STAGE_NAME=`,      stage]],
+      [`-e`, [`VERBOSE=`,         ARGV.verbose]],
       `quick-lambda`
     ];
 
