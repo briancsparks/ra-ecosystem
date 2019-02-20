@@ -235,7 +235,7 @@ exports.fixParams = function(arr) {
 
 
   return result;
-}
+};
 
 
 
