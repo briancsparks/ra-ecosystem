@@ -1,6 +1,6 @@
 {
   "name": "sg-clihelp",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Utilities for writing cli apps",
   "main": "index.js",
   "scripts": {
