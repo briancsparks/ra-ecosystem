@@ -924,9 +924,6 @@ mod.xport({getSubnets: function(argv, context, callback) {
                 return sg.ap(m, subnet);
               }
             });
-            // if (subnetNames && subnetNames.indexOf(subnetTag) !== -1) {
-            //   return sg.ap(m0, subnet);
-            // }
           }
           return m0;
         });
