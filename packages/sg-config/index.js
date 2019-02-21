@@ -56,7 +56,7 @@ _.each(sg, (v,k) => {
 
 function Config(...configs) {
   return qmResolve(...configs);
-};
+}
 
 function Configuration(dir, name) {
   var fileJson = {};
@@ -69,7 +69,7 @@ function Configuration(dir, name) {
 
   return function(key) {
     return fileJson[key] || process.env[key];
-  }
-};
+  };
+}
 
 

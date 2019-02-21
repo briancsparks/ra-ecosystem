@@ -37,8 +37,13 @@ curl -sSL "https://download.docker.com/linux/ubuntu/gpg" | apt-key add -
 echo "deb https://download.docker.com/linux/ubuntu ${osversion} stable" | tee /etc/apt/sources.list.d/docker.list
 
 # MongoDB
-sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 9DA31620334BD75D9DCB49F368818C72E52529D4
+apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 9DA31620334BD75D9DCB49F368818C72E52529D4
 echo "deb https://repo.mongodb.org/apt/ubuntu ${osversion}/mongodb-org/4.0 multiverse" | tee /etc/apt/sources.list.d/mongodb-org-4.0.list
+# sudo apt-get update && sudo apt-get install -y mongodb-org
+
+# Lets Encrypt
+add-apt-repository -y ppa:certbot/certbot
+# sudo apt-get update && sudo apt-get install -y certbot python-certbot-nginx
 
 # ----------------------------------------------------------------------------------------------
 

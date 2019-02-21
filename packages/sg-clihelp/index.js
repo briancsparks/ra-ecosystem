@@ -15,6 +15,7 @@ const { _ }                   = sg;
 const fs   = sg.fs            = require('fs');
 const path = sg.path          = require('path');
 const os   = sg.os            = require('os');
+const util = sg.util          = require('util');
 const sh   = sg.sh            = require('shelljs');
 
 var   ARGV;

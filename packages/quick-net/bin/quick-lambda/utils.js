@@ -41,7 +41,7 @@ exports.execz = execz;
 //
 
 function execz(a, ...rest) {
-  if (sg.isnt(a))                                   { return execz({next:function(){}}, ...rest); }
+  if (sg.isnt(a))                                   { return execz({next:noop}, ...rest); }
   if (_.isFunction(a))                              { return execz({next:a}, ...rest); }
 
   // execz({}, file, command, args)
@@ -58,7 +58,7 @@ function _execz_({next,show=true}, args /*file, command, rest*/) {
   const cmdline                   = qm.stitch(args);
   const [file, command, ...rest]  = cmdline;
 
-  ARGV.v(`execz`, {file, command, rest, next});
+  ARGV.v(`execz`, {file, command, rest, next: (next === noop ? 'noop' : next) || 'function'});
 
   const stdout = execa(file, [command, ...rest]).stdout;
 
@@ -72,4 +72,5 @@ function _execz_({next,show=true}, args /*file, command, rest*/) {
   });
 }
 
+function noop(){}
 

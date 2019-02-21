@@ -60,12 +60,12 @@ async function sg_config_link_with_file() {
     const origPackagePath         = path.join(workdir, pkgDir, 'package.json');
     const origPackageJson         = fs.readFileSync(origPackagePath, 'utf8');
 
-    const package                 = readPkg.sync({cwd: packagePath, normalize:false});      /* the formally-read in package.json contents */
-    const dependencyReplacement   = `file:${resolvePkg(package.name, {cwd:workdir})}`;
+    const packaje                 = readPkg.sync({cwd: packagePath, normalize:false});      /* the formally-read in package.json contents */
+    const dependencyReplacement   = `file:${resolvePkg(packaje.name, {cwd:workdir})}`;
 
-    console_info(`  Package ${package.name} is at ${dependencyReplacement}`);
+    console_info(`  Package ${packaje.name} is at ${dependencyReplacement}`);
 
-    return sg.kv(m, package.name, {updatePackage: package, origPackageJson, origPackagePath, dependencyReplacement});
+    return sg.kv(m, packaje.name, {updatePackage: packaje, origPackageJson, origPackagePath, dependencyReplacement});
   });
 
   console_log({updatePackageList});

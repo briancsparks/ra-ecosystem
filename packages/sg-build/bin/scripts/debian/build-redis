@@ -1,0 +1,8 @@
+#!/bin/bash -e
+
+eval "$(cli-shezargs)"
+
+mkdir -p zz_packages && cd $_
+curl -sSL 'http://download.redis.io/redis-stable.tar.gz' | tar xvzf -
+cd redis-stable
+make

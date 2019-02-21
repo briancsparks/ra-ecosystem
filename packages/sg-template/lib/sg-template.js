@@ -125,7 +125,7 @@ exports.generate = function(...args) {
 
   var contents = require(filename)(argv, context);
 
-  const result = contents.stringify()
+  const result = contents.stringify();
 
   if (output) {
     if (output === '-') {

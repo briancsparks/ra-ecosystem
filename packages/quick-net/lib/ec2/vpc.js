@@ -196,7 +196,7 @@ mod.xport({upsertSubnet: function(argv, context, callback) {
       }, function(next) {
         var   params = {SubnetId};
 
-        if (publicIp)   { params.MapPublicIpOnLaunch = {Value:true} };
+        if (publicIp)   { params.MapPublicIpOnLaunch = {Value:true}; }
 
         if (sg.numKeys(params) <= 1)    { return next(); }
 
@@ -409,7 +409,7 @@ mod.xport({allocateAddress: function(argv, context, callback) {
 
       return describeAddresses(awsFilters({"tag:VpcId":[VpcId],"tag:SubnetId":[SubnetId]}), {abort:false}, function(err, data) {
         if (sg.ok(err, data) && data.Addresses && data.Addresses.length > 0) {
-          AllocationId = data.Addresses[0].AllocationId;
+          let AllocationId = data.Addresses[0].AllocationId;
         }
 
         my.result = { Address: data.Addresses[0]};
@@ -609,19 +609,19 @@ mod.xport({createRouteTable: function(argv, context, callback) {
 
     const SubnetId            = rax.arg(argv, 'SubnetId,subnet', {required:false});
     const VpcId               = rax.arg(argv, 'VpcId,vpc', {required:true});
-    const public              = rax.arg(argv, 'public');
+    const isPublic            = rax.arg(argv, 'public');
     const adjective           = rax.arg(argv, 'adjective,adj');
     const suffix              = rax.arg(argv, 'suffix');
 
     if (rax.argErrors())    { return rax.abort(); }
 
-    var access = (public? 'public' : 'private');
+    var access = (isPublic? 'public' : 'private');
     var RouteTableId;
     return sg.__run2({result:{}}, callback, [function(my, next, last) {
       var filters = {"vpc-id":[VpcId]};
       if (SubnetId) {
         filters["association.subnet-id"] = [SubnetId];
-      } else if (public) {
+      } else if (isPublic) {
         filters["tag:access"] = [access];
       } else {
         if (rax.argErrors({SubnetId}))    { return rax.abort(); }
@@ -796,9 +796,9 @@ mod.xport({createVpcEndpoint: function(argv, context, callback) {
     const gateway_    = {PolicyDocument, RouteTableIds};
     const gateway     = sg.smartExtend({...gateway_});
     const interface_  = {PrivateDnsEnabled,SecurityGroupIds,SubnetIds};
-    const interface   = sg.smartExtend({...interface_});
+    const iface       = sg.smartExtend({...interface_});
 
-    const params  = { ...reqd, ...optional, ...gateway, ...interface };
+    const params  = { ...reqd, ...optional, ...gateway, ...iface };
 
     var   VpcEndpointId;
     return sg.__run2({result:{}}, callback, [function(my, next, last) {
@@ -852,8 +852,8 @@ mod.xport({getSubnets: function(argv, context, callback) {
 
   const classB        = ''+argv.classB;
   const kind          = argv.kind ? argv.kind.toLowerCase() : argv.kind;
-  const subnetName    = argv.subnet   || argv.subnetName            || argv.SubnetId;
   const ids           = argv.ids;
+  const subnetNames   = sg.arrayify(argv.subnet   || argv.subnets   || argv.subnetName            || argv.SubnetId);
   const sgNames       = sg.arrayify(argv.sg       || argv.sgs   || argv.sgName  || argv.SecurityGroupIds);
 
   var   allVpcs, allSubnets, allSecurityGroups;
@@ -902,12 +902,13 @@ mod.xport({getSubnets: function(argv, context, callback) {
     _.each(vpcs, function(vpc) {
       subnets = sg.reduce(allSubnets, subnets, function(m, subnet) {
         if (subnet.VpcId === vpc.VpcId) {
+          const subnetTag = getTag(subnet, 'Name').toLowerCase();
 
           if (kind && getTag(subnet, 'aws:cloudformation:logical-id').toLowerCase().endsWith(kind)) {
             return sg.ap(m, subnet);
           }
 
-          if (subnetName && (getTag(subnet, 'Name').toLowerCase().startsWith(subnetName.toLowerCase()))) {
+          if (subnetNames && subnetNames.indexOf(subnetTag) !== -1) {
             return sg.ap(m, subnet);
           }
         }
@@ -924,7 +925,7 @@ mod.xport({getSubnets: function(argv, context, callback) {
               return sg.ap(m, securityGroup);
             }
 
-          } else if (!kind || sgKind == 'sgwide' || (kind === 'public' && sgKind === 'sgweb')) {
+          } else if (!kind || sgKind === 'sgwide' || (kind === 'public' && sgKind === 'sgweb')) {
             return sg.ap(m, securityGroup);
           }
         }
@@ -939,6 +940,10 @@ mod.xport({getSubnets: function(argv, context, callback) {
       result.vpcs = vpcs;
       result.subnets = subnets;
       result.securityGroups = securityGroups;
+    }
+
+    if (_.compact(_.flatten(_.values(_.pick(result, 'subnets', 'securityGroups')))).length === 0) {
+      result.__hint__ = `You could add classB, sgs, subnet`;
     }
 
     return callback(null, result);

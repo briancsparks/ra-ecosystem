@@ -128,11 +128,13 @@ mod.xport({upsertInstance: function(argv, context, callback) {
   return rax.iwrap(function(abort, calling) {
     const { runInstances,describeInstances }  = libAws.awsFns(ec2, 'runInstances,describeInstances', rax.opts({}), abort);
     const { getSubnets }                      = rax.loads(libVpc, 'getSubnets', rax.opts({}), abort);
+    const { getUbuntuLtsAmis }                = rax.loads('getUbuntuLtsAmis', rax.opts({}), abort);
 
     var   AllAwsParams          = sg.reduce(argv, {}, (m,v,k) => ( sg.kv(m, awsKey(k), v) || m ));
 
+    const distro                = rax.arg(argv, 'distro', {required:true});
     const uniqueName            = rax.arg(argv, 'uniqueName,unique', {required: sg.modes().production});
-    const ImageId               = rax.arg(argv, 'ImageId,image', {required:true});
+    var   ImageId               = rax.arg(argv, 'ImageId,image');
     const InstanceType          = rax.arg(argv, 'InstanceType,type', {required:true});
     const classB                = rax.arg(argv, 'classB,b');
     var   az                    = rax.arg(argv, 'AvailabilityZone,az');
@@ -146,7 +148,6 @@ mod.xport({upsertInstance: function(argv, context, callback) {
     var   MaxCount              = rax.arg(argv, 'MaxCount,max') || count;
     var   MinCount              = rax.arg(argv, 'MinCount,min') || count;
     const DryRun                = rax.arg(argv, 'DryRun,dry-run');
-    const distro                = rax.arg(argv, 'distro', {required:true});
     const envJsonFile           = rax.arg(argv, 'envjson');
     var   userdataOpts          = rax.arg(argv, 'userdata_opts');   // An object
 
@@ -170,7 +171,7 @@ mod.xport({upsertInstance: function(argv, context, callback) {
         const count = sg.reduce(data.Reservations || [], 0, function(m0, reservations) {
           return sg.reduce(reservations.Instances || [], m0, function(m, instance) {
             const state = instance.State && instance.State.Name;
-            if (state != 'shutting-down' && state !== 'terminated') {
+            if (state !== 'shutting-down' && state !== 'terminated') {
               theInstance = instance;
               return m+1;
             }
@@ -187,7 +188,16 @@ mod.xport({upsertInstance: function(argv, context, callback) {
       });
 
     }, function(my, next) {
-      if (SecurityGroupIds[0].startsWith('sg-') || SubnetId.startsWith('subnet-'))   { return next(); }
+      if (ImageId)  { return next(); }
+
+      return getUbuntuLtsAmis({latest:true}, {}, function(err, data) {
+        ImageId = data.ImageId;
+        return next();
+      });
+
+    }, function(my, next) {
+      if (rax.argErrors({ImageId}))                                                   { return rax.abort(); }
+      if (SecurityGroupIds[0].startsWith('sg-') || SubnetId.startsWith('subnet-'))    { return next(); }
 
       if (rax.argErrors({classB}))    { return rax.abort(); }
 
