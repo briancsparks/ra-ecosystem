@@ -2,13 +2,13 @@
 
 eval "$(cli-shezargs)"
 
-${build_scripts}/build-redis
+${scripts_dir}/build-redis
 
 sudo make install
 cat redis.conf | \
     sed 's/^bind 127.0.0.1/#bind 127.0.0.1/g' | \
     sed 's/^protected-mode yes/protected-mode no/g' | \
     sed 's/^daemonize no/daemonize yes/g' | \
-        sudo tee /etc/redis.conf
+        sudo tee /etc/redis.conf > /dev/null
 
 sudo redis-server /etc/redis.conf

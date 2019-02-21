@@ -30,7 +30,7 @@ const ARGV                    = sg.ARGV();
 //
 const main = function() {
   const type      = ARGV._.shift();
-  const templates = glob.sync(`templates/**/build-${type}*.js`, {cwd: __dirname}) || [];
+  const templates = glob.sync(`templates/**/install-${type}*.js`, {cwd: __dirname}) || [];
   const template  = templates[0];
 
   if (template) {
