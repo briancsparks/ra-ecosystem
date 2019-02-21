@@ -38,7 +38,7 @@ const install = function(argv) {
     return;
   }
 
-  const scripts   = glob.sync(`scripts/**/install-${type}*.js`, {cwd: __dirname}) || [];
+  const scripts   = glob.sync(`scripts/**/install-${type}`, {cwd: __dirname}) || [];
   const script    = scripts[0];
 
   if (script) {

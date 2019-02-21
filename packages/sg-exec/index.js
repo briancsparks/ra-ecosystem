@@ -28,7 +28,7 @@ exports.execz = execz;
 //
 
 function execz(a, ...rest) {
-  if (_.isFunction(_.last(rest)))                   { return execz({next:_.last(rest)}, ...[a, ...rest]); }
+  if (_.isFunction(_.last(rest)))                   { return execz({next:_.last(rest)}, ...[a, ..._.initial(rest)]); }
   if (sg.isnt(a))                                   { return execz({next:noop}, ...rest); }
   if (_.isFunction(a))                              { return execz({next:a}, ...rest); }
 
@@ -41,6 +41,12 @@ function execz(a, ...rest) {
     // execz({}, file, args)
     const [ b, rest2 ] = rest;
     return execz(a, [...sg.arrayify(b), ...sg.arrayify(rest2) ]);
+
+  } if (rest.length === 1) {
+    // execz({}, file)
+    const [ b ] = rest;
+    return execz(a, [...sg.arrayify(b) ]);
+
   }
 
   return _execz_(a, ...rest);

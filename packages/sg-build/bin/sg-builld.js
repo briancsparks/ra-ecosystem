@@ -31,7 +31,7 @@ const main = function() {
   const cmd   = ARGV._.shift();
 
   if (cmd === 'install') {
-    let install = require('./install');
+    let { install } = require('./install');
     return install(ARGV);
 
   } else if (cmd === 'build') {
