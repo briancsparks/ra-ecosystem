@@ -850,103 +850,115 @@ mod.xport({getSubnets: function(argv, context, callback) {
     ra invoke\packages\quick-net\lib\ec2\vpc.js getSubnets --classB=111 --sg=admin --subnet=webtier | jq . | grep Id
   */
 
-  const classB        = ''+argv.classB;
-  const kind          = argv.kind ? argv.kind.toLowerCase() : argv.kind;
-  const ids           = argv.ids;
-  const subnetNames   = sg.arrayify(argv.subnet   || argv.subnets   || argv.subnetName            || argv.SubnetId);
-  const sgNames       = sg.arrayify(argv.sg       || argv.sgs   || argv.sgName  || argv.SecurityGroupIds);
+  const ractx     = context.runAnywhere || {};
+  const { rax }   = (ractx.quickNetVpc__getSubnets || ractx);
 
-  var   allVpcs, allSubnets, allSecurityGroups;
+  return rax.iwrap(function(abort, calling) {
+    const { describeVpcs,describeSecurityGroups,describeSubnets } = libAws.awsFns(ec2, 'describeVpcs,describeSecurityGroups,describeSubnets', rax.opts({}), abort);
 
-  return sg.__runll([function(next) {
+    const classB        = ''+argv.classB;
+    const kind          = argv.kind ? argv.kind.toLowerCase() : argv.kind;
+    const ids           = argv.ids;
+    const subnetNames   = sg.arrayify(argv.subnet   || argv.subnets   || argv.subnetName            || argv.SubnetId);
+    const sgNames       = sg.arrayify(argv.sg       || argv.sgs   || argv.sgName  || argv.SecurityGroupIds);
 
-    return ec2.describeVpcs({}, function(err, data) {
-      if (!sg.ok(err, data)) { return callback(err); }
+    var   allVpcs, allSubnets, allSecurityGroups;
 
-      allVpcs = data.Vpcs;
-      return next();
-    });
-  }, function(next) {
+    var   errors = [];
+    return sg.__runll([function(next) {
 
-    return ec2.describeSecurityGroups({}, function(err, data) {
-      if (!sg.ok(err, data)) { return callback(err); }
+      return describeVpcs({}, {abort:false}, function(err, data) {
+        if (!sg.ok(err, data)) { errors.push(err); return next(); }
 
-      allSecurityGroups = data.SecurityGroups;
-      return next();
-    });
-  }, function(next) {
-
-    return ec2.describeSubnets({}, function(err, data) {
-      if (!sg.ok(err, data)) { return callback(err); }
-
-      allSubnets = data.Subnets;
-      return next();
-    });
-  }], function done() {
-
-    var result = {};
-    var vpcs = [], subnets = [], securityGroups = [];
-
-    // Filter the VPCs by class B
-    if (classB) {
-      vpcs = sg.reduce(allVpcs || [], vpcs, function(m, vpc) {
-        let parts = (vpc.CidrBlock || '').split(/[^0-9]+/);
-        if (parts.length === 5 && parts[1] === classB) {
-          return sg.ap(m, vpc);
-        }
-        return m;
+        allVpcs = data.Vpcs;
+        return next();
       });
-    }
+    }, function(next) {
 
-    // Filter the subnets and SGs by the VPCs' IDs
-    _.each(vpcs, function(vpc) {
-      subnets = sg.reduce(allSubnets, subnets, function(m, subnet) {
-        if (subnet.VpcId === vpc.VpcId) {
-          const subnetTag = getTag(subnet, 'Name').toLowerCase();
+      return describeSecurityGroups({}, {abort:false}, function(err, data) {
+        if (!sg.ok(err, data)) { errors.push(err); return next(); }
 
-          if (kind && getTag(subnet, 'aws:cloudformation:logical-id').toLowerCase().endsWith(kind)) {
-            return sg.ap(m, subnet);
-          }
-
-          if (subnetNames && subnetNames.indexOf(subnetTag) !== -1) {
-            return sg.ap(m, subnet);
-          }
-        }
-        return m;
+        allSecurityGroups = data.SecurityGroups;
+        return next();
       });
+    }, function(next) {
 
-      securityGroups = sg.reduce(allSecurityGroups, securityGroups, function(m, securityGroup) {
-        if (securityGroup.VpcId === vpc.VpcId) {
-          const sgKind = getTag(securityGroup, 'aws:cloudformation:logical-id').toLowerCase();
-          const sgtag  = getTag(securityGroup, 'Name').toLowerCase();
+      return describeSubnets({}, {abort:false}, function(err, data) {
+        if (!sg.ok(err, data)) { errors.push(err); return next(); }
 
-          if (sgNames) {
-            if (sgNames.indexOf(sgtag) !== -1) {
-              return sg.ap(m, securityGroup);
+        allSubnets = data.Subnets;
+        return next();
+      });
+    }], function done() {
+
+      if (_.compact(errors).length !== 0) {
+        return callback(errors);
+      }
+
+      var result = {};
+      var vpcs = [], subnets = [], securityGroups = [];
+
+      // Filter the VPCs by class B
+      if (classB) {
+        vpcs = sg.reduce(allVpcs || [], vpcs, function(m, vpc) {
+          let parts = (vpc.CidrBlock || '').split(/[^0-9]+/);
+          if (parts.length === 5 && parts[1] === classB) {
+            return sg.ap(m, vpc);
+          }
+          return m;
+        });
+      }
+
+      // Filter the subnets and SGs by the VPCs' IDs
+      _.each(vpcs, function(vpc) {
+        subnets = sg.reduce(allSubnets, subnets, function(m, subnet) {
+          if (subnet.VpcId === vpc.VpcId) {
+            const subnetTag = getTag(subnet, 'Name').toLowerCase();
+
+            if (kind && getTag(subnet, 'aws:cloudformation:logical-id').toLowerCase().endsWith(kind)) {
+              return sg.ap(m, subnet);
             }
 
-          } else if (!kind || sgKind === 'sgwide' || (kind === 'public' && sgKind === 'sgweb')) {
-            return sg.ap(m, securityGroup);
+            if (subnetNames && subnetNames.indexOf(subnetTag) !== -1) {
+              return sg.ap(m, subnet);
+            }
           }
-        }
-        return m;
+          return m;
+        });
+
+        securityGroups = sg.reduce(allSecurityGroups, securityGroups, function(m, securityGroup) {
+          if (securityGroup.VpcId === vpc.VpcId) {
+            const sgKind = getTag(securityGroup, 'aws:cloudformation:logical-id').toLowerCase();
+            const sgtag  = getTag(securityGroup, 'Name').toLowerCase();
+
+            if (sgNames) {
+              if (sgNames.indexOf(sgtag) !== -1) {
+                return sg.ap(m, securityGroup);
+              }
+
+            } else if (!kind || sgKind === 'sgwide' || (kind === 'public' && sgKind === 'sgweb')) {
+              return sg.ap(m, securityGroup);
+            }
+          }
+          return m;
+        });
       });
+
+      if (ids) {
+        result.subnets          = _.map(subnets, ({SubnetId, AvailabilityZone}) => ({SubnetId, AvailabilityZone}));
+        result.securityGroups   = sg.pluck(securityGroups, 'GroupId');
+      } else {
+        result.vpcs = vpcs;
+        result.subnets = subnets;
+        result.securityGroups = securityGroups;
+      }
+
+      if (_.compact(_.flatten(_.values(_.pick(result, 'subnets', 'securityGroups')))).length === 0) {
+        result.__hint__ = `You could add classB, sgs, subnet`;
+      }
+
+      return callback(null, result);
     });
-
-    if (ids) {
-      result.subnets          = _.map(subnets, ({SubnetId, AvailabilityZone}) => ({SubnetId, AvailabilityZone}));
-      result.securityGroups   = sg.pluck(securityGroups, 'GroupId');
-    } else {
-      result.vpcs = vpcs;
-      result.subnets = subnets;
-      result.securityGroups = securityGroups;
-    }
-
-    if (_.compact(_.flatten(_.values(_.pick(result, 'subnets', 'securityGroups')))).length === 0) {
-      result.__hint__ = `You could add classB, sgs, subnet`;
-    }
-
-    return callback(null, result);
   });
 
 }});

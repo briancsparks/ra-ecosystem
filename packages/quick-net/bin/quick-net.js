@@ -66,6 +66,7 @@ quickNet();
 
 function quickNet() {
   require('loud-rejection/register');
+  require('exit-on-epipe');
 
   const silent    = argvGet(ARGV, 'silent,s');
   const debug     = argvGet(ARGV, 'debug,d');

@@ -64,10 +64,26 @@ const awsFns = function(service, names_, options1, abort) {
         }
 
         abort.calling(`AWS::${fname}(44)`, params);
-        // return awsFn.apply(service, [params, callback]);
-        return sg.until(function(again /*, lastX, count, elapsed*/) {
+
+        var lastError;
+        return sg.until(function(again , lastX, count /*, elapsed*/) {
+
+          // Only try so many times
+          if (count > 8) {
+            return callback(lastError);
+          }
+
           return awsFn.apply(service, [params, function(err, data, ...rest) {
+            lastError = err;
             if (sg.ok(err, data))   { return callback(err, data, ...rest); }
+
+            /* is it one that says retriable, but really isnt? */
+            if (err.errno == 'EPIPE') {
+              console.error(`----------------------------------------------------------`);
+              console.error(`  Error EPIPE might mean your proxy is not setup correctly`);
+              console.error(`----------------------------------------------------------`);
+              return callback(err, data, ...rest);
+            }
 
             /* otherwise -- is it a retryable error? */
             if (err.retryable) {
