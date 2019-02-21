@@ -28,8 +28,8 @@ const ARGV                    = sg.ARGV();
 // -------------------------------------------------------------------------------------
 //  Functions
 //
-const main = function() {
-  const type      = ARGV._.shift();
+const install = function(argv) {
+  const type      = argv._.shift();
   const templates = glob.sync(`templates/**/install-${type}*.js`, {cwd: __dirname}) || [];
   const template  = templates[0];
 
@@ -53,13 +53,11 @@ const main = function() {
   return;
 };
 
-main();
-// (async function() {
-//   await main();
-// })();
+exports.install   = install;
 
-
-
+if (process.argv[1] === __filename) {
+  install();
+}
 
 // -------------------------------------------------------------------------------------
 //  Helper Functions

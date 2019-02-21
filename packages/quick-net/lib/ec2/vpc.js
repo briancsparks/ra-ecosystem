@@ -911,19 +911,24 @@ mod.xport({getSubnets: function(argv, context, callback) {
 
       // Filter the subnets and SGs by the VPCs' IDs
       _.each(vpcs, function(vpc) {
-        subnets = sg.reduce(allSubnets, subnets, function(m, subnet) {
+        subnets = sg.reduce(allSubnets, subnets, function(m0, subnet) {
           if (subnet.VpcId === vpc.VpcId) {
             const subnetTag = getTag(subnet, 'Name').toLowerCase();
 
             if (kind && getTag(subnet, 'aws:cloudformation:logical-id').toLowerCase().endsWith(kind)) {
-              return sg.ap(m, subnet);
+              return sg.ap(m0, subnet);
             }
 
-            if (subnetNames && subnetNames.indexOf(subnetTag) !== -1) {
-              return sg.ap(m, subnet);
-            }
+            return sg.reduce(subnetNames, m0, (m, subnetName) => {
+              if (subnetTag.startsWith(subnetName)) {
+                return sg.ap(m, subnet);
+              }
+            });
+            // if (subnetNames && subnetNames.indexOf(subnetTag) !== -1) {
+            //   return sg.ap(m0, subnet);
+            // }
           }
-          return m;
+          return m0;
         });
 
         securityGroups = sg.reduce(allSecurityGroups, securityGroups, function(m, securityGroup) {
