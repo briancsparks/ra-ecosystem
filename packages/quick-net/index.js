@@ -20,6 +20,7 @@ var   mods = {};
 
 mods.commandVpcs             = require('./commands/vpcs');
 mods.commandInstances        = require('./commands/instances');
+mods.setupWebiter            = require('./commands/setup-webtier');
 mods.libDynamoDb             = require('./lib/db/dynamodb');
 mods.libDescribeVpc          = require('./lib/ec2/vpc/describe');
 mods.libCidr                 = require('./lib/ec2/cidr');

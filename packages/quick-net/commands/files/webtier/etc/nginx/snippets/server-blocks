@@ -1,0 +1,63 @@
+
+# vim: set ft=NGINX:
+
+  # Super-basic server block, http only
+  server {
+    listen       80 default_server;
+    listen  [::]:80 default_server;
+
+    root /var/www/html;
+
+    index index.html index.htm index.nginx-debian.html;
+
+    server_name  _;
+
+    location / {
+        try_files $uri $uri/ =404;
+    }
+  }
+
+  # Redirect all requests to be HTTP -> HTTPS
+  server {
+
+    listen 80 ;
+    server_name example.com;            # Change from example.com
+
+    return 301 https://$host$request_uri;
+  }
+
+
+  # The next one is what Lets Encrypt should generate. Do not put this block in yourself
+
+  # Basic HTTPS, with Lets Encrypt
+  server {
+
+    root /var/www/html;
+
+    index index.html index.htm index.nginx-debian.html;
+    server_name example.com;            # Change from example.com
+
+    location ~* ^/hello {
+      include /etc/nginx/proxy_params;
+
+      proxy_pass http://127.0.0.1:3003;
+    }
+
+    location ~* ^/api {
+      include /etc/nginx/proxy_params;
+
+      proxy_pass http://127.0.0.1:3003;
+    }
+
+    location / {
+      try_files $uri $uri/ =404;
+    }
+
+    listen [::]:443 ssl ipv6only=on;
+    listen 443 ssl;
+    ssl_certificate /etc/letsencrypt/live/api.netlabone.net/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/api.netlabone.net/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+
+  }

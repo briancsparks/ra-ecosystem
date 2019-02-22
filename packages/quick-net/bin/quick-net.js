@@ -24,6 +24,7 @@ var   mods = [];
 var   theMod;
 const commandVpcs             = theMod = require('../commands/vpcs');                     mods.push(theMod);
 const commandInstances        = theMod = require('../commands/instances');                mods.push(theMod);
+const setupWebiter            = theMod = require('../commands/setup-webiter');            mods.push(theMod);
 const libDynamoDb             = theMod = require('../lib/db/dynamodb');                   mods.push(theMod);
 const libDescribeVpc          = theMod = require('../lib/ec2/vpc/describe');              mods.push(theMod);
 const libCidr                 = theMod = require('../lib/ec2/cidr');                      mods.push(theMod);
