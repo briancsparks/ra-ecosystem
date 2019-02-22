@@ -2,7 +2,9 @@
 
 eval "$(cli-shezargs)"
 
-sudo apt-get install -y build-essential curl
+if which lsb_release > /dev/null; then
+  sudo apt-get install -y build-essential curl
+fi
 
 mkdir -p ~/zz_packages && cd $_
 curl -sSL 'http://download.redis.io/redis-stable.tar.gz' | tar xvzf -

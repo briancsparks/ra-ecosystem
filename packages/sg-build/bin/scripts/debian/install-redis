@@ -8,8 +8,6 @@ pwd
 cd ~/zz_packages/redis-stable
 pwd
 
-exit 0
-
 sudo make install
 cat redis.conf | \
     sed 's/^bind 127.0.0.1/#bind 127.0.0.1/g' | \

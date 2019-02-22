@@ -27,39 +27,23 @@ exports.execz = execz;
 //  Helper Functions
 //
 
-function execz(a, ...rest) {
-  if (_.isFunction(_.last(rest)))                   { return execz({next:_.last(rest)}, ...[a, ..._.initial(rest)]); }
-  if (sg.isnt(a))                                   { return execz({next:noop}, ...rest); }
-  if (_.isFunction(a))                              { return execz({next:a}, ...rest); }
+function execz(...args_) {
+  var   args      = _.toArray(args_);
 
-  // execz({}, file, command, args)
-  if (rest.length === 3) {
-    const [ b, c, rest2 ] = rest;
-    return execz(a, [...sg.arrayify(b), ...sg.arrayify(c), ...sg.arrayify(rest2) ]);
+  const next      = args.pop() || function(){};
+  var   options   = (sg.isObject(args[0]) ? args.shift() : {});
 
-  } if (rest.length === 2) {
-    // execz({}, file, args)
-    const [ b, rest2 ] = rest;
-    return execz(a, [...sg.arrayify(b), ...sg.arrayify(rest2) ]);
-
-  } if (rest.length === 1) {
-    // execz({}, file)
-    const [ b ] = rest;
-    return execz(a, [...sg.arrayify(b) ]);
-
-  }
-
-  return _execz_(a, ...rest);
+  return _execz_(sg.merge(options, {next}), args);
 }
 
 function _execz_({next,show=true}, args /*file, command, rest*/) {
-
   const cmdline                   = qm.stitch(args);
   const [file, command, ...rest]  = cmdline;
+  const cliArgs                   = _.compact([command, ...rest]);
 
-  ARGV.v(`execz`, {file, command, rest, next: (next === noop ? 'noop' : next) || 'function'});
+  ARGV.v(`execz`, {file, command, rest, show, next: (next === noop ? 'noop' : next) || 'function'});
 
-  const stdout = execa(file, [command, ...rest]).stdout;
+  const stdout = execa(file, cliArgs).stdout;
 
   if (show && !ARGV.quiet) {
     stdout.pipe(process.stdout);

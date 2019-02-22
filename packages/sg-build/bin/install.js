@@ -32,21 +32,24 @@ console.error({a:process.argv, ARGV, __filename});
 //
 const install = function(argv) {
   const type      = argv._.shift();
+
+  // Get the script
+  const scripts   = glob.sync(`scripts/**/install-${type}`, {cwd: __dirname}) || [];
+  const script    = sg.path.join(__dirname, scripts[0]);
+
+  if (script) {
+    return sg.execz({show:true}, script, function(err, stdout) {
+      return;
+    });
+  }
+
+  // Maybe there is a template?
   const templates = glob.sync(`templates/**/install-${type}*.js`, {cwd: __dirname}) || [];
   const template  = templates[0];
 
   if (template) {
     sg.generate({fliename: sg.path.join(__dirname, template), output:'-'});
     return;
-  }
-
-  const scripts   = glob.sync(`scripts/**/install-${type}`, {cwd: __dirname}) || [];
-  const script    = scripts[0];
-
-  if (script) {
-    return sg.execz(script, function(err, stdout) {
-      return;
-    });
   }
 
   // Nothing?

@@ -28,23 +28,40 @@ const ARGV                    = sg.ARGV();
 // -------------------------------------------------------------------------------------
 //  Functions
 //
-const main = function() {
-  const type      = ARGV._.shift();
+const build = function() {
+  const type      = argv._.shift();
+
+  // Get the script
+  const scripts   = glob.sync(`scripts/**/build-${type}`, {cwd: __dirname}) || [];
+  const script    = sg.path.join(__dirname, scripts[0]);
+
+  if (script) {
+    return sg.execz({show:true}, script, function(err, stdout) {
+      return;
+    });
+  }
+
+  // Maybe there is a template?
   const templates = glob.sync(`templates/**/build-${type}*.js`, {cwd: __dirname}) || [];
   const template  = templates[0];
 
-  if (!template) {
-    console.error(`Cannot find ${type}`);
-    process.exit(2);
+  if (template) {
+    sg.generate({fliename: sg.path.join(__dirname, template), output:'-'});
     return;
   }
 
-  // console.log(templates, ARGV, template);
-
-  sg.generate({fliename: sg.path.join(__dirname, template), output:'-'});
+  // Nothing?
+  console.error(`Cannot find ${type}`);
+  process.exit(2);
+  return;
 };
 
-main();
+exports.build   = build;
+
+if (process.argv[1] === __filename || process.argv[1].endsWith('build')) {
+  build(ARGV);
+}
+
 
 // -------------------------------------------------------------------------------------
 //  Helper Functions
