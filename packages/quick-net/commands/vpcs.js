@@ -641,7 +641,7 @@ sgsPlus = [() => ({
     IpProtocol:   'tcp',
     CidrIp:       '10.0.0.0/8',
     FromPort:     6379,
-    ToPort:       6379,
+    ToPort:       6380,
     Description:  'All Redis access'
   },{
     /*GroupId*/

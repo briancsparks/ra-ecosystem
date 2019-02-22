@@ -829,6 +829,32 @@ sg.reduce = function(collection, initial, fn) {
   return _.reduce(collection, fn, initial);
 };
 
+sg.reduceObj = function(obj, initial, fn) {
+  const isObject = sg.isObject(initial);
+
+  return _.reduce(obj, function(m, v, k, ...rest) {
+    const res = fn(m, v, k, ...rest);
+    if (!isObject)          { return res; }
+    if (sg.isObject(res))   { return res; }
+
+    // They just returned, without returning any data... Just means 'unchanged'
+    if (_.isUndefined(res))   { return m; }
+
+    // Key-Value pair(s)
+    if (Array.isArray(res)) {
+      return { ...m, ...sg.reduce(res, {}, function(m1, item) {
+        if (_.isString(item))   { return {[item]:item}; }
+        if (Array.isArray(item) && item.count === 2) {
+          return {[item[0]]: item[1]};
+        }
+        return item;
+      })};
+    }
+
+    return res;
+  }, initial);
+};
+
 /**
  * Restore rest().
  *

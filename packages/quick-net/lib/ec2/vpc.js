@@ -923,6 +923,7 @@ mod.xport({getSubnets: function(argv, context, callback) {
               if (subnetTag.startsWith(subnetName)) {
                 return sg.ap(m, subnet);
               }
+              return m;
             });
           }
           return m0;
