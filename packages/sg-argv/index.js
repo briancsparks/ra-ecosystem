@@ -107,6 +107,14 @@ function ARGV(input = process.argv) {
     return sg.log(msg, one, two, ...args);
   };
 
+  argv.pod = function() {
+    return sg.reduce(argv, {}, (m,v,k) => {
+      if (_.isFunction(v))  { return m; }
+
+      return sg.kv(m, k, v);
+    });
+  };
+
   return argv;
 }
 

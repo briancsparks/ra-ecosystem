@@ -29,12 +29,12 @@ exports.mkFns = function(service, fnames, options1, abort) {
 };
 
 exports.mkInterceptorFn = function(service, fname, options1, abort) {
-  const origFn = service[fname] || noopFn;
+  const origFn = (service[fname] ? (service[fname].bind(service)) : noopFn);
 
   const interceptFn = function(...args_) {
     var   args          = _.toArray(args_);
-    const continuation  = args_.pop();
-    const options_      = args_.pop();
+    const continuation  = args.pop();
+    const options_      = args.pop();
     var   options       = sg.merge({...options1, ...options_});
 
     const callback = function(err, data, ...rest) {
@@ -44,7 +44,7 @@ exports.mkInterceptorFn = function(service, fname, options1, abort) {
 
       // Report normal (ok === true) and errors that are aborted (!ok && options.abort)
       if (options.debug && (ok || (!ok && options.abort))) {
-        sg.elog(`${fname}(45)`, sg.inspect({args, err, data, rest: rest}));
+        sg.elog(`${fname}(45)`, {args, err, data, rest: rest});
       }
 
       if (!ok) {
@@ -53,7 +53,7 @@ exports.mkInterceptorFn = function(service, fname, options1, abort) {
 
         // Report, but leave out the verbose error
         if (options.debug) {
-          sg.elog(`${fname}(17)`, sg.inspect({args, err:(options.verbose ? err : true), data, rest: rest}));
+          sg.elog(`${fname}(17)`, {args, err:(options.verbose ? err : true), data, rest: rest});
         }
       }
 

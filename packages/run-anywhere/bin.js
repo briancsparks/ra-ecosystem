@@ -133,6 +133,103 @@ commands.invoke = function() {
 };
 
 /**
+ *  The workhorse invoke2() function.
+ *
+ *  This is the function that parses the command line, finds, and loads the requested
+ *  script. Then it calls `ra.js` invoking the `invoke2` function.
+ *
+ */
+commands.invoke2 = function() {
+  require('loud-rejection/register');
+  require('exit-on-epipe');
+  const sg    = require('sg-argv');
+  const ARGV  = sg.ARGV();
+
+  const silent    = ARGV._get('silent,s');
+  const debug     = ARGV._get('debug,d');
+  const verbose   = ARGV._get('verbose,v');
+  const machine   = ARGV._get('machine,m');
+  const human     = ARGV._get('human,r');
+
+  if (debug || verbose) { sg.mkInspect({fancy:true}); }
+
+  const [
+    command,
+    moduleFilename,
+    fname
+  ]                       = ARGV._;
+
+  if (!moduleFilename || !fname) {
+    console.error("Must provide module and function names");
+    process.exit(1);
+    return;
+  }
+
+  if (silent) { runAnywhereV2.utils.setQuiet(true); }
+
+  /* otherwise */
+  var mod = raInvokeRequire(moduleFilename);
+  if (!mod) {
+    console.error("module "+moduleFilename+" failed to be required");
+    process.exit(1);
+    return;
+  }
+
+  /* otherwise */
+  // Otherwise, run it
+  return ra.invoke2(ARGV.pod(), mod, fname, function(err, ...rest) {
+    var exitCode = 0;
+
+    // Is there an error?
+    if (err) {
+
+      exitCode = 1;
+
+      // Log it unless silent
+      if (!silent) {
+        console.error(err);
+      }
+    }
+
+    // If we only got an error object, were done
+    if (arguments.length === 1) {
+      process.exit(exitCode);
+      return;
+    }
+
+    // For humans
+    if (human) {
+      sg.debugLog(fname, ...rest);
+      return;
+    }
+
+    // Machine output?
+    if (machine) {
+      _.each(rest, (result) => {
+        if (!_.isString(result)) {
+          process.stdout.write(JSON.stringify(result) + '\n');
+          return;
+        }
+
+        process.stdout.write(result + '\n');
+      });
+
+      return;
+    }
+
+    /* otherwise -- machine-ish */
+    _.each(rest, (result) => {
+      if (!_.isString(result)) {
+        process.stdout.write(JSON.stringify(result, null, 2) + '\n');
+        return;
+      }
+
+      process.stdout.write(result + '\n');
+    });
+  });
+};
+
+/**
  *  The validate() function.
  *
  */
