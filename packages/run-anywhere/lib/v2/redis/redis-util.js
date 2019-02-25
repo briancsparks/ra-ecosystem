@@ -6,17 +6,16 @@ const _                         = require('lodash');
 const utils                     = require('../../utils');
 const sg                        = utils.sg;
 const redisLib                  = require('redis');
-const { registerSanityChecks }  = require('../sanity-checks');
+const wrapped                   = require('../wrapped');
 
 const {
-  getQuiet, raContext, inspect,
+  getQuiet, raContext,
 }                               = utils;
 
 // -------------------------------------------------------------------------------------
 //  Data
 //
 
-var   sanityChecks            = [];
 
 const redisPort               = process.env.redis_port  || process.env.REDIS_PORT || 6379;
 const redisHost               = process.env.redis       || process.env.REDIS;
@@ -36,8 +35,9 @@ const redisHost               = process.env.redis       || process.env.REDIS;
  * This function allows the individual ra-invokable function to do the open/OP/close pattern, but if
  * the containing app has already setup the DB, then the function's open and close are noops.
  *
- * @param {*} context
- * @returns
+ * @param {Object} context  - The run-anywhere context object.
+ *
+ * @returns {Object}        - The Redis object, and the associated close function.
  */
 exports.getRedis = function(context) {
   const quiet           = getQuiet(context || {});
@@ -62,15 +62,10 @@ exports.getRedis = function(context) {
     close
   };
 };
-sanityChecks.push(async function({assert, ...context}) {
-  const { redis, close } = await exports.getRedis(context);
-  close();
 
-  return `redis_close()`;
-});
+exports.redisFns = wrapped.mkFns;
 
 // -------------------------------------------------------------------------------------
 //  Helper functions
 //
 
-registerSanityChecks(module, __filename, sanityChecks);

@@ -28,9 +28,14 @@ sudo chown -R "${the_user_name}":"${the_user_name}" "${the_home_dir}/.config/"
 # ----------------------------------------------------------------------------------------------
 # Update pointers to package repos for packages that are mostly kept outside the official repos
 
-# Add nodesource to our sources
+# Node.js
 curl -sSL "https://deb.nodesource.com/gpgkey/nodesource.gpg.key" | apt-key add -
 echo "deb https://deb.nodesource.com/node_8.x ${osversion} main" | tee /etc/apt/sources.list.d/nodesource.list
+
+# Nginx
+curl -sSL "https://nginx.org/keys/nginx_signing.key" | apt-key add -
+echo "deb https://nginx.org/packages/mainline/ubuntu ${osversion} nginx" | tee -a /etc/apt/sources.list.d/nginx.list
+# sudo apt-get update && sudo apt-get install -y nginx nginx-module-njs
 
 # Docker
 curl -sSL "https://download.docker.com/linux/ubuntu/gpg" | apt-key add -

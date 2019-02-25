@@ -76,7 +76,7 @@ if (sg.startupDone(ARGV, __filename))  { /* return; */ }
   const layerPackageJson  = await getLayerPackageJson(name, Bucket);
 
   skipLayer = skipLayer || deepEqual(layerPackageJson.dependencies, packageDeps) || skipLayer;  /* final skipLayer makes it be undefined, not false */
-  if (!('dependencies' in layerPackageJson)) {
+  if (!('dependencies' in layerPackageJson) || forceLayer) {
     skipLayer = null;
   }
   ARGV.d_if(!skipLayer, `Will create the layer -----`);

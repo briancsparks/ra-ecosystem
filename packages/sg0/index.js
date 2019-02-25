@@ -180,27 +180,26 @@ sg.mkInspect = function(argv) {
   if (argv) {
     if (argv.fancy) {
       inspectorName = 'debug';
-      // sg.inspect = sg.inspect.debug;
       return;
     }
   }
 
   if (sg.modes().prod)  {
-    sg.inspect = sg.inspect.prod;
+    inspectorName = 'prod';
     return;
   }
 
   if (sg.modes().test) {
-    sg.inspect = (sg.modes().debug ? sg.inspect.debug : sg.inspect.ndebug);
+    inspectorName = (sg.modes().debug ? 'debug' : 'ndebug');
     return;
   }
 
   if (sg.modes().debug) {
-    sg.inspect = sg.inspect.debug;
+    inspectorName = 'debug';
     return;
   }
 
-  sg.inspect = sg.inspect.dev;
+  inspectorName = 'dev';
 };
 // sg.inspect.current = null;
 sg.inspect.debug = function(x, colors) {
@@ -269,7 +268,7 @@ sg.dump = function(msg_, level, arg0, ...args) {
  * @param {*} msg
  * @param {*} args
  */
-sg.stdlog = function(msg, arg0, ...args) {
+sg.stdlog = function(...args) {
   console.log(...logParams(...args));
 };
 
@@ -279,7 +278,7 @@ sg.stdlog = function(msg, arg0, ...args) {
  * @param {*} msg
  * @param {*} args
  */
-sg.elog = function(msg, arg0, ...args) {
+sg.elog = function(...args) {
   console.error(...logParams(...args));
 };
 sg.edebugLog = sg.elog;

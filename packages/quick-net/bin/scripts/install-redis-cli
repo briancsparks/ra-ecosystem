@@ -1,0 +1,7 @@
+#!/bin/bash -e
+
+[[ -z $util ]] && echo "need \$util"
+
+scp ${util}:~/zz_packages/redis-stable/src/redis-cli ./
+sudo cp redis-cli /usr/local/bin
+rm redis-cli

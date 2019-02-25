@@ -37,10 +37,11 @@ var   xyzDbs        = {};
  * This function allows the individual ra-invokable function to do the open/CRUD/close pattern, but if
  * the containing app has already setup the DB, then the function's open and close are noops.
  *
- * @param {*} collName the name of the collection
- * @param {*} context  the context from AWS
- * @param {*} dbName   the name of the DB
- * @returns The collection and a close function to call when done.
+ * @param {String} collName - the name of the collection
+ * @param {Object} context  - the context from AWS
+ * @param {String} dbName   - the name of the DB
+ *
+ * @returns {Object}        -  The collection and a close function to call when done.
  */
 const getXyzDb = async function(collName, context, dbName) {
   const quiet           = getQuiet(context || {});
@@ -91,9 +92,10 @@ const getXyzDb = async function(collName, context, dbName) {
  * This is the entry-point fot the getXyzDb() function, which does all the real
  * work.
  *
- * @param {*} dbname
- * @param {*} collname
- * @returns
+ * @param {String} dbname     - the name of the DB.
+ * @param {String} collname   - the name of the collection.
+ *
+ * @returns {Object}          - The DB (collection)
  */
 exports.getGetXyzDb = function(dbname, collname) {
 
@@ -113,10 +115,11 @@ exports.getGetXyzDb = function(dbname, collname) {
 /**
  * Builds a MongoDB Cursor object in an easy way.
  *
- * @param {*} xyzDb
- * @param {*} context
- * @param {*} argvs
- * @returns
+ * @param {Object} xyzDb    - The DB (collection)
+ * @param {Object} context  - The run-anywhere context
+ * @param {Object[]} argvs  - Query arguments
+ *
+ * @returns {Object}        - The cursor object.
  */
 const queryCursor = exports.queryCursor = function(xyzDb, context, ...argvs) {
 
