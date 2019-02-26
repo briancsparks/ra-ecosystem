@@ -31,6 +31,7 @@ const mod                     = ra.modSquad(module, 'datatapRead');
 mod.xport({readData: function(argv, context, callback) {
 
   // ra invoke lib\ec2\.js readData --name=us --from=them --hold=500
+  // ra invoke lib\ec2\.js readData --name=us --from=them --hold=500 --status
 
   const ractx             = context.runAnywhere || {};
   const { rax }           = ractx.datatapRead__readData;
@@ -56,16 +57,28 @@ mod.xport({readData: function(argv, context, callback) {
 
     const holdFor           = argv.holdfor      || argv.hold    || 25;
     const iteration         = argv.iteration    || argv.iter    || 1;
+    const status            = argv.status;
     const name              = argv.name;
     const from              = argv.fromList     || argv.from;
 
     fromList                = sg.arrayify(from);
 
-    const dataFeedName      = `datatap:feed:${name}`;
+    const dataTypeName      = (status ? 'status' : 'feed');
+    const dataFeedName      = `datatap:${dataTypeName}:${name}`;
 
     if (sg.isnt(name))      { return allDone(new Error(`ENONAME`)); }
     if (sg.isnt(from))      { return allDone(new Error(`ENOFROM`)); }
     if (rax.argErrors())    { return rax.abort(); }
+
+    // Build the key list
+    fromList = sg.keys(sg.reduce(sg.arrayify(from), {}, (m, fromName) => {
+      const feedFromKey = `datatap:${dataTypeName}from:${fromName}`;
+      return sg.kv(m, feedFromKey, feedFromKey);
+    }));
+
+    if (status) {
+      fromList.push(`datatap:status`);
+    }
 
     return clearDataForFirstIter();
     function clearDataForFirstIter() {
@@ -94,7 +107,7 @@ mod.xport({readData: function(argv, context, callback) {
         const [ readFeedName, payloadStr ]   = data;
 
         // Add the new data to our result
-        const payload = sg.safeJSONParse(payloadStr) || [];
+        const payload = {from: readFeedName, status:(sg.safeJSONParse(payloadStr) || {})};
         result = [ ...result, ...[payload] ];
 
         // See if there are more data elements to be gotten
@@ -118,8 +131,7 @@ mod.xport({readData: function(argv, context, callback) {
         return setSourcesDone();
       });
 
-      return fromList.forEach(fromName => {
-        const feedFromKey = `datatap:feedfrom:${fromName}`;
+      return fromList.forEach(feedFromKey => {
 
         return SADD(feedFromKey, dataFeedName, rax.opts({}), (err, receipt) => {
           if (!dquiet)  { sg.log(`SADD ${feedFromKey} ${dataFeedName}`, {err, receipt}); }

@@ -150,7 +150,7 @@ mod.xport({upsertInstance: function(argv, context, callback) {
     const DryRun                = rax.arg(argv, 'DryRun,dry-run');
     const envJsonFile           = rax.arg(argv, 'envjson');
     var   userdataOpts          = rax.arg(argv, 'userdata_opts');   // An object
-
+sg.log(`upsertInstance params`, {SecurityGroupIds, SubnetId});
     if (rax.argErrors())    { return rax.abort(); }
 
     if (!BlockDeviceMappings) {
@@ -201,7 +201,7 @@ mod.xport({upsertInstance: function(argv, context, callback) {
 
       if (rax.argErrors({classB}))    { return rax.abort(); }
 
-      return getSubnets({classB, SecurityGroupIds: SecurityGroupIds[0], SubnetId}, {}, function(err, data) {
+      return getSubnets({classB, SecurityGroupIds: SecurityGroupIds, SubnetId}, {}, function(err, data) {
         if (sg.ok(err, data)) {
           SecurityGroupIds  = sg.pluck(data.securityGroups, 'GroupId');
           SubnetId          = (data.subnets.filter(s => s.AvailabilityZone.endsWith(az))[0]   || data.subnets[0] || {}).SubnetId;

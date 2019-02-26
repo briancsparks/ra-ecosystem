@@ -330,7 +330,7 @@ const FuncRa = function(argv, context, callback, origCallback, options_ = {}) {
 
           // Report normal (ok === true) and errors that are aborted (!ok && options.abort)
           if (options.debug && (ok || (!ok && options.abort))) {
-            console.error(`${mod.modname || self.modname || 'modunk'}::${fname}(23)`, sg.inspect({argv, err, data, ...rest}));
+            console.error(`${mod.modname || self.modname || 'modunk'}::${fname}(96)`, sg.inspect({argv, ok, err, data, ...rest}));
           }
 
           // Handle errors -- we normally abort, but the caller can tell us not to
@@ -339,7 +339,7 @@ const FuncRa = function(argv, context, callback, origCallback, options_ = {}) {
 
             // Report, but leave out the verbose error
             if (options.debug) {
-              console.error(`${mod.modname || self.modname || 'modunk'}::${fname}(42)`, sg.inspect({argv, err:(options.verbose ? err : true), data, ...rest}));
+              console.error(`${mod.modname || self.modname || 'modunk'}::${fname}(97)`, sg.inspect({argv, err:(options.verbose ? err : true), data, ...rest}));
             }
           }
 
@@ -353,7 +353,7 @@ const FuncRa = function(argv, context, callback, origCallback, options_ = {}) {
         }
 
         // Invoke the original function
-        if (abort)  { abort.calling(`${mod.modname || self.modname || 'modunk'}::${fname}(21)`, argv); }
+        if (abort)  { abort.calling(`${mod.modname || self.modname || 'modunk'}::${fname}(98)`, argv); }
         return mod[fname](argv, context, callback);
       };
       // ----------------------------- end

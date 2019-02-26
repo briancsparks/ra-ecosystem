@@ -40,11 +40,16 @@ exports.mkInterceptorFn = function(service, fname, options1, abort) {
     const callback = function(err, data, ...rest) {
       var   ok = false;
       if (arguments.length === 0)     { ok = true; }
-      if (arguments.length > 1)       { ok = sg.ok(err, data, ...rest); }
+
+      if (!options.emptyOk) {
+        if (arguments.length > 1)       { ok = sg.ok(err, data, ...rest); }
+      } else {
+        if (arguments.length > 1)       { ok = sg.ok(err); }
+      }
 
       // Report normal (ok === true) and errors that are aborted (!ok && options.abort)
       if (options.debug && (ok || (!ok && options.abort))) {
-        sg.elog(`${fname}(45)`, {args, err, data, rest: rest});
+        sg.elog(`${fname}(45)`, {args, ok, err, data, rest: rest});
       }
 
       if (!ok) {

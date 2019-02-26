@@ -56,7 +56,7 @@ add-apt-repository -y ppa:certbot/certbot
 
 # Add nodesource to our sources
 APT_PACKAGES="${APT_PACKAGES} nodejs"
-NODE_UTILS="${NODE_UTILS} pm2 run-anywhere cli-shezargs"
+NODE_UTILS="${NODE_UTILS} pm2 run-anywhere cli-shezargs quick-net"
 echo 'NODE_ENV="production"' | tee -a /etc/environment
 
 # Add docker

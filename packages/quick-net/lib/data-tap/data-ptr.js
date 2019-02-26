@@ -12,6 +12,7 @@ const ra                      = require('run-anywhere').v2;
 const sg                      = ra.get3rdPartyLib('sg-flow');
 const { _ }                   = sg;
 const libFanout               = require('./fanout');
+const redisUtils              = ra.redisUtils;
 const { getDQuiet }           = ra.utils;
 
 const mod                     = ra.modSquad(module, 'datatapDataPtr');
@@ -24,33 +25,34 @@ mod.xport({pushDataPtr: function(argv, context, callback) {
 
   // ra invoke lib\ec2\.js pushDataPtr --name= --data= --loc=
 
-  const ractx     = context.runAnywhere || {};
-  const { rax }   = ractx.datatapDataPtr__pushDataPtr;
-  const dquiet    = getDQuiet(context);
+  const ractx                 = context.runAnywhere || {};
+  const { rax }               = ractx.datatapDataPtr__pushDataPtr;
+  const { redis, close }      = redisUtils.getRedis(context);
+  const dquiet                = getDQuiet(context);
 
   return rax.iwrap(function(abort) {
 
     const { pushData } = rax.loads(libFanout, 'pushData', rax.opts({}), abort);
 
     const name              = rax.arg(argv, 'name', {required:true});
-    var   data              = rax.arg(argv, 'data', {required:true});
+    var   wholeData         = rax.arg(argv, 'wholeData,data', {required:true});
     var   location          = rax.arg(argv, 'location,loc', {required:true});
 
     if (rax.argErrors({}))    { return rax.abort(); }
 
-    if (data === 'magic') {
-      data = magicData(context);
+    if (wholeData === 'magic') {
+      wholeData = magicData(context);
     }
 
     if (location === 'magic') {
       location = magicLocation(context);
     }
 
-    // TODO: make summary of data
-    // sg.log(`aff`, {ps: payloadStats(data)});
-
-    return pushData({name, data:{...location, ...payloadStats(data)}}, rax.opts({}), (err, receipt) => {
+    const data = {...location, ...payloadStats(data)};
+    return pushData({name, data}, rax.opts({}), (err, receipt) => {
       if (!dquiet)  { sg.log(`pushData ${name}`, {data, err, receipt}); }
+
+      close();
       return callback(err, receipt);
     });
   });

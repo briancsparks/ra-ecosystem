@@ -38,24 +38,30 @@ mod.xport({pushData: function(argv, context, callback) {
 
   const localAbort = function(err, msg) {
     if (msg) { sg.logError(err, msg, {}, {EFAIL:`pushData`}); }
+
+    sg.elog(`fanout::abort`, {err});
     return allDone(err);
   };
 
   return rax.iwrap(localAbort, function(abort) {
 
-    const { smembers,lpush } = redisUtils.redisFns(redis, 'smembers,lpush', rax.opts({}), abort);
+    const { smembers }    = redisUtils.redisFns(redis, 'smembers', rax.opts({emptyOk:true}), abort);
+    const { lpush }       = redisUtils.redisFns(redis, 'lpush', rax.opts({}), abort);
 
-    var   signalName        = rax.arg(argv, 'signalName,name', {required:true});
+    const status            = false;
+    const dataTypeName      = (status ? 'status' : 'feed');
+    var   signalName        = rax.arg(argv, 'signalName,name');
+    const key               = rax.arg(argv, 'key')                        || (signalName && `datatap:${dataTypeName}from:${signalName}`);
     const data              = rax.arg(argv, 'data', {required:true});
 
-    if (rax.argErrors())    { return rax.abort(); }
+    if (rax.argErrors({key}))    { return rax.abort(); }
 
-    signalName = `datatap:feedfrom:${signalName}`;
-    return smembers(signalName, rax.opts({}), (err, destKeys) => {
+    var   result = [];
+    return smembers(key, rax.opts({}), (err, destKeys) => {
 
       if (err)                        { return allDone(err); }
-      if (!destKeys)                  { return allDone(); }
-      if (destKeys.length === 0)      { return allDone(); }
+      if (!destKeys)                  { return allDone(null, result); }
+      if (destKeys.length === 0)      { return allDone(null, result); }
 
       const done    = _.after(destKeys.length, allDone);
       const dataStr = (_.isString(data) ? data : JSON.stringify(data));
@@ -63,7 +69,8 @@ mod.xport({pushData: function(argv, context, callback) {
       return destKeys.forEach(destKey => {
         return lpush(destKey, dataStr, rax.opts({}), function(err, redisReceipt) {
           if (!dquiet)  { sg.log(`lpush ${destKey}`, {err, redisReceipt}); }
-          return done(err, {lpush:redisReceipt});
+          result.push({[destKey]:{redisReceipt}});
+          return done(err, result);
         });
       });
 
