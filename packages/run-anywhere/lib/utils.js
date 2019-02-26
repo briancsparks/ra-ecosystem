@@ -33,7 +33,7 @@ exports.raContext = function(context = {}) {
 
 const isSanityCheck = exports.isSanityCheck = function(context) {
   return context && context.sanityCheck === 'sanityCheck';
-}
+};
 
 exports.pad = function(s_, len, fill) {
   var s = ''+s_;
@@ -71,7 +71,7 @@ exports.getQuiet = function(context) {
 
   if (!context) {
 
-    if (g_quiet != null) {
+    if (g_quiet !== null) {
       return g_quiet;
     }
 
@@ -106,12 +106,12 @@ exports.getQuiet = function(context) {
   }
 
   return false;
-}
+};
 
 exports.getDQuiet = function(context) {
 
   // TODO: putttt back
-  return false;
+  // return false;
 
   if (g_dquiet !== null) {
     return g_dquiet;

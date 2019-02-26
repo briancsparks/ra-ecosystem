@@ -24,7 +24,11 @@ var   mods = [];
 var   theMod;
 const commandVpcs             = theMod = require('../commands/vpcs');                     mods.push(theMod);
 const commandInstances        = theMod = require('../commands/instances');                mods.push(theMod);
-const setupWebiter            = theMod = require('../commands/setup-webiter');            mods.push(theMod);
+const setupWebtier            = theMod = require('../commands/setup-webtier');            mods.push(theMod);
+const dataPtr                 = theMod = require('../lib/data-tap/data-ptr');             mods.push(theMod);
+const fanout                  = theMod = require('../lib/data-tap/fanout');               mods.push(theMod);
+const read                    = theMod = require('../lib/data-tap/read');                 mods.push(theMod);
+const status                  = theMod = require('../lib/data-tap/status');               mods.push(theMod);
 const libDynamoDb             = theMod = require('../lib/db/dynamodb');                   mods.push(theMod);
 const libDescribeVpc          = theMod = require('../lib/ec2/vpc/describe');              mods.push(theMod);
 const libCidr                 = theMod = require('../lib/ec2/cidr');                      mods.push(theMod);
@@ -106,7 +110,7 @@ function quickNet() {
   }
 
   // Otherwise, run it
-  return ra0.invoke2(ARGV, mod, fname, function(err, ...rest) {
+  return ra0.invoke2(ARGV.pod(), mod, fname, function(err, ...rest) {
     var exitCode = 0;
 
     // Is there an error?

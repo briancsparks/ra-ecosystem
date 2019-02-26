@@ -20,13 +20,17 @@ var   mods = {};
 
 mods.commandVpcs             = require('./commands/vpcs');
 mods.commandInstances        = require('./commands/instances');
-mods.setupWebiter            = require('./commands/setup-webtier');
+mods.setupWebtier            = require('./commands/setup-webtier');
 mods.libDynamoDb             = require('./lib/db/dynamodb');
 mods.libDescribeVpc          = require('./lib/ec2/vpc/describe');
 mods.libCidr                 = require('./lib/ec2/cidr');
 mods.libEc2                  = require('./lib/ec2/ec2');
 mods.libTags                 = require('./lib/ec2/tags');
 mods.libVpc                  = require('./lib/ec2/vpc');
+mods.dataPtr                 = require('./lib/data-tap/data-ptr');
+mods.fanout                  = require('./lib/data-tap/fanout');
+mods.read                    = require('./lib/data-tap/read');
+mods.status                  = require('./lib/data-tap/status');
 mods.libAws                  = require('./lib/aws');
 
 
