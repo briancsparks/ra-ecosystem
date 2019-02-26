@@ -194,7 +194,7 @@ function argvGet(argv, names, options) {
   return sg.reduce(names.split(','), null, (m, name) => {
     if (m)  { return m; }
 
-    if (name in argv) {
+    if (name in argv && !(typeof argv[name] === 'function')) {
       // return sg.kv(m, name, argv[name]);
       return argv[name];
     }

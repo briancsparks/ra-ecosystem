@@ -50,6 +50,8 @@ lib.getMod = function(name) {
   }
 };
 
+lib.mods = mods;
+
 
 
 expo(lib);

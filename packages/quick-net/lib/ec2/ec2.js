@@ -150,7 +150,7 @@ mod.xport({upsertInstance: function(argv, context, callback) {
     const DryRun                = rax.arg(argv, 'DryRun,dry-run');
     const envJsonFile           = rax.arg(argv, 'envjson');
     var   userdataOpts          = rax.arg(argv, 'userdata_opts');   // An object
-sg.log(`upsertInstance params`, {SecurityGroupIds, SubnetId});
+
     if (rax.argErrors())    { return rax.abort(); }
 
     if (!BlockDeviceMappings) {

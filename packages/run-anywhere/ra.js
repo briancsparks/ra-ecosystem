@@ -32,6 +32,25 @@ var   libRa                     = {v2:runAnywhereV2};
 //  Functions
 //
 
+
+libRa.v2.invoke = exports.invoke = function(...args) {     /* params_, spec_, fn, callback */
+  if (typeof args[1] !== 'string' && typeof args[2] === 'function')     { return exports._invoke_(...args); }
+
+  /* otherwise */
+  const [ pkgMod, fname, argv, callback ] = args;
+  const mod = sg.reduce(pkgMod.mods || [], null, (m, mod) => {
+    const asyncFnNames = Object.keys(mod.async || {});
+    if (asyncFnNames && asyncFnNames.length > 0 && (fname in mod.async)) {
+      return mod;
+    }
+    return m;
+  });
+
+  return exports.invoke2(argv, mod, fname, function(err, ...rest) {
+    return callback(err, ...rest);
+  });
+};
+
 /**
  *  Invoke a single function that adheres to the run-anywhere calling convention.
  *
@@ -41,7 +60,7 @@ var   libRa                     = {v2:runAnywhereV2};
  *
  *      fn(params.params, params.context, callback, spec.raEnv, callback);
  */
-exports.invoke = function(params_, spec_, fn, callback) {
+exports._invoke_ = function(params_, spec_, fn, callback) {
   var   spec    = spec_   || {};
   var   params  = params_ || {};
   var   args    = [];
