@@ -67,7 +67,10 @@ mod.xport({readData: function(argv, context, callback) {
     const dataFeedName      = `datatap:${dataTypeName}:${name}`;
 
     if (sg.isnt(name))      { return allDone(new Error(`ENONAME`)); }
-    if (sg.isnt(from))      { return allDone(new Error(`ENOFROM`)); }
+    if (sg.isnt(from)) {
+      if (!status)          { return allDone(new Error(`ENOFROM`)); }
+    }
+
     if (rax.argErrors())    { return rax.abort(); }
 
     // Build the key list

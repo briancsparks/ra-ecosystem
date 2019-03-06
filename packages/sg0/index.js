@@ -1020,7 +1020,10 @@ sg.jsonify = function(x) {
 /**
  * Make sure x is an Array.
  *
+ * @param {*} x                       - The thing to arrayify.
+ * @param {Boolean} skipSplitStrings  - Should not split strings
  *
+ * @returns {Array}                   - The arrayified x.
  */
 sg.arrayify = function(x, skipSplitStrings) {
   if (Array.isArray(x)) {
@@ -1029,7 +1032,7 @@ sg.arrayify = function(x, skipSplitStrings) {
   if (!skipSplitStrings && typeof x === 'string') {
     return x.split(',');
   }
-  return [x];
+  return _.compact([x]);
 };
 
 
