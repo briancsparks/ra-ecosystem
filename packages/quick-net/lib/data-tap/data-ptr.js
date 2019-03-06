@@ -23,7 +23,9 @@ const mod                     = ra.modSquad(module, 'datatapDataPtr');
 
 mod.xport({pushDataPtr: function(argv, context, callback) {
 
-  // ra invoke lib\ec2\.js pushDataPtr --name= --data= --loc=
+  /*
+    quick-net pushDataPtr --name=them --data=magic --loc=magic
+  */
 
   const ractx                 = context.runAnywhere || {};
   const { rax }               = ractx.datatapDataPtr__pushDataPtr;
@@ -48,7 +50,7 @@ mod.xport({pushDataPtr: function(argv, context, callback) {
       location = magicLocation(context);
     }
 
-    const data = {...location, ...payloadStats(data)};
+    const data = {...location, ...payloadStats(wholeData)};
     return pushData({name, data}, rax.opts({}), (err, receipt) => {
       if (!dquiet)  { sg.log(`pushData ${name}`, {data, err, receipt}); }
 

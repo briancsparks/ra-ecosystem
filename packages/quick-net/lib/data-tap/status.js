@@ -30,7 +30,9 @@ const mod                     = ra.modSquad(module, 'datatapStatus');
 
 mod.xport({pushStatus: function(argv, context, callback) {
 
-  // ra invoke lib\ec2\.js pushStatus --name=them --data='{\"msg\":\"my updated status\"}'
+  /*
+    quick-net pushStatus --name=them --data='{\"msg\":\"myUpdatedStatus\"}'
+  */
 
   const ractx               = context.runAnywhere || {};
   const { rax }             = ractx.datatapStatus__pushStatus;

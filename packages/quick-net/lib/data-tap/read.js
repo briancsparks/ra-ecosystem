@@ -30,8 +30,11 @@ const mod                     = ra.modSquad(module, 'datatapRead');
 
 mod.xport({readData: function(argv, context, callback) {
 
-  // ra invoke lib\ec2\.js readData --name=us --from=them --hold=500
-  // ra invoke lib\ec2\.js readData --name=us --from=them --hold=500 --status
+  /*
+    quick-net readData --name=us --from=them --hold=500
+    quick-net readData --name=us --from=them --hold=500 --status
+    quick-net readData --name=us --hold=500 --status
+  */
 
   const ractx             = context.runAnywhere || {};
   const { rax }           = ractx.datatapRead__readData;
@@ -110,7 +113,7 @@ mod.xport({readData: function(argv, context, callback) {
         const [ readFeedName, payloadStr ]   = data;
 
         // Add the new data to our result
-        const payload = {from: readFeedName, status:(sg.safeJSONParse(payloadStr) || {})};
+        const payload = {from: readFeedName, [dataTypeName]:(sg.safeJSONParse(payloadStr) || {})};
         result = [ ...result, ...[payload] ];
 
         // See if there are more data elements to be gotten
@@ -140,8 +143,8 @@ mod.xport({readData: function(argv, context, callback) {
           if (!dquiet)  { sg.log(`SADD ${feedFromKey} ${dataFeedName}`, {err, receipt}); }
 
           if (!err) {
-            EXPIRE(feedFromKey, 120, rax.opts({}), (err, receipt) => {
-              if (!dquiet)  { sg.log(`EXPIRE ${feedFromKey} 120`, {err, receipt}); }
+            EXPIRE(feedFromKey, holdFor, rax.opts({}), (err, receipt) => {
+              if (!dquiet)  { sg.log(`EXPIRE ${feedFromKey} ${holdFor}`, {err, receipt}); }
             });
           }
 

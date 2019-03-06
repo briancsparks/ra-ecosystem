@@ -43,32 +43,40 @@ var   skipPush                = ARGV._get('skip-push')    || ARGV._get('dry-run'
 var   dryRun                  = ARGV._get('dry-run');
 var   stage                   = ARGV._get('stage')        || (ARGV._get('prod') ? 'prod' : 'dev');
 
-if (sg.startupDone(ARGV, __filename))  { /* return; */ }
+if (sg.startupDone(ARGV, __filename))  { return; }
 
 (async function() {
   var   AWS_PROFILE;
 
+  // ------------------------------------------------------------------------------------
+  // ----- Prereqs -----
+
   var   packageDir    = sg.path.join(process.cwd(), ARGV._[0] || '.');
 
   // We need the dir for package.json...
-  if (!test('-f', sg.path.join(packageDir, 'package.json')))  { return sg.die(`Cannot find package.json at ${packageDir}`); }
+  if (!test('-f', sg.path.join(packageDir, 'package.json')))            { return sg.die(`Cannot find package.json at ${packageDir}`); }               /* || die */
 
   // ...and a --name
   var   name = ARGV._get('name,n')    ||
                sg.from(packageDir, 'package.json', 'config.quickNet.lambdaName') ||
                sg.from(packageDir, 'quick-net.json', 'lambdaName');
 
-  if (!name)  { return sg.die(`Must provide the name of the lambda function as --name=`); }
-  if (!stage) { return sg.die(`Must provide the stage name (like 'dev' or 'prod') as --name=`); }
+  if (!name)                          { return sg.die(`Must provide the name of the lambda function as --name=`); }                                   /* || die */
+  if (!stage)                         { return sg.die(`Must provide the stage name (like 'dev' or 'prod') as --name=`); }                             /* || die */
 
   // ...and the bucket
   var   Bucket = ARGV._get('Bucket,bucket') || sg.from([packageDir, '_config', stage, 'env.json'], "DeployBucket");
 
-  if (!Bucket) { return sg.die(`Cannot find the deploy bucket name (should be in ${sg.path.join(packageDir, '_config', stage, 'env.json')})`); }
+  if (!Bucket) { return sg.die(`Cannot find the deploy bucket name (should be in ${sg.path.join(packageDir, '_config', stage, 'env.json')})`); }      /* || die */
 
   if (stage !== 'dev') {
     AWS_PROFILE=`quicknet${stage}`;
   }
+
+
+  // ===================================================================================
+  // We are go!
+  // ===================================================================================
 
   // ------------------------------------------------------------------------------------
   // ----- Have the dependencies changed since we last pushed the underlying layer? -----
@@ -182,6 +190,18 @@ function earlierThan(a_, b_) {
 }
 
 async function getLayerPackageJson(name, Bucket) {
+  const result = await _getLayerPackageJson_(name, Bucket);
+
+  if (sg.isnt(result)) {
+    ARGV.w(`Did not get package.json for the layer in  getLayerPackageJson`);
+  // } else {
+  //   ARGV.v(`Got layer package.json`, result);
+  }
+
+  return result;
+}
+
+async function _getLayerPackageJson_(name, Bucket) {
   const layerName         = `layer-for-${name}`;
   const Key               = `quick-net/lambda-layers/${layerName}/package.json`;
 
@@ -193,7 +213,7 @@ async function getLayerPackageJson(name, Bucket) {
     return sg.safeJSONParse(s3Object.Body.toString());
   } catch(error) {}
 
-  return {};
+  return;
 }
 
 

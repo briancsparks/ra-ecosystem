@@ -29,7 +29,9 @@ const mod                     = ra.modSquad(module, 'datatapFanout');
 
 mod.xport({pushData: function(argv, context, callback) {
 
-  // ra invoke lib\ec2\.js pushData --name=them --data='{\"a\":42}'
+  /*
+    quick-net pushData --name=them --data='{\"a\":42}'
+  */
 
   const ractx             = context.runAnywhere || {};
   const { rax }           = ractx.datatapFanout__pushData;
