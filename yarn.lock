@@ -2575,6 +2575,41 @@ ee-first@1.1.1:
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/ee-first/-/ee-first-1.1.1.tgz#590c61156b0ae2f4f0255732a158b266bc56b21d"
 
+emailjs-addressparser@^2.0.2:
+  version "2.0.2"
+  resolved "https://registry.yarnpkg.com/emailjs-addressparser/-/emailjs-addressparser-2.0.2.tgz#fa8e6ff989667da8ae41d7316a7dfe6abe3c9d51"
+  integrity sha512-E6ztFf1ePtZEwqfN3aWsvZNcpBeDqgJbVL4D32dckHkcwdhJ1bhlE4MLvHBf/IoXQmJBgkKlwGP5/5l11EE5OQ==
+
+emailjs-base64@^1.1.4:
+  version "1.1.4"
+  resolved "https://registry.yarnpkg.com/emailjs-base64/-/emailjs-base64-1.1.4.tgz#392fa38cb6aa35dccd3af3637ffc14c1c7ce9612"
+  integrity sha512-4h0xp1jgVTnIQBHxSJWXWanNnmuc5o+k4aHEpcLXSToN8asjB5qbXAexs7+PEsUKcEyBteNYsSvXUndYT2CGGA==
+
+emailjs-mime-builder@^2.0.5:
+  version "2.0.5"
+  resolved "https://registry.yarnpkg.com/emailjs-mime-builder/-/emailjs-mime-builder-2.0.5.tgz#fedd7c7fd273accdd7033dc649f335c3eb2188f6"
+  integrity sha512-fkaUn6IA4onX3SmVpqvVTlkdrusM9lq+xnrA24euyMUga2B44Ue0ftE48aSNveEWPgGLtHfSd04lGWhT2/AOpw==
+  dependencies:
+    emailjs-addressparser "^2.0.2"
+    emailjs-mime-codec "^2.0.5"
+    emailjs-mime-types "^2.0.0"
+    punycode "1.4.1"
+    ramda "^0.25.0"
+
+emailjs-mime-codec@^2.0.5:
+  version "2.0.8"
+  resolved "https://registry.yarnpkg.com/emailjs-mime-codec/-/emailjs-mime-codec-2.0.8.tgz#d5abc191902c560ee56359e0d1d9b090471f3a3f"
+  integrity sha512-Upnk1zSj6wVrKRBdfc0di2eyjyTOatTs8QlZZlBedfGBWalZ6IlEaPbmoCL5Qt4VVTwLp7buYcw0+pu9sB744g==
+  dependencies:
+    emailjs-base64 "^1.1.4"
+    ramda "^0.25.0"
+    text-encoding "^0.6.4"
+
+emailjs-mime-types@^2.0.0:
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/emailjs-mime-types/-/emailjs-mime-types-2.0.0.tgz#384fdd6a04634119ffce09f2a954508786ee42f4"
+  integrity sha512-PzfzGnsH6qLhotKwup7YCwdD3u2CJDMtLui9ZRcqHj2NQGgIRSRACFg29SnS0UHL03BjU3+C3I24dfK6vzpz3g==
+
 emittery@^0.4.1:
   version "0.4.1"
   resolved "https://registry.yarnpkg.com/emittery/-/emittery-0.4.1.tgz#abe9d3297389ba424ac87e53d1c701962ce7433d"
@@ -3864,6 +3899,14 @@ js-tokens@^3.0.2:
 js-yaml@^3.10.0, js-yaml@^3.9.0:
   version "3.12.1"
   resolved "https://registry.yarnpkg.com/js-yaml/-/js-yaml-3.12.1.tgz#295c8632a18a23e054cf5c9d3cecafe678167600"
+  dependencies:
+    argparse "^1.0.7"
+    esprima "^4.0.0"
+
+js-yaml@^3.12.2:
+  version "3.12.2"
+  resolved "https://registry.yarnpkg.com/js-yaml/-/js-yaml-3.12.2.tgz#ef1d067c5a9d9cb65bd72f285b5d8105c77f14fc"
+  integrity sha512-QHn/Lh/7HhZ/Twc7vJYQTkjuCa0kaCcDcjK5Zlk2rvnUpy7DxMJ23+Jc2dcyvltwQVg1nygAVlB2oRDFHoRS5Q==
   dependencies:
     argparse "^1.0.7"
     esprima "^4.0.0"
@@ -5279,7 +5322,7 @@ punycode@1.3.2:
   version "1.3.2"
   resolved "https://registry.yarnpkg.com/punycode/-/punycode-1.3.2.tgz#9653a036fb7c1ee42342f2325cceefea3926c48d"
 
-punycode@^1.4.1:
+punycode@1.4.1, punycode@^1.4.1:
   version "1.4.1"
   resolved "https://registry.yarnpkg.com/punycode/-/punycode-1.4.1.tgz#c0d5a63b2718800ad8e1eb0fa5269c84dd41845e"
 
@@ -5306,6 +5349,11 @@ querystring@0.2.0:
 quick-lru@^1.0.0:
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/quick-lru/-/quick-lru-1.1.0.tgz#4360b17c61136ad38078397ff11416e186dcfbb8"
+
+ramda@^0.25.0:
+  version "0.25.0"
+  resolved "https://registry.yarnpkg.com/ramda/-/ramda-0.25.0.tgz#8fdf68231cffa90bc2f9460390a0cb74a29b29a9"
+  integrity sha512-GXpfrYVPwx3K7RQ6aYT8KPS8XViSXUVJT1ONhoKPE9VAleW42YE+U+8VEyGWt41EnEQW7gwecYJriTI0pKoecQ==
 
 randomatic@^3.0.0:
   version "3.1.1"
@@ -6283,6 +6331,11 @@ term-size@^1.2.0:
   resolved "https://registry.yarnpkg.com/term-size/-/term-size-1.2.0.tgz#458b83887f288fc56d6fffbfad262e26638efa69"
   dependencies:
     execa "^0.7.0"
+
+text-encoding@^0.6.4:
+  version "0.6.4"
+  resolved "https://registry.yarnpkg.com/text-encoding/-/text-encoding-0.6.4.tgz#e399a982257a276dae428bb92845cb71bdc26d19"
+  integrity sha1-45mpgiV6J22uQou5KEXLcb3CbRk=
 
 text-extensions@^1.0.0:
   version "1.9.0"
