@@ -143,7 +143,7 @@ mod.xport({upsertInstance: function(argv, context, callback) {
     const uniqueName            = rax.arg(argv, 'uniqueName,unique', {required: sg.modes().production});
     var   ImageId               = rax.arg(argv, 'ImageId,image');
     var   osVersion             = rax.arg(argv, 'osVersion,os-version');
-    const InstanceType          = rax.arg(argv, 'InstanceType,type', {required:true});
+    const InstanceType          = rax.arg(argv, 'InstanceType,instanceType,instance', {required:true});
     const classB                = rax.arg(argv, 'classB,b');
     var   az                    = rax.arg(argv, 'AvailabilityZone,az');
     const KeyName               = rax.arg(argv, 'KeyName,key', {required:true});

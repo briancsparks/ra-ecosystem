@@ -9,8 +9,8 @@ const superb                  = require('superb');
 
 const mod                     = ra.modSquad(module);
 
-const ec2 = new AWS.EC2({region: 'us-east-1', ...awsDefs.options});
-
+const config                  = new AWS.Config({paramValidation:false, region:'us-east-1', ...awsDefs.options});
+const ec2                     = new AWS.EC2(config);
 
 mod.xport({tag: function(argv, context, callback) {
 

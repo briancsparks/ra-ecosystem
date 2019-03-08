@@ -9,6 +9,7 @@ const _                         = require('lodash');
 var   utils                     = require('./utils');
 const sg                        = utils.sg;
 const libExpress                = require('./express');
+const libMakeCommand            = require('./v2/make-command');
 const libModSquad               = require('./v2/mod-squad');
 const lambdaHandler             = require('./v2/lambda-handler');
 const expressHost               = require('./v2/express-host');
@@ -29,6 +30,7 @@ var   sanityChecks  = [];
 //  Functions
 //
 
+utils.command                 = libMakeCommand.command;
 utils.modSquad                = libModSquad.modSquad;
 utils.load                    = libModSquad.load;
 utils.loads                   = libModSquad.loads;
@@ -44,6 +46,7 @@ _.each(lambdaHandler, function(v,k) {
 
 module.exports.utils                  = utils;
 module.exports.sg                     = utils.sg;
+module.exports.command                = libMakeCommand.command;
 module.exports.modSquad               = libModSquad.modSquad;
 module.exports.load                   = libModSquad.load;
 module.exports.loads                  = libModSquad.loads;

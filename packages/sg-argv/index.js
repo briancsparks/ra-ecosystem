@@ -73,6 +73,14 @@ function ARGV(input = process.argv) {
   }
 
   // Augment
+  argv._plus = function(more) {
+    _.each(more, (v,k) => {
+      argv[k] = v;
+    });
+
+    return argv;
+  };
+
   argv._get = function(...args) {
     return argvGet(argv, ...args);
   };

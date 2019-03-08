@@ -8,10 +8,13 @@ const awsDefs                 = require('./aws-defs');
 
 const mod                     = ra.modSquad(module);
 
-const ec2 = new AWS.EC2({region: 'us-east-1', ...awsDefs.options});
+const config_                 = {paramValidation:false, region:'us-east-1', ...awsDefs.options};
+const config                  = new AWS.Config(config_);
+const ec2                     = new AWS.EC2(config);
 
 const awsService = function(name, options) {
-  const service = new AWS[name](sg.merge(awsDefs.options, options));
+  const config  = new AWS.Config(sg.merge(config_, options));
+  const service = new AWS[name](config);
 
   return service;
 };

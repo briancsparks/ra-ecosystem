@@ -215,7 +215,7 @@ sg.inspect.dev = function(x, colors) {
   return util.inspect(x, {depth:null, colors: colors || sg.modes().debug});
 };
 
-const logParams = function(msg, arg0, ...args) {
+const logParams = sg.logParams = function(msg, arg0, ...args) {
   var logged = [msg];
 
   if (!sg.isnt(arg0)) {

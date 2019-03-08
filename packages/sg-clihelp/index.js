@@ -89,13 +89,15 @@ function grepLines(regex, filename) {
 
 function startupDone(ARGV, modfilename, failed, msg) {
   if (ARGV.help) {
-    grepLines(/^#==(.*)/, modfilename);
+    if (modfilename)    { grepLines(/^#==(.*)/, modfilename); }
+
     process.exit(0);
     return true;
   }
 
   if (failed) {
-    console.error(msg);
+    if (msg)                    { console.error(msg); }
+
     process.exit(113);
     return true;
   }

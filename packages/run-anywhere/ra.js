@@ -98,7 +98,7 @@ exports._invoke_ = function(params_, spec_, fn, callback) {
  *      fn(argv, context, callback);
  *
  */
-libRa.v2.invoke2 = exports.invoke2 = function(argv, mod, fname, callback) {
+libRa.v2.invoke2 = exports.invoke2 = function(argv, mod, fname, callback, abort_) {
 
   // Get args
   const debug   = argv.debug;
@@ -114,10 +114,10 @@ libRa.v2.invoke2 = exports.invoke2 = function(argv, mod, fname, callback) {
   const init  = ROOT.xport({root: function(argv, context, callback) {
 
     const ractx     = context.runAnywhere || {};
-    const { fra }   = ractx.ROOT__root;
+    const { rax }   = ractx.ROOT__root;
 
-    return fra.iwrap(function(abort) {
-      const fns = fra.loads(mod, fname, sg0.merge({debug, verbose}), abort);
+    return rax.iwrap(abort_, function(abort) {
+      const fns = rax.loads(mod, fname, sg0.merge({debug, verbose}), abort);
       const fn  = fns[fname];
 
       return fn(argv, context, callback);

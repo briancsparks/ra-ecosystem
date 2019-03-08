@@ -33,7 +33,8 @@ const deepEqual               = require('deep-equal');
 const { test }                = sg.sh;
 const { execz, execa }        = require('./quick-lambda/utils');
 
-const s3                      = new AWS.S3({region:'us-east-1'});
+const config                  = new AWS.Config({paramValidation:false, region:'us-east-1'});
+const s3                      = new AWS.S3(config);
 const ARGV                    = sg.ARGV();
 
 var   claudiaDeploy           = ARGV._get('claudia-deploy,claudia');
