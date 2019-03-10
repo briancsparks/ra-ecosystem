@@ -22,7 +22,8 @@ var loadedModules             = {};
 
 const registerModule = function(mod, name) {
   if (loadedModules[name]) {
-    name += sg.numKeys(loadedModules);
+    loadedModules[`${name}_${sg.numKeys(loadedModules)}`] = loadedModules[name];
+    // name += sg.numKeys(loadedModules);
   }
 
   loadedModules[name] = mod;
@@ -41,7 +42,7 @@ const ModSquad = function(otherModule, otherModuleName = 'mod') {
   self.xport = function(fobj) {
     var previousFn;
 
-    _.each(fobj, (fn_, fname) => {
+    _.each(fobj, (fn_, fnName) => {
       var fn            = fn_;
 
       // Wrap `fn` in a safety function that scrubs debug info out of the result
@@ -50,7 +51,7 @@ const ModSquad = function(otherModule, otherModuleName = 'mod') {
         // This is the function that will be exported and called by those that require() the mod. ----------------------------------------
         fn = function(argv, context, callback_) {
 
-          var   ractx             = upsertRaContextForX(context, otherModuleName, fname);
+          var   ractx             = upsertRaContextForX(context, otherModuleName, fnName);
 
           // This will be called when the called function finishes. -----
           const callback = function(err, data, ...rest) {
@@ -65,7 +66,7 @@ const ModSquad = function(otherModule, otherModuleName = 'mod') {
           // -----
 
           // Attach a special run-anywhere object to the context.
-          setRax(context, new FuncRa(argv, context, callback, callback_, {otherModule: otherModule.exports, otherModuleName, fname}));
+          setRax(context, new FuncRa(argv, context, callback, callback_, {otherModule: otherModule.exports, otherModuleName, fnName}));
 
           // Call the modules function (the original function.)
           return fn_(argv, context, callback);
@@ -74,8 +75,8 @@ const ModSquad = function(otherModule, otherModuleName = 'mod') {
       }
 
       // Export the modules function (the original function.)
-      otherModule.exports[fname]        = previousFn = (fn || previousFn);
-      otherModule.exports.async[fname]  = promisify(fn || previousFn);
+      otherModule.exports[fnName]        = previousFn = (fn || previousFn);
+      otherModule.exports.async[fnName]  = promisify(fn || previousFn);
     });
 
     return previousFn;
@@ -97,7 +98,7 @@ const ModSquad = function(otherModule, otherModuleName = 'mod') {
 
     var previousFn;
 
-    _.each(fobj, (fn_, fname) => {
+    _.each(fobj, (fn_, fnName) => {
       var fn            = fn_;
 
       // Wrap `fn` in a safety function that scrubs debug info out of the result
@@ -113,12 +114,12 @@ const ModSquad = function(otherModule, otherModuleName = 'mod') {
           const callback          = function(){};
           const callback_         = function(){};
 
-          var   ractx             = res.runAnywhere          =  req.runAnywhere   = upsertRaContextForX(context, otherModuleName, fname);
+          var   ractx             = res.runAnywhere          =  req.runAnywhere   = upsertRaContextForX(context, otherModuleName, fnName);
 
           // ------ This is where you apply a middleware function -------
 
           // Attach a special run-anywhere object to the context.
-          setRax(context, new FuncRa(argv, context, callback, callback_, {otherModule: otherModule.exports, otherModuleName, fname}));
+          setRax(context, new FuncRa(argv, context, callback, callback_, {otherModule: otherModule.exports, otherModuleName, fnName}));
 
           // Call the modules function (the original function.)
           return fn_(req, res, ...rest);
@@ -126,10 +127,14 @@ const ModSquad = function(otherModule, otherModuleName = 'mod') {
       }
 
       mod.reqHandler         = mod.reqHandler   || {};
-      mod.reqHandler[fname]  = previousFn = (fn || previousFn);
+      mod.reqHandler[fnName]  = previousFn = (fn || previousFn);
     });
 
     return previousFn;
+  };
+
+  self.exportSubModules = function(subModules) {
+    return module.exports.exportSubModules(otherModule, subModules);
   };
 
 };
@@ -138,15 +143,34 @@ module.exports.modSquad = function(...args) {
   return new ModSquad(...args);
 };
 
-// TODO: also need loadAsync
-module.exports.load = function(mod, fname) {
-  return mod[fname];
+module.exports.addSubModules = function(obj, subModules) {
+  _.each(subModules, lib => {
+    _.each(lib, function(v,k) {
+      obj[k] = v;
+    });
+  });
 };
 
-module.exports.loads = function(mod, fnames, context, options1, abort) {
-  // const loadedFn =  mod[fname];
+module.exports.exportSubModules = function(mod, subModules) {
+  _.each(subModules, lib => {
+    _.each((lib.async || {}), function(v,k) {
+      mod.exports.async = mod.exports.async || {};
 
-  return sg.reduce(fnames.split(','), {}, function(m, fname) {
+      mod.exports.async[k]  = v;
+      mod.exports[k]        = lib[k];
+    });
+  });
+};
+
+// TODO: also need loadAsync
+module.exports.load = function(mod, fnName) {
+  return mod[fnName];
+};
+
+module.exports.loads = function(mod, fnNames, context, options1, abort) {
+  // const loadedFn =  mod[fnName];
+
+  return sg.reduce(fnNames.split(','), {}, function(m, fnName) {
 
     // ------------------------ The fn that gets called by you
     const interceptFn = function(argv, options__, continuation) {
@@ -165,29 +189,31 @@ module.exports.loads = function(mod, fnames, context, options1, abort) {
         }
 
         if (options.debug) {
-          console.error(`mod::${fname}()`, sg.inspect({argv, err, data, ...rest}));
+          console.error(`mod::${fnName}()`, sg.inspect({argv, err, data, ...rest}));
         }
 
         return continuation(err, data, ...rest);
       };
 
-      abort.calling(`${fname}()`, argv);
-      return mod[fname](argv, context, callback);
+      abort.calling(`${fnName}()`, argv);
+      return mod[fnName](argv, context, callback);
     };
     // ----------------------------- end
 
-    return sg.kv(m, fname, interceptFn);
+    return sg.kv(m, fnName, interceptFn);
   });
 };
 
 /**
  * An object newed and attached to the context object.
  *
- * @param {*} argv
- * @param {*} context
- * @param {*} callback
- * @param {*} origCallback
- * @param {*} [options_={}]
+ * This is the object that is usually named `rax`.
+ *
+ * @param {*} argv            - The canonical run-anywhere argv object.
+ * @param {*} context         - The canonical run-anywhere context object.
+ * @param {*} callback        - The specially-made function to inspect for errors.
+ * @param {*} origCallback    - The caller-supplied original callback.
+ * @param {*} [options_={}]   - Options.
  */
 const FuncRa = function(argv, context, callback, origCallback, options_ = {}) {
   const self = this;
@@ -195,7 +221,7 @@ const FuncRa = function(argv, context, callback, origCallback, options_ = {}) {
   self.options          = options_;
   self.mod              = self.options.otherModule;
   self.modname          = self.options.otherModuleName || 'mod';
-  self.fname            = self.options.fname || null;
+  self.fnName           = self.options.fnName || self.options.fname || null;
   self.providedAbort    = null;
   self.argTypes         = {};
   self.args             = [];
@@ -208,19 +234,20 @@ const FuncRa = function(argv, context, callback, origCallback, options_ = {}) {
   /**
    * Wraps the body of a run-anywhere style function to help reduce complexity handling errors.
    *
-   * @param {*} [functionName]
-   * @param {*} body_function
-   * @param {*} c_
-   * @returns
+   * @param {*} [a_]         - `functionName` The name of the function that is iwrapped, used in messages.
+   * @param {*} [b_]         - `abort` A custom abort function (when you need to release resources, for example.
+   * @param {*} c_           - `body_callback` The function being iwrapped.
+   *
+   * @returns {null}            - [[return is only use for control-flow.]]
    */
   self.iwrap = function(a_, b_, c_ /* abort, body_callback*/) {
     var a=a_, b=b_, c=c_;
 
-    var fname = 'mod__func';
-    if (self.fname) {
-      fname = `${self.modname}__${self.fname}`;
+    var fnName = 'mod__func';
+    if (self.fnName) {
+      fnName = `${self.modname}__${self.fnName}`;
     } else if (_.isString(a)) {
-      fname = a.replace(/:/g, '_');
+      fnName = a.replace(/:/g, '_');
     }
 
     var   numArgs = arguments.length;
@@ -230,7 +257,7 @@ const FuncRa = function(argv, context, callback, origCallback, options_ = {}) {
       numArgs += 1;
     }
 
-    // console.error(`fra.iwrapping ${self.fname}`);
+    // console.error(`fra.iwrapping ${self.fnName}`);
 
     var body_callback;
     if (numArgs === 2) {
@@ -248,9 +275,9 @@ const FuncRa = function(argv, context, callback, origCallback, options_ = {}) {
     };
 
     if (numArgs === 2) {
-      return sg.iwrap(fname, callback, my_body_callback);
+      return sg.iwrap(fnName, callback, my_body_callback);
     } else {
-      return sg.iwrap(fname, callback, b, my_body_callback);
+      return sg.iwrap(fnName, callback, b, my_body_callback);
     }
   };
 
@@ -264,8 +291,9 @@ const FuncRa = function(argv, context, callback, origCallback, options_ = {}) {
    * For example, `--debug` and `--verbose` are both propigated into all `argv` objects, and
    * all `options` objects.
    *
-   * @param {*} [options={}]
-   * @returns
+   * @param {*} [options={}]    - The current options to merge in.
+   *
+   * @returns {null}            - [[return is only used for control-flow.]]
    */
   self.opts = function(options = {}) {
     return sg.merge({ ...argOptions, ...options});
@@ -278,11 +306,12 @@ const FuncRa = function(argv, context, callback, origCallback, options_ = {}) {
    * 1. Remembers the `context` object, so you do not have to pass it around.
    * 2. Adds special CLI params like `--debug` and `--verbose` down to all `argv` objects.
    *
-   * @param {*} module
-   * @param {*} function_names
-   * @param {*} options
-   * @param {*} abort_function
-   * @returns
+   * @param {*} [module]            - The module to load from. Not required when loading from your own module.
+   * @param {*} function_names      - The function names to load.
+   * @param {*} options             - Any options, like {abort:false}.
+   * @param {*} abort_function      - The abort function to use.
+   *
+   * @returns {null}  - [[return is just used for control-flow.]]
    */
   self.loads = function(...args) {
 
@@ -300,16 +329,16 @@ const FuncRa = function(argv, context, callback, origCallback, options_ = {}) {
     return self.loads_(...args);
   };
 
-  self.loads_ = function(mod, fnames, options1, abort) {
-    // const fnames = (_.isArray(fnames_) ? fnames_ : [fnames_]);
+  self.loads_ = function(mod, fnNames, options1, abort) {
+    // const fnNames = (_.isArray(fnNames_) ? fnNames_ : [fnNames_]);
 
     // Do for each function name
-    return sg.reduce(fnames.split(','), {}, function(m, fname) {
+    return sg.reduce(fnNames.split(','), {}, function(m, fnName) {
 
       // ------------------------ The proxy for the function that was loaded
       const interceptFn = function(argv_, options2, continuation) {
 
-        if (!_.isFunction(continuation))    { sg.warn(`continuation for ${fname} is not a function`); }
+        if (!_.isFunction(continuation))    { sg.warn(`continuation for ${fnName} is not a function`); }
 
         // self.opts() propigates --debug and --verbose; options is a combination of options1 and options2 for this call.
         const argv      = self.opts(argv_);
@@ -330,7 +359,7 @@ const FuncRa = function(argv, context, callback, origCallback, options_ = {}) {
 
           // Report normal (ok === true) and errors that are aborted (!ok && options.abort)
           if (options.debug && (ok || (!ok && options.abort))) {
-            console.error(`${mod.modname || self.modname || 'modunk'}::${fname}(96)`, sg.inspect({argv, ok, err, data, ...rest}));
+            console.error(`${mod.modname || self.modname || 'modunk'}::${fnName}(96)`, sg.inspect({argv, ok, err, data, ...rest}));
           }
 
           // Handle errors -- we normally abort, but the caller can tell us not to
@@ -339,7 +368,7 @@ const FuncRa = function(argv, context, callback, origCallback, options_ = {}) {
 
             // Report, but leave out the verbose error
             if (options.debug) {
-              console.error(`${mod.modname || self.modname || 'modunk'}::${fname}(97)`, sg.inspect({argv, err:(options.verbose ? err : true), data, ...rest}));
+              console.error(`${mod.modname || self.modname || 'modunk'}::${fnName}(97)`, sg.inspect({argv, err:(options.verbose ? err : true), data, ...rest}));
             }
           }
 
@@ -349,27 +378,28 @@ const FuncRa = function(argv, context, callback, origCallback, options_ = {}) {
         // -----
 
         if (options.verbose) {
-          console.error(`${mod.modname || self.modname || 'modunk'}::${fname}(99)`, sg.inspect({argv, fname}));
+          console.error(`${mod.modname || self.modname || 'modunk'}::${fnName}(99)`, sg.inspect({argv, fnName}));
         }
 
         // Invoke the original function
-        if (abort)  { abort.calling(`${mod.modname || self.modname || 'modunk'}::${fname}(98)`, argv); }
-        return mod[fname](argv, context, callback);
+        if (abort)  { abort.calling(`${mod.modname || self.modname || 'modunk'}::${fnName}(98)`, argv); }
+        return mod[fnName](argv, context, callback);
       };
       // ----------------------------- end
 
       // Put the interception function into the object that gets returned.
-      return sg.kv(m, fname, interceptFn);
+      return sg.kv(m, fnName, interceptFn);
     });
   };
 
   /**
    * Returns argv[one of the names].
    *
-   * @param {*} argv
-   * @param {*} names_
-   * @param {*} [options={}]
-   * @returns
+   * @param {*} argv            - The canonical run-anywhere argv argument.
+   * @param {*} names_          - Name of the arg, plus aliases to use.
+   * @param {*} [options={}]    - Options for the arg, like {required:true}
+   *
+   * @returns {*}               - The value, or `undefined` if not found.
    */
   self.arg = function(argv, names_, options = {}) {
     const names     = names_.split(',');
@@ -433,8 +463,9 @@ const FuncRa = function(argv, context, callback, origCallback, options_ = {}) {
    * * Marking `{required:true}` while getting the value
    * * Passing in all required values here.
    *
-   * @param {*} [args={}]
-   * @returns
+   * @param {*} [args_={}]     - A list of extra values to check.
+   *
+   * @returns {Object}        - The errors
    */
   self.argErrors = function(args_ = {}) {
     var args  = args_;
@@ -453,19 +484,19 @@ const FuncRa = function(argv, context, callback, origCallback, options_ = {}) {
     }
 
 
-    // console.error(`fra.argErrors ${self.fname} (${(self.argErrs || []).length})`);
+    // console.error(`fra.argErrors ${self.fnName} (${(self.argErrs || []).length})`);
     return self.argErrs;
   };
 
   /**
    * Aborts!
    *
-   * @param {*} msg
+   * @param {*} msg - The message to show.
    */
   self.abort = function(msg) {
-    const { fname, argTypes, args } = self;
+    const { fnName, argTypes, args } = self;
 
-    console.error(`FuncRa aborting`, sg.inspect({fname, argTypes, args}));
+    console.error(`FuncRa aborting`, sg.inspect({fnName, argTypes, args}));
 
     if (args.length === 0) {
       // No args, show available args
@@ -490,18 +521,18 @@ function getRaContext(context) {
   return context.runAnywhere;
 }
 
-function upsertRaContextForX(context, modname, fname) {
+function upsertRaContextForX(context, modname, fnName) {
   // if (getRaContext(context))          { return getRaContext(context); }
 
-  const fullFname           = `${modname}__${fname}`;
+  const fullFnName           = `${modname}__${fnName}`;
   var   ractx               = context.runAnywhere = context.runAnywhere || {current: {}};
 
-  ractx[fullFname]          = {};
+  ractx[fullFnName]          = {};
   ractx.current.modname     = modname;
-  ractx.current.fname       = fname;
-  ractx.current.fullFname   = fullFname;
+  ractx.current.fnName       = fnName;
+  ractx.current.fullFnName   = fullFnName;
 
-  sg.setOn(ractx, ['mod', modname, 'func', fname], {fullFname, rax: null, fra:null});
+  sg.setOn(ractx, ['mod', modname, 'func', fnName], {fullFnName, rax: null, fra:null});
 
   return ractx;
 }
@@ -509,14 +540,14 @@ function upsertRaContextForX(context, modname, fname) {
 function setRax(context, rax) {
   var   ractx                 = context.runAnywhere;
   const {
-    modname, fname, fullFname
+    modname, fnName, fullFnName
   }                           = ractx.current;
 
   ractx.current.rax           = rax;
-  ractx[fullFname].rax        = rax;
-  ractx[fullFname].fra        = rax;
+  ractx[fullFnName].rax        = rax;
+  ractx[fullFnName].fra        = rax;
 
-  sg.setOn(ractx, ['mod', modname, 'func', fname, 'rax'], rax);
+  sg.setOn(ractx, ['mod', modname, 'func', fnName, 'rax'], rax);
 
   // sg.debugLog(`setRax`, {ractx});
 

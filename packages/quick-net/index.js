@@ -3,7 +3,9 @@
  * @file
  *
  */
-const sg                      = require('sg-clihelp');
+const ra                      = require('run-anywhere').v2;
+const sg0                     = ra.get3rdPartyLib('sg-flow');
+const sg                      = sg0.merge(sg0, require('sg-clihelp'));
 const { _ }                   = sg;
 
 var lib = {};
@@ -52,7 +54,9 @@ lib.getMod = function(name) {
 
 lib.mods = mods;
 
-
+ra.exportSubModules(module, [
+  require('./lib/data-tap')
+]);
 
 expo(lib);
 function expo(mod) {

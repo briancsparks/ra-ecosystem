@@ -48,6 +48,7 @@ module.exports.command                = libMakeCommand.command;
 module.exports.modSquad               = libModSquad.modSquad;
 module.exports.load                   = libModSquad.load;
 module.exports.loads                  = libModSquad.loads;
+module.exports.exportSubModules       = libModSquad.exportSubModules;
 module.exports.raExpressMw            = expressHost.raExpressMw;
 module.exports.dbUtils                = dbUtils;
 module.exports.redisUtils             = redisUtils;
