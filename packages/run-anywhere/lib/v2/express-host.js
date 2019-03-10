@@ -7,7 +7,6 @@ const _                         = require('lodash');
 const utils                     = require('../utils');
 const sg                        = utils.sg;
 const { qm }                    = require('quick-merge');
-const { registerSanityChecks }  = require('./sanity-checks');
 const {
   isAws,
   cleanEnv,
@@ -19,8 +18,6 @@ const {
 // -------------------------------------------------------------------------------------
 //  Data
 //
-
-var   sanityChecks  = [];
 
 var   collections = {};
 var   closes      = {};
@@ -154,7 +151,10 @@ exports.express_close = function() {
  *    open and close the DB connection all the time, but also allowing the code
  *    to get DB connections whenever needed in the case of something like Lamba
  *
- * @returns
+ * @param {string} dbName       - The name of the DB.
+ * @param {string[]} collNames  - Array of collection names.
+ *
+ * @returns {function}          - An express.js middleware function that augments context with ra
  */
 exports.raContextMw = exports.express_raMw = function(dbName, collNames = []) {
   var   raApp = {context:{}};
@@ -173,7 +173,6 @@ exports.raContextMw = exports.express_raMw = function(dbName, collNames = []) {
     closes[collName]      = close;
   });
 
-
   // Hook into the request/response stream -- the prototypical express.js middleware pattern
   return function(req, res, next) {
 
@@ -191,13 +190,6 @@ exports.raContextMw = exports.express_raMw = function(dbName, collNames = []) {
 //  Helper functions
 //
 
-sanityChecks.push(async function({assert, ...context}) {
-  getPort();
-
-  return `getPort()`;
-});
-
-registerSanityChecks(module, __filename, sanityChecks);
 
 // -------------------------------------------------------------------------------------
 //  Helper functions
@@ -206,12 +198,13 @@ registerSanityChecks(module, __filename, sanityChecks);
 /**
  *  Allows the port to come from many places.
  *
- * @param {Number} port
- * @returns The port number
+ * @param {Number} [port]   - The input port number.
+ *
+ * @returns {Number}        - The port number
  */
-function getPort(port_) {
-  var port = port_ || process.env.PORT || require('minimist')(process.argv.slice(2)).port || 3000;
-  return +port;
+function getPort(port) {
+  var port_ = port || process.env.PORT || process.env.port || require('minimist')(process.argv.slice(2)).port || 3000;
+  return +port_;
 }
 
 function chompSlash(str) {
@@ -224,9 +217,11 @@ function chompSlash(str) {
  *  Example of how to do Express.js middleware when you need to do something at the end
  *  of the request.
  *
- * @param {ServerRequest} req
- * @param {ServerResponse} res
- * @param {function} next
+ * @param {ServerRequest} req   - The NodeJs request.
+ * @param {ServerResponse} res  - The NodeJs response
+ * @param {function} next       - The next function to call.
+ *
+ * @returns {null}              - Nothing. The return statement is just to end the function.
  */
 function hook(req, res, next) {
   var _end    = res.end;

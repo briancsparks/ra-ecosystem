@@ -7,14 +7,12 @@
 const _                           = require('lodash');
 const utils                       = require('../utils');
 const { reportWarning }           = require('../error-handlers');
-// const { registerSanityChecks }    = require('./sanity-checks');
 const { inspect }                 = utils;
 
 // -------------------------------------------------------------------------------------
 //  Data
 //
 
-// var   sanityChecks  = [];
 var   handlers      = {};
 var   handlerFns    = [];
 
@@ -113,8 +111,6 @@ exports.claudiaServerlessApi = function(subdomainName, handler) {
   });
 };
 
-
-// registerSanityChecks(module, __filename, sanityChecks);
 
 // -------------------------------------------------------------------------------------
 //  Helper functions
