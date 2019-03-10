@@ -22,14 +22,20 @@ const {
 
 var   sanityChecks  = [];
 
-// TODO: move out
-const collNames               = 'clients,sessions,users,telemetry,attrstream,logs'.split(',');
-const dbName                  = process.env.DB_NAME || 'ntl';
-
 var   collections = {};
 var   closes      = {};
 
 var   server;
+
+const binaryMimeTypes_ = [
+	'application/octet-stream',
+	'font/eot',
+	'font/opentype',
+	'font/otf',
+	'image/jpeg',
+	'image/png',
+	'image/svg+xml'
+];
 
 
 
@@ -40,48 +46,71 @@ var   server;
 /**
  *  Setup middleware for the hosting environment.
  *
- * @param {*} app
+ * @param {*} app     - The express.js app object.
+ * @param {*} name    - The app name.
+ * @param {*} stage   - The name of the stage.
+ * @param {*} options - Additional options, like dbName.
+ *
+ * @returns {*}       - The handler function.
  */
-exports.hookIntoHost = function(app) {
+exports.express_hookIntoHost = function(app, name, stage, options = {}) {
+  const { dbName, collNames, binaryMimeTypes } = options;
+
+  var   result;
 
   // Use the middleware that is appropriate for the environment.
   if (isAws()) {
+    const awsServerlessExpress            = require('aws-serverless-express');
     const awsServerlessExpressMiddleware  = require('aws-serverless-express/middleware');
+
     app.use(awsServerlessExpressMiddleware.eventContext());
+    const server = awsServerlessExpress.createServer(app, null, binaryMimeTypes || binaryMimeTypes_);
+
+    result = (event, context) => awsServerlessExpress.proxy(server, event, context);
+
   } else {
-    app.use(exports.raContextMw(dbName, collNames));
-  };
+    app.use(exports.express_raMw(dbName, collNames));
+  }
 
   // Setup
   app.runAnywhere = {
+    stage,
+    use: function(prefix_, ...rest) {
+      const prefix = `/` + _.compact([chompSlash(stage), chompSlash(prefix_)]).join('/')
+      app.use(prefix, ...rest);
+    },
+
     listen: function(callback) {
-      exports.listen(app, function(err, port) {
+      exports.express_listen(app, name, function(err, port) {
         return callback(err, port);
       });
     },
 
     close: function() {
-      exports.close();
+      exports.express_close();
     }
   };
-}
+
+  return result;
+};
 
 /**
  *  Calls Node.js listen function unless on Lambda, where Lambda will listen on a
  *  domain socket for us.
  *
- * @param {*} app
- * @param {*} port
- * @returns
+ * @param {*} app                 - The app.
+ * @param {*} name                - The name of the app.
+ * @param {*} callback            - The typical continuation function
+ * @returns {null}                - [[NOTE: the return statement is just to end control-flow, no meaningful data is returned.]]
  */
-exports.listen = function(app, callback) {
+exports.express_listen = function(app, name, callback) {
 
   if (!isAws()) {
     const port  = getPort();
     if (port <= 0)  { console.log(`Not starting server`); return; }
 
     server = app.listen(port, () => {
-      // console.log(`Server is listening on ${port}`);
+      console.log(`Run-anywhere/express app ${name} is listening on ${port}`);
       if (_.isFunction(callback)) {
         return callback(null, port);
       }
@@ -100,7 +129,7 @@ exports.listen = function(app, callback) {
  * Closes dbs (MongoDB collections), and stops the server.
  *
  */
-exports.close = function() {
+exports.express_close = function() {
   const keys = Object.keys(closes);
 
   _.each(keys, (key) => {
@@ -127,7 +156,7 @@ exports.close = function() {
  *
  * @returns
  */
-exports.raContextMw = exports.raExpressMw = function(dbName, collNames = []) {
+exports.raContextMw = exports.express_raMw = function(dbName, collNames = []) {
   var   raApp = {context:{}};
 
   // We grab connections to the DB here, so we dont have to close the DB after
@@ -148,7 +177,7 @@ exports.raContextMw = exports.raExpressMw = function(dbName, collNames = []) {
   // Hook into the request/response stream -- the prototypical express.js middleware pattern
   return function(req, res, next) {
 
-    req.raApp = qm(req.raApp || {}, raApp);
+    req.raApp = req.raApp || raApp;
 
     // If you ever need to hook in and know when the request completes, see for an example:
     //    https://github.com/expressjs/compression/blob/master/index.js
@@ -156,7 +185,7 @@ exports.raContextMw = exports.raExpressMw = function(dbName, collNames = []) {
 
     return next();
   };
-}
+};
 
 // -------------------------------------------------------------------------------------
 //  Helper functions
@@ -183,6 +212,11 @@ registerSanityChecks(module, __filename, sanityChecks);
 function getPort(port_) {
   var port = port_ || process.env.PORT || require('minimist')(process.argv.slice(2)).port || 3000;
   return +port;
+}
+
+function chompSlash(str) {
+  if (!str)         { return str; }
+  return str.replace(/^[/]+/g, '').replace(/[/]+$/g, '');
 }
 
 

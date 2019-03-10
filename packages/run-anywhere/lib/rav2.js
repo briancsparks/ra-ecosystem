@@ -10,6 +10,7 @@ var   utils                     = require('./utils');
 const sg                        = utils.sg;
 const libExpress                = require('./express');
 const libMakeCommand            = require('./v2/make-command');
+const libExpressMiddleware      = require('./v2/express-middleware');
 const libModSquad               = require('./v2/mod-squad');
 const lambdaHandler             = require('./v2/lambda-handler');
 const expressHost               = require('./v2/express-host');
@@ -40,8 +41,10 @@ utils.dbUtils                 = dbUtils;
 utils.redisUtils              = redisUtils;
 utils.claudiaUtils            = claudiaUtils;
 
-_.each(lambdaHandler, function(v,k) {
-  module.exports[k] = v;
+_.each([lambdaHandler, libExpressMiddleware, expressHost], lib => {
+  _.each(lib, function(v,k) {
+    module.exports[k] = v;
+  });
 });
 
 module.exports.utils                  = utils;
@@ -58,9 +61,10 @@ module.exports.redisUtils             = redisUtils;
 module.exports.claudiaUtils           = claudiaUtils;
 
 module.exports.express = {
-  middleware: expressHost.raExpressMw,
-  listen:     expressHost.listen,             /* (app, [callback]) */
-  close:      expressHost.close,
+  hookIntoHost: expressHost.express_hookIntoHost,
+  middleware:   expressHost.express_raMw,
+  listen:       expressHost.express_listen,             /* (app, [callback]) */
+  close:        expressHost.express_close,
 };
 
 

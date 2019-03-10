@@ -91,9 +91,16 @@ exports.claudiaServerlessApi = function(subdomainName, handler) {
 
       if (domainName.match(/execute-api/i) && domainName.match(/amazonaws[.]com$/i)) {
         if (domainName.indexOf(subdomainName) !== -1) {
-          if (!utils.getDQuiet(context)) { console.log(`DDDSending request to handler for gatewayApi sub-domain: ${subdomainName}`); }
-          if (!utils.getQuiet(context)) { console.log(`Sending request to handler for gatewayApi sub-domain: ${subdomainName}`); }
-          return true;
+
+          if (handler) {
+            if (!utils.getDQuiet(context)) { console.log(`DDDSending request to handler for gatewayApi sub-domain: ${subdomainName}`); }
+            if (!utils.getQuiet(context)) { console.log(`Sending request to handler for gatewayApi sub-domain: ${subdomainName}`); }
+            return true;
+
+          } else {
+            if (!utils.getQuiet(context)) { console.log(`NOT Sending request to handler for gatewayApi sub-domain, even though we know subdomain: ${subdomainName}`); }
+              return false;
+          }
         }
       }
     }

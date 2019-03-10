@@ -45,9 +45,7 @@ exports.command = function(ARGV = sg.ARGV(), mods = {}, fnName, opts={}, command
   if (cleanExit(ARGV, modfilename, fnName, 'ENOFUNCTION', `Must provide a function name`))      { return false; }
 
   // Try to find the function in the modules
-// console.log(`m`, sg.inspect({fnName, k: sg.keys(mods)}));
   const mod = sg.reduce(mods.mods || mods, null, (m0, theMod0) => {
-// console.log(`m2`, sg.inspect({fnName, k2: sg.keys(theMod0)}));
 
     const theMod = isTheMod(m0, theMod0);
     if (theMod) {
@@ -55,7 +53,6 @@ exports.command = function(ARGV = sg.ARGV(), mods = {}, fnName, opts={}, command
     }
 
     return sg.reduce(theMod0.mods || theMod0, m0, (m, theMod) => {
-// console.log(`m3`, sg.inspect({fnName, k3: sg.keys(theMod)}));
       return isTheMod(m, theMod);
     });
 
@@ -69,16 +66,6 @@ exports.command = function(ARGV = sg.ARGV(), mods = {}, fnName, opts={}, command
 
       return m;
     }
-
-
-    // let fn = theMod[fnName];
-    // if (_.isFunction(fn)) {
-    //   if (m)        { sg.warn(`Duplicate ${fnName} functions in ${theMod.modname || 'some_mod'} and ${m.modname || 'some_other_mod'}`); }
-
-    //   m = theMod;
-    // }
-
-    // return m;
   });
 
   if (cleanExit(ARGV, modfilename, mod, 'ENOFNINMODS', `Could not find function ${fnName} in mods`))      { return false; }
@@ -180,7 +167,8 @@ function invoke2(argv, mod, fname, callback, abort_) {
     return rax.iwrap(abort_, function(abort) {
       const fns = rax.loads(mod, fname, sg0.merge({debug, verbose}), abort);
       const fn  = fns[fname];
-console.error(`invoking ${fname}`, sg.inspect({argv, context}));
+
+      //console.error(`invoking ${fname}`, sg.inspect({argv, context}));
       return fn(argv, context, callback);
     });
   }});
@@ -188,5 +176,5 @@ console.error(`invoking ${fname}`, sg.inspect({argv, context}));
   return init(argv, context, function(err, data, ...rest) {
     return callback(err, data, ...rest);
   });
-};
+}
 

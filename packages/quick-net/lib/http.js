@@ -116,7 +116,7 @@ exports.initialReqParams = function(req, res) {
  */
 exports.getHttpParams = module.exports.getHttpParams = function(req, normalizeBodyFn = _.identity) {
 
-  const url       = libUrl.parse(req.url, true);
+  const url       = libUrl.parse(req.originalUrl, true);
 
   // These are the parameters that are returned (along with headers, ezHeaders)
   var   event, context, body, query, orig_path, stage, real_ip, protocol, host, pathname, search;
@@ -134,7 +134,7 @@ exports.getHttpParams = module.exports.getHttpParams = function(req, normalizeBo
         event             = apiGateway.event                      || {};
         query             = event.queryStringParameters           || {};
   const requestContext    = event.requestContext                  || {};
-        orig_path         = requestContext.path;
+        orig_path         = req.originalUrl                       || requestContext.path;
         context           = apiGateway.context                    || {};
         stage             = getEnvName(req);
         real_ip           = ezHeaders.x_real_ip                   || (ezHeaders.x_forwarded_for || '').split(', ')[0]
@@ -145,7 +145,7 @@ exports.getHttpParams = module.exports.getHttpParams = function(req, normalizeBo
         pathname          = url.pathname                          || orig_path;
         search            = url.search                            || makeSearch(query)    || '';
 
-        protocol          = colonify(url.protocol  || ezHeaders.x_forwarded_proto  || ezHeaders.cloudfront_forwarded_proto);
+        protocol          = colonify(url.protocol  || ezHeaders.x_forwarded_proto  || ezHeaders.cloudfront_forwarded_proto || 'http');
 
         body              = normalizeBodyFn(req.body || {}, {}, query || url.query || {});
 
