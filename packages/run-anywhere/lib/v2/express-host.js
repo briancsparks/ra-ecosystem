@@ -73,7 +73,7 @@ exports.express_hookIntoHost = function(app, name, stage, options = {}) {
   app.runAnywhere = {
     stage,
     use: function(prefix_, ...rest) {
-      const prefix = `/` + _.compact([chompSlash(stage), chompSlash(prefix_)]).join('/')
+      const prefix = `/` + _.compact([chompSlash(stage), chompSlash(prefix_)]).join('/');
       app.use(prefix, ...rest);
     },
 

@@ -55,7 +55,8 @@ lib.getMod = function(name) {
 lib.mods = mods;
 
 ra.exportSubModules(module, [
-  require('./lib/data-tap')
+  require('./lib/data-tap'),
+  require('./lib/data-transfer'),
 ]);
 
 expo(lib);

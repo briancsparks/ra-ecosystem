@@ -37,6 +37,7 @@
     "run-anywhere": "^1.0.23",
     "sg-clihelp": "^1.0.12",
     "shelljs": "^0.8.3",
+    "superagent": "^4.1.0",
     "superb": "^3.0.0"
   }
 }

@@ -4,6 +4,7 @@
 //  requirements
 //
 
+const sg                          = require('sg-config');
 const _                           = require('lodash');
 const utils                       = require('../utils');
 const { reportWarning }           = require('../error-handlers');
@@ -74,7 +75,8 @@ exports.expressServerlessRoutes = function(subdomainName, handler /*, appBuilder
     if (!utils.getQuiet(context)) { console.log(`NOT Sending request to handler for express sub-domain: ${subdomainName}`); }
     return false;
   },
-  function(event, context, callback) {
+  function(event, context_, callback) {
+    const context = sg.merge(context_, {expressServerless:true, awsApiGateway:true});
     return handler(event, context, callback);
   });
 };
@@ -106,7 +108,8 @@ exports.claudiaServerlessApi = function(subdomainName, handler) {
     if (!utils.getQuiet(context)) { console.log(`NOT Sending request to handler for gatewayApi sub-domain: ${subdomainName}`); }
     return false;
   },
-  function(event, context, callback) {
+  function(event, context_, callback) {
+    const context = sg.merge(context_, {claudia:true, awsApiGateway:true});
     return handler(event, context, callback);
   });
 };

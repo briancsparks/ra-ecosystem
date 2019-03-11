@@ -43,9 +43,10 @@ const {
  *          });
  * ```
  *
- * @param {*} args
- * @param {*} callback
- * @returns
+ * @param {*} args - The standard args (request, context).
+ * @param {*} callback - continuation
+ *
+ * @returns {Array} - [argv, context, callback]
  */
 exports.claudia2RaArgs = function(args, callback) {
   checkArgs(args);
@@ -59,6 +60,7 @@ exports.claudia2RaArgs = function(args, callback) {
   };
 
   var   context = {
+    claudia       : true,
     ...(context_ || request.lambdaContext || {}),
     __gatewayApi  : request.context,
     __request     : request
@@ -92,9 +94,11 @@ exports.claudia2RaArgs = function(args, callback) {
  *          });
  * ```
  *
- * @param {*} args
- * @param {*} callback
- * @returns
+ * @param {*} argv - The standard argv.
+ * @param {*} args - The standard args (request, context).
+ * @param {*} callback - continuation
+ *
+ * @returns {Array} - [argv, context, callback]
  */
 exports.claudia2RaArgs2 = function(argv, args, callback) {
   const raArgs = exports.claudia2RaArgs(args, callback);
@@ -128,9 +132,11 @@ exports.claudia2RaArgs2 = function(argv, args, callback) {
  *          });
  * ```
  *
- * @param {*} args
- * @param {*} callback
- * @returns
+ * @param {*} argv - The standard argv.
+ * @param {*} args - The standard args (request, context).
+ * @param {*} callback - continuation
+ *
+ * @returns {Array} - [argv, context, callback]
  */
  exports.claudia2RaMyArgs = function(argv, args, callback) {
   const raArgs = exports.claudia2RaArgs(args, callback);

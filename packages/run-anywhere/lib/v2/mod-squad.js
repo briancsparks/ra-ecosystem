@@ -8,6 +8,7 @@ const sg                      = require('sg-flow');
 const _                       = require('lodash');
 const utilLib                 = require('util');
 const libMakeCommand          = require('./make-command');
+const libWrapped              = require('./wrapped');
 
 const promisify               = utilLib.promisify;
 const callbackify             = utilLib.callbackify;
@@ -233,7 +234,34 @@ const FuncRa = function(argv, context, callback, origCallback, ractx, options_ =
 
   const verbose         = argv.verbose;
   const debug           = argv.debug        || verbose;
-  const argOptions      = sg.merge({debug, verbose});
+  const silent          = argv.silent;
+  const argOptions      = sg.merge({debug, verbose, silent});
+
+  const longFnName = function() {
+    if (self.fnName) {
+      return `${self.modname}__${self.fnName}`;
+    }
+
+    return `${self.modname}__unnamed`;
+  };
+
+  self.mkLocalAbort = function(finalizer) {
+    const localAbort = function(err, msg) {
+      if (msg) { sg.logError(err, msg, {}, {EFAIL:self.fnName}); }
+
+      sg.elog(longFnName(), {err});
+      return finalizer(err);
+    };
+
+    return localAbort;
+  };
+
+  self.wrapFns = function(service, fnNames, ...rest) {
+    var [ options1, abort ] = (rest.length === 2 ? rest : [{}, rest[0]]);
+    abort                   = abort || self.providedAbort || abort;
+
+    return libWrapped.mkFns2(service, fnNames, options1, abort);
+  };
 
   /**
    * Wraps the body of a run-anywhere style function to help reduce complexity handling errors.

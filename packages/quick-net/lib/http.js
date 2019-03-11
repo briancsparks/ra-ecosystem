@@ -27,9 +27,10 @@ const libUrl                  = require('url');
 /**
  *  Gets the raw (Buffer) body of the request.
  *
- * @param {*} req
- * @param {*} callback
- * @returns
+ * @param {*} req       - The request object.
+ * @param {*} callback  - The callback
+ *
+ * @returns {Buffer[]}  - The list of buffer chunks that make up the body.
  */
 exports.getRawBody = function(req, callback) {
 
@@ -61,7 +62,9 @@ exports.getRawBody = function(req, callback) {
 /**
  * Turns the body into JSON.
  *
- * @param {*} req
+ * @param {*} req - The request object
+ *
+ * @returns {string} - The JSON from parsing the body.
  */
 exports.decodeJSONBody = function(req) {
   var bodyStr;
@@ -98,8 +101,10 @@ exports.decodeJSONBody = function(req) {
  * Gets the parameters that are available on first server request, so
  * no body, and a callback is not needed.
  *
- * @param {*} req
- * @param {*} res
+ * @param {*} req - The request object.
+ * @param {*} res - The response object.
+ *
+ * @returns {Object}  - All params that can be determined.
  */
 exports.initialReqParams = function(req, res) {
   const url   = libUrl.parse(req.url, true);
@@ -111,8 +116,10 @@ exports.initialReqParams = function(req, res) {
 /**
  *  Gets stuff that is usually gotten from the req/res (HTTP) elements.
  *
- * @param {*} req
- * @returns
+ * @param {*} req - The request object.
+ * @param {function} normalizeBodyFn - The fn to build up the result.
+ *
+ * @returns {Object} - All of the parameters that could be found for the request.
  */
 exports.getHttpParams = module.exports.getHttpParams = function(req, normalizeBodyFn = _.identity) {
 
@@ -149,13 +156,17 @@ exports.getHttpParams = module.exports.getHttpParams = function(req, normalizeBo
 
         body              = normalizeBodyFn(req.body || {}, {}, query || url.query || {});
 
-  return {
+  var   httpParams = {
     /* complex  */ event, context,
     /* headers  */ headers, ezHeaders,
     /* req data */ body, query, orig_path,
     /* names    */ stage, real_ip,
     /* urlparts */ protocol, host, pathname, search
   };
+
+  httpParams.argv = httpParams.all = {...httpParams, ...httpParams.body, ...httpParams.query};
+
+  return httpParams;
 };
 
 // --------------------------------------------------------------------
@@ -226,7 +237,7 @@ exports.getEnvName = function(req) {
   }
 
   return result;
-}
+};
 
 
 
@@ -252,7 +263,7 @@ function colonify(protocol) {
 }
 
 function makeSearch(query = {}) {
-  const str = reduce(query, [], (arr,v,k) => {
+  const str = sg.reduce(query, [], (arr,v,k) => {
     return [...arr, _.compact([k,v]).join('=')];
   }).join('&');
 
