@@ -29,6 +29,8 @@ const { promisify }             = require('util');
 //
 
 utils.command                 = libMakeCommand.command;
+utils.invoke2                 = libMakeCommand.invoke2;
+utils.invoke                  = libMakeCommand.invoke;
 utils.modSquad                = libModSquad.modSquad;
 utils.load                    = libModSquad.load;
 utils.loads                   = libModSquad.loads;
@@ -45,6 +47,7 @@ _.each([lambdaHandler, expressHost], lib => {
 module.exports.utils                  = utils;
 module.exports.sg                     = utils.sg;
 module.exports.command                = libMakeCommand.command;
+module.exports.commandInvoke          = libMakeCommand.invoke;
 module.exports.modSquad               = libModSquad.modSquad;
 module.exports.load                   = libModSquad.load;
 module.exports.loads                  = libModSquad.loads;

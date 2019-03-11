@@ -7,9 +7,12 @@
 const sg                      = require('sg-flow');
 const _                       = require('lodash');
 const utilLib                 = require('util');
+const libMakeCommand          = require('./make-command');
 
 const promisify               = utilLib.promisify;
 const callbackify             = utilLib.callbackify;
+
+const commandInvoke           = libMakeCommand.invoke;
 
 // -------------------------------------------------------------------------------------
 //  Data
@@ -66,7 +69,7 @@ const ModSquad = function(otherModule, otherModuleName = 'mod') {
           // -----
 
           // Attach a special run-anywhere object to the context.
-          setRax(context, new FuncRa(argv, context, callback, callback_, {otherModule: otherModule.exports, otherModuleName, fnName}));
+          setRax(context, new FuncRa(argv, context, callback, callback_, ractx, {otherModule: otherModule.exports, otherModuleName, fnName}));
 
           // Call the modules function (the original function.)
           return fn_(argv, context, callback);
@@ -119,7 +122,7 @@ const ModSquad = function(otherModule, otherModuleName = 'mod') {
           // ------ This is where you apply a middleware function -------
 
           // Attach a special run-anywhere object to the context.
-          setRax(context, new FuncRa(argv, context, callback, callback_, {otherModule: otherModule.exports, otherModuleName, fnName}));
+          setRax(context, new FuncRa(argv, context, callback, callback_, ractx, {otherModule: otherModule.exports, otherModuleName, fnName}));
 
           // Call the modules function (the original function.)
           return fn_(req, res, ...rest);
@@ -213,9 +216,10 @@ module.exports.loads = function(mod, fnNames, context, options1, abort) {
  * @param {*} context         - The canonical run-anywhere context object.
  * @param {*} callback        - The specially-made function to inspect for errors.
  * @param {*} origCallback    - The caller-supplied original callback.
+ * @param {*} ractx           - The ractx object.
  * @param {*} [options_={}]   - Options.
  */
-const FuncRa = function(argv, context, callback, origCallback, options_ = {}) {
+const FuncRa = function(argv, context, callback, origCallback, ractx, options_ = {}) {
   const self = this;
 
   self.options          = options_;
@@ -303,6 +307,9 @@ const FuncRa = function(argv, context, callback, origCallback, options_ = {}) {
    * Loads a run-anywhere style function, so it can be easily called by other run-anywhere
    * functions.
    *
+   * If you are calling a (argv, context, callback) run-anywhere function from another one, use `loads()`.
+   * If you are calling a (argv, context, callback) run-anywhere function from one that isnt, use `invokers()`.
+   *
    * 1. Remembers the `context` object, so you do not have to pass it around.
    * 2. Adds special CLI params like `--debug` and `--verbose` down to all `argv` objects.
    *
@@ -384,6 +391,44 @@ const FuncRa = function(argv, context, callback, origCallback, options_ = {}) {
         // Invoke the original function
         if (abort)  { abort.calling(`${mod.modname || self.modname || 'modunk'}::${fnName}(98)`, argv); }
         return mod[fnName](argv, context, callback);
+      };
+      // ----------------------------- end
+
+      // Put the interception function into the object that gets returned.
+      return sg.kv(m, fnName, interceptFn);
+    });
+  };
+
+  /**
+   * Loads a run-anywhere invoke style function, so it can be easily called by other run-anywhere
+   * functions.
+   *
+   * If you are calling a (argv, context, callback) run-anywhere function from another one, use `loads()`.
+   * If you are calling a (argv, context, callback) run-anywhere function from one that isnt, use `invokers()`.
+   *
+   * 1. Remembers the `context` object, so you do not have to pass it around.
+   * 2. Adds special CLI params like `--debug` and `--verbose` down to all `argv` objects.
+   *
+   * @param {*} mod                 - The module to load from. Not required when loading from your own module.
+   * @param {*} fnNames             - The function names to load.
+   * @param {*} options             - Any options, like {abort:false}.
+   * @param {*} abort               - The abort function to use.
+   *
+   * @returns {null}  - [[return is just used for control-flow.]]
+   */
+  self.invokers = function(mod, fnNames, options, abort) {
+
+    // Do for each function name
+    return sg.reduce(fnNames.split(','), {}, function(m, fnName) {
+      const invokeOpts  = {mod, fnName, hostModName: self.modname};
+
+      // ------------------------ The proxy for the function that was loaded
+      const interceptFn = function(argv, continuation) {
+
+        if (!_.isFunction(continuation))    { sg.warn(`continuation for ${fnName} is not a function`); }
+
+        // Invoke the original function
+        return commandInvoke(invokeOpts, self.opts(argv), ractx, continuation);
       };
       // ----------------------------- end
 

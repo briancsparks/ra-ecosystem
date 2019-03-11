@@ -128,6 +128,7 @@ exports.command = function(ARGV = sg.ARGV(), mods = {}, fnName, opts={}, command
 // exports
 //
 exports.invoke2 = invoke2;
+exports.invoke = invoke;
 
 // -------------------------------------------------------------------------------------
 //  Helper Functions
@@ -166,6 +167,42 @@ function invoke2(argv, mod, fname, callback, abort_) {
       const fn  = fns[fname];
 
       //console.error(`invoking ${fname}`, sg.inspect({argv, context}));
+      return fn(argv, context, callback);
+    });
+  }});
+
+  return init(argv, context, function(err, data, ...rest) {
+    return callback(err, data, ...rest);
+  });
+}
+
+function invoke(options, argv, ractx, callback, abort_) {
+
+  const { mod, fnName }   = options;
+  const { hostModName }   = options;
+
+  // Get args
+  const debug   = argv.debug;
+  const verbose = argv.verbose;
+
+  var   context = {
+    // isRaInvoked:  true,
+    runAnywhere:  ractx   || {}
+  };
+
+  // Load up the function
+  const sg0   = require('sg-flow');
+  const ROOT  = require('./mod-squad').modSquad({exports:{}}, `${hostModName}ROOT`);
+  const init  = ROOT.xport({invoke: function(argv, context, callback) {
+
+    const ractx     = context.runAnywhere || {};
+    const { rax }   = ractx[`${hostModName}ROOT__invoke`];
+
+    return rax.iwrap(abort_, function(abort) {
+      const fns = rax.loads(mod, fnName, sg0.merge({debug, verbose}), abort);
+      const fn  = fns[fnName];
+
+      //console.error(`invoking ${fnName}`, sg.inspect({argv, context}));
       return fn(argv, context, callback);
     });
   }});
