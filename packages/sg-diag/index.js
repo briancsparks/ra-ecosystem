@@ -59,7 +59,7 @@ sg.check = function(id, filename, namedArg, x, ...rest) {
 
 sg.bigNag = function(msg, ...args) {
   var inspectedArgs = _.map(args, (arg) => {
-    return sg.inspect(args)
+    return sg.inspect(args);
   });
 
   console.error(`${decorate(msg,3)}`, ...inspectedArgs);
