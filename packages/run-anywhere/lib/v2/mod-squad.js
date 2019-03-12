@@ -435,11 +435,12 @@ const FuncRa = function(argv, context, callback, origCallback, ractx, options_ =
    * Loads a run-anywhere invoke style function, so it can be easily called by other run-anywhere
    * functions.
    *
-   * If you are calling a (argv, context, callback) run-anywhere function from another one, use `loads()`.
-   * If you are calling a (argv, context, callback) run-anywhere function from one that isnt, use `invokers()`.
+   * If you are calling one run-anywhere continuation-style function (argv, context, callback) from another, use `loads()`.
+   * If you are calling a run-anywhere continuation-style function (argv, context, callback) from a function that is not
+   * that style, use `invokers()`.
    *
    * 1. Remembers the `context` object, so you do not have to pass it around.
-   * 2. Adds special CLI params like `--debug` and `--verbose` down to all `argv` objects.
+   * 2. Adds special CLI params like `--debug` and `--verbose` to all `argv` objects.
    *
    * @param {*} mod                 - The module to load from. Not required when loading from your own module.
    * @param {*} fnNames             - The function names to load.
@@ -683,9 +684,17 @@ function getStage(context, argv, ractx) {
 }
 
 function getIsApiGateway(context, event, ractx) {
+console.log(`giag`, sg.inspect({event}));
   if (event.requestContext) {
     return /amazonaws/i.exec((event.requestContext || {}).domainName || '');
   }
+
+  const domainName = sg.deref(event, `argv.event.requestContext.domainName`);
+  console.log(`giag`, sg.inspect({domainName}));
+  if (domainName) {
+    return /amazonaws/i.exec(domainName);
+  }
+
   return false;
 }
 

@@ -32,12 +32,15 @@ exports.ensureContext = function(req, res, initialParams={}) {
       current: {}
     };
 
-    ractx.context = {runAnywhere: ractx};     /* FIXME */
-    req.runAnywhere = res.runAnywhere = ractx;
+    ractx.context     = ractx.context || sg.deref(req, `apiGateway.context`);
+    ractx.event       = ractx.event   || sg.deref(req, `apiGateway.event`);
+
+    req.runAnywhere   = res.runAnywhere = ractx;
   }
 
-  ractx   = res.runAnywhere;
-  context = ractx.context;
+  ractx     = res.runAnywhere;
+  context   = ractx.context;
+
   return {ractx, context};
 };
 

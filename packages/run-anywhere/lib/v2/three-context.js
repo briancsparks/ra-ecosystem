@@ -22,7 +22,7 @@ const { _ }                   = sg;
 //  Functions
 //
 
-exports.ensureContext = function(context_, initialParams={}) {
+exports.ensureThreeContext = function(context_, initialParams={}) {
   var ractx, context;
 
   if (!context_.runAnywhere) {

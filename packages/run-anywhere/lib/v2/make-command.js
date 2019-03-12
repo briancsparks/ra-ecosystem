@@ -13,7 +13,7 @@ const sg                      = sg0.merge(sg0, require('sg-clihelp'));
 const { _ }                   = sg;
 const libThreeContext         = require('./three-context');
 
-const ensureThreeContext      = libThreeContext.ensureContext;
+const ensureThreeContext      = libThreeContext.ensureThreeContext;
 
 // -------------------------------------------------------------------------------------
 //  Data
