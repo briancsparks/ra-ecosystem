@@ -596,14 +596,18 @@ exports.getRaContext          = getRaContext;
 exports.upsertRaContextForX   = upsertRaContextForX;
 
 function getContext(context={}, argv={}) {
-  const ractx = context.runAnywhere || {};
-  const rax   = (ractx.current || {}).rax || {};
-  var   stage = getStage(context, argv, ractx);
+  const ractx         = context.runAnywhere || {};
+  const rax           = (ractx.current || {}).rax || {};
+  var   stage         = getStage(context, argv, ractx);
+  var   isApiGateway  = getIsApiGateway(context, argv, ractx);
+  var   isAws         = getIsAws(context, argv, ractx);
 
   return {
     ractx,
     rax,
-    stage
+    stage,
+    isApiGateway,
+    isAws
   };
 }
 
@@ -671,5 +675,20 @@ function getStage(context, argv, ractx) {
   }
 
   return process.env.STAGE || process.env.AWS_ACCT_TYPE;
+}
+
+function getIsApiGateway(context, event, ractx) {
+  if (event.requestContext) {
+    return /amazonaws/i.exec((event.requestContext || {}).domainName || '');
+  }
+  return false;
+}
+
+function getIsAws(context, event, ractx) {
+  if ('awsRequestId' in context) {
+    return true;
+  }
+
+  return false;
 }
 
