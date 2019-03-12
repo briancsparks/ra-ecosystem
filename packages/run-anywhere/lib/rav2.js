@@ -38,7 +38,7 @@ utils.dbUtils                 = dbUtils;
 utils.redisUtils              = redisUtils;
 utils.claudiaUtils            = claudiaUtils;
 
-_.each([lambdaHandler, expressHost], lib => {
+_.each([lambdaHandler, expressHost, libModSquad], lib => {
   _.each(lib, function(v,k) {
     module.exports[k] = v;
   });
@@ -63,9 +63,6 @@ module.exports.express = {
   listen:       expressHost.express_listen,             /* (app, [callback]) */
   close:        expressHost.express_close,
 };
-
-
-
 module.exports.paramsFromExpress = libExpress.paramsFromExpress;
 
 

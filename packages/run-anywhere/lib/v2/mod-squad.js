@@ -6,7 +6,9 @@
 
 const sg                      = require('sg-flow');
 const _                       = require('lodash');
+const reqResContext           = require('./req-res-context');
 const utilLib                 = require('util');
+const libUrl                  = require('url');
 const libMakeCommand          = require('./make-command');
 const libWrapped              = require('./wrapped');
 
@@ -55,7 +57,7 @@ const ModSquad = function(otherModule, otherModuleName = 'mod') {
         // This is the function that will be exported and called by those that require() the mod. ----------------------------------------
         fn = function(argv, context, callback_) {
 
-          var   ractx             = upsertRaContextForX(context, otherModuleName, fnName);
+          var   { ractx }          = upsertRaContextForX(context, otherModuleName, fnName);
 
           // This will be called when the called function finishes. -----
           const callback = function(err, data, ...rest) {
@@ -113,12 +115,11 @@ const ModSquad = function(otherModule, otherModuleName = 'mod') {
 
 
           // Must create argv, context
-          var   argv              = {};     /* TODO: get from query, body, etc */
-          var   context           = {};
-          const callback          = function(){};
-          const callback_         = function(){};
+          var   argv                  = {};     /* TODO: get from query, body, etc */
+          const callback              = function(){};
+          const callback_             = function(){};
 
-          var   ractx             = res.runAnywhere          =  req.runAnywhere   = upsertRaContextForX(context, otherModuleName, fnName);
+          var   { ractx, context }    = upsertRaContextForReqRes(req, res, otherModuleName, fnName);
 
           // ------ This is where you apply a middleware function -------
 
@@ -165,6 +166,9 @@ module.exports.exportSubModules = function(mod, subModules) {
     });
   });
 };
+
+
+
 
 // TODO: also need loadAsync
 module.exports.load = function(mod, fnName) {
@@ -587,17 +591,35 @@ const FuncRa = function(argv, context, callback, origCallback, ractx, options_ =
 //  Helper functions
 //
 
+exports.getContext            = getContext;
 exports.getRaContext          = getRaContext;
 exports.upsertRaContextForX   = upsertRaContextForX;
+
+function getContext(context={}, argv={}) {
+  const ractx = context.runAnywhere || {};
+  const rax   = (ractx.current || {}).rax || {};
+  var   stage = getStage(context, argv, ractx);
+
+  return {
+    ractx,
+    rax,
+    stage
+  };
+}
 
 function getRaContext(context) {
   return context.runAnywhere;
 }
 
+function upsertRaContextForReqRes(req, res, modname, fnName) {
+  const {context} = reqResContext.ensureContext(req, res);
+  return upsertRaContextForX(context, modname, fnName);
+}
+
 function upsertRaContextForX(context, modname, fnName) {
   // if (getRaContext(context))          { return getRaContext(context); }
 
-  const fullFnName           = `${modname}__${fnName}`;
+  const fullFnName          = `${modname}__${fnName}`;
   var   ractx               = context.runAnywhere = context.runAnywhere || {current: {}};
 
   ractx[fullFnName]          = {};
@@ -607,7 +629,7 @@ function upsertRaContextForX(context, modname, fnName) {
 
   sg.setOn(ractx, ['mod', modname, 'func', fnName], {fullFnName, rax: null, fra:null});
 
-  return ractx;
+  return { ractx, context };
 }
 
 function setRax(context, rax) {
@@ -625,5 +647,29 @@ function setRax(context, rax) {
   // sg.debugLog(`setRax`, {ractx});
 
   return ractx;
+}
+
+function getStage(context, argv, ractx) {
+  if (context.invokedFunctionArn) {
+    return _.last(context.invokedFunctionArn.split(':'));
+  }
+
+  if ((argv.stageVariables || {}).lambdaVersion) {
+    return argv.stageVariables.lambdaVersion;
+  }
+
+  if (ractx.stage) {
+    return ractx.stage;
+  }
+
+  if (ractx.req_url) {
+    let url     = libUrl.parse(ractx.req_url);
+    let parts   = sg.rest(url.pathname.split('/'));
+    if (parts.length > 1) {
+      return parts[0];
+    }
+  }
+
+  return process.env.STAGE || process.env.AWS_ACCT_TYPE;
 }
 

@@ -6,6 +6,7 @@
 const _                         = require('lodash');
 const utils                     = require('../utils');
 const sg                        = utils.sg;
+const reqResContext             = require('./req-res-context');
 const { qm }                    = require('quick-merge');
 const {
   isAws,
@@ -66,7 +67,7 @@ exports.express_hookIntoHost = function(app, name, stage, options = {}) {
     result = (event, context) => awsServerlessExpress.proxy(server, event, context);
 
   } else {
-    app.use(exports.express_raMw(dbName, collNames));
+    app.use(exports.express_raMw(stage, dbName, collNames));
   }
 
   // Setup
@@ -151,12 +152,13 @@ exports.express_close = function() {
  *    open and close the DB connection all the time, but also allowing the code
  *    to get DB connections whenever needed in the case of something like Lamba
  *
+ * @param {string} stage        - The stage
  * @param {string} dbName       - The name of the DB.
  * @param {string[]} collNames  - Array of collection names.
  *
  * @returns {function}          - An express.js middleware function that augments context with ra
  */
-exports.raContextMw = exports.express_raMw = function(dbName, collNames = []) {
+exports.raContextMw = exports.express_raMw = function(stage, dbName, collNames = []) {
   var   raApp = {context:{}};
 
   // We grab connections to the DB here, so we dont have to close the DB after
@@ -175,6 +177,9 @@ exports.raContextMw = exports.express_raMw = function(dbName, collNames = []) {
 
   // Hook into the request/response stream -- the prototypical express.js middleware pattern
   return function(req, res, next) {
+    var   { ractx, context } = reqResContext.ensureContext(req, res);
+
+    ractx.stage = stage;
 
     req.raApp = req.raApp || raApp;
 

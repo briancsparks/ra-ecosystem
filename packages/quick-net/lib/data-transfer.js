@@ -36,7 +36,7 @@ mod.xport({fetchAndCache: function(argv, context, callback) {
   const { rax }           = ractx.dataTransfer__fetchAndCache;
   const { redis, close }  = redisUtils.getRedis(context);
 
-  var   haveReturnedToClient = false;
+  var   haveGivenResult = false;
   return rax.iwrap(rax.mkLocalAbort(allDone), function(abort) {
 
     const { GET }           = rax.wrapFns(redis, 'GET', rax.opts({emptyOk:true, abort:false}));
@@ -50,18 +50,18 @@ mod.xport({fetchAndCache: function(argv, context, callback) {
     return sg.__run2({result:{}}, callback, [function(my, next, last) {
 
       return GET(key, function(err, data) {
-        sg.elog(`GET ${key}`, {err, data});
+        sg.elog(`redis GET ${key}`, {err, data});
 
         // We try to get from redis. If we are successful, we still fetch from the API,
-        // because that is what pre-ish-warms the API
+        // because that is what warms the API
 
         if (sg.ok(err) && data)  {
 
           const result = sg.safeJSONParse(data) || {just:data};
-          sg.elog(`alldone`, {result, haveReturnedToClient});
+          sg.elog(`alldone`, {haveGivenResult, result});
 
-          if (!haveReturnedToClient) {
-            haveReturnedToClient = true;
+          if (!haveGivenResult) {
+            haveGivenResult = true;
             callback(null, result);
           }
 
@@ -73,8 +73,10 @@ mod.xport({fetchAndCache: function(argv, context, callback) {
 
     }, function(my, next) {
       return request.get(url).end(function(err, res) {
+        sg.elog(`superagent GET ${url}`, {err, res: res && res.ok && res.body});
+
         if (sg.ok(err, res) && res.ok) {
-          console.log(`super`, sg.keys(res), sg.inspect({body: res.body}));
+          // console.log(`super`, sg.keys(res), sg.inspect({body: res.body}));
 
           if (res.body) {
             my.body = res.body;
@@ -82,7 +84,8 @@ mod.xport({fetchAndCache: function(argv, context, callback) {
           }
         }
 
-        return abort(err);
+        // The fetch failed.
+        return abort(err, `fetch ${url} failed.`);
       });
 
     }, function(my, next) {
@@ -99,12 +102,12 @@ mod.xport({fetchAndCache: function(argv, context, callback) {
 
 
   function allDone(...args) {
-    sg.elog(`allDone`, {args, haveReturnedToClient});
+    sg.elog(`allDone`, {haveGivenResult, args});
 
     close();
 
-    if (!haveReturnedToClient) {
-      haveReturnedToClient = true;
+    if (!haveGivenResult) {
+      haveGivenResult = true;
       return callback(...args);
     }
   }
