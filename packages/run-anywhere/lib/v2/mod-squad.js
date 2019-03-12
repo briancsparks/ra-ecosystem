@@ -450,22 +450,26 @@ const FuncRa = function(argv, context, callback, origCallback, ractx, options_ =
    * @returns {null}  - [[return is just used for control-flow.]]
    */
   self.invokers = function(mod, fnNames, options, abort) {
-
+console.log(`invokers1`, sg.inspect({fnNames}));
     // Do for each function name
     return sg.reduce(fnNames.split(','), {}, function(m, fnName) {
       const invokeOpts  = {mod, fnName, hostModName: self.modname, hostMod: self.mod};
+console.log(`invokers2`, sg.inspect({fnName, hostModName: self.modname}));
 
       // ------------------------ The proxy for the function that was loaded
       const interceptFn = function(argv, continuation) {
+console.log(`invokers4`, sg.inspect({argv}));
 
         if (!_.isFunction(continuation))    { sg.warn(`continuation for ${fnName} is not a function`); }
 
         // Invoke the original function
+console.log(`invokers5`, sg.inspect({k:sg.keys(ractx)}));
         return commandInvoke(invokeOpts, self.opts(argv), ractx, continuation);
       };
       // ----------------------------- end
 
       // Put the interception function into the object that gets returned.
+console.log(`invokers3`, sg.inspect({fnName}));
       return sg.kv(m, fnName, interceptFn);
     });
   };
