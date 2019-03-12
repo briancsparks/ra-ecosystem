@@ -23,6 +23,14 @@ const { _ }                   = sg;
 //
 
 exports.ensureThreeContext = function(context_, initialParams={}) {
+  if (context_.runAnywhere) {
+    let ractx   = context_.runAnywhere;
+    let context = ractx.context;
+    let event   = ractx.event;
+
+    return {ractx, context, event};
+  }
+
   var ractx, context;
 
   if (!context_.runAnywhere) {

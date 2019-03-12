@@ -109,6 +109,7 @@ exports.mkInterceptorFn2 = function(service, fname, ...rest) {
       return continuation(err, data, ...rest);
 
 
+      // ==========================================================
       function reportTheData({condition, id, small}) {
         if (condition) { sg.elog(`${fname}(${id})`, sg.merge({args: args_, ok, data, rest: rest}, {err: (small? !!err : err)})); }
       }
@@ -123,6 +124,8 @@ exports.mkInterceptorFn2 = function(service, fname, ...rest) {
     if (args.length === 1 && _.isArray(args[0])) {
       args = args[0];
     }
+
+    // TODO: use abort.calling, if appropriate
     return origFn(...args, callback);
   };
 

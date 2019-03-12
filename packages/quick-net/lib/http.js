@@ -114,6 +114,70 @@ exports.initialReqParams = function(req, res) {
 
 // -------------------------------------------------------------------------------------
 /**
+ *  Gets all stuff from the request object.
+ *
+ * @param {*} req - The request object.
+ * @param {function} normalizeBodyFn - The fn to build up the result.
+ *
+ * @returns {Object} - All of the parameters that could be found for the request.
+ */
+module.exports.getReqParams = function(req, normalizeBodyFn = _.identity) {
+
+  const url       = libUrl.parse(req.originalUrl, true);
+
+  // These are the parameters that are returned (along with headers, ezHeaders)
+  var   event, context, body, query, orig_path, stage, real_ip, protocol, host, pathname, search;
+
+  var   headers   = {...req.headers};
+
+  var   ezHeaders = sg.reduce(req.headers, {}, (m, value, k) => {
+    const key = k.toLowerCase().replace(/[^a-z0-9]/gi, '_');
+    return sg.kv(m, key, value);
+  });
+
+  // Get parameters, event, context from API Gateway
+  const apiGateway        = req.apiGateway                        || {};
+
+        event             = apiGateway.event                      || {};
+        query             = event.queryStringParameters           || {};
+  const requestContext    = event.requestContext                  || {};
+        orig_path         = req.originalUrl                       || requestContext.path;
+        context           = apiGateway.context                    || {};
+        stage             = getEnvName(req);
+        real_ip           = ezHeaders.x_real_ip                   || (ezHeaders.x_forwarded_for || '').split(', ')[0]
+                                                                  || sg.deref(requestContext, ['identity', 'sourceIp']);
+  _.extend(query, url.query);
+
+        host              = url.host                              || headers.host || '';
+        pathname          = url.pathname                          || orig_path;
+        search            = url.search                            || makeSearch(query)    || '';
+
+        protocol          = colonify(url.protocol  || ezHeaders.x_forwarded_proto  || ezHeaders.cloudfront_forwarded_proto || 'http');
+
+        body              = normalizeBodyFn(req.body || {}, {}, query || url.query || {});
+
+  var reqParams = {
+    platform: {
+      /* complex  */ event, context,
+      /* names    */ stage, real_ip,
+    },
+
+    http: {
+      /* headers  */ headers, ezHeaders,
+      /* req data */ body, query, orig_path,
+      /* urlparts */ protocol, host, pathname, search
+    }
+  };
+
+  // Join all the param sources
+  // reqParams.argv = reqParams.http.all = {...reqParams.http.ezHeaders, ...reqParams.http.body, ...reqParams.http.query};
+  reqParams.argv = reqParams.http.all = {...reqParams.http.body, ...reqParams.http.query, headers: ezHeaders, protocol, host};
+
+  return reqParams;
+};
+
+// -------------------------------------------------------------------------------------
+/**
  *  Gets stuff that is usually gotten from the req/res (HTTP) elements.
  *
  * @param {*} req - The request object.

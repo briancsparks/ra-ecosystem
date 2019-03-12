@@ -179,8 +179,10 @@ exports.raContextMw = exports.express_raMw = function(stage, dbName, collNames =
 
   // Hook into the request/response stream -- the prototypical express.js middleware pattern
   return function(req, res, next) {
-    req.raHost = JSON.parse(seedContext);
-    var   { ractx, context } = reqResContext.ensureContext(req, res, `raHost.context`, `raHost.event`);
+    const raHostKey = `apiGateway`;
+    // const raHostKey = `raHost`;
+    req[raHostKey] = JSON.parse(seedContext);
+    var   { ractx, context } = reqResContext.ensureContext(req, res, `${raHostKey}.context`, `${raHostKey}.event`);
 
     ractx.stage = stage;
 

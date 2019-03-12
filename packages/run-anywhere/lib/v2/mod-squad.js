@@ -380,9 +380,10 @@ const FuncRa = function(argv, context, callback, origCallback, ractx, options_ =
         if (!_.isFunction(continuation))    { sg.warn(`continuation for ${fnName} is not a function`); }
 
         // self.opts() propigates --debug and --verbose; options is a combination of options1 and options2 for this call.
-        const argv      = self.opts(argv_);
+        var   argv      = self.opts(argv_);
         var   options   = sg.merge({...options1, ...self.opts(options2)});
 
+        // argv            = removeContextAndEvent(argv);
         options.abort   = ('abort' in options ? options.abort : true);
 
         // This will be called when the called function finishes. -----
@@ -450,26 +451,26 @@ const FuncRa = function(argv, context, callback, origCallback, ractx, options_ =
    * @returns {null}  - [[return is just used for control-flow.]]
    */
   self.invokers = function(mod, fnNames, options, abort) {
-console.log(`invokers1`, sg.inspect({fnNames}));
+    console.log(`invokers1`, sg.inspect({fnNames}));
     // Do for each function name
     return sg.reduce(fnNames.split(','), {}, function(m, fnName) {
       const invokeOpts  = {mod, fnName, hostModName: self.modname, hostMod: self.mod};
-console.log(`invokers2`, sg.inspect({fnName, hostModName: self.modname}));
+      console.log(`invokers2`, sg.inspect({fnName, hostModName: self.modname}));
 
       // ------------------------ The proxy for the function that was loaded
       const interceptFn = function(argv, continuation) {
-console.log(`invokers4`, sg.inspect({argv}));
+        console.log(`invokers4`, sg.inspect({argv}));
 
         if (!_.isFunction(continuation))    { sg.warn(`continuation for ${fnName} is not a function`); }
 
         // Invoke the original function
-console.log(`invokers5`, sg.inspect({k:sg.keys(ractx)}));
+        console.log(`invokers5`, sg.inspect({k:sg.keys(ractx)}));
         return commandInvoke(invokeOpts, self.opts(argv), ractx, continuation);
       };
       // ----------------------------- end
 
       // Put the interception function into the object that gets returned.
-console.log(`invokers3`, sg.inspect({fnName}));
+      console.log(`invokers3`, sg.inspect({fnName}));
       return sg.kv(m, fnName, interceptFn);
     });
   };
@@ -695,7 +696,7 @@ function getStage(context, argv, ractx) {
 }
 
 function getIsApiGateway(context, event, ractx) {
-console.log(`giag`, sg.inspect({event}));
+  console.log(`giag`, sg.inspect({event}));
   if (event.requestContext) {
     return /amazonaws/i.exec((event.requestContext || {}).domainName || '');
   }
@@ -717,3 +718,23 @@ function getIsAws(context, event, ractx) {
   return false;
 }
 
+function removeContextAndEvent(argv_) {
+  // Strip out context and event
+  var   event;
+  var   argv  = sg.reduce(argv_, {}, (m,v,k) => {
+    if (k === 'context')    { return m; }
+    if (k === 'event')      { event = event || v; return m; }
+
+    if (sg.isObject(v)) {
+      return sg.kv(m, k, _.omit(v, 'context', 'event'));
+    }
+
+    return sg.kv(m, k, v);
+  });
+
+  if (event) {
+    argv.event = event;
+  }
+
+  return argv;
+}

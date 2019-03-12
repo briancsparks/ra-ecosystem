@@ -88,9 +88,7 @@ mod.xport({fetchAndCache: function(argv, context, callback) {
         }
 
         // The fetch failed.
-        // return abort(err, `fetch ${url} failed.`);
-        return abort(sg.keys(err), `fetch ${url} failed.`);
-        // return abort(true, `fetch ${url} failed.`);
+        return abort(libHttp.superagentPodErr(err), `fetch ${url} failed.`);
       });
 
     }, function(my, next) {
