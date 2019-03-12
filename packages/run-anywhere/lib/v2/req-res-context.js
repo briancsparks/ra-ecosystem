@@ -22,8 +22,16 @@ const { _ }                   = sg;
 //  Functions
 //
 
-exports.ensureContext = function(req, res, initialParams={}) {
-  var ractx, context;
+exports.ensureContext = function(req, res, contextDottedPath, eventDottedPath, initialParams={}) {
+  if (res.runAnywhere) {
+    let ractx   = res.runAnywhere;
+    let context = ractx.context;
+    let event   = ractx.event;
+
+    return {ractx, context, event};
+  }
+
+  var ractx, context = sg.deref(req, contextDottedPath), event = sg.deref(req, eventDottedPath);
 
   if (!res.runAnywhere) {
     ractx = {
@@ -32,16 +40,16 @@ exports.ensureContext = function(req, res, initialParams={}) {
       current: {}
     };
 
-    ractx.context     = ractx.context || sg.deref(req, `apiGateway.context`);
-    ractx.event       = ractx.event   || sg.deref(req, `apiGateway.event`);
+    ractx.context     = context;
+    ractx.event       = event;
 
     req.runAnywhere   = res.runAnywhere = ractx;
   }
 
-  ractx     = res.runAnywhere;
-  context   = ractx.context;
+  ractx                 = res.runAnywhere;
+  context.runAnywhere   = ractx;
 
-  return {ractx, context};
+  return {ractx, context, event};
 };
 
 // -------------------------------------------------------------------------------------

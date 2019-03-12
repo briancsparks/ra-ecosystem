@@ -622,7 +622,14 @@ function getRaContext(context) {
 }
 
 function upsertRaContextForReqRes(req, res, modname, fnName) {
-  const {context} = reqResContext.ensureContext(req, res);
+  var   contextDottedPath='context', eventDottedPath='event';
+
+  if (req.apiGateway) {
+    contextDottedPath = `apiGateway.context`;
+    eventDottedPath   = `apiGateway.event`;
+  }
+
+  const {context} = reqResContext.ensureContext(req, res, contextDottedPath, eventDottedPath);
   return upsertRaContextForX(context, modname, fnName);
 }
 

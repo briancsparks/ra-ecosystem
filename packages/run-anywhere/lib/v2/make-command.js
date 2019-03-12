@@ -198,7 +198,7 @@ function invoke(opts, argv, ractx, callback, abort_) {
     mod, fnName, hostModName, hostMod
   }                     = opts;
 
-console.log(`invoke1, ractx keys, context keys`, sg.keys(ractx), sg.keys((ractx && ractx.context) || {}));
+// console.log(`invoke1, ractx keys, context keys`, sg.keys(ractx), sg.keys((ractx && ractx.context) || {}));
 
   var   modjule               = {exports:{}};
   const ra                    = require('./mod-squad');
@@ -213,7 +213,7 @@ console.log(`invoke1, ractx keys, context keys`, sg.keys(ractx), sg.keys((ractx 
   // Load up the function
   ROOT.xport({invoke: function(argv, context, callback) {
     sg.check(43, __filename, {argv}, {context}, 'runAnywhere');
-  console.log(`invoke4, ractx keys, context keys`, sg.keys((context && context.runAnywhere) || {}), sg.keys(context));
+  // console.log(`invoke4, ractx keys, context keys`, sg.keys((context && context.runAnywhere) || {}), sg.keys(context));
 
     const { rax }    = ra.getContext(context, argv, 0);
 
@@ -229,7 +229,7 @@ console.log(`invoke1, ractx keys, context keys`, sg.keys(ractx), sg.keys((ractx 
 
   const caller = ROOT.xport({caller: function(argv, context, callback) {
     sg.check(44, __filename, {argv}, {context}, 'runAnywhere');
-console.log(`invoke3, ractx keys, context keys`, sg.keys((context && context.runAnywhere) || {}), sg.keys(context));
+// console.log(`invoke3, ractx keys, context keys`, sg.keys((context && context.runAnywhere) || {}), sg.keys(context));
 
     const { rax }       = ra.getContext(context, argv, 0);
     const { invoke }    = rax.loads('invoke', {}, function(){});
@@ -242,7 +242,7 @@ console.log(`invoke3, ractx keys, context keys`, sg.keys((context && context.run
 
   // Build up or get the context
   const { context } = ensureThreeContext(ractx.context || {});
-console.log(`invoke2, ractx keys, context keys`, sg.keys((context && context.runAnywhere) || {}), sg.keys(context));
+// console.log(`invoke2, ractx keys, context keys`, sg.keys((context && context.runAnywhere) || {}), sg.keys(context));
 
   return caller(argv, context, function(err, data, ...rest) {
     return callback(err, data, ...rest);

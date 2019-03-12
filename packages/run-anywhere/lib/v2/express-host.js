@@ -175,9 +175,12 @@ exports.raContextMw = exports.express_raMw = function(stage, dbName, collNames =
     closes[collName]      = close;
   });
 
+  const seedContext = JSON.stringify({context:{}, event:{}});
+
   // Hook into the request/response stream -- the prototypical express.js middleware pattern
   return function(req, res, next) {
-    var   { ractx, context } = reqResContext.ensureContext(req, res, {context:{}, event:{}});
+    req.raHost = JSON.parse(seedContext);
+    var   { ractx, context } = reqResContext.ensureContext(req, res, `raHost.context`, `raHost.event`);
 
     ractx.stage = stage;
 
