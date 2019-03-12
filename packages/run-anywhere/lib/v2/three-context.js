@@ -22,24 +22,25 @@ const { _ }                   = sg;
 //  Functions
 //
 
-exports.ensureContext = function(req, res, initialParams={}) {
+exports.ensureContext = function(context_, initialParams={}) {
   var ractx, context;
 
-  if (!res.runAnywhere) {
+  if (!context_.runAnywhere) {
     ractx = {
-      req_url:  req.url,
       ...initialParams,
       current: {}
     };
 
-    ractx.context = {runAnywhere: ractx};     /* FIXME */
-    req.runAnywhere = res.runAnywhere = ractx;
+    ractx.context           = context_;
+    context_.runAnywhere    = ractx;
   }
 
-  ractx   = res.runAnywhere;
+  ractx   = context_.runAnywhere;
   context = ractx.context;
+
   return {ractx, context};
 };
+
 
 // -------------------------------------------------------------------------------------
 // exports

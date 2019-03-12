@@ -7,7 +7,7 @@
 //  Requirements
 //
 
-const sg                      = require('sg0');
+const sg                      = require('sg-diag');
 const { _ }                   = sg;
 
 // -------------------------------------------------------------------------------------

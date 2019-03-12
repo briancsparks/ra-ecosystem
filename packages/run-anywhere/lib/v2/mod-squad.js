@@ -421,7 +421,7 @@ const FuncRa = function(argv, context, callback, origCallback, ractx, options_ =
         }
 
         // Invoke the original function
-        if (abort)  { abort.calling(`${mod.modname || self.modname || 'modunk'}::${fnName}(98)`, argv); }
+        if (abort && options.abort && abort.calling)  { abort.calling(`${mod.modname || self.modname || 'modunk'}::${fnName}(98)`, argv); }
         return mod[fnName](argv, context, callback);
       };
       // ----------------------------- end
@@ -452,7 +452,7 @@ const FuncRa = function(argv, context, callback, origCallback, ractx, options_ =
 
     // Do for each function name
     return sg.reduce(fnNames.split(','), {}, function(m, fnName) {
-      const invokeOpts  = {mod, fnName, hostModName: self.modname};
+      const invokeOpts  = {mod, fnName, hostModName: self.modname, hostMod: self.mod};
 
       // ------------------------ The proxy for the function that was loaded
       const interceptFn = function(argv, continuation) {
@@ -595,20 +595,25 @@ exports.getContext            = getContext;
 exports.getRaContext          = getRaContext;
 exports.upsertRaContextForX   = upsertRaContextForX;
 
-function getContext(context={}, argv={}) {
+function getContext(context={}, argv={}, level=1) {
   const ractx         = context.runAnywhere || {};
   const rax           = (ractx.current || {}).rax || {};
   var   stage         = getStage(context, argv, ractx);
-  var   isApiGateway  = getIsApiGateway(context, argv, ractx);
-  var   isAws         = getIsAws(context, argv, ractx);
 
-  return {
-    ractx,
-    rax,
+  var   result = sg.merge({
     stage,
-    isApiGateway,
-    isAws
-  };
+    ractx,
+    rax
+  });
+
+  if (level >= 1) {
+    result = sg.merge(result, {
+      isApiGateway:     getIsApiGateway(context, argv, ractx),
+      isAws:            getIsAws(context, argv, ractx),
+    });
+  }
+
+  return result;
 }
 
 function getRaContext(context) {

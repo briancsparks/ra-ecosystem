@@ -1,0 +1,19 @@
+{
+  "name": "sg-diag",
+  "version": "1.0.0",
+  "description": "Diagnostics",
+  "author": "Brian C Sparks <briancsparks@gmail.com>",
+  "homepage": "https://github.com/briancsparks/ra-ecosystem#readme",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/briancsparks/ra-ecosystem.git"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "sg0": "^1.0.7"
+  }
+}

@@ -1,0 +1,3 @@
+# SG Diagnostics
+
+sg.check

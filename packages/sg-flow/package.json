@@ -19,6 +19,6 @@
   "homepage": "https://github.com/briancsparks/ra-ecosystem/tree/master/packages/sg-flow#readme",
   "dependencies": {
     "lodash": "^4.17.11",
-    "sg0": "^1.0.7"
+    "sg-diag": "^1.0.0"
   }
 }

@@ -4,7 +4,7 @@
  */
 
 var _                         = require('lodash');
-var sg                        = require('sg0');
+var sg                        = require('sg-diag');
 
 /**
  *  Was the callback called to mean a good result? (Are the results OK?)

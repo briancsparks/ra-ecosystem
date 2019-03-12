@@ -11,6 +11,9 @@
 const sg0                     = require('sg-flow');
 const sg                      = sg0.merge(sg0, require('sg-clihelp'));
 const { _ }                   = sg;
+const libThreeContext         = require('./three-context');
+
+const ensureThreeContext      = libThreeContext.ensureContext;
 
 // -------------------------------------------------------------------------------------
 //  Data
@@ -21,6 +24,18 @@ const { _ }                   = sg;
 //  Functions
 //
 
+/**
+ *
+ *
+ * @param {*} [ARGV=sg.ARGV()]    - The standard ARGV.
+ * @param {*} [mods={}]           - Run-anywhere modules that contain the fnName function.
+ * @param {*} fnName              - The name of the command to run.
+ * @param {*} [opts={}]           - Options
+ * @param {*} [commands={}]       - A map of functions.
+ * @param {*} [callback=null]     - The normal NodeJs continuation callback.
+ *
+ * @returns {null}                - [[return is only used for control-flow.]]
+ */
 exports.command = function(ARGV = sg.ARGV(), mods = {}, fnName, opts={}, commands = {}, callback=null) {
   require('loud-rejection/register');
   require('exit-on-epipe');
@@ -69,7 +84,7 @@ exports.command = function(ARGV = sg.ARGV(), mods = {}, fnName, opts={}, command
 
 
   // Otherwise, run it
-  return invoke2(ARGV.pod(), mod, fnName, function(err, ...rest) {
+  return invoke0(ARGV.pod(), mod, fnName, function(err, ...rest) {
     var exitCode = 0;
 
     // Is there an error?
@@ -78,7 +93,7 @@ exports.command = function(ARGV = sg.ARGV(), mods = {}, fnName, opts={}, command
 
       // Log it unless silent
       if (!silent) {
-        console.error(...sg.logParams(`EINVOKE2 -- ${fnName} failed.`, err));
+        console.error(...sg.logParams(`EINVOKE0 -- ${fnName} failed.`, err));
       }
     }
 
@@ -127,8 +142,8 @@ exports.command = function(ARGV = sg.ARGV(), mods = {}, fnName, opts={}, command
 // -------------------------------------------------------------------------------------
 // exports
 //
-exports.invoke2 = invoke2;
-exports.invoke = invoke;
+exports.invoke0 = invoke0;
+exports.invoke  = invoke;
 
 // -------------------------------------------------------------------------------------
 //  Helper Functions
@@ -144,7 +159,7 @@ function cleanExit(ARGV, modfilename, condition, code, msg) {
 
 function noop(){}
 
-function invoke2(argv, mod, fname, callback, abort_) {
+function invoke0(argv, mod, fname, callback, abort_) {
 
   // Get args
   const debug   = argv.debug;
@@ -176,38 +191,60 @@ function invoke2(argv, mod, fname, callback, abort_) {
   });
 }
 
-function invoke(options, argv, ractx, callback, abort_) {
+function invoke(opts, argv, ractx, callback, abort_) {
+  sg.check(42, __filename, {opts}, 'mod;fnName;hostModName;hostMod', {argv}, {ractx}, 'context');
 
-  const { mod, fnName }   = options;
-  const { hostModName }   = options;
+  const {
+    mod, fnName, hostModName, hostMod
+  }                     = opts;
+
+console.log(`invoke1, ractx keys, context keys`, sg.keys(ractx), sg.keys((ractx && ractx.context) || {}));
+
+  var   modjule               = {exports:{}};
+  const ra                    = require('./mod-squad');
+  const ROOT                  = ra.modSquad(modjule, `${hostModName}ROOT`);
 
   // Get args
-  const debug   = argv.debug;
-  const verbose = argv.verbose;
-
-  var   context = {
-    // isRaInvoked:  true,
-    runAnywhere:  ractx   || {}
-  };
+  const {
+    debug, silent, verbose, machine, human
+  }                                             = argv;
+  const options1 = sg.merge({debug, silent, verbose, machine, human});
 
   // Load up the function
-  const sg0   = require('sg-flow');
-  const ROOT  = require('./mod-squad').modSquad({exports:{}}, `${hostModName}ROOT`);
-  const init  = ROOT.xport({invoke: function(argv, context, callback) {
+  ROOT.xport({invoke: function(argv, context, callback) {
+    sg.check(43, __filename, {argv}, {context}, 'runAnywhere');
+  console.log(`invoke4, ractx keys, context keys`, sg.keys((context && context.runAnywhere) || {}), sg.keys(context));
 
-    const ractx     = context.runAnywhere || {};
-    const { rax }   = ractx[`${hostModName}ROOT__invoke`];
+    const { rax }    = ra.getContext(context, argv, 0);
 
-    return rax.iwrap(abort_, function(abort) {
-      const fns = rax.loads(mod, fnName, sg0.merge({debug, verbose}), abort);
+    const iwrapArgs = _.compact([abort_, function(abort) {
+      const fns = rax.loads(mod, fnName, options1, abort);
       const fn  = fns[fnName];
 
-      //console.error(`invoking ${fnName}`, sg.inspect({argv, context}));
       return fn(argv, context, callback);
-    });
+    }]);
+
+    return rax.iwrap(...iwrapArgs);
   }});
 
-  return init(argv, context, function(err, data, ...rest) {
+  const caller = ROOT.xport({caller: function(argv, context, callback) {
+    sg.check(44, __filename, {argv}, {context}, 'runAnywhere');
+console.log(`invoke3, ractx keys, context keys`, sg.keys((context && context.runAnywhere) || {}), sg.keys(context));
+
+    const { rax }       = ra.getContext(context, argv, 0);
+    const { invoke }    = rax.loads('invoke', {}, function(){});
+
+    return invoke(argv, {}, callback);
+  }});
+
+
+  // --------------------------------------------------------
+
+  // Build up or get the context
+  const { context } = ensureThreeContext(ractx.context || {});
+console.log(`invoke2, ractx keys, context keys`, sg.keys((context && context.runAnywhere) || {}), sg.keys(context));
+
+  return caller(argv, context, function(err, data, ...rest) {
     return callback(err, data, ...rest);
   });
 }
