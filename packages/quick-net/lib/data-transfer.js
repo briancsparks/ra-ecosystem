@@ -13,6 +13,7 @@ const sg                      = ra.get3rdPartyLib('sg-flow');
 const { _ }                   = sg;
 const redisUtils              = ra.redisUtils;
 const { getDQuiet }           = ra.utils;
+const libHttp                 = require('./http');
 const request                 = require('superagent');
 
 const mod                     = ra.modSquad(module, 'dataTransfer');
@@ -73,7 +74,9 @@ mod.xport({fetchAndCache: function(argv, context, callback) {
 
     }, function(my, next) {
       return request.get(url).end(function(err, res) {
-        sg.elog(`superagent GET ${url}`, {err, res: res && res.ok && res.body});
+        // const response = _.pick(res, 'text,body,header,type,charset,status,statusType,info,ok,clientError,serverError,error,accepted,noContent,badRequest,unauthorized,notAcceptable,notFound,forbidden'.split(','));
+        const response = libHttp.superagentPodResponse(res);
+        sg.elog(`superagent GET ${url}`, {err: libHttp.superagentPodErr(err), response});
 
         if (sg.ok(err, res) && res.ok) {
           // console.log(`super`, sg.keys(res), sg.inspect({body: res.body}));
@@ -85,7 +88,9 @@ mod.xport({fetchAndCache: function(argv, context, callback) {
         }
 
         // The fetch failed.
-        return abort(err, `fetch ${url} failed.`);
+        // return abort(err, `fetch ${url} failed.`);
+        return abort(sg.keys(err), `fetch ${url} failed.`);
+        // return abort(true, `fetch ${url} failed.`);
       });
 
     }, function(my, next) {

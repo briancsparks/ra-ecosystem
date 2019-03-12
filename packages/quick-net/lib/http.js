@@ -169,6 +169,19 @@ exports.getHttpParams = module.exports.getHttpParams = function(req, normalizeBo
   return httpParams;
 };
 
+exports.superagentPodResponse = function(response) {
+  // return _.pick(response, 'text,body,header,type,charset,status,statusType,info,ok,clientError,serverError,error,accepted,noContent,badRequest,unauthorized,notAcceptable,notFound,forbidden'.split(','));
+  return _.pick(response, 'text,body,header,type,charset,status,statusType,info,ok,clientError,serverError,accepted,noContent,badRequest,unauthorized,notAcceptable,notFound,forbidden'.split(','));
+};
+
+exports.superagentPodErr = function(err) {
+  if (!err)   { return err; }
+  return {
+    status:   err.status,
+    response: _.pick(err.response, 'text,body,header,type,charset,status,statusType,info,ok,clientError,serverError,accepted,noContent,badRequest,unauthorized,notAcceptable,notFound,forbidden'.split(','))
+  };
+};
+
 // --------------------------------------------------------------------
 exports._200 = function(req, res, result_, dbg) {
   var result = {code:200, ok:true, ...result_, ...sg.debugInfo(dbg)};
