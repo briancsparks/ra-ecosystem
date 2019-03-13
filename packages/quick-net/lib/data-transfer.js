@@ -29,6 +29,7 @@ const mod                     = ra.modSquad(module, 'dataTransfer');
 //  Functions
 //
 
+// TODO: add modes always fetch, or not.
 mod.xport({fetchAndCache: function(argv, context, callback) {
 
   // ra invoke lib\ec2\.js fetchAndCache --arg=
@@ -40,7 +41,7 @@ mod.xport({fetchAndCache: function(argv, context, callback) {
   var   haveGivenResult = false;
   return rax.iwrap(rax.mkLocalAbort(allDone), function(abort) {
 
-    const { GET }           = rax.wrapFns(redis, 'GET', rax.opts({emptyOk:true, abort:false}));
+    const { GET,EXPIRE }    = rax.wrapFns(redis, 'GET,EXPIRE', rax.opts({emptyOk:true, abort:false}));
     const { SET }           = rax.wrapFns(redis, 'SET', rax.opts({emptyOk:true}));
 
     const key               = rax.arg(argv, 'key');
@@ -74,8 +75,7 @@ mod.xport({fetchAndCache: function(argv, context, callback) {
 
     }, function(my, next) {
       return request.get(url).end(function(err, res) {
-        // const response = _.pick(res, 'text,body,header,type,charset,status,statusType,info,ok,clientError,serverError,error,accepted,noContent,badRequest,unauthorized,notAcceptable,notFound,forbidden'.split(','));
-        const response = libHttp.superagentPodResponse(res);
+        // const response = libHttp.superagentPodResponse(res);
         // sg.elog(`superagent GET ${url}`, {err: libHttp.superagentPodErr(err), response});
 
         if (sg.ok(err, res) && res.ok) {
@@ -95,7 +95,10 @@ mod.xport({fetchAndCache: function(argv, context, callback) {
       const json = JSON.stringify(my.body || {});
       return SET([key, json], function(err, receipt) {
         // sg.elog(`SET ${key} ${json}`, {err, receipt});
-        return next();
+
+        return EXPIRE([key, 1 * 60 * 60 /* one hour */], (err, receipt) => {
+          return next();
+        });
       });
 
     }, function(my, next) {

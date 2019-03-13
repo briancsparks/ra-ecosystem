@@ -88,13 +88,6 @@ exports.getQuiet = function(context) {
     }
   }
 
-  // TODO: putttt back
-  // if (sg.numKeys(context) && context.runAnywhere) {
-  //   if ('quiet' in context.runAnywhere) {
-  //     return context.runAnywhere.quiet;
-  //   }
-  // }
-
   // Quiet during scripts
   if ('npm_lifecycle_event' in process.env) {
     return true;
