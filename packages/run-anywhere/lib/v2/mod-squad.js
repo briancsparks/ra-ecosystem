@@ -601,27 +601,6 @@ exports.getContext            = getContext;
 exports.getRaContext          = getRaContext;
 exports.upsertRaContextForX   = upsertRaContextForX;
 
-function getContext(context={}, argv={}, level=1) {
-  const ractx         = context.runAnywhere || {};
-  const rax           = (ractx.current || {}).rax || {};
-  var   stage         = getStage(context, argv, ractx);
-
-  var   result = sg.merge({
-    stage,
-    ractx,
-    rax
-  });
-
-  if (level >= 1) {
-    result = sg.merge(result, {
-      isApiGateway:     getIsApiGateway(context, argv, ractx),
-      isAws:            getIsAws(context, argv, ractx),
-    });
-  }
-
-  return result;
-}
-
 function getRaContext(context) {
   return context.runAnywhere;
 }
@@ -695,8 +674,29 @@ function getStage(context, argv, ractx) {
   return process.env.STAGE || process.env.AWS_ACCT_TYPE;
 }
 
+function getContext(context={}, argv={}, level=1) {
+  const ractx         = context.runAnywhere || {};
+  const rax           = (ractx.current || {}).rax || {};
+  var   stage         = getStage(context, argv, ractx);
+
+  var   result = sg.merge({
+    stage,
+    ractx,
+    rax
+  });
+
+  if (level >= 1) {
+    result = sg.merge(result, {
+      isApiGateway:     getIsApiGateway(context, argv, ractx),
+      isAws:            getIsAws(context, argv, ractx),
+    });
+  }
+
+  return result;
+}
+
 function getIsApiGateway(context, event, ractx) {
-  console.log(`giag`, sg.inspect({context, event}));
+  // console.log(`giag`, sg.inspect({context, event})); // too complex to log
 
   if ('isApiGateway' in context) {
     return context.isApiGateway;
