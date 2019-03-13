@@ -9,7 +9,7 @@ const redisLib                  = require('redis');
 const wrapped                   = require('../wrapped');
 
 const {
-  getQuiet, raContext,
+  getQuiet, getVerbose, raContext,
 }                               = utils;
 
 // -------------------------------------------------------------------------------------
@@ -41,6 +41,7 @@ const redisHost               = process.env.redis       || process.env.REDIS;
  */
 exports.getRedis = function(context) {
   const quiet           = getQuiet(context || {});
+  const verbose         = getVerbose(context);
   var   raCtx           = raContext(context);
   var   redis           = raCtx.redis;
 
@@ -50,9 +51,9 @@ exports.getRedis = function(context) {
     redis               = redisLib.createClient(redisPort, redisHost);
     raCtx.redis         = redis;
 
-    if (!quiet) console.log(`Giving out redis close`);
+    if (verbose || process.env.SHOW_CONNECTION_CLOSES) console.log(`Giving out redis close`);
     close = function() {
-      if (!quiet) console.log(`Closing redis`);
+      if (verbose || process.env.SHOW_CONNECTION_CLOSES) console.log(`Closing redis`);
       redis.quit();
     };
   }

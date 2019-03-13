@@ -262,8 +262,9 @@ const FuncRa = function(argv, context, callback, origCallback, ractx, options_ =
     return localAbort;
   };
 
-  // TODO: if service is a string, recurse, and use our mod
   self.wrapFns = function(service, fnNames, ...rest) {
+    if (typeof service === 'string')    { return self.wrapFns(self.mod, service, fnNames, ...rest); }
+
     var [ options1, abort ] = (rest.length === 2 ? rest : [{}, rest[0]]);
     abort                   = abort || self.providedAbort || abort;
 
@@ -450,32 +451,30 @@ const FuncRa = function(argv, context, callback, origCallback, ractx, options_ =
    * @param {*} mod                 - The module to load from. Not required when loading from your own module.
    * @param {*} fnNames             - The function names to load.
    * @param {*} options             - Any options, like {abort:false}.
-   * @param {*} abort               - The abort function to use.
+   * @param {*} abort_               - The abort function to use.
    *
    * @returns {null}  - [[return is just used for control-flow.]]
    */
-  self.invokers = function(mod, fnNames, options, abort) {
+  self.invokers = function(mod, fnNames, options, abort_) {
     // TODO sg.check
-    // console.log(`invokers1`, sg.inspect({fnNames}));
+
+    const abort = abort_ || self.providedAbort || abort_;
+
     // Do for each function name
     return sg.reduce(fnNames.split(','), {}, function(m, fnName) {
       const invokeOpts  = {mod, fnName, hostModName: self.modname, hostMod: self.mod};
-      // console.log(`invokers2`, sg.inspect({fnName, hostModName: self.modname}));
 
       // ------------------------ The proxy for the function that was loaded
       const interceptFn = function(argv, continuation) {
-        // console.log(`invokers4`, sg.inspect({argv}));
 
         if (!_.isFunction(continuation))    { sg.warn(`continuation for ${fnName} is not a function`); }
 
         // Invoke the original function
-        // console.log(`invokers5`, sg.inspect({k:sg.keys(ractx)}));
-        return commandInvoke(invokeOpts, self.opts(argv), ractx, continuation);
+        return commandInvoke(invokeOpts, options, self.opts(argv), ractx, continuation, abort);
       };
       // ----------------------------- end
 
       // Put the interception function into the object that gets returned.
-      // console.log(`invokers3`, sg.inspect({fnName}));
       return sg.kv(m, fnName, interceptFn);
     });
   };

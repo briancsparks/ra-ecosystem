@@ -192,14 +192,12 @@ function invoke0(argv, mod, fname, callback, abort_) {
   });
 }
 
-function invoke(opts, argv, ractx, callback, abort_) {
+function invoke(opts, options, argv, ractx, callback, abort_) {
   sg.check(42, __filename, {opts}, 'mod;fnName;hostModName;hostMod', {argv}, {ractx}, 'context');
 
   const {
     mod, fnName, hostModName, hostMod
   }                     = opts;
-
-  // console.log(`invoke1, ractx keys, context keys`, sg.keys(ractx), sg.keys((ractx && ractx.context) || {}));
 
   var   modjule               = {exports:{}};
   const ra                    = require('./mod-squad');
@@ -209,7 +207,7 @@ function invoke(opts, argv, ractx, callback, abort_) {
   const {
     debug, silent, verbose, machine, human
   }                                             = argv;
-  const options1 = sg.merge({debug, silent, verbose, machine, human});
+  const options1 = sg.merge({debug, silent, verbose, machine, human}, options || {});
 
   // Load up the function
   ROOT.xport({invoke: function(argv, context, callback) {
@@ -232,7 +230,7 @@ function invoke(opts, argv, ractx, callback, abort_) {
     sg.check(44, __filename, {argv}, {context}, 'runAnywhere');
 
     const { rax }       = ra.getContext(context, argv, 0);
-    const { invoke }    = rax.loads('invoke', {}, function(){});
+    const { invoke }    = rax.loads('invoke', {}, abort_ || function(){});
 
     return invoke(argv, {}, callback);
   }});
@@ -242,7 +240,6 @@ function invoke(opts, argv, ractx, callback, abort_) {
 
   // Build up or get the context
   const { context } = ensureThreeContext(ractx.context || {});
-  // console.log(`invoke2, ractx keys, context keys`, sg.keys((context && context.runAnywhere) || {}), sg.keys(context));
 
   return caller(argv, context, function(err, data, ...rest) {
     return callback(err, data, ...rest);

@@ -11,7 +11,7 @@ const { qm }                    = require('quick-merge');
 const { registerSanityChecks }  = require('../sanity-checks');
 
 const {
-  getQuiet, raContext, inspect,
+  getQuiet, getVerbose, raContext, inspect,
 }                               = utils;
 
 // -------------------------------------------------------------------------------------
@@ -45,6 +45,7 @@ var   xyzDbs        = {};
  */
 const getXyzDb = async function(collName, context, dbName) {
   const quiet           = getQuiet(context || {});
+  const verbose         = getVerbose(context);
   var   raCtx           = context.runAnywhere     = context.runAnywhere   || {};
   var   connections     = raCtx.dbs               = raCtx.dbs             || {};
 
@@ -64,9 +65,9 @@ const getXyzDb = async function(collName, context, dbName) {
 
     xyzDb               = raCtx.dbs[`${dbName}/${collName}`] = db.collection(collName);
 
-    if (!quiet) console.log(`Giving out close for ${collName}`);
+    if (verbose || process.env.SHOW_CONNECTION_CLOSES) console.log(`Giving out close for ${collName}`);
     close = function() {
-      if (!quiet) console.log(`Closing for ${collName}`);
+      if (verbose || process.env.SHOW_CONNECTION_CLOSES) console.log(`Closing for ${collName}`);
       conn.close();
     };
     meaningfulClose = true;
@@ -174,8 +175,9 @@ sanityChecks.push(async function({assert, ...context}) {
  * When logging a result of querying, the list is usually big, and not meaningful to
  * the log, this function shortens the list of items to one, and shows the length.
  *
- * @param {*} result
- * @returns
+ * @param {*} result    - A result from a DB query.
+ *
+ * @returns {object}    - A smaller version
  */
 exports.smQueryResult = function(result) {
   return utils.smallItems(result, 'items');
@@ -185,10 +187,11 @@ exports.smQueryResult = function(result) {
  * Does the mundane `mtime/ctime` on an object, and makes sure that IDs that are
  * on the query are put into the update.
  *
- * @param {*} updates_
- * @param {*} query
- * @param {*} context
- * @returns
+ * @param {*} updates_  - The updates
+ * @param {*} query     - The query
+ * @param {*} context   - The standard context object
+ *
+ * @returns {object}    - The receipt for the operation
  */
 exports.updatify = function(updates_, query, context) {
 
@@ -224,8 +227,9 @@ exports.updatify = function(updates_, query, context) {
  * * dt, date   -- a string that can be parsed by Date c-tor
  * * tm, time   -- a number (or all-numeric string) to use to make a Date from a time epoch
  *
- * @param {*} arr
- * @returns
+ * @param {*} arr   - The input
+ *
+ * @returns {array}   - The result
  */
 exports.fixParams = function(arr) {
   if (!_.isArray(arr))    { return exports.fixParams([arr])[0]; }
@@ -245,7 +249,9 @@ exports.fixParams = function(arr) {
 /**
  * results from MongoDB are huge objects. Makes them small.
  *
- * @param {*} result
+ * @param {*} result    - A result from a DB query.
+ *
+ * @returns {object}    - A smaller version
  */
 exports.smResult = exports.smReceipt = exports.smDbResult = exports.smDbReceipt = function(result) {
   return _.omit(result, 'message', 'connection');

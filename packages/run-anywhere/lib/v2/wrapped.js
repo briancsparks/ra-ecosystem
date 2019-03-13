@@ -22,14 +22,14 @@ const { _ }                   = sg;
 //  Functions
 //
 
-exports.mkFns = function(service, fnames, options1, abort) {
-  return sg.reduce(fnames.split(','), {}, (m, fname) => {
-    return sg.kv(m, fname, exports.mkInterceptorFn(service, fname, options1, abort));
+exports.mkFns = function(service, fnNames, options1, abort) {
+  return sg.reduce(fnNames.split(','), {}, (m, fnName) => {
+    return sg.kv(m, fnName, exports.mkInterceptorFn(service, fnName, options1, abort));
   });
 };
 
-exports.mkInterceptorFn = function(service, fname, options1, abort) {
-  const origFn = (service[fname] ? (service[fname].bind(service)) : noopFn);
+exports.mkInterceptorFn = function(service, fnName, options1, abort) {
+  const origFn = (service[fnName] ? (service[fnName].bind(service)) : noopFn);
 
   const interceptFn = function(...args_) {
     var   args          = _.toArray(args_);
@@ -49,7 +49,7 @@ exports.mkInterceptorFn = function(service, fname, options1, abort) {
 
       // Report normal (ok === true) and errors that are aborted (!ok && options.abort)
       if (options.debug && (ok || (!ok && options.abort))) {
-        sg.elog(`${fname}(45)`, {args, ok, err, data, rest: rest});
+        sg.elog(`${fnName}(45)`, {args, ok, err, data, rest: rest});
       }
 
       if (!ok) {
@@ -58,7 +58,7 @@ exports.mkInterceptorFn = function(service, fname, options1, abort) {
 
         // Report, but leave out the verbose error
         if (options.debug) {
-          sg.elog(`${fname}(17)`, {args, err:(options.verbose ? err : true), data, rest: rest});
+          sg.elog(`${fnName}(17)`, {args, err:(options.verbose ? err : true), data, rest: rest});
         }
       }
 
@@ -78,16 +78,16 @@ exports.mkInterceptorFn = function(service, fname, options1, abort) {
 
 
 
-exports.mkFns2 = function(service, fnames, ...rest) {
-  return sg.reduce(fnames.split(','), {}, (m, fname) => {
-    return sg.kv(m, fname, exports.mkInterceptorFn2(service, fname, ...rest));
+exports.mkFns2 = function(service, fnNames, ...rest) {
+  return sg.reduce(fnNames.split(','), {}, (m, fnName) => {
+    return sg.kv(m, fnName, exports.mkInterceptorFn2(service, fnName, ...rest));
   });
 };
 
-exports.mkInterceptorFn2 = function(service, fname, ...rest) {
+exports.mkInterceptorFn2 = function(service, fnName, ...rest) {
   var [ options1, abort ] = (rest.length === 2 ? rest : [{}, rest[0]]);
 
-  const origFn = (service[fname] ? (service[fname].bind(service)) : noopFn);
+  const origFn = (service[fnName] ? (service[fnName].bind(service)) : noopFn);
 
   const interceptFn = function(...args_) {
     var   args          = _.toArray(args_);
@@ -111,13 +111,13 @@ exports.mkInterceptorFn2 = function(service, fname, ...rest) {
 
       // ==========================================================
       function reportTheData({condition, id, small}) {
-        if (condition) { sg.elog(`${fname}(${id})`, sg.merge({args: args_, ok, data, rest: rest}, {err: (small? !!err : err)})); }
+        if (condition) { sg.elog(`${fnName}(${id})`, sg.merge({args: args_, ok, data, rest: rest}, {err: (small? !!err : err)})); }
       }
     };
 
     // Should we verbose?
     if (options.verbose) {
-      sg.elog(`${fname}(32)`, {args: args_});
+      sg.elog(`${fnName}(32)`, {args: args_});
     }
 
     // Call the original function
@@ -125,7 +125,7 @@ exports.mkInterceptorFn2 = function(service, fname, ...rest) {
       args = args[0];
     }
 
-    // TODO: use abort.calling, if appropriate
+    if (abort && abort.calling)   { abort.calling(`${fnName}`, {args}); }
     return origFn(...args, callback);
   };
 

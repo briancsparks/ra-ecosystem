@@ -56,6 +56,7 @@ exports.smallItems = function(obj, key = 'items') {
 
 var   g_quiet   = null;
 var   g_dquiet  = null;
+var   g_verbose = false;
 
 exports.setQuiet = function(q) {
   g_quiet = q;
@@ -63,6 +64,35 @@ exports.setQuiet = function(q) {
 
 exports.setDQuiet = function(q) {
   g_dquiet = q;
+};
+
+exports.setVerbose = function(v) {
+  g_verbose = v;
+};
+
+exports.getVerbose = function(context={}, options={}) {
+
+  // Quiet during sanity checks
+  if (isSanityCheck(context)) {
+    return false;
+  }
+
+  // Quiet during scripts
+  if ('npm_lifecycle_event' in process.env) {
+    return false;
+  }
+
+  // Quiet while claudia is testing
+  if (process.platform === 'win32' && process.argv[1] && process.argv[1].match(/claudia/i)) {
+    return false;
+  }
+
+  if (options.verbose) {
+    return true;
+  }
+
+  // Otherwise, only if turned on
+  return g_verbose;
 };
 
 exports.getQuiet = function(context) {
@@ -123,6 +153,10 @@ exports.getDQuiet = function(context) {
   return true;
 };
 
+
+
+
+// -----------
 const pad = exports.pad = function(s_, len, fill) {
   var s = ''+s_;
   while (s.length < len) {
@@ -130,9 +164,6 @@ const pad = exports.pad = function(s_, len, fill) {
   }
   return s;
 };
-
-
-
 
 // lib   = sg.extend(lib, require(...));
 

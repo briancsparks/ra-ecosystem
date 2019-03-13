@@ -14,7 +14,6 @@ const { inspect }                 = utils;
 //  Data
 //
 
-var   handlers      = {};
 var   handlerFns    = [];
 
 // -------------------------------------------------------------------------------------
@@ -65,14 +64,12 @@ exports.expressServerlessRoutes = function(subdomainName, handler /*, appBuilder
 
       if (domainName.match(/execute-api/i) && domainName.match(/amazonaws[.]com$/i)) {
         if (domainName.indexOf(subdomainName) !== -1) {
-          // if (!utils.getDQuiet(context)) { console.log(`DDDSending request to handler for express sub-domain: ${subdomainName}`); }
-          if (!utils.getQuiet(context)) { console.log(`Sending request to handler for express sub-domain: ${subdomainName}`); }
+          if (utils.getVerbose(context)) { console.log(`Sending sub-domain request ${subdomainName} --> [express]`); }
           return true;
         }
       }
     }
 
-    // if (!utils.getQuiet(context)) { console.log(`NOT Sending request to handler for express sub-domain: ${subdomainName}`); }
     return false;
   },
   function(event, context_, callback) {
@@ -91,25 +88,16 @@ exports.claudiaServerlessApi = function(subdomainName, handler) {
 
       if (domainName.match(/execute-api/i) && domainName.match(/amazonaws[.]com$/i)) {
         if (domainName.indexOf(subdomainName) !== -1) {
-
-          if (handler) {
-            // if (!utils.getDQuiet(context)) { console.log(`DDDSending request to handler for gatewayApi sub-domain: ${subdomainName}`); }
-            if (!utils.getQuiet(context)) { console.log(`Sending request to handler for gatewayApi sub-domain: ${subdomainName}`); }
-            return true;
-
-          } else {
-            // if (!utils.getQuiet(context)) { console.log(`NOT Sending request to handler for gatewayApi sub-domain, even though we know subdomain: ${subdomainName}`); }
-            return false;
-          }
+          if (utils.getVerbose(context)) { console.log(`Sending sub-domain request ${subdomainName} --> [API Builder]`); }
+          return true;
         }
       }
     }
 
-    // if (!utils.getQuiet(context)) { console.log(`NOT Sending request to handler for gatewayApi sub-domain: ${subdomainName}`); }
     return false;
   },
   function(event, context_, callback) {
-    const context = sg.merge(context_, {claudia:true, isApiGateway:true});
+    const context = sg.merge(context_, {isClaudia:true, isApiGateway:true});
     return handler(event, context, callback);
   });
 };
