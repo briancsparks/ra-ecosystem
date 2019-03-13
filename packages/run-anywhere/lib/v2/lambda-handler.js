@@ -76,7 +76,7 @@ exports.expressServerlessRoutes = function(subdomainName, handler /*, appBuilder
     return false;
   },
   function(event, context_, callback) {
-    const context = sg.merge(context_, {expressServerless:true, awsApiGateway:true});
+    const context = sg.merge(context_, {isServerlessExpress:true, isExpress:true, isApiGateway:true});
     return handler(event, context, callback);
   });
 };
@@ -109,7 +109,7 @@ exports.claudiaServerlessApi = function(subdomainName, handler) {
     return false;
   },
   function(event, context_, callback) {
-    const context = sg.merge(context_, {claudia:true, awsApiGateway:true});
+    const context = sg.merge(context_, {claudia:true, isApiGateway:true});
     return handler(event, context, callback);
   });
 };
