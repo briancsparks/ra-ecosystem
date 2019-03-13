@@ -696,7 +696,12 @@ function getStage(context, argv, ractx) {
 }
 
 function getIsApiGateway(context, event, ractx) {
-  console.log(`giag`, sg.inspect({event}));
+  console.log(`giag`, sg.inspect({context, event}));
+
+  if ('awsApiGateway' in context) {
+    return context.awsApiGateway;
+  }
+
   if (event.requestContext) {
     return /amazonaws/i.exec((event.requestContext || {}).domainName || '');
   }
