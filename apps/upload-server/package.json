@@ -1,7 +1,7 @@
 {
   "name": "upload-server",
   "private": true,
-  "version": "1.0.40",
+  "version": "1.0.41",
   "description": "A server using run-anywhere that receives a file uplaod from the client and stores on S3",
   "main": "index.js",
   "scripts": {
@@ -11,8 +11,8 @@
   "license": "MIT",
   "dependencies": {
     "claudia-api-builder": "^4.1.2",
-    "quick-net": "^1.0.41",
-    "run-anywhere": "^1.0.34",
+    "quick-net": "^1.0.42",
+    "run-anywhere": "^1.0.35",
     "superb": "^3.0.0"
   }
 }
