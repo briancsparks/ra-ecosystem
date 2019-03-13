@@ -51,7 +51,7 @@ mod.xport({fetchAndCache: function(argv, context, callback) {
     return sg.__run2({result:{}}, callback, [function(my, next, last) {
 
       return GET(key, function(err, data) {
-        sg.elog(`redis GET ${key}`, {err, data});
+        // sg.elog(`redis GET ${key}`, {err, data});
 
         // We try to get from redis. If we are successful, we still fetch from the API,
         // because that is what warms the API
@@ -59,7 +59,7 @@ mod.xport({fetchAndCache: function(argv, context, callback) {
         if (sg.ok(err) && data)  {
 
           const result = sg.safeJSONParse(data) || {just:data};
-          sg.elog(`alldone`, {haveGivenResult, result});
+          // sg.elog(`alldone`, {haveGivenResult, result});
 
           if (!haveGivenResult) {
             haveGivenResult = true;
@@ -76,7 +76,7 @@ mod.xport({fetchAndCache: function(argv, context, callback) {
       return request.get(url).end(function(err, res) {
         // const response = _.pick(res, 'text,body,header,type,charset,status,statusType,info,ok,clientError,serverError,error,accepted,noContent,badRequest,unauthorized,notAcceptable,notFound,forbidden'.split(','));
         const response = libHttp.superagentPodResponse(res);
-        sg.elog(`superagent GET ${url}`, {err: libHttp.superagentPodErr(err), response});
+        // sg.elog(`superagent GET ${url}`, {err: libHttp.superagentPodErr(err), response});
 
         if (sg.ok(err, res) && res.ok) {
           // console.log(`super`, sg.keys(res), sg.inspect({body: res.body}));
@@ -94,7 +94,7 @@ mod.xport({fetchAndCache: function(argv, context, callback) {
     }, function(my, next) {
       const json = JSON.stringify(my.body || {});
       return SET([key, json], function(err, receipt) {
-        sg.elog(`SET ${key} ${json}`, {err, receipt});
+        // sg.elog(`SET ${key} ${json}`, {err, receipt});
         return next();
       });
 
@@ -105,7 +105,7 @@ mod.xport({fetchAndCache: function(argv, context, callback) {
 
 
   function allDone(...args) {
-    sg.elog(`allDone`, {haveGivenResult, args});
+    // sg.elog(`allDone`, {haveGivenResult, args});
 
     close();
 

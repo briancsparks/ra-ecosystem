@@ -234,7 +234,6 @@ exports.getHttpParams = module.exports.getHttpParams = function(req, normalizeBo
 };
 
 exports.superagentPodResponse = function(response) {
-  // return _.pick(response, 'text,body,header,type,charset,status,statusType,info,ok,clientError,serverError,error,accepted,noContent,badRequest,unauthorized,notAcceptable,notFound,forbidden'.split(','));
   return _.pick(response, 'text,body,header,type,charset,status,statusType,info,ok,clientError,serverError,accepted,noContent,badRequest,unauthorized,notAcceptable,notFound,forbidden'.split(','));
 };
 

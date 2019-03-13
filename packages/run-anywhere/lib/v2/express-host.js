@@ -164,8 +164,6 @@ exports.raContextMw = exports.express_raMw = function(stage, dbName, collNames =
   // We grab connections to the DB here, so we dont have to close the DB after
   // every request.
 
-  // TODO: move out
-  // collNames = 'clients,sessions,users,telemetry,attrstream,logs'.split(',');
   collNames.forEach(collName => {
 
     // TODO: this is an async function, must await, or use Promise
@@ -179,14 +177,14 @@ exports.raContextMw = exports.express_raMw = function(stage, dbName, collNames =
 
   // Hook into the request/response stream -- the prototypical express.js middleware pattern
   return function(req, res, next) {
-    const raHostKey = `apiGateway`;
-    // const raHostKey = `raHost`;
-    req[raHostKey] = JSON.parse(seedContext);
-    var   { ractx, context } = reqResContext.ensureContext(req, res, `${raHostKey}.context`, `${raHostKey}.event`);
 
-    ractx.stage = stage;
+    const raHostKey   = `apiGateway`;
+    req[raHostKey]    = JSON.parse(seedContext);
 
-    req.raApp = req.raApp || raApp;
+    var   { ractx }   = reqResContext.ensureContext(req, res, `${raHostKey}.context`, `${raHostKey}.event`);
+    ractx.stage       = stage;
+
+    req.raApp         = req.raApp || raApp;
 
     // If you ever need to hook in and know when the request completes, see for an example:
     //    https://github.com/expressjs/compression/blob/master/index.js
