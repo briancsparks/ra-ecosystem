@@ -101,7 +101,7 @@ exports.mkInterceptorFn2 = function(service, fnName, ...rest) {
       reportTheData(reportingOptions(ok, options));
 
       // Are we OK?
-      if (!ok && options.abort) {
+      if (!ok && options.abort && abort) {
         return abort(err);
       }
 

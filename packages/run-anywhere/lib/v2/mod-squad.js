@@ -262,13 +262,15 @@ const FuncRa = function(argv, context, callback, origCallback, ractx, options_ =
     return localAbort;
   };
 
-  self.wrapFns = function(service, fnNames, ...rest) {
-    if (typeof service === 'string')    { return self.wrapFns(self.mod, service, fnNames, ...rest); }
+  self.wrapFns = function(...args) {
+    const mod       = (sg.isObject(args[0]) ? args.shift() : self.mod);
+    const fnNames   = args.shift();
+    const options   = (sg.isObject(args[0]) ? args.shift() : self.opts({}));
+    var   abort     = args.shift();
 
-    var [ options1, abort ] = (rest.length === 2 ? rest : [{}, rest[0]]);
-    abort                   = abort || self.providedAbort || abort;
+    abort           = abort || self.providedAbort || abort;
 
-    return libWrapped.mkFns2(service, fnNames, options1, abort);
+    return libWrapped.mkFns2(mod, fnNames, options, abort);
   };
 
   /**
@@ -360,16 +362,14 @@ const FuncRa = function(argv, context, callback, origCallback, ractx, options_ =
 
     // This function just cracks the arguments, and calls loads_, which does the real work.
 
-    const [a,b,c,d] = args;
+    const mod       = (sg.isObject(args[0]) ? args.shift() : self.mod);
+    const fnNames   = args.shift();
+    const options   = (sg.isObject(args[0]) ? args.shift() : self.opts({}));
+    var   abort     = args.shift();
 
-    if (args.length === 4)        { return self.loads_(...args); }
-    if (args.length === 3) {
-      if (_.isString(args[0]))    { return self.loads_(self.mod, a, b, c); }
+    abort           = abort || self.providedAbort || abort;
 
-      if (_.isFunction(args[2]))  { return self.loads_(a, b, {}, c); }
-    }
-
-    return self.loads_(...args);
+    return self.loads_(mod, fnNames, options, abort);
   };
 
   self.loads_ = function(mod, fnNames, options1, abort) {
@@ -386,7 +386,7 @@ const FuncRa = function(argv, context, callback, origCallback, ractx, options_ =
 
         // self.opts() propigates --debug and --verbose; options is a combination of options1 and options2 for this call.
         var   argv      = self.opts(argv_);
-        var   options   = sg.merge({...options1, ...self.opts(options2)});
+        var   options   = sg.merge({...(options1 || {}), ...self.opts(options2)});
 
         // argv            = removeContextAndEvent(argv);
         options.abort   = ('abort' in options ? options.abort : true);
@@ -455,7 +455,18 @@ const FuncRa = function(argv, context, callback, origCallback, ractx, options_ =
    *
    * @returns {null}  - [[return is just used for control-flow.]]
    */
-  self.invokers = function(mod, fnNames, options, abort_) {
+  self.invokers = function(...args) {
+    const mod       = (sg.isObject(args[0]) ? args.shift() : self.mod);
+    const fnNames   = args.shift();
+    const options   = (sg.isObject(args[0]) ? args.shift() : self.opts({}));
+    var   abort     = args.shift();
+
+    abort           = abort || self.providedAbort || abort;
+
+    return self.invokers_(mod, fnNames, options, abort);
+  };
+
+  self.invokers_ = function(mod, fnNames, options, abort_) {
     // TODO sg.check
 
     const abort = abort_ || self.providedAbort || abort_;
@@ -654,12 +665,29 @@ function setRax(context, rax) {
   return ractx;
 }
 
+function getContext(context={}, argv=null, level=1) {
+  const ractx         = context.runAnywhere || {};
+  const rax           = (ractx.current || {}).rax || {};
+
+  var   result = sg.merge({ractx, rax});
+
+  if (level >= 1) {
+    result = sg.merge(result, {
+      stage:            getStage(context, argv, ractx),
+      isApiGateway:     getIsApiGateway(context, argv, ractx),
+      isAws:            getIsAws(context, argv, ractx),
+    });
+  }
+
+  return result;
+}
+
 function getStage(context, argv, ractx) {
   if (context.invokedFunctionArn) {
     return _.last(context.invokedFunctionArn.split(':'));
   }
 
-  if ((argv.stageVariables || {}).lambdaVersion) {
+  if (argv && (argv.stageVariables || {}).lambdaVersion) {
     return argv.stageVariables.lambdaVersion;
   }
 
@@ -678,27 +706,6 @@ function getStage(context, argv, ractx) {
   return process.env.STAGE || process.env.AWS_ACCT_TYPE;
 }
 
-function getContext(context={}, argv={}, level=1) {
-  const ractx         = context.runAnywhere || {};
-  const rax           = (ractx.current || {}).rax || {};
-  var   stage         = getStage(context, argv, ractx);
-
-  var   result = sg.merge({
-    stage,
-    ractx,
-    rax
-  });
-
-  if (level >= 1) {
-    result = sg.merge(result, {
-      isApiGateway:     getIsApiGateway(context, argv, ractx),
-      isAws:            getIsAws(context, argv, ractx),
-    });
-  }
-
-  return result;
-}
-
 function getIsApiGateway(context, event, ractx) {
   // console.log(`giag`, sg.inspect({context, event})); // too complex to log
 
@@ -706,11 +713,11 @@ function getIsApiGateway(context, event, ractx) {
     return context.isApiGateway;
   }
 
-  if (event.requestContext) {
+  if (event && event.requestContext) {
     return /amazonaws/i.exec((event.requestContext || {}).domainName || '');
   }
 
-  const domainName = sg.deref(event, `argv.event.requestContext.domainName`);
+  const domainName = sg.deref(event || {}, `argv.event.requestContext.domainName`);
   // console.log(`giag`, sg.inspect({domainName}));
   if (domainName) {
     return /amazonaws/i.exec(domainName);
