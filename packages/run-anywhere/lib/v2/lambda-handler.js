@@ -6,6 +6,7 @@
 
 const sg                          = require('sg-config');
 const _                           = require('lodash');
+const { qm }                      = require('quick-merge');
 const utils                       = require('../utils');
 const { reportWarning }           = require('../error-handlers');
 const { inspect }                 = utils;
@@ -22,7 +23,9 @@ var   handlerFns    = [];
 
 exports.lambda_handler = function(event, context, callback) {
 
-  if (!utils.getQuiet(context)) { console.log(`ra.lambda_handler`, sg.inspect({event, context})); }
+  if (!utils.getQuiet(context)) {
+    console.log(`ra.lambda_handler`, sg.inspect({event: qm(event, {body: event.body.length}), context}));
+  }
 
   var handled = false;
   _.each(handlerFns, (handler) => {
