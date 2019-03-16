@@ -208,6 +208,7 @@ function invoke(opts, options, argv, ractx, callback, abort_) {
     debug, silent, verbose, machine, human
   }                                             = argv;
   const options1 = sg.merge({debug, silent, verbose, machine, human}, options || {});
+  options1.abort   = ('abort' in options1 ? options1.abort : true);
 
   // Load up the function
   ROOT.xport({invoke: function(argv, context, callback) {
@@ -219,7 +220,7 @@ function invoke(opts, options, argv, ractx, callback, abort_) {
       const fns = rax.loads(mod, fnName, options1, abort);
       const fn  = fns[fnName];
 
-      return fn(argv, context, callback);
+      return fn(argv, rax.opts({}), callback);
     }]);
 
     return rax.iwrap(...iwrapArgs);

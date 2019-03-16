@@ -95,6 +95,8 @@ exports.mkInterceptorFn2 = function(service, fnName, ...rest) {
     const options_      = (args.length > 1 ? args.pop() : {});
     var   options       = sg.merge({...options1, ...options_});
 
+    options.abort       = ('abort' in options ? options.abort : true);
+
     const callback = function(err, data, ...rest) {
       var   ok = isOk(options, err, data, ...rest);
 
