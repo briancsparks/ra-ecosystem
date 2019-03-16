@@ -33,8 +33,7 @@ mod.xport({pushData: function(argv, context, callback) {
     quick-net pushData --name=them --data='{\"a\":42}'
   */
 
-  const ractx             = context.runAnywhere || {};
-  const { rax }           = ractx.datatapFanout__pushData;
+  const { rax }           = ra.getContext(context, argv);
   const { redis, close }  = redisUtils.getRedis(context);
   const dquiet            = getDQuiet(context);
 
@@ -47,8 +46,8 @@ mod.xport({pushData: function(argv, context, callback) {
 
   return rax.iwrap(localAbort, function(abort) {
 
-    const { smembers }    = redisUtils.redisFns(redis, 'smembers', rax.opts({emptyOk:true}), abort);
-    const { lpush }       = redisUtils.redisFns(redis, 'lpush', rax.opts({}), abort);
+    const { smembers }    = rax.wrapFns(redis, 'smembers', rax.opts({emptyOk:true}));
+    const { lpush }       = rax.wrapFns(redis, 'lpush',    rax.opts({}));
 
     const status            = false;
     const dataTypeName      = (status ? 'status' : 'feed');

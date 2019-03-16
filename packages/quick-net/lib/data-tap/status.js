@@ -34,14 +34,13 @@ mod.xport({pushStatus: function(argv, context, callback) {
     quick-net pushStatus --name=them --data='{\"msg\":\"myUpdatedStatus\"}'
   */
 
-  const ractx               = context.runAnywhere || {};
-  const { rax }             = ractx.datatapStatus__pushStatus;
+  const { rax }             = ra.getContext(context, argv);
   const { redis, close }    = redisUtils.getRedis(context);
   const dquiet              = getDQuiet(context);
 
   return rax.iwrap(function(abort) {
 
-    const { pushData } = rax.loads(libFanout, 'pushData', rax.opts({}), abort);
+    const { pushData }      = rax.wrapFns(libFanout, 'pushData', rax.opts({}));
 
     const status            = true;
     const dataTypeName      = (status ? 'status' : 'feed');

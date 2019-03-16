@@ -36,8 +36,7 @@ mod.xport({readData: function(argv, context, callback) {
     quick-net readData --name=us --hold=500 --status
   */
 
-  const ractx             = context.runAnywhere || {};
-  const { rax }           = ractx.datatapRead__readData;
+  const { rax }           = ra.getContext(context, argv);
   const { redis, close }  = redisUtils.getRedis(context);
   const dquiet            = getDQuiet(context);
 
@@ -55,8 +54,8 @@ mod.xport({readData: function(argv, context, callback) {
 
   return rax.iwrap(localAbort, function(abort) {
 
-    const { SADD }                  = redisUtils.redisFns(redis, 'SADD', rax.opts({}), abort);
-    const { LLEN,DEL,EXPIRE }       = redisUtils.redisFns(redis, 'LLEN,EXPIRE,DEL', rax.opts({abort:false}), abort);
+    const { SADD }                  = rax.wrapFns(redis, 'SADD',            rax.opts({}));
+    const { LLEN,DEL,EXPIRE }       = rax.wrapFns(redis, 'LLEN,EXPIRE,DEL', rax.opts({abort:false}));
 
     const holdFor           = argv.holdfor      || argv.hold    || 25;
     const iteration         = argv.iteration    || argv.iter    || 1;

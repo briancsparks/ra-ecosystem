@@ -27,14 +27,13 @@ mod.xport({pushDataPtr: function(argv, context, callback) {
     quick-net pushDataPtr --name=them --data=magic --loc=magic
   */
 
-  const ractx                 = context.runAnywhere || {};
-  const { rax }               = ractx.datatapDataPtr__pushDataPtr;
+  const { rax }               = ra.getContext(context, argv);
   const { redis, close }      = redisUtils.getRedis(context);
   const dquiet                = getDQuiet(context);
 
   return rax.iwrap(function(abort) {
 
-    const { pushData } = rax.loads(libFanout, 'pushData', rax.opts({}), abort);
+    const { pushData }      = rax.wrapFns(libFanout, 'pushData', rax.opts({}));
 
     const name              = rax.arg(argv, 'name', {required:true});
     var   wholeData         = rax.arg(argv, 'wholeData,data', {required:true});

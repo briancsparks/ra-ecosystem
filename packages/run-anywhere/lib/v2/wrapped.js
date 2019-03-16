@@ -85,7 +85,7 @@ exports.mkFns2 = function(service, fnNames, ...rest) {
 };
 
 exports.mkInterceptorFn2 = function(service, fnName, ...rest) {
-  var [ options1, abort ] = (rest.length === 2 ? rest : [{}, rest[0]]);
+  var [ options1, abort ] = (rest.length === 2 ? rest : _.isFunction(rest[0]) ? [{}, rest[0]] :[rest[0], function(){}]);
 
   const origFn = (service[fnName] ? (service[fnName].bind(service)) : noopFn);
 
