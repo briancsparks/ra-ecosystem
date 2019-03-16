@@ -50,7 +50,11 @@ mod.xport({pushDataPtr: function(argv, context, callback) {
       location = magicLocation(context);
     }
 
-    const data = {...location, ...payloadStats(wholeData)};
+    if (location.Bucket && location.Key) {
+      location.url = `s3://${location.Bucket}/${location.Key}`;
+    }
+
+    const data = {...location, ..._.omit(wholeData, 'items', 'payload'), ...payloadStats(wholeData)};
     return pushData({name, data}, rax.opts({}), (err, receipt) => {
       if (!dquiet)  { sg.log(`pushData ${name}`, {data, err, receipt}); }
 
