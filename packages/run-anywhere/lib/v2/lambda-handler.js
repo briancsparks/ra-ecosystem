@@ -24,7 +24,7 @@ var   handlerFns    = [];
 exports.lambda_handler = function(event, context, callback) {
 
   if (!utils.getQuiet(context)) {
-    console.log(`ra.lambda_handler`, sg.inspect({event: qm(event, {body: event.body.length}), context}));
+    console.log(`ra.lambda_handler`, sg.inspect({event: qm(event, {body: (event.body && event.body.length) || 0}), context}));
   }
 
   var handled = false;
