@@ -438,6 +438,106 @@ const FuncRa = function(argv, context, callback, origCallback, ractx, options_ =
   };
 
   /**
+   * Loads a run-anywhere style function, so it can be easily called by other run-anywhere
+   * functions.
+   *
+   * If you are calling a (argv, context, callback) run-anywhere function from another one, use `loads()`.
+   * If you are calling a (argv, context, callback) run-anywhere function from one that isnt, use `invokers()`.
+   *
+   * 1. Remembers the `context` object, so you do not have to pass it around.
+   * 2. Adds special CLI params like `--debug` and `--verbose` down to all `argv` objects.
+   *
+   * @param {*} [module]            - The module to load from. Not required when loading from your own module.
+   * @param {*} function_names      - The function names to load.
+   * @param {*} options             - Any options, like {abort:false}.
+   * @param {*} abort_function      - The abort function to use.
+   *
+   * @returns {null}  - [[return is just used for control-flow.]]
+   */
+  self.loads2 = function(...args) {
+
+    // This function just cracks the arguments, and calls loads_, which does the real work.
+
+    const mod       = (sg.isObject(args[0]) ? args.shift() : self.mod);
+    const fnNames   = args.shift();
+    const options   = (sg.isObject(args[0]) ? args.shift() : self.opts({}));
+    var   abort     = args.shift();
+
+    abort           = abort || self.providedAbort || abort;
+
+    return self.loads2_(mod, fnNames, options, abort);
+  };
+
+  self.loads2_ = function(mod, fnNames, options1, abort) {
+    // TODO use sg.check
+    // const fnNames = (_.isArray(fnNames_) ? fnNames_ : [fnNames_]);
+
+    // Do for each function name
+    return sg.reduce(fnNames.split(','), {}, function(m, fnName) {
+
+      // ------------------------ The proxy for the function that was loaded
+      const interceptFn = function(...args_) {    // argv_, options2, continuation
+        var   args          = _.toArray(args_);
+        const continuation  = args.pop();
+        const options2      = (args.length > 1 ? args.pop() : {});
+        const argv_         = args.pop();
+
+        if (!_.isFunction(continuation))    { sg.warn(`continuation for ${fnName} is not a function`); }
+
+        // self.opts() propigates --debug and --verbose; options is a combination of options1 and options2 for this call.
+        var   argv      = self.opts(argv_);
+        var   options   = sg.merge({...(options1 || {}), ...self.opts(options2)});
+
+        // argv            = removeContextAndEvent(argv);
+        options.abort   = ('abort' in options ? options.abort : true);
+
+        // This will be called when the called function finishes. -----
+        const callback = function(err, data, ...rest) {
+
+          // The called function just finished, and we will call the callers continuation soon, but first
+          //    check for errors and do some logging.
+
+          // OK?
+          var   ok = false;
+          if (arguments.length === 0)     { ok = true; }
+          if (arguments.length > 1)       { ok = sg.ok(err, data, ...rest); }
+
+          // Report normal (ok === true) and errors that are aborted (!ok && options.abort)
+          if (options.debug && (ok || (!ok && options.abort))) {
+            console.error(`${mod.modname || self.modname || 'modunk'}::${fnName}(96)`, sg.inspect({argv, ok, err, data, ...rest}));
+          }
+
+          // Handle errors -- we normally abort, but the caller can tell us not to
+          if (!ok) {
+            if (options.abort && abort)            { return abort(err); }
+
+            // Report, but leave out the verbose error
+            if (options.debug) {
+              console.error(`${mod.modname || self.modname || 'modunk'}::${fnName}(97)`, sg.inspect({argv, err:(options.verbose ? err : true), data, ...rest}));
+            }
+          }
+
+          // Continue with the callers code
+          return continuation(err, data, ...rest);   /* ... not a function === 3rd param to loads()-loaded function wasnt a function */
+        };
+        // -----
+
+        if (options.verbose) {
+          console.error(`${mod.modname || self.modname || 'modunk'}::${fnName}(99)`, sg.inspect({argv, fnName}));
+        }
+
+        // Invoke the original function
+        if (abort && options.abort && abort.calling)  { abort.calling(`${mod.modname || self.modname || 'modunk'}::${fnName}(98)`, argv); }
+        return mod[fnName](argv, context, callback);
+      };
+      // ----------------------------- end
+
+      // Put the interception function into the object that gets returned.
+      return sg.kv(m, fnName, interceptFn);
+    });
+  };
+
+  /**
    * Loads a run-anywhere invoke style function, so it can be easily called by other run-anywhere
    * functions.
    *
