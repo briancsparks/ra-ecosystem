@@ -33,7 +33,7 @@ mod.xport({pushDataPtr: function(argv, context, callback) {
 
   return rax.iwrap(function(abort) {
 
-    const { pushData }      = rax.wrapFns(libFanout, 'pushData', rax.opts({}));
+    const { pushData }      = rax.loads(libFanout, 'pushData', rax.opts({}));
 
     const name              = rax.arg(argv, 'name', {required:true});
     var   wholeData         = rax.arg(argv, 'wholeData,data', {required:true});
