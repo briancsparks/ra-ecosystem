@@ -23,7 +23,7 @@ var   handlerFns    = [];
 
 exports.lambda_handler = function(event, context_, callback) {
 
-  const ARGV      = utils.getARGV().pod();
+  const ARGV      = utils.pod(utils.getARGV());
   const context   = sg.merge(context_, {ARGV});
 
   console.log(`lh`, sg.inspect({quiet: utils.getQuiet(context), dquiet: utils.getDQuiet(context)}));

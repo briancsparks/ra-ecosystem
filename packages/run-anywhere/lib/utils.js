@@ -63,6 +63,13 @@ exports.getARGV = function() {
   return g_ARGV || {};
 };
 
+exports.pod = function(ARGV) {
+  if (_.isFunction(ARGV.pod)) {
+    return ARGV.pod();
+  }
+  return ARGV;
+};
+
 
 // -------------------- getQuiet
 
