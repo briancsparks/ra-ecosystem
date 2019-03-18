@@ -1,6 +1,6 @@
 {
   "name": "sg0",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "All the little functions that make functional Node.JS easier.",
   "main": "index.js",
   "scripts": {
