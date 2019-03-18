@@ -108,7 +108,7 @@ mod.xport({fetchAndCache: function(argv, context, callback) {
     }, function(my, next) {
       const json = JSON.stringify(my.body || {});
       return SET([key, json], function(err, receipt) {
-        if (!quiet) { sg.elog(`SET ${key} ${smJson(json)}`, {err, receipt}); }
+        if (!quiet) { sg.elog(`SET ${key} |${smJson(json)}|`, {err, receipt}); }
 
         const ttl = 1 * 60 * 60; /* one hour */
         return EXPIRE([key, ttl], (err, receipt) => {
