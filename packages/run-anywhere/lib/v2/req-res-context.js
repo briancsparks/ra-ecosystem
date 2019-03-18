@@ -10,6 +10,7 @@
 //
 const sg                      = require('sg0');
 const { _ }                   = sg;
+const utils                     = require('../utils');
 
 
 // -------------------------------------------------------------------------------------
@@ -35,21 +36,20 @@ exports.ensureContext = function(req, res, contextDottedPath, eventDottedPath, i
 
   if (!res.runAnywhere) {
     ractx = {
+      ARGV:   utils.getARGV(),
       req_url:  req.url,
       ...initialParams,
       current: {}
     };
 
-    ractx.context     = context;
-    ractx.event       = event;
+    ractx.context         = context;
+    ractx.event           = event;
 
-    req.runAnywhere   = res.runAnywhere = ractx;
+    req.runAnywhere       = res.runAnywhere = ractx;
+    context.runAnywhere   = ractx;
   }
 
-  ractx                 = res.runAnywhere;
-  context.runAnywhere   = ractx;
-
-  return {ractx, context, event};
+  return exports.ensureContext(req, res, contextDottedPath, eventDottedPath, initialParams);
 };
 
 // -------------------------------------------------------------------------------------

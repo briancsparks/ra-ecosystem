@@ -13,7 +13,7 @@ const sg                      = sg0.merge(sg0, require('sg-clihelp'));
 const { _ }                   = sg;
 const libThreeContext         = require('./three-context');
 
-const ensureThreeContext      = libThreeContext.ensureThreeContext;
+const { ensureThreeArgvContext }    = libThreeContext;
 
 // -------------------------------------------------------------------------------------
 //  Data
@@ -217,7 +217,7 @@ function invoke(opts, options, argv, ractx, callback, abort_) {
     const { rax }    = ra.getContext(context, argv, 0);
 
     const iwrapArgs = _.compact([abort_, function(abort) {
-      const fns = rax.loads(mod, fnName, options1, abort);
+      const fns = rax.loads2(mod, fnName, options1, abort);
       const fn  = fns[fnName];
 
       return fn(argv, rax.opts({}), callback);
@@ -231,18 +231,18 @@ function invoke(opts, options, argv, ractx, callback, abort_) {
     sg.check(44, __filename, {argv}, {context}, 'runAnywhere');
 
     const { rax }       = ra.getContext(context, argv, 0);
-    const { invoke }    = rax.loads('invoke', {}, abort_ || function(){});
+    const { invoke }    = rax.loads2('invoke', {}, abort_ || function(){});
 
-    return invoke(argv, {}, callback);
+    return invoke(argv, callback);
   }});
 
 
   // --------------------------------------------------------
 
   // Build up or get the context
-  const { context } = ensureThreeContext(ractx.context || {});
+  const { event, context } = ensureThreeArgvContext(sg.merge(ractx.event || {}, argv), ractx.context || {});
 
-  return caller(argv, context, function(err, data, ...rest) {
+  return caller(event, context, function(err, data, ...rest) {
     return callback(err, data, ...rest);
   });
 }

@@ -51,6 +51,18 @@ exports.smallItems = function(obj, key = 'items') {
   return {...obj, [key]: [obj[key][0], `--- Plus ${obj[key].length-1} more items ---`]};
 };
 
+// -------------------- ARGV
+
+var g_ARGV = null;
+
+exports.setARGV = function(ARGV) {
+  g_ARGV = ARGV;
+};
+
+exports.getARGV = function() {
+  return g_ARGV || {};
+};
+
 
 // -------------------- getQuiet
 

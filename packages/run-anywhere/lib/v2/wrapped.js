@@ -48,7 +48,7 @@ exports.mkInterceptorFn = function(service, fnName, options1, abort) {
       }
 
       // Report normal (ok === true) and errors that are aborted (!ok && options.abort)
-      if (options.debug && (ok || (!ok && options.abort))) {
+      if (options.ddebug && (ok || (!ok && options.abort))) {
         sg.elog(`${fnName}(45)`, {args, ok, err, data, rest: rest});
       }
 
@@ -57,8 +57,8 @@ exports.mkInterceptorFn = function(service, fnName, options1, abort) {
         if (options.abort) { return abort(err); }
 
         // Report, but leave out the verbose error
-        if (options.debug) {
-          sg.elog(`${fnName}(17)`, {args, err:(options.verbose ? err : true), data, rest: rest});
+        if (options.ddebug) {
+          sg.elog(`${fnName}(17)`, {args, err:(options.vverbose ? err : true), data, rest: rest});
         }
       }
 
@@ -118,7 +118,7 @@ exports.mkInterceptorFn2 = function(service, fnName, ...rest) {
     };
 
     // Should we verbose?
-    if (options.verbose) {
+    if (options.vverbose) {
       sg.elog(`${fnName}(32)`, {args: args_});
     }
 
@@ -149,16 +149,16 @@ function reportingOptions(ok, options) {
 
   // Are we OK?
   if (ok) {
-    return returnIt(33, options.debug);
+    return returnIt(33, options.ddebug);
 
   } else {
     if (options.abort) {
-      return returnIt(31, options.debug);
+      return returnIt(31, options.ddebug);
     }
   }
 
   // error, but caller doesnt want to abort
-  return returnIt(35, options.debug, !options.verbose);
+  return returnIt(35, options.ddebug, !options.vverbose);
 
   function returnIt(id, condition, small) {
     return {id,condition,small};

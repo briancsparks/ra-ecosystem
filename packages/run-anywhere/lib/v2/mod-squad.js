@@ -196,7 +196,7 @@ module.exports.loads = function(mod, fnNames, context, options1, abort) {
           if (!ok)                      { return abort(err); }
         }
 
-        if (options.debug) {
+        if (options.ddebug) {
           console.error(`mod::${fnName}()`, sg.inspect({argv, err, data, ...rest}));
         }
 
@@ -238,10 +238,12 @@ const FuncRa = function(argv, context, callback, origCallback, ractx, options_ =
   self.args             = [];
   self.argErrs          = null;
 
-  const verbose         = argv.verbose;
-  const debug           = argv.debug        || verbose;
-  const silent          = argv.silent;
-  const argOptions      = sg.merge({debug, verbose, silent});
+  const verbose         = argv.verbose      || (context.ARGV && context.ARGV.verbose);
+  const debug           = argv.debug        || (context.ARGV && context.ARGV.debug)    || verbose;
+  const vverbose        = argv.vverbose     || (context.ARGV && context.ARGV.vverbose);
+  const ddebug          = argv.ddebug       || (context.ARGV && context.ARGV.ddebug)   || vverbose;
+  const silent          = argv.silent       || (context.ARGV && context.ARGV.silent);
+  const argOptions      = sg.merge({debug, verbose, ddebug, vverbose, silent});
 
   const longFnName = function() {
     if (self.fnName) {
@@ -403,7 +405,7 @@ const FuncRa = function(argv, context, callback, origCallback, ractx, options_ =
           if (arguments.length > 1)       { ok = sg.ok(err, data, ...rest); }
 
           // Report normal (ok === true) and errors that are aborted (!ok && options.abort)
-          if (options.debug && (ok || (!ok && options.abort))) {
+          if (options.ddebug && (ok || (!ok && options.abort))) {
             console.error(`${mod.modname || self.modname || 'modunk'}::${fnName}(96)`, sg.inspect({argv, ok, err, data, ...rest}));
           }
 
@@ -412,8 +414,8 @@ const FuncRa = function(argv, context, callback, origCallback, ractx, options_ =
             if (options.abort && abort)            { return abort(err); }
 
             // Report, but leave out the verbose error
-            if (options.debug) {
-              console.error(`${mod.modname || self.modname || 'modunk'}::${fnName}(97)`, sg.inspect({argv, err:(options.verbose ? err : true), data, ...rest}));
+            if (options.ddebug) {
+              console.error(`${mod.modname || self.modname || 'modunk'}::${fnName}(97)`, sg.inspect({argv, err:(options.vverbose ? err : true), data, ...rest}));
             }
           }
 
@@ -422,7 +424,7 @@ const FuncRa = function(argv, context, callback, origCallback, ractx, options_ =
         };
         // -----
 
-        if (options.verbose) {
+        if (options.vverbose) {
           console.error(`${mod.modname || self.modname || 'modunk'}::${fnName}(99)`, sg.inspect({argv, fnName}));
         }
 
@@ -487,8 +489,8 @@ const FuncRa = function(argv, context, callback, origCallback, ractx, options_ =
         // self.opts() propigates --debug and --verbose; options is a combination of options1 and options2 for this call.
         var   argv      = self.opts(argv_);
         var   options   = sg.merge({...(options1 || {}), ...self.opts(options2)});
+        var   logArgv   = _.omit(argv, 'debug', 'verbose', 'silent');
 
-        // argv            = removeContextAndEvent(argv);
         options.abort   = ('abort' in options ? options.abort : true);
 
         // This will be called when the called function finishes. -----
@@ -503,8 +505,8 @@ const FuncRa = function(argv, context, callback, origCallback, ractx, options_ =
           if (arguments.length > 1)       { ok = sg.ok(err, data, ...rest); }
 
           // Report normal (ok === true) and errors that are aborted (!ok && options.abort)
-          if (options.debug && (ok || (!ok && options.abort))) {
-            console.error(`${mod.modname || self.modname || 'modunk'}::${fnName}(96)`, sg.inspect({argv, ok, err, data, ...rest}));
+          if (options.ddebug && (ok || (!ok && options.abort))) {
+            sg.elog(`${mod.modname || self.modname || 'modunk'}::${fnName}(96)`, {argv:logArgv, ok, err, data, ...rest});
           }
 
           // Handle errors -- we normally abort, but the caller can tell us not to
@@ -512,8 +514,8 @@ const FuncRa = function(argv, context, callback, origCallback, ractx, options_ =
             if (options.abort && abort)            { return abort(err); }
 
             // Report, but leave out the verbose error
-            if (options.debug) {
-              console.error(`${mod.modname || self.modname || 'modunk'}::${fnName}(97)`, sg.inspect({argv, err:(options.verbose ? err : true), data, ...rest}));
+            if (options.ddebug) {
+              sg.elog(`${mod.modname || self.modname || 'modunk'}::${fnName}(97)`, {argv:logArgv, err:(options.vverbose ? err : true), data, ...rest});
             }
           }
 
@@ -522,12 +524,12 @@ const FuncRa = function(argv, context, callback, origCallback, ractx, options_ =
         };
         // -----
 
-        if (options.verbose) {
-          console.error(`${mod.modname || self.modname || 'modunk'}::${fnName}(99)`, sg.inspect({argv, fnName}));
+        if (options.vverbose) {
+          sg.elog(`${mod.modname || self.modname || 'modunk'}::${fnName}(99)`, {argv:logArgv, fnName});
         }
 
         // Invoke the original function
-        if (abort && options.abort && abort.calling)  { abort.calling(`${mod.modname || self.modname || 'modunk'}::${fnName}(98)`, argv); }
+        if (abort && options.abort && abort.calling)  { abort.calling(`${mod.modname || self.modname || 'modunk'}::${fnName}(98)`, logArgv); }
         return mod[fnName](argv, context, callback);
       };
       // ----------------------------- end

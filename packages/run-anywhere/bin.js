@@ -69,7 +69,7 @@ commands['invoke-script'] = commands.invokeScript = commands.invokescript = func
   }
 
   if (!moduleDirname) {
-    console.error("module "+moduleFilename+" failed to be required");
+    console.error("module "+moduleDirname+" failed to be required");
     process.exit(1);
     return;
   }

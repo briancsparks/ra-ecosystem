@@ -11,6 +11,7 @@
 const ra                      = require('run-anywhere').v2;
 const sg                      = ra.get3rdPartyLib('sg-flow');
 const { _ }                   = sg;
+const { qm }                  = require('quick-merge');
 const redisUtils              = ra.redisUtils;
 const { getDQuiet }           = ra.utils;
 const libHttp                 = require('./http');
@@ -31,6 +32,14 @@ const mod                     = ra.modSquad(module, 'dataTransfer');
 
 // TODO: add modes always fetch, or not.
 mod.xport({fetchAndCache: function(argv, context, callback) {
+
+  // console.log(`fetchandcache`, sg.inspect({
+  //   argv,
+  //   context : {...qm(_.omit(context, 'runAnywhere'), {
+  //     runAnywhere: {..._.pick(context.runAnywhere, 'req_url', 'current', 'event', 'stage'),
+  //       current: {..._.omit(context.runAnywhere.current, 'rax')}
+  //     }
+  //   })}}));
 
   // ra invoke lib\ec2\.js fetchAndCache --arg=
 

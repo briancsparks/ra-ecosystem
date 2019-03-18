@@ -10,6 +10,7 @@
 //
 const sg                      = require('sg0');
 const { _ }                   = sg;
+const utils                   = require('../utils');
 
 
 // -------------------------------------------------------------------------------------
@@ -22,7 +23,7 @@ const { _ }                   = sg;
 //  Functions
 //
 
-exports.ensureThreeContext = function(context_, initialParams={}) {
+exports.ensureThreeContext = function(event_, context_, initialParams={}) {
   if (context_.runAnywhere) {
     let ractx   = context_.runAnywhere;
     let context = ractx.context;
@@ -31,22 +32,49 @@ exports.ensureThreeContext = function(context_, initialParams={}) {
     return {ractx, context, event};
   }
 
-  var ractx, context;
+  var ractx;
 
   if (!context_.runAnywhere) {
     ractx = {
+      ARGV:   utils.getARGV(),
       ...initialParams,
       current: {}
     };
 
     ractx.context           = context_;
+    ractx.event             = event_;
+
     context_.runAnywhere    = ractx;
   }
 
-  ractx   = context_.runAnywhere;
-  context = ractx.context;
+  return exports.ensureThreeContext(event_, context_, initialParams);
+};
 
-  return {ractx, context};
+exports.ensureThreeArgvContext = function(argv, context_, initialParams={}) {
+  if (context_.runAnywhere) {
+    let ractx   = context_.runAnywhere;
+    let context = ractx.context;
+    let event   = ractx.event     = argv;
+
+    return {ractx, context, event};
+  }
+
+  var ractx;
+
+  if (!context_.runAnywhere) {
+    ractx = {
+      ARGV:   utils.getARGV(),
+      ...initialParams,
+      current: {}
+    };
+
+    ractx.context           = context_;
+    ractx.event             = argv;
+
+    context_.runAnywhere    = ractx;
+  }
+
+  return exports.ensureThreeContext(argv, context_, initialParams);
 };
 
 

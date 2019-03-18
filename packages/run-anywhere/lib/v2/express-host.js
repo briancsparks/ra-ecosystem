@@ -3,9 +3,9 @@
 //  requirements
 //
 
+const sg                        = require('sg-config');
 const _                         = require('lodash');
 const utils                     = require('../utils');
-const sg                        = utils.sg;
 const reqResContext             = require('./req-res-context');
 const { qm }                    = require('quick-merge');
 const {
@@ -47,12 +47,15 @@ const binaryMimeTypes_ = [
  * @param {*} app     - The express.js app object.
  * @param {*} name    - The app name.
  * @param {*} stage   - The name of the stage.
+ * @param {*} ARGV    - The typical ARGV
  * @param {*} options - Additional options, like dbName.
  *
  * @returns {*}       - The handler function.
  */
-exports.express_hookIntoHost = function(app, name, stage, options = {}) {
+exports.express_hookIntoHost = function(app, name, stage, ARGV, options = {}) {
   const { dbName, collNames, binaryMimeTypes } = options;
+
+  utils.setARGV(ARGV);
 
   var   result;
 
@@ -67,7 +70,7 @@ exports.express_hookIntoHost = function(app, name, stage, options = {}) {
     result = (event, context) => awsServerlessExpress.proxy(server, event, context);
 
   } else {
-    app.use(exports.express_raMw(stage, dbName, collNames));
+    app.use(exports.express_raMw(stage, ARGV, dbName, collNames));
   }
 
   // Setup
@@ -153,12 +156,13 @@ exports.express_close = function() {
  *    to get DB connections whenever needed in the case of something like Lamba
  *
  * @param {string} stage        - The stage
+ * @param {object} ARGV         - The ARGV.
  * @param {string} dbName       - The name of the DB.
  * @param {string[]} collNames  - Array of collection names.
  *
  * @returns {function}          - An express.js middleware function that augments context with ra
  */
-exports.raContextMw = exports.express_raMw = function(stage, dbName, collNames = []) {
+exports.raContextMw = exports.express_raMw = function(stage, ARGV, dbName, collNames = []) {
   var   raApp = {context:{}};
 
   // We grab connections to the DB here, so we dont have to close the DB after
@@ -173,18 +177,22 @@ exports.raContextMw = exports.express_raMw = function(stage, dbName, collNames =
     closes[collName]      = close;
   });
 
-  const seedContext = JSON.stringify({context:{}, event:{}});
+  const seedContextHolder = JSON.stringify({context:{}, event:{}});
 
   // Hook into the request/response stream -- the prototypical express.js middleware pattern
   return function(req, res, next) {
 
-    const raHostKey   = `apiGateway`;
-    req[raHostKey]    = JSON.parse(seedContext);
+    var   contextHolder         = JSON.parse(seedContextHolder);
 
-    var   { ractx }   = reqResContext.ensureContext(req, res, `${raHostKey}.context`, `${raHostKey}.event`);
-    ractx.stage       = stage;
+    contextHolder.context.ARGV  = ARGV.pod();
 
-    req.raApp         = req.raApp || raApp;
+    const raHostKey             = `apiGateway`;
+    req[raHostKey]              = contextHolder;
+
+    var   { ractx }             = reqResContext.ensureContext(req, res, `${raHostKey}.context`, `${raHostKey}.event`);
+    ractx.stage                 = stage;
+
+    req.raApp                   = req.raApp || raApp;
 
     // If you ever need to hook in and know when the request completes, see for an example:
     //    https://github.com/expressjs/compression/blob/master/index.js

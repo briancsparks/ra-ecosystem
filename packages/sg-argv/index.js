@@ -57,7 +57,11 @@ function ARGV(input = process.argv) {
     argv.debug = true;
   }
 
-  if (argv.debug) {
+  if (argv.vverbose) {
+    argv.ddebug = true;
+  }
+
+  if (argv.debug || argv.ddebug) {
     sg.mkInspect({fancy:true});
   }
 

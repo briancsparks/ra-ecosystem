@@ -163,7 +163,16 @@ sg.debugInfo = function(dbg) {
   return dbg;
 };
 
-var inspectorName = 'prod';
+var inspectorName   = 'prod';
+var isCli           = null;
+
+// logging goes to stdout or stderr?
+const logStream = function(def) {
+  if (isCli === null)     { return def; }
+  if (isCli)              { return 'error'; }
+  return 'log';
+};
+
 /**
  * Returns an inspected object.
  *
@@ -180,8 +189,14 @@ sg.mkInspect = function(argv) {
   if (argv) {
     if (argv.fancy) {
       inspectorName = 'debug';
-      return;
     }
+    if (argv.notCli) {
+      isCli = false;
+    }
+    if (argv.isCli) {
+      isCli = true;
+    }
+    return;
   }
 
   if (sg.modes().prod)  {
@@ -240,7 +255,7 @@ const logParams = sg.logParams = function(msg, arg0, ...args) {
  * @param {*} args
  */
 sg.log = function(...args /*msg, arg0, ...args*/) {
-  console.log(...logParams(...args));
+  console[logStream('log')](...logParams(...args));
 };
 sg.debugLog = sg.log;
 
@@ -258,8 +273,8 @@ sg.dump = function(msg_, level, arg0, ...args) {
   var   lines = sg.reduce(_.range(level), '', m => `\n`);
   const msg   = `${lines}     ` + sg.reduce(_.range(level), msg_, (m) => { return `_____     ${m}     _____`; }) + lines;
 
-  console.error(..._.compact([msg, arg0 &&  sg.inspect({...arg0}), (args.length > 0) && sg.inspect([...args])]));
-  console.error(msg);
+  console[logStream('error')](..._.compact([msg, arg0 &&  sg.inspect({...arg0}), (args.length > 0) && sg.inspect([...args])]));
+  console[logStream('error')](msg);
 };
 
 /**
@@ -269,7 +284,7 @@ sg.dump = function(msg_, level, arg0, ...args) {
  * @param {*} args
  */
 sg.stdlog = function(...args) {
-  console.log(...logParams(...args));
+  console[logStream('log')](...logParams(...args));
 };
 
 /**
@@ -279,7 +294,7 @@ sg.stdlog = function(...args) {
  * @param {*} args
  */
 sg.elog = function(...args) {
-  console.error(...logParams(...args));
+  console[logStream('error')](...logParams(...args));
 };
 sg.edebugLog = sg.elog;
 
