@@ -13,7 +13,7 @@ const sg                      = ra.get3rdPartyLib('sg-flow');
 const { _ }                   = sg;
 const libFanout               = require('./fanout');
 const redisUtils              = ra.redisUtils;
-const { getDQuiet }           = ra.utils;
+const { getQuiet }            = ra.utils;
 
 const mod                     = ra.modSquad(module, 'datatapDataPtr');
 
@@ -29,7 +29,7 @@ mod.xport({pushDataPtr: function(argv, context, callback) {
 
   const { rax }               = ra.getContext(context, argv);
   const { redis, close }      = redisUtils.getRedis(context);
-  const dquiet                = getDQuiet(context);
+  const quiet                 = getQuiet(context);
 
   return rax.iwrap(function(abort) {
 
@@ -55,7 +55,7 @@ mod.xport({pushDataPtr: function(argv, context, callback) {
 
     const data = {...location, ..._.omit(wholeData, 'items', 'payload'), ...payloadStats(wholeData)};
     return pushData({name, data}, rax.opts({}), (err, receipt) => {
-      if (!dquiet)  { sg.log(`pushData ${name}`, {data, err, receipt}); }
+      if (!quiet)  { sg.log(`pushData ${name}`, {data, err, receipt}); }
 
       close();
       return callback(err, receipt);

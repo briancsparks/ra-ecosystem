@@ -12,7 +12,7 @@ const ra                      = require('run-anywhere').v2;
 const sg                      = ra.get3rdPartyLib('sg-flow');
 const { _ }                   = sg;
 const redisUtils              = ra.redisUtils;
-const { getDQuiet }           = ra.utils;
+const { getQuiet }            = ra.utils;
 
 const mod                     = ra.modSquad(module, 'datatapRead');
 
@@ -38,7 +38,7 @@ mod.xport({readData: function(argv, context, callback) {
 
   const { rax }           = ra.getContext(context, argv);
   const { redis, close }  = redisUtils.getRedis(context);
-  const dquiet            = getDQuiet(context);
+  const quiet             = getQuiet(context);
 
   const blockingClient    = redis.duplicate();
 
@@ -91,7 +91,7 @@ mod.xport({readData: function(argv, context, callback) {
 
       // If this is the first time getting this data, clear out any stale data
       return DEL(dataFeedName, rax.opts({}), (err, receipt) => {
-        if (!dquiet)  { sg.log(`DEL ${dataFeedName}`, {err, receipt}); }
+        if (!quiet)  { sg.log(`DEL ${dataFeedName}`, {err, receipt}); }
 
         return setDataRetrieval(holdFor);
       });
@@ -104,7 +104,7 @@ mod.xport({readData: function(argv, context, callback) {
 
       // Block and wait for data
       blockingClient.brpop(dataFeedName_, timeoutSecs, (err, data) => {
-        if (!dquiet)  { sg.log(`brpop ${dataFeedName_}`, {err, data}); }
+        if (!quiet)  { sg.log(`brpop ${dataFeedName_}`, {err, data}); }
 
         if (err)                { return allDone(err); }
         if (!data)              { return allDone(); }        /* timed out */
@@ -139,11 +139,11 @@ mod.xport({readData: function(argv, context, callback) {
       return fromList.forEach(feedFromKey => {
 
         return SADD(feedFromKey, dataFeedName, rax.opts({}), (err, receipt) => {
-          if (!dquiet)  { sg.log(`SADD ${feedFromKey} ${dataFeedName}`, {err, receipt}); }
+          if (!quiet)  { sg.log(`SADD ${feedFromKey} ${dataFeedName}`, {err, receipt}); }
 
           if (!err) {
             EXPIRE(feedFromKey, holdFor, rax.opts({}), (err, receipt) => {
-              if (!dquiet)  { sg.log(`EXPIRE ${feedFromKey} ${holdFor}`, {err, receipt}); }
+              if (!quiet)  { sg.log(`EXPIRE ${feedFromKey} ${holdFor}`, {err, receipt}); }
             });
           }
 
@@ -152,7 +152,7 @@ mod.xport({readData: function(argv, context, callback) {
       });
 
       function setSourcesDone() {
-        if (!dquiet)  { sg.log(`setSourcesDone`); }
+        if (!quiet)  { sg.log(`setSourcesDone`); }
         if (context.isRaInvoked) {
           sg.elog(`waiting for ${fromList}`);
         }
@@ -169,7 +169,7 @@ mod.xport({readData: function(argv, context, callback) {
       return fromList.forEach(fromClientId => {
         // const feedFromKey = `river:feedfrom:${fromClientId}`;
         // return redis.del(feedFromKey, function(err, receipt) {
-        //   if (!dquiet)   console.log(`redis.DEL ${feedFromKey}`, {err, receipt});
+        //   if (!quiet)   console.log(`redis.DEL ${feedFromKey}`, {err, receipt});
 
           return next();
         // });

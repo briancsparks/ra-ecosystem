@@ -13,7 +13,8 @@ const sg                      = ra.get3rdPartyLib('sg-flow');
 const { _ }                   = sg;
 const { qm }                  = require('quick-merge');
 const redisUtils              = ra.redisUtils;
-const { getDQuiet }           = ra.utils;
+const { getQuiet }            = ra.utils;
+const { smJson }              = require('./utils');
 const libHttp                 = require('./http');
 const request                 = require('superagent');
 
@@ -46,22 +47,24 @@ mod.xport({fetchAndCache: function(argv, context, callback) {
   const ractx             = context.runAnywhere || {};
   const { rax }           = ractx.dataTransfer__fetchAndCache;
   const { redis, close }  = redisUtils.getRedis(context);
+  const quiet             = getQuiet(context);
 
+  var   key, url;
   var   haveGivenResult = false;
   return rax.iwrap(rax.mkLocalAbort(allDone), function(abort) {
 
     const { GET,EXPIRE }    = rax.wrapFns(redis, 'GET,EXPIRE', rax.opts({emptyOk:true, abort:false}));
     const { SET }           = rax.wrapFns(redis, 'SET', rax.opts({emptyOk:true}));
 
-    const key               = rax.arg(argv, 'key');
-    const url               = rax.arg(argv, 'url', {required:true});
+    key                     = rax.arg(argv, 'key');
+    url                     = rax.arg(argv, 'url', {required:true});
 
     if (rax.argErrors())    { return rax.abort(); }
 
     return sg.__run2({result:{}}, callback, [function(my, next, last) {
 
       return GET(key, function(err, data) {
-        // sg.elog(`redis GET ${key}`, {err, data});
+        if (!quiet) { sg.elog(`GET ${key}`, {err, data: smJson(data)}); }
 
         // We try to get from redis. If we are successful, we still fetch from the API,
         // because that is what warms the API
@@ -73,6 +76,8 @@ mod.xport({fetchAndCache: function(argv, context, callback) {
 
           if (!haveGivenResult) {
             haveGivenResult = true;
+
+            if (!quiet) { sg.elog(`fetchAndCache GET(${key})`, {err, data: smJson(data)}); }
             callback(null, result);
           }
 
@@ -103,9 +108,11 @@ mod.xport({fetchAndCache: function(argv, context, callback) {
     }, function(my, next) {
       const json = JSON.stringify(my.body || {});
       return SET([key, json], function(err, receipt) {
-        // sg.elog(`SET ${key} ${json}`, {err, receipt});
+        if (!quiet) { sg.elog(`SET ${key} ${smJson(json)}`, {err, receipt}); }
 
-        return EXPIRE([key, 1 * 60 * 60 /* one hour */], (err, receipt) => {
+        const ttl = 1 * 60 * 60; /* one hour */
+        return EXPIRE([key, ttl], (err, receipt) => {
+          if (!quiet) { sg.elog(`EXPIRE ${key} ${ttl}`, {err, receipt}); }
           return next();
         });
       });
@@ -115,15 +122,16 @@ mod.xport({fetchAndCache: function(argv, context, callback) {
     }]);
   });
 
-
-  function allDone(...args) {
+  function allDone(err, data) {
     // sg.elog(`allDone`, {haveGivenResult, args});
 
     close();
 
     if (!haveGivenResult) {
       haveGivenResult = true;
-      return callback(...args);
+
+      if (!quiet) { sg.elog(`fetchAndCache superagent(${url})`, {err, data: smJson(data)}); }
+      return callback(err, data);
     }
   }
 }});

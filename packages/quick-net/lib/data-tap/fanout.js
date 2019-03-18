@@ -12,7 +12,7 @@ const ra                      = require('run-anywhere').v2;
 const sg                      = ra.get3rdPartyLib('sg-flow');
 const { _ }                   = sg;
 const redisUtils              = ra.redisUtils;
-const { getDQuiet }           = ra.utils;
+const { getQuiet }            = ra.utils;
 
 const mod                     = ra.modSquad(module, 'datatapFanout');
 
@@ -35,7 +35,7 @@ mod.xport({pushData: function(argv, context, callback) {
 
   const { rax }           = ra.getContext(context, argv);
   const { redis, close }  = redisUtils.getRedis(context);
-  const dquiet            = getDQuiet(context);
+  const quiet             = getQuiet(context);
 
   const localAbort = function(err, msg) {
     if (msg) { sg.logError(err, msg, {}, {EFAIL:`pushData`}); }
@@ -69,7 +69,7 @@ mod.xport({pushData: function(argv, context, callback) {
 
       return destKeys.forEach(destKey => {
         return lpush(destKey, dataStr, rax.opts({}), function(err, redisReceipt) {
-          if (!dquiet)  { sg.log(`lpush ${destKey}`, {err, redisReceipt}); }
+          if (!quiet)  { sg.log(`lpush ${destKey}`, {err, redisReceipt}); }
           result.push({[destKey]:{redisReceipt}});
           return done(err, result);
         });

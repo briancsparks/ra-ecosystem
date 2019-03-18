@@ -64,4 +64,8 @@ exports.localIp = function() {
   return iface.address;
 };
 
+exports.smJson = function(json) {
+  return `"${json.substr(0, 23)}..." length: ${json.length}`;
+};
+
 // console.log(exports.localIp());

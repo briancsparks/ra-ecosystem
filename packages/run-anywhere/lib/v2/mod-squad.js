@@ -506,7 +506,7 @@ const FuncRa = function(argv, context, callback, origCallback, ractx, options_ =
 
           // Report normal (ok === true) and errors that are aborted (!ok && options.abort)
           if (options.ddebug && (ok || (!ok && options.abort))) {
-            sg.elog(`${mod.modname || self.modname || 'modunk'}::${fnName}(96)`, {argv:logArgv, ok, err, data, ...rest});
+            sg.elog(`__dd__ ${mod.modname || self.modname || 'modunk'}::${fnName}(96)`, {argv:logArgv, ok, err, data, ...rest});
           }
 
           // Handle errors -- we normally abort, but the caller can tell us not to
@@ -515,7 +515,7 @@ const FuncRa = function(argv, context, callback, origCallback, ractx, options_ =
 
             // Report, but leave out the verbose error
             if (options.ddebug) {
-              sg.elog(`${mod.modname || self.modname || 'modunk'}::${fnName}(97)`, {argv:logArgv, err:(options.vverbose ? err : true), data, ...rest});
+              sg.elog(`__dd__ ${mod.modname || self.modname || 'modunk'}::${fnName}(97)`, {argv:logArgv, err:(options.vverbose ? err : true), data, ...rest});
             }
           }
 
@@ -525,11 +525,11 @@ const FuncRa = function(argv, context, callback, origCallback, ractx, options_ =
         // -----
 
         if (options.vverbose) {
-          sg.elog(`${mod.modname || self.modname || 'modunk'}::${fnName}(99)`, {argv:logArgv, fnName});
+          sg.elog(`__vv__ ${mod.modname || self.modname || 'modunk'}::${fnName}(99)`, {argv:logArgv, fnName});
         }
 
         // Invoke the original function
-        if (abort && options.abort && abort.calling)  { abort.calling(`${mod.modname || self.modname || 'modunk'}::${fnName}(98)`, logArgv); }
+        if (abort && options.abort && abort.calling)  { abort.calling(`__aa__ ${mod.modname || self.modname || 'modunk'}::${fnName}(98)`, logArgv); }
         return mod[fnName](argv, context, callback);
       };
       // ----------------------------- end
