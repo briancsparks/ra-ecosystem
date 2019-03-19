@@ -112,7 +112,8 @@ mod.xport({readData: function(argv, context, callback) {
         const [ readFeedName, payloadStr ]   = data;
 
         // Add the new data to our result
-        const payload = {from: readFeedName, [dataTypeName]:(sg.safeJSONParse(payloadStr) || {})};
+        const json    = sg.safeJSONParse(payloadStr) || {};
+        const payload = sg.merge({channel: readFeedName}, {from: sg.extract(json, '__from__')}, {[dataTypeName]:json});
         result = [ ...result, ...[payload] ];
 
         // See if there are more data elements to be gotten

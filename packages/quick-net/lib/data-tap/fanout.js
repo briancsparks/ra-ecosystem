@@ -53,9 +53,14 @@ mod.xport({pushData: function(argv, context, callback) {
     const dataTypeName      = (status ? 'status' : 'feed');
     var   signalName        = rax.arg(argv, 'signalName,name');
     const key               = rax.arg(argv, 'key')                        || (signalName && `datatap:${dataTypeName}from:${signalName}`);
-    const data              = rax.arg(argv, 'data', {required:true});
+    const data_             = rax.arg(argv, 'data', {required:true});
 
     if (rax.argErrors({key}))    { return rax.abort(); }
+
+    var   data    = data_;
+    if (sg.isObject(data)) {
+      data = {...data, __from__: key};
+    }
 
     var   result = [];
     return smembers(key, rax.opts({}), (err, destKeys) => {

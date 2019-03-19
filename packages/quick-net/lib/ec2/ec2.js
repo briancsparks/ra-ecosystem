@@ -175,7 +175,10 @@ mod.xport({upsertInstance: function(argv, context, callback) {
     var   shellscript, mimeArchive;
     return rax.__run2({result:{}}, callback, [function(my, next, last) {
 
+      // Itempotentcy -- use uniqueName so you can upsertInstance many times, and only launch once
       if (!uniqueName)  { return next(); }
+
+      // They sent in a uniqueName. See if it already exists
       return describeInstances(awsFilters({"tag:uniqueName":[uniqueName]}), rax.opts({}), function(err, data) {
 
         var   theInstance;
@@ -190,17 +193,25 @@ mod.xport({upsertInstance: function(argv, context, callback) {
           });
         });
 
+        // If we have an instance, return it
         if (count > 0) {
           my.result = {Instance: theInstance};
           return callback(null, my);
         }
 
+        // The instance for uniqueName does not exist, continue on, and launch it.
         return next();
       });
 
     }, function(my, next) {
+
+      // --------------------------------------------
+      // We need an AMI.
+
+      // Did the caller pass one in?
       if (ImageId)  { return next(); }
 
+      // We have to go get the AMI ourselves
       return getUbuntuLtsAmis({latest:true}, {}, function(err, data) {
         ImageId     = data.ImageId;
         osVersion   = osVersion || data.osVersion;
@@ -208,11 +219,22 @@ mod.xport({upsertInstance: function(argv, context, callback) {
       });
 
     }, function(my, next) {
+
+      // We must have `ImageId` by now.
       if (rax.argErrors({ImageId}))                                                   { return rax.abort(); }
+
+      // --------------------------------------------
+      // We need the security-groups and subnet.
+
+      // Did the caller pass them in?
       if (SecurityGroupIds[0].startsWith('sg-') || SubnetId.startsWith('subnet-'))    { return next(); }
 
+      // Must find them ourselves
+
+      // Must have `classB` to find sgs and subnet
       if (rax.argErrors({classB}))    { return rax.abort(); }
 
+      // Find them ourselves
       return getSubnets({classB, SecurityGroupIds: SecurityGroupIds, SubnetId}, {}, function(err, data) {
         if (sg.ok(err, data)) {
           SecurityGroupIds  = sg.pluck(data.securityGroups, 'GroupId');
@@ -221,17 +243,18 @@ mod.xport({upsertInstance: function(argv, context, callback) {
         return next();
       });
 
-
-
-
-
-
     }, function(my, next) {
+
+      // We must have `SubnetId` by now.
+      if (rax.argErrors({SubnetId}))                                                   { return rax.abort(); }
 
       // -------------------------------------------------------------------------------------------------------
       // Initialize what we are going to cloud-init-ify
+      //
+      //  cloudInitData['cloud-config'] will hold several attributes for cloud-init-ing the instance
+      //
 
-      // Special keys
+      // Special keys - like build-deploy keys
       if (roleKeys && roleKeys.length > 0) {
         var write_files = [];
 
@@ -259,21 +282,24 @@ mod.xport({upsertInstance: function(argv, context, callback) {
         if (!sg.ok(err, shellscript_))    { return abort(err, `fail reading ${distro}`); }
 
         shellscript = shellscript_;
-        shellscript  += `\n`;
-        shellscript  += `echo UserData script is done for ${uniqueName || 'instance'}`;
-        shellscript  += `\n`;
 
         // Add any lines the caller wants
         shellscript  += moreShellScript;
 
-        // shellscript  += `\n`;
-        // shellscript  += 'chown -R ubuntu:ubuntu /home/ubuntu';
-        // shellscript  += `\n`;
+        // Signal that the script is done running
+        shellscript  += `\n`;
+        shellscript  += `echo UserData script is done for ${uniqueName || 'instance'}`;
+        shellscript  += `\n`;
 
+        // Replace `quicknetuserdataenvcursor` with the script options (like `INSTALL_DOCKER`), and the env
         shellscript = sg.reduce(shellscript.split('\n'), [], (m, line) => {
           if (!line.match(/quicknetuserdataenvcursor/i)) { return [...m, line]; }
 
+          // Script options
           var newlines = sg.reduce(_.isObject(userdataOpts) ? userdataOpts : {}, [], (m, v, k) => {
+
+            // For example, `set INSTALL_DOCKER="1"`  or `unset INSTALL_DOCKER`
+
             var   newline = `${k}="${v === true ? '1' : v}"`;
             if (v === false) {
               newline = `unset ${k}`;
@@ -282,6 +308,7 @@ mod.xport({upsertInstance: function(argv, context, callback) {
             return [...m, newline];
           });
 
+          // env vars
           newlines = sg.reduce(userdataEnv, newlines, (m, v, k) => {
             const newline = `echo '${k}="${v === true ? '1' : v === false ? '0' : v}"' >> /etc/environment`;
 
@@ -297,6 +324,7 @@ mod.xport({upsertInstance: function(argv, context, callback) {
 
     }, function(my, next) {
 
+      // Install all the stuff we install for every instance
       cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
         package_update: true,
         package_upgrade: true,
@@ -312,6 +340,7 @@ mod.xport({upsertInstance: function(argv, context, callback) {
         }
       });
 
+      // Install docker?
       if (userdataOpts.INSTALL_DOCKER) {
         cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
           packages: ['docker-ce'],
@@ -327,6 +356,7 @@ mod.xport({upsertInstance: function(argv, context, callback) {
         });
       }
 
+      // Install the web-tier? (nginx and certbot)
       if (userdataOpts.INSTALL_WEBTIER) {
         cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
           packages: ['nginx', 'nginx-module-njs', 'certbot', 'python-certbot-nginx'],
@@ -346,6 +376,7 @@ mod.xport({upsertInstance: function(argv, context, callback) {
         });
       }
 
+      // Install mongodb?
       if (userdataOpts.INSTALL_MONGODB) {
         // Not sure how to do:
         // apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 9DA31620334BD75D9DCB49F368818C72E52529D4
@@ -364,6 +395,7 @@ mod.xport({upsertInstance: function(argv, context, callback) {
         });
       }
 
+      // Install tools for dev-ops?
       if (userdataOpts.INSTALL_OPS) {
         cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
           packages: ['jq', 'python-pip']
@@ -389,6 +421,10 @@ mod.xport({upsertInstance: function(argv, context, callback) {
       return next();
 
     }, function(my, next) {
+
+      // -------------------------------------------------------------------------------------------------------
+      // Build the mime-archive
+
       mimeArchive = new MimeBuilder('multipart/mixed');
 
       if (shellscript) {
@@ -415,24 +451,29 @@ mod.xport({upsertInstance: function(argv, context, callback) {
       return next();
 
     }, function(my, next) {
+
+      // Pack up the params for runInstances
+
       var UserData;
       var params = {};
 
+      // Tag with `uniqueName`
       if (uniqueName) {
         params.TagSpecifications = [{ResourceType:'instance', Tags:[{Key:'uniqueName', Value:uniqueName},{Key:'Name', Value:uniqueName}]}];
       }
 
+      // Build up the cloud-init userdata
       const userdata = mimeArchive.build();
-// sg.dump(`ud`, 1, {userdata, mimeArchive});
-
       if (userdata) {
         UserData   = Buffer.from(userdata).toString('base64');
       }
-// sg.dump(`size`, 1, {ud:userdata.length, UD: UserData.length});
+
+      // Add the instance-role profile name
       if (iamName) {
         params.IamInstanceProfile = {Name: iamName};
       }
 
+      // Make the runInstances params, and launch
       params = sg.merge(AllAwsParams, params, {ImageId, InstanceType, KeyName, SecurityGroupIds, SubnetId, MaxCount, MinCount, UserData, DryRun});
       return runInstances(params, rax.opts({}), function(err, data) {
 
@@ -443,6 +484,8 @@ mod.xport({upsertInstance: function(argv, context, callback) {
       });
 
     }, function(my, next) {
+
+      // Must wait for launches
       return sg.until(function(again, last, count, elapsed) {
         return describeInstances({InstanceIds:[InstanceId]}, rax.opts({abort:false}), function(err, data) {
           if (err) {

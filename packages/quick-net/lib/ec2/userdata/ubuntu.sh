@@ -27,7 +27,6 @@ sudo chown -R "${the_user_name}":"${the_user_name}" "${the_home_dir}/.config/"
 # ----------------------------------------------------------------------------------------------
 # Add node and global npm packages
 NODE_UTILS="${NODE_UTILS} pm2 run-anywhere cli-shezargs quick-net"
-echo 'NODE_ENV="production"' | tee -a /etc/environment
 
 # ----------------------------------------------------------------------------------------------
 # Add docker
