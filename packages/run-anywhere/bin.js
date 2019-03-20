@@ -356,7 +356,8 @@ commands.ls = function() {
   });
 };
 
-if (process.argv[1] === __filename || process.argv[1].match(/bin.js$/)) {
+const argv1 = _.last(process.argv[1].split('/'));
+if (process.argv[1] === __filename || argv1.match(/bin.js$/) || argv1 === 'ra' || argv1 === 'run-anywhere') {
   return main();
 }
 
