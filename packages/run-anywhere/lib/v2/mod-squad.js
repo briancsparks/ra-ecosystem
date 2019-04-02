@@ -20,7 +20,9 @@ const commandInvoke           = libMakeCommand.invoke;
 // -------------------------------------------------------------------------------------
 //  Data
 //
-var loadedModules             = {};
+var   loadedModules             = {};
+const inverseOptionsList        = 'wrapper'.split(',');
+
 
 // -------------------------------------------------------------------------------------
 //  Functions
@@ -45,8 +47,18 @@ const ModSquad = function(otherModule, otherModuleName = 'mod') {
   otherModule.exports.modname   = otherModuleName;
   otherModule.exports.async     = otherModule.exports.async || {};
 
-  self.xport = function(fobj) {
+  self.xport = function(fobj_) {
     var previousFn;
+
+    var   inverseOptions = {};
+    const fobj = _.filter(fobj_, (v,k) => {
+      if (k in inverseOptionsList) {
+        inverseOptions[k] = v;
+        return false;
+      }
+
+      return true;
+    });
 
     _.each(fobj, (fn_, fnName) => {
       var fn            = fn_;
@@ -72,7 +84,7 @@ const ModSquad = function(otherModule, otherModuleName = 'mod') {
           // -----
 
           // Attach a special run-anywhere object to the context.
-          setRax(context, new FuncRa(argv, context, callback, callback_, ractx, {otherModule: otherModule.exports, otherModuleName, fnName}));
+          setRax(context, new FuncRa(argv, context, callback, callback_, ractx, {otherModule: otherModule.exports, otherModuleName, fnName, inverseOptions}));
 
           // Call the modules function (the original function.)
           return fn_(argv, context, callback);
@@ -99,10 +111,20 @@ const ModSquad = function(otherModule, otherModuleName = 'mod') {
     return previousFn;
   };
 
-  self.reqHandler = function(fobj) {
+  self.reqHandler = function(fobj_) {
     var   mod = loadedModules[otherModuleName];
 
     var previousFn;
+
+    var inverseOptions = {};
+    const fobj = _.filter(fobj_, (v,k) => {
+      if (k in inverseOptionsList) {
+        inverseOptions[k] = v;
+        return false;
+      }
+
+      return true;
+    });
 
     _.each(fobj, (fn_, fnName) => {
       var fn            = fn_;
@@ -124,7 +146,7 @@ const ModSquad = function(otherModule, otherModuleName = 'mod') {
           // ------ This is where you apply a middleware function -------
 
           // Attach a special run-anywhere object to the context.
-          setRax(context, new FuncRa(argv, context, callback, callback_, ractx, {otherModule: otherModule.exports, otherModuleName, fnName}));
+          setRax(context, new FuncRa(argv, context, callback, callback_, ractx, {otherModule: otherModule.exports, otherModuleName, fnName, inverseOptions}));
 
           // Call the modules function (the original function.)
           return fn_(req, res, ...rest);
@@ -238,12 +260,16 @@ const FuncRa = function(argv, context, callback, origCallback, ractx, options_ =
   self.args             = [];
   self.argErrs          = null;
 
+  const inverseOptions  = options_.inverseOptions || {};
+
   const verbose         = argv.verbose      || (context.ARGV && context.ARGV.verbose);
   const debug           = argv.debug        || (context.ARGV && context.ARGV.debug)    || verbose;
   const vverbose        = argv.vverbose     || (context.ARGV && context.ARGV.vverbose);
   const ddebug          = argv.ddebug       || (context.ARGV && context.ARGV.ddebug)   || vverbose;
-  const silent          = argv.silent       || (context.ARGV && context.ARGV.silent);
-  const argOptions      = sg.merge({debug, verbose, ddebug, vverbose, silent});
+
+  const forceSilent     = argv.forceSilent  || inverseOptions.wrapper  || (context.ARGV && context.ARGV.forceSilent);
+  const silent          = argv.silent       || (context.ARGV && context.ARGV.silent)   || forceSilent;
+  const argOptions      = sg.merge({debug, verbose, ddebug, vverbose, forceSilent, silent});
 
   const longFnName = function() {
     if (self.fnName) {
@@ -470,6 +496,22 @@ const FuncRa = function(argv, context, callback, origCallback, ractx, options_ =
     return self.loads2_(mod, fnNames, options, abort);
   };
 
+  // Same as loads2, but used when one ra-style function calls another, but does no real work
+  // (at least according to the semantics of the app -- like a wrapper function that just parses
+  // function parameters, and calls the 'real' function to do the real work.)
+  self.loadsDirect2 = function(...args) {
+
+    // This function just cracks the arguments, and calls loads_, which does the real work.
+
+    const mod       = (sg.isObject(args[0]) ? args.shift() : self.mod);
+    const fnNames   = args.shift();
+    const options   = (sg.isObject(args[0]) ? args.shift() : self.opts({}));
+    const abort     = args.shift();
+
+    // return self.loads2(mod, fnNames, {...options, forceSilent:true}, abort);
+    return self.loads2(mod, fnNames, options, abort);
+  };
+
   self.loads2_ = function(mod, fnNames, options1, abort) {
     // TODO use sg.check
     // const fnNames = (_.isArray(fnNames_) ? fnNames_ : [fnNames_]);
@@ -506,7 +548,7 @@ const FuncRa = function(argv, context, callback, origCallback, ractx, options_ =
 
           // Report normal (ok === true) and errors that are aborted (!ok && options.abort)
           if (options.ddebug && (ok || (!ok && options.abort))) {
-            sg.elog(`__dd__ ${mod.modname || self.modname || 'modunk'}::${fnName}(96)`, {argv:logArgv, ok, err, data, ...rest});
+            if (!options.forceSilent) { sg.elog(`__dd__ ${mod.modname || self.modname || 'modunk'}::${fnName}(96)`, {argv:logArgv, ok, err, data, ...rest}); }
           }
 
           // Handle errors -- we normally abort, but the caller can tell us not to
@@ -515,7 +557,7 @@ const FuncRa = function(argv, context, callback, origCallback, ractx, options_ =
 
             // Report, but leave out the verbose error
             if (options.ddebug) {
-              sg.elog(`__dd__ ${mod.modname || self.modname || 'modunk'}::${fnName}(97)`, {argv:logArgv, err:(options.vverbose ? err : true), data, ...rest});
+              if (!options.forceSilent) { sg.elog(`__dd__ ${mod.modname || self.modname || 'modunk'}::${fnName}(97)`, {argv:logArgv, err:(options.vverbose ? err : true), data, ...rest}); }
             }
           }
 
@@ -525,7 +567,7 @@ const FuncRa = function(argv, context, callback, origCallback, ractx, options_ =
         // -----
 
         if (options.vverbose) {
-          sg.elog(`__vv__ ${mod.modname || self.modname || 'modunk'}::${fnName}(99)`, {argv:logArgv, fnName});
+          if (!options.forceSilent) { sg.elog(`__vv__ ${mod.modname || self.modname || 'modunk'}::${fnName}(99)`, {argv:logArgv, fnName}); }
         }
 
         // Invoke the original function

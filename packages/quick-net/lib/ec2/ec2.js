@@ -165,10 +165,12 @@ mod.xport({upsertInstance: function(argv, context, callback) {
     if (rax.argErrors())    { return rax.abort(); }
 
     if (!BlockDeviceMappings) {
-      if (!rootVolumeSize)  {
-        return rax.abort(`Must provide BlockDeviceMappings or rootVolumeSize.`);
+      // if (!rootVolumeSize)  {
+      //   return rax.abort(`Must provide BlockDeviceMappings or rootVolumeSize.`);
+      // }
+      if (rootVolumeSize)  {
+        BlockDeviceMappings = [{DeviceName: '/dev/sda1', Ebs:{VolumeSize: rootVolumeSize}}];
       }
-      BlockDeviceMappings = [{DeviceName: 'xvdh', Ebs:{VolumeSize: rootVolumeSize}}];
     }
 
     var   InstanceId;
@@ -414,7 +416,8 @@ mod.xport({upsertInstance: function(argv, context, callback) {
         power_state: {
           mode:       "reboot",
           message:    "Go on without me, boys... I'm done-fer [[rebooting now]]",
-          condition:  "test -f /var/run/reboot-required"
+          // condition:  "test -f /var/run/reboot-required"
+          condition:  true
         }
       });
 
@@ -474,7 +477,7 @@ mod.xport({upsertInstance: function(argv, context, callback) {
       }
 
       // Make the runInstances params, and launch
-      params = sg.merge(AllAwsParams, params, {ImageId, InstanceType, KeyName, SecurityGroupIds, SubnetId, MaxCount, MinCount, UserData, DryRun});
+      params = sg.merge(AllAwsParams, params, {ImageId, InstanceType, KeyName, SecurityGroupIds, SubnetId, MaxCount, MinCount, UserData, BlockDeviceMappings, DryRun});
       return runInstances(params, rax.opts({}), function(err, data) {
 
         my.result   = {Instance: data.Instances[0]};

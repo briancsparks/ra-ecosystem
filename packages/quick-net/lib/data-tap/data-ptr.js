@@ -109,6 +109,7 @@ function magicLocation(context) {
 
 function payloadStats(body) {
 
+  const dataType= body.dataType;
   const items   = body.payload || body.items || [];
   var   counts  = {
     startTick:        Number.MAX_SAFE_INTEGER,
@@ -117,9 +118,11 @@ function payloadStats(body) {
 
   if (!Array.isArray(items)) { return {}; }
 
-  if (body.dataType === 'logs') {
+  if (dataType !== 'attrstream') {
     arrayValues(counts, items);
-  } else {
+  }
+
+  if ('eventType' in counts.values || (dataType === 'attrstream')) {
     arrayStats(counts, items);
   }
 
@@ -128,6 +131,7 @@ function payloadStats(body) {
   } else if (body.tick0) {
     counts.startTick += body.tick0;
     counts.endTick   += body.tick0;
+    counts.tick0      = body.tick0;
   }
 
   return counts;

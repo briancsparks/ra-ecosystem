@@ -1,0 +1,23 @@
+{
+  "name": "sg-one",
+  "version": "1.0.0",
+  "description": "Functions to compose other, more useful functions.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/briancsparks/ra-ecosystem.git"
+  },
+  "author": "Brian C Sparks <briancsparks@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/briancsparks/ra-ecosystem/issues"
+  },
+  "homepage": "https://github.com/briancsparks/ra-ecosystem/tree/master/packages/sg-one#readme",
+  "dependencies": {
+    "lodash": "^4.17.11"
+  }
+}
