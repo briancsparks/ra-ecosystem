@@ -12,6 +12,7 @@ const sg0                     = require('sg-flow');
 const sg                      = sg0.merge(sg0, require('sg-clihelp'));
 const { _ }                   = sg;
 const libThreeContext         = require('./three-context');
+const { omitDebug }           = require('../utils');
 
 const { ensureThreeArgvContext }    = libThreeContext;
 
@@ -205,9 +206,9 @@ function invoke(opts, options, argv, ractx, callback, abort_) {
 
   // Get args
   const {
-    debug, silent, verbose, machine, human
+    debug, silent, verbose, ddebug, forceSilent, vverbose, machine, human
   }                                             = argv;
-  const options1 = sg.merge({debug, silent, verbose, machine, human}, options || {});
+  const options1 = sg.merge({debug, silent, verbose, ddebug, forceSilent, vverbose, machine, human}, options || {});
   options1.abort   = ('abort' in options1 ? options1.abort : true);
 
   // Load up the function

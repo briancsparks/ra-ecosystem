@@ -11,11 +11,15 @@ const utilLib                 = require('util');
 const libUrl                  = require('url');
 const libMakeCommand          = require('./make-command');
 const libWrapped              = require('./wrapped');
+const utils                   = require('../utils');
 
 const promisify               = utilLib.promisify;
 const callbackify             = utilLib.callbackify;
 
 const commandInvoke           = libMakeCommand.invoke;
+const {
+  mkResponse, ensureContext
+}                             = reqResContext;
 
 // -------------------------------------------------------------------------------------
 //  Data
@@ -51,13 +55,13 @@ const ModSquad = function(otherModule, otherModuleName = 'mod') {
     var previousFn;
 
     var   inverseOptions = {};
-    const fobj = _.filter(fobj_, (v,k) => {
+    const fobj = sg.reduce(fobj_, {}, (m,v,k) => {
       if (k in inverseOptionsList) {
         inverseOptions[k] = v;
-        return false;
+        return m;
       }
 
-      return true;
+      return sg.kv(m, k, v);
     });
 
     _.each(fobj, (fn_, fnName) => {
@@ -84,7 +88,7 @@ const ModSquad = function(otherModule, otherModuleName = 'mod') {
           // -----
 
           // Attach a special run-anywhere object to the context.
-          setRax(context, new FuncRa(argv, context, callback, callback_, ractx, {otherModule: otherModule.exports, otherModuleName, fnName, inverseOptions}));
+         setRax(context, new FuncRa(argv, context, callback, callback_, ractx, {otherModule: otherModule.exports, otherModuleName, fnName, inverseOptions}));
 
           // Call the modules function (the original function.)
           return fn_(argv, context, callback);
@@ -117,13 +121,13 @@ const ModSquad = function(otherModule, otherModuleName = 'mod') {
     var previousFn;
 
     var inverseOptions = {};
-    const fobj = _.filter(fobj_, (v,k) => {
+    const fobj = sg.reduce(fobj_, {}, (m,v,k) => {
       if (k in inverseOptionsList) {
         inverseOptions[k] = v;
-        return false;
+        return m;
       }
 
-      return true;
+      return sg.kv(m, k, v);
     });
 
     _.each(fobj, (fn_, fnName) => {
@@ -138,22 +142,48 @@ const ModSquad = function(otherModule, otherModuleName = 'mod') {
 
           // Must create argv, context
           var   argv                  = {};     /* TODO: get from query, body, etc */
-          const callback              = function(){};
           const callback_             = function(){};
+
+          var   rax_;
+
+          // The abort function to translate error-first style to HTTP codes-style
+          const abort = function(err, msg) {
+            if (msg) { sg.logError(err, msg, {}, {EFAIL: fnName}); }
+
+            if (rax_) {
+              sg.elog(rax_.longFnName(), {err});
+            }
+
+            const code = decodeErrForHttp(err, msg);
+            return mkResponse(code, req, res, err, {}, {msg});
+          };
+
+          const callback = function(err, data, ...rest) {
+            if (err) {
+              return abort(err);
+            }
+
+            // Todo: log
+            return mkResponse(200, req, res, err, {...data, ...(sg.merge(...rest))});
+          };
 
           var   { ractx, context }    = upsertRaContextForReqRes(req, res, otherModuleName, fnName);
 
           // ------ This is where you apply a middleware function -------
 
           // Attach a special run-anywhere object to the context.
-          setRax(context, new FuncRa(argv, context, callback, callback_, ractx, {otherModule: otherModule.exports, otherModuleName, fnName, inverseOptions}));
+          const { rax } =  setRax(context, new FuncRa(argv, context, callback, callback_, ractx, {otherModule: otherModule.exports, otherModuleName, fnName, inverseOptions}));
+          rax_ = rax;
+
+          // The abort function to translate error-first style to HTTP codes-style
+          rax.defaultAbort = abort;
 
           // Call the modules function (the original function.)
           return fn_(req, res, ...rest);
         };
       }
 
-      mod.reqHandler         = mod.reqHandler   || {};
+      mod.reqHandler          = mod.reqHandler   || {};
       mod.reqHandler[fnName]  = previousFn = (fn || previousFn);
     });
 
@@ -165,6 +195,27 @@ const ModSquad = function(otherModule, otherModuleName = 'mod') {
   };
 
 };
+
+function decodeErrForHttp(err, msg) {
+  if (sg.isnt(err))     { return 200; }
+
+  var   result = 400;   /* in the face of no other evidence, general user error */
+
+  if (sg.isObject(err)) {
+    let code = err.code || err.httpCode;
+    if (code)                         { return result = code; }
+  }
+
+  if (_.isString(err)) {
+    if (err.startsWith('ENO'))        { return result = 400; }   /* user-paramteter wrong */
+  }
+
+  if (_.isString(msg)) {
+    if (msg.match(/not found/i))      { return result = 404; }   /* not found */
+  }
+
+  return result;
+}
 
 module.exports.modSquad = function(...args) {
   return new ModSquad(...args);
@@ -255,6 +306,7 @@ const FuncRa = function(argv, context, callback, origCallback, ractx, options_ =
   self.mod              = self.options.otherModule;
   self.modname          = self.options.otherModuleName || 'mod';
   self.fnName           = self.options.fnName || self.options.fname || null;
+  self.defaultAbort     = self.options.abort;
   self.providedAbort    = null;
   self.argTypes         = {};
   self.args             = [];
@@ -299,6 +351,27 @@ const FuncRa = function(argv, context, callback, origCallback, ractx, options_ =
     abort           = abort || self.providedAbort || abort;
 
     return libWrapped.mkFns2(mod, fnNames, options, abort);
+  };
+
+  /**
+   * Merges any special command-line given args into other objects.
+   *
+   * For example, `--debug` and `--verbose` are both propigated into all `argv` objects, and
+   * all `options` objects.
+   *
+   * @param {object} [argv={}]    - The current args to merge in.
+   * @param {object} [options={}] - Controlling options.
+   *
+   * @returns {null}            - [[return is only used for control-flow.]]
+   */
+  self.opts = function(argv = {}, options={}) {
+    var   opts = sg.merge({ ...argOptions, ...argv});
+
+    if (options.cleanArgv) {
+      opts = utils.omitDebug(opts);
+    }
+
+    return opts;
   };
 
   /**
@@ -351,22 +424,49 @@ const FuncRa = function(argv, context, callback, origCallback, ractx, options_ =
     }
   };
 
-  self.__run2 = function(...args) {
-    return sg.__run2(...args);
+  /**
+   * Wraps the body of a run-anywhere style function to help reduce complexity handling errors.
+   *
+   * A lot like iwrap, except:
+   *
+   * 1. Less complex parameter options (no name).
+   * 2. Abort can be read from the Rax object (self).
+   *
+   * @param {*} [abort]         - A custom abort function (when you need to release resources, for example.
+   * @param {*} body_callback   - The function being iwrapped.
+   *
+   * @returns {null}            - [[return is only use for control-flow.]]
+   */
+  self.iwrap2 = function(...args /* abort, body_callback*/) {
+    const [a, b] = args;
+
+    if (args.length === 2) {
+      return self._iwrap2_(a, b);
+    }
+    return self._iwrap2_(null, a);
   };
 
-  /**
-   * Merges any special command-line given args into other objects.
-   *
-   * For example, `--debug` and `--verbose` are both propigated into all `argv` objects, and
-   * all `options` objects.
-   *
-   * @param {*} [options={}]    - The current options to merge in.
-   *
-   * @returns {null}            - [[return is only used for control-flow.]]
-   */
-  self.opts = function(options = {}) {
-    return sg.merge({ ...argOptions, ...options});
+
+  self._iwrap2_ = function(abort_, body_callback) {
+    var   abort             = abort_ || self.defaultAbort || abort_;
+
+    const fnName            = `${self.modname}__${self.fnName}`.replace(/:/g, '_');
+    const my_body_callback  = function(providedAbort, ...rest) {
+
+      // Remember the abort function that is given -- it is the right one
+      self.providedAbort = providedAbort;
+
+      return body_callback(providedAbort, ...rest);
+    };
+
+    if (abort) {
+      return sg.iwrap(fnName, callback, abort, my_body_callback);
+    }
+    return sg.iwrap(fnName, callback, my_body_callback);
+  };
+
+  self.__run2 = function(...args) {
+    return sg.__run2(...args);
   };
 
   /**
@@ -413,8 +513,8 @@ const FuncRa = function(argv, context, callback, origCallback, ractx, options_ =
         if (!_.isFunction(continuation))    { sg.warn(`continuation for ${fnName} is not a function`); }
 
         // self.opts() propigates --debug and --verbose; options is a combination of options1 and options2 for this call.
-        var   argv      = self.opts(argv_);
         var   options   = sg.merge({...(options1 || {}), ...self.opts(options2)});
+        var   argv      = self.opts(argv_, options);
 
         // argv            = removeContextAndEvent(argv);
         options.abort   = ('abort' in options ? options.abort : true);
@@ -432,7 +532,7 @@ const FuncRa = function(argv, context, callback, origCallback, ractx, options_ =
 
           // Report normal (ok === true) and errors that are aborted (!ok && options.abort)
           if (options.ddebug && (ok || (!ok && options.abort))) {
-            console.error(`${mod.modname || self.modname || 'modunk'}::${fnName}(96)`, sg.inspect({argv, ok, err, data, ...rest}));
+            console.error(`${mod.modname || self.modname || 'modunk'}::${fnName}(96)`, sg.inspect({argv, ok, err, data: sg.small(data), ...rest}));
           }
 
           // Handle errors -- we normally abort, but the caller can tell us not to
@@ -441,7 +541,7 @@ const FuncRa = function(argv, context, callback, origCallback, ractx, options_ =
 
             // Report, but leave out the verbose error
             if (options.ddebug) {
-              console.error(`${mod.modname || self.modname || 'modunk'}::${fnName}(97)`, sg.inspect({argv, err:(options.vverbose ? err : true), data, ...rest}));
+              console.error(`${mod.modname || self.modname || 'modunk'}::${fnName}(97)`, sg.inspect({argv, err:(options.vverbose ? err : true), data: sg.small(data), ...rest}));
             }
           }
 
@@ -509,7 +609,7 @@ const FuncRa = function(argv, context, callback, origCallback, ractx, options_ =
     const abort     = args.shift();
 
     // return self.loads2(mod, fnNames, {...options, forceSilent:true}, abort);
-    return self.loads2(mod, fnNames, options, abort);
+    return self.loads2_(mod, fnNames, options, abort);
   };
 
   self.loads2_ = function(mod, fnNames, options1, abort) {
@@ -529,9 +629,9 @@ const FuncRa = function(argv, context, callback, origCallback, ractx, options_ =
         if (!_.isFunction(continuation))    { sg.warn(`continuation for ${fnName} is not a function`); }
 
         // self.opts() propigates --debug and --verbose; options is a combination of options1 and options2 for this call.
-        var   argv      = self.opts(argv_);
         var   options   = sg.merge({...(options1 || {}), ...self.opts(options2)});
-        var   logArgv   = _.omit(argv, 'debug', 'verbose', 'silent');
+        var   argv      = self.opts(argv_, options);
+        var   logArgv   = utils.omitDebug(argv);
 
         options.abort   = ('abort' in options ? options.abort : true);
 
@@ -548,7 +648,7 @@ const FuncRa = function(argv, context, callback, origCallback, ractx, options_ =
 
           // Report normal (ok === true) and errors that are aborted (!ok && options.abort)
           if (options.ddebug && (ok || (!ok && options.abort))) {
-            if (!options.forceSilent) { sg.elog(`__dd__ ${mod.modname || self.modname || 'modunk'}::${fnName}(96)`, {argv:logArgv, ok, err, data, ...rest}); }
+            if (!options.forceSilent) { sg.elog(`__dd__ ${mod.modname || self.modname || 'modunk'}::${fnName}(86)`, {argv:logArgv, ok, err, data: sg.small(data), ...rest}); }
           }
 
           // Handle errors -- we normally abort, but the caller can tell us not to
@@ -557,7 +657,7 @@ const FuncRa = function(argv, context, callback, origCallback, ractx, options_ =
 
             // Report, but leave out the verbose error
             if (options.ddebug) {
-              if (!options.forceSilent) { sg.elog(`__dd__ ${mod.modname || self.modname || 'modunk'}::${fnName}(97)`, {argv:logArgv, err:(options.vverbose ? err : true), data, ...rest}); }
+              if (!options.forceSilent) { sg.elog(`__dd__ ${mod.modname || self.modname || 'modunk'}::${fnName}(87)`, {argv:logArgv, err:(options.vverbose ? err : true), data: sg.small(data), ...rest}); }
             }
           }
 
@@ -567,7 +667,7 @@ const FuncRa = function(argv, context, callback, origCallback, ractx, options_ =
         // -----
 
         if (options.vverbose) {
-          if (!options.forceSilent) { sg.elog(`__vv__ ${mod.modname || self.modname || 'modunk'}::${fnName}(99)`, {argv:logArgv, fnName}); }
+          if (!options.forceSilent) { sg.elog(`__vv__ ${mod.modname || self.modname || 'modunk'}::${fnName}(89)`, {argv:logArgv, fnName}); }
         }
 
         // Invoke the original function
@@ -625,7 +725,7 @@ const FuncRa = function(argv, context, callback, origCallback, ractx, options_ =
         if (!_.isFunction(continuation))    { sg.warn(`continuation for ${fnName} is not a function`); }
 
         // Invoke the original function
-        return commandInvoke(invokeOpts, options, self.opts(argv), ractx, continuation, abort);
+        return commandInvoke(invokeOpts, options, self.opts(argv, options), ractx, continuation, abort);
       };
       // ----------------------------- end
 
@@ -759,6 +859,7 @@ const FuncRa = function(argv, context, callback, origCallback, ractx, options_ =
 exports.getContext            = getContext;
 exports.getRaContext          = getRaContext;
 exports.upsertRaContextForX   = upsertRaContextForX;
+exports.omitDebug             = utils.omitDebug;
 
 function getRaContext(context) {
   return context.runAnywhere;
@@ -772,7 +873,7 @@ function upsertRaContextForReqRes(req, res, modname, fnName) {
     eventDottedPath   = `apiGateway.event`;
   }
 
-  const {context} = reqResContext.ensureContext(req, res, contextDottedPath, eventDottedPath);
+  const {context} = ensureContext(req, res, contextDottedPath, eventDottedPath);
   return upsertRaContextForX(context, modname, fnName);
 }
 
@@ -806,7 +907,7 @@ function setRax(context, rax) {
 
   // sg.debugLog(`setRax`, {ractx});
 
-  return ractx;
+  return { ractx, rax };
 }
 
 function getContext(context={}, argv=null, level=1) {
