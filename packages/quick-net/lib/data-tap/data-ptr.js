@@ -122,7 +122,7 @@ function payloadStats(body) {
     arrayValues(counts, items);
   }
 
-  if ('eventType' in counts.values || (dataType === 'attrstream')) {
+  if ((counts.values && 'eventType' in counts.values) || (dataType === 'attrstream')) {
     arrayStats(counts, items);
   }
 
