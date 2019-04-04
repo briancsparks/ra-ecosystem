@@ -25,7 +25,7 @@ const {
 //  Data
 //
 var   loadedModules             = {};
-const inverseOptionsList        = 'wrapper'.split(',');
+const inverseOptionsNonFnList   = 'wrapper'.split(',');
 
 
 // -------------------------------------------------------------------------------------
@@ -56,7 +56,7 @@ const ModSquad = function(otherModule, otherModuleName = 'mod') {
 
     var   inverseOptions = {};
     const fobj = sg.reduce(fobj_, {}, (m,v,k) => {
-      if (k in inverseOptionsList) {
+      if (k in inverseOptionsNonFnList && !_.isFunction(v)) {
         inverseOptions[k] = v;
         return m;
       }
@@ -122,7 +122,7 @@ const ModSquad = function(otherModule, otherModuleName = 'mod') {
 
     var inverseOptions = {};
     const fobj = sg.reduce(fobj_, {}, (m,v,k) => {
-      if (k in inverseOptionsList) {
+      if (k in inverseOptionsNonFnList && !_.isFunction(v)) {
         inverseOptions[k] = v;
         return m;
       }

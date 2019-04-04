@@ -38,8 +38,28 @@ const { ensureThreeArgvContext }    = libThreeContext;
  * @returns {null}                - [[return is only used for control-flow.]]
  */
 exports.command = function(ARGV = sg.ARGV(), mods = {}, fnName, opts={}, commands = {}, callback=null) {
+  return exports.command2(ARGV, mods, {}, [], fnName, opts, commands, callback);
+};
+
+/**
+ *
+ *
+ * @param {*} [ARGV=sg.ARGV()]    - The standard ARGV.
+ * @param {*} [loadedMods={}]     - Run-anywhere modules that contain the fnName function.
+ * @param {*} [modFnMap={}]       - Map of mod to the functions they contain.
+ * @param {*} [allMods=[]]        - Array of module filenames to look into.
+ * @param {*} fnName_             - The name of the command to run.
+ * @param {*} [opts={}]           - Options
+ * @param {*} [commands={}]       - A map of functions.
+ * @param {*} [callback=null]     - The normal NodeJs continuation callback.
+ *
+ * @returns {null}                - [[return is only used for control-flow.]]
+ */
+exports.command2 = function(ARGV = sg.ARGV(), loadedMods = {}, modFnMap={}, allMods=[], fnName_, opts={}, commands = {}, callback=null) {
   require('loud-rejection/register');
   require('exit-on-epipe');
+
+  const fnName        = fnName_   || ARGV.function || ARGV.fn || ARGV._[0];
 
   const modfilename   = opts.modfilename || opts.__filename;
 
@@ -58,28 +78,7 @@ exports.command = function(ARGV = sg.ARGV(), mods = {}, fnName, opts={}, command
   if (cleanExit(ARGV, modfilename, fnName, 'ENOFUNCTION', `Must provide a function name`))      { return false; }
 
   // Try to find the function in the modules
-  const mod = sg.reduce(mods.mods || mods, null, (m0, theMod0) => {
-
-    const theMod = isTheMod(m0, theMod0);
-    if (theMod) {
-      return theMod;
-    }
-
-    return sg.reduce(theMod0.mods || theMod0, m0, (m, theMod) => {
-      return isTheMod(m, theMod);
-    });
-
-    function isTheMod(m, mod) {
-      let fn = mod[fnName];
-      if (_.isFunction(fn)) {
-        if (m)        { sg.warn(`Duplicate ${fnName} functions in ${mod.modname || 'some_mod'} and ${m.modname || 'some_other_mod'}`); }
-
-        return mod;
-      }
-
-      return m;
-    }
-  });
+  const mod = findMod(loadedMods, modFnMap, allMods, fnName);
 
   if (cleanExit(ARGV, modfilename, mod, 'ENOFNINMODS', `Could not find function ${fnName} in mods`))      { return false; }
 
@@ -140,6 +139,61 @@ exports.command = function(ARGV = sg.ARGV(), mods = {}, fnName, opts={}, command
   });
 };
 
+function findMod(mods = {}, modFnMap={}, allMods=[], fnName) {
+  var    modFilename = sg.reduce(modFnMap, null, (m, v, modName) => {
+    if (m)  { return m; }
+
+    if (v.fnNames.indexOf(fnName) !== -1) {
+      return v.filename;
+    }
+
+    return m;
+  });
+
+  var mod;
+  if (modFilename) {
+    if (isTheMod(null, (mod = require(modFilename)))) {
+      return mod;
+    }
+  }
+
+  modFilename = sg.reduce(allMods, null, (m, filename) => {
+    if (isTheMod(null, require(filename))) {
+      return filename;
+    }
+  });
+
+  if (modFilename) {
+    if (isTheMod(null, (mod = require(modFilename)))) {
+      return mod;
+    }
+  }
+
+  mod = sg.reduce(mods.mods || mods, null, (m0, theMod0) => {
+
+    const theMod = isTheMod(m0, theMod0);
+    if (theMod) {
+      return theMod;
+    }
+
+    return sg.reduce(theMod0.mods || theMod0, m0, (m, theMod) => {
+      return isTheMod(m, theMod);
+    });
+  });
+
+  function isTheMod(m, mod) {
+    let fn = mod[fnName];
+    if (_.isFunction(fn)) {
+      if (m)        { sg.warn(`Duplicate ${fnName} functions in ${mod.modname || 'some_mod'} and ${m.modname || 'some_other_mod'}`); }
+
+      return mod;
+    }
+
+    return m;
+  }
+}
+
+
 // -------------------------------------------------------------------------------------
 // exports
 //
@@ -160,35 +214,43 @@ function cleanExit(ARGV, modfilename, condition, code, msg) {
 
 function noop(){}
 
-function invoke0(argv, mod, fname, callback, abort_) {
+function invoke0(argv, mod, fnName, callback, abort_) {
+
+  // Load up the function
+  var   modjule               = {exports:{}};
+  const sg0                   = require('sg-flow');
+  const ra                    = require('./mod-squad');
+  const ROOT                  = ra.modSquad(modjule, 'commandROOT');
 
   // Get args
-  const debug   = argv.debug;
-  const verbose = argv.verbose;
+  const {
+    debug, silent, verbose, ddebug, forceSilent, vverbose, machine, human
+  }               = argv;
+  const options1  = sg.merge({debug, silent, verbose, ddebug, forceSilent, vverbose, machine, human});
+  options1.abort  = ('abort' in options1 ? options1.abort : true);
 
-  var   context = {
+  const init = ROOT.xport({init: function(argv, context, callback) {
+
+    const { rax }    = ra.getContext(context, argv, 0);
+
+    return rax.iwrap(..._.compact([abort_, function(abort) {
+      const fns = rax.loads2(mod, fnName, options1, abort);
+      const fn  = fns[fnName];
+
+      return fn(argv, rax.opts({}), callback);
+    }]));
+  }});
+
+  // --------------------------------------------------------
+
+  // Build up or get the context
+  var   context_ = {
     isRaInvoked:  true
   };
 
-  // Load up the function
-  const sg0   = require('sg-flow');
-  const ROOT  = require('./mod-squad').modSquad({exports:{}}, 'ROOT');
-  const init  = ROOT.xport({root: function(argv, context, callback) {
+  const { event, context } = ensureThreeArgvContext(argv, context_);
 
-    const ractx     = context.runAnywhere || {};
-    const { rax }   = ractx.ROOT__root;
-
-    // TODO: use compact to optionalify abort_, like invoke (below) does.
-    return rax.iwrap(abort_, function(abort) {
-      const fns = rax.loads(mod, fname, sg0.merge({debug, verbose}), abort);
-      const fn  = fns[fname];
-
-      //console.error(`invoking ${fname}`, sg.inspect({argv, context}));
-      return fn(argv, context, callback);
-    });
-  }});
-
-  return init(argv, context, function(err, data, ...rest) {
+  return init(event, context, function(err, data, ...rest) {
     return callback(err, data, ...rest);
   });
 }
@@ -197,7 +259,7 @@ function invoke(opts, options, argv, ractx, callback, abort_) {
   sg.check(42, __filename, {opts}, 'mod;fnName;hostModName;hostMod', {argv}, {ractx}, 'context');
 
   const {
-    mod, fnName, hostModName, hostMod
+    mod, fnName, hostModName
   }                     = opts;
 
   var   modjule               = {exports:{}};
@@ -207,7 +269,7 @@ function invoke(opts, options, argv, ractx, callback, abort_) {
   // Get args
   const {
     debug, silent, verbose, ddebug, forceSilent, vverbose, machine, human
-  }                                             = argv;
+  }              = argv;
   const options1 = sg.merge({debug, silent, verbose, ddebug, forceSilent, vverbose, machine, human}, options || {});
   options1.abort   = ('abort' in options1 ? options1.abort : true);
 

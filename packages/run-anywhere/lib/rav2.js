@@ -38,7 +38,7 @@ utils.dbUtils                 = dbUtils;
 utils.redisUtils              = redisUtils;
 utils.claudiaUtils            = claudiaUtils;
 
-_.each([lambdaHandler, expressHost, libModSquad], lib => {
+_.each([lambdaHandler, expressHost, libModSquad, libMakeCommand], lib => {
   _.each(lib, function(v,k) {
     module.exports[k] = v;
   });

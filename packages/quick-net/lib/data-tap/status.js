@@ -45,7 +45,7 @@ mod.xport({pushStatus: function(argv, context, callback) {
     const status            = true;
     const dataTypeName      = (status ? 'status' : 'feed');
     const name              = rax.arg(argv, 'name', {required:true});
-    const data              = rax.arg(argv, 'data', {required:true});
+    var   data              = rax.arg(argv, 'data', {required:true});
 
     if (rax.argErrors())    { return rax.abort(); }
 

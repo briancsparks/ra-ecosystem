@@ -58,6 +58,9 @@ mod.xport({pushData: function(argv, context, callback) {
     if (rax.argErrors({key}))    { return rax.abort(); }
 
     var   data    = data_;
+    if (_.isString(data)) {
+      data = sg.safeJSONParse(data) || data;
+    }
     if (sg.isObject(data)) {
       data = {...data, __from__: key};
     }
