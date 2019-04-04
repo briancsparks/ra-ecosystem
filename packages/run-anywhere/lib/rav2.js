@@ -7,7 +7,7 @@
 
 const _                         = require('lodash');
 var   utils                     = require('./utils');
-const sg                        = utils.sg;
+const sg                        = utils.sgsg;
 const libExpress                = require('./express');
 const libMakeCommand            = require('./v2/make-command');
 const libModSquad               = require('./v2/mod-squad');
@@ -45,7 +45,7 @@ _.each([lambdaHandler, expressHost, libModSquad], lib => {
 });
 
 module.exports.utils                  = utils;
-module.exports.sg                     = utils.sg;
+module.exports.sg                     = utils.sgsg;
 module.exports.command                = libMakeCommand.command;
 module.exports.commandInvoke          = libMakeCommand.invoke;
 module.exports.modSquad               = libModSquad.modSquad;
