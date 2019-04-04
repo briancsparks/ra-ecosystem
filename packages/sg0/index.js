@@ -717,7 +717,7 @@ var kvSmart = sg.kvSmart = function(o, k, v) {
  * @returns {object}                - A smaller version of obj.
  */
 exports.smallItems = function(obj, key = 'items') {
-  sg.warn_if(!obj, `${obj} detected in smallItems (${__filename})`);
+  sg.warn_if(sg.isnt(obj), `${obj} detected in smallItems (${__filename})`);
 
   if (!obj || !obj[key] || !_.isArray(obj[key])) {
     return obj;
