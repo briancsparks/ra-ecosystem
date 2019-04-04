@@ -18,10 +18,34 @@ var weeks   = sg.weeks   = sg.week   = 7*days,      week   = weeks;
 var months  = sg.months  = sg.month  = 30*days,     month  = months;
 var years   = sg.years   = sg.year   = 365*days,    year   = years;
 
-var   inspectFn = null;
+sg.argvFlag = function(flag) {
+  var target = `--${flag}`;
+  return process.argv.filter(x => (x === '--' || x === target))[0] === target;
+};
+
+sg.argvValue = function(key) {
+  var target = `--${key}=`;
+  var arg    = process.argv.filter(x => (x === '--' || x.startsWith(target)))[0] || '';
+  return arg.split('=')[1];
+};
+
+
+
+
+var stage       = sg.argvValue('stage');
+var fastFail    = sg.argvFlag('FASTFAIL');
 var cachedModes = null;     /* sg.modes() result cached */
 var forcedTestName;
 var forcedModes_;
+
+sg.setStage = function(stg) {
+  stage = stg;
+};
+
+sg.setFastFail = function(ff = true) {
+  fastFail = ff;
+};
+
 sg.setModes = function(modesStr) {
   cachedModes = null;
 
@@ -278,6 +302,26 @@ sg.dump = function(msg_, level, arg0, ...args) {
 };
 
 /**
+ * Inspect variables while in active development.
+ *
+ * @param {*} msg
+ * @param {*} level
+ * @param {*} arg0
+ * @param {*} args
+ */
+sg.dump_if = function(condition, msg_, level, arg0, ...args) {
+  if (!condition) { return; }
+
+  // var   msg = `\n\n     _____     _____     ${msg_}     _____     _____\n\n`;
+
+  var   lines = sg.reduce(_.range(level), '', m => `\n`);
+  const msg   = `${lines}     ` + sg.reduce(_.range(level), msg_, (m) => { return `_____     ${m}     _____`; }) + lines;
+
+  console[logStream('error')](..._.compact([msg, arg0 &&  sg.inspect({...arg0}), (args.length > 0) && sg.inspect([...args])]));
+  console[logStream('error')](msg);
+};
+
+/**
  * Just like console.log, but with inspect by default.
  *
  * @param {*} msg
@@ -313,9 +357,26 @@ sg.logError = function(error, msg, arg0, ...debugArgs) {
 sg.warn = function(msg_, arg0, ...args) {
   var msg = `\n\n     #####     #####     ${msg_}     #####     #####\n\n`;
   console.warn(..._.compact([msg, arg0 &&  sg.inspect({...arg0}), (args.length > 0) && sg.inspect([...args])]));
+
+  if (fastFail) {
+    throw(new Error(`FastFail warning ${msg_}`));
+  }
+};
+
+sg.warn_if = function(condition, ...args) {
+  if (!condition) { return; }
+
+  return sg.warn(...args);
 };
 
 sg.nag = function(msg_, arg0, ...args) {
+  var msg = `\n\n     .....     .....     ${msg_}     .....     .....\n\n`;
+  console.warn(..._.compact([msg, arg0 &&  sg.inspect({...arg0}), (args.length > 0) && sg.inspect([...args])]));
+};
+
+sg.nag_if = function(condition, msg_, arg0, ...args) {
+  if (!condition) { return; }
+
   var msg = `\n\n     .....     .....     ${msg_}     .....     .....\n\n`;
   console.warn(..._.compact([msg, arg0 &&  sg.inspect({...arg0}), (args.length > 0) && sg.inspect([...args])]));
 };
@@ -464,17 +525,6 @@ sg.keyMirror = function(x, sep) {
   });
 
   return result;
-};
-
-sg.argvFlag = function(flag) {
-  var target = `--${flag}`;
-  return process.argv.filter(x => (x === '--' || x === target))[0] === target;
-};
-
-sg.argvValue = function(key) {
-  var target = `--${key}=`;
-  var arg    = process.argv.filter(x => (x === '--' || x.startsWith(target)))[0] || '';
-  return arg.split('=')[1];
 };
 
 /**
@@ -657,6 +707,25 @@ var kvSmart = sg.kvSmart = function(o, k, v) {
 
   return o;
 };
+
+/**
+ * Returns a smaller object, suitable for debug logging.
+ *
+ * @param {object} obj              - The item to be logged.
+ * @param {string} [key='items']    - The key if the item that is large and should be shortened.
+ *
+ * @returns {object}                - A smaller version of obj.
+ */
+exports.smallItems = function(obj, key = 'items') {
+  sg.warn_if(!obj, `${obj} detected in smallItems (${__filename})`);
+
+  if (!obj || !obj[key] || !_.isArray(obj[key])) {
+    return obj;
+  }
+
+  return {...obj, [key]: [obj[key][0], `--- Plus ${obj[key].length-1} more items ---`]};
+};
+exports.small = exports.smallItems;
 
 /**
  *  Gets a sub-sub-key.

@@ -113,7 +113,7 @@ exports.mkInterceptorFn2 = function(service, fnName, ...rest) {
 
       // ==========================================================
       function reportTheData({condition, id, small}) {
-        if (condition) { sg.elog(`__dd__ ${fnName}(${id})`, sg.merge({args: args_, ok, data, rest: rest}, {err: (small? !!err : err)})); }
+        if (condition) { sg.elog(`__dd__ ${fnName}(${id})`, sg.merge({args: args_, ok, data: sg.small(data), rest: rest}, {err: (small? !!err : err)})); }
       }
     };
 

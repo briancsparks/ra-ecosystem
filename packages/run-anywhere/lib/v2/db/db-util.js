@@ -180,6 +180,7 @@ sanityChecks.push(async function({assert, ...context}) {
  * @returns {object}    - A smaller version
  */
 exports.smQueryResult = function(result) {
+  if (sg.isnt(result))  { return result; }
   return utils.smallItems(result, 'items');
 };
 

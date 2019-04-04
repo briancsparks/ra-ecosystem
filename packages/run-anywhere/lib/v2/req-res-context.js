@@ -52,6 +52,29 @@ exports.ensureContext = function(req, res, contextDottedPath, eventDottedPath, i
   return exports.ensureContext(req, res, contextDottedPath, eventDottedPath, initialParams);
 };
 
+// Blantly stolen from quick-net
+
+exports.mkResponse = function(code, req, res, err, result_, dbg) {
+  var result = {code, ok:!err, ...sg.debugInfo(dbg)};
+
+  if (!err) {
+    result = {...result, ...(result_ || {})};
+  }
+
+  console.error(`${code} for ${req.url}`, sg.inspect({result, err}));
+
+  if (sg.modes().debug) {
+    result.error = err;
+  }
+
+  const strResult = JSON.stringify(result);
+  res.statusCode = code;
+  res.setHeader('Content-Type', 'application/json');
+  res.setHeader('Content-Length', strResult.length);
+  res.end(strResult);
+};
+
+
 // -------------------------------------------------------------------------------------
 // exports
 //

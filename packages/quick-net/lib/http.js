@@ -12,6 +12,7 @@ const ra                      = require('run-anywhere').v2;
 const sg                      = ra.get3rdPartyLib('sg-flow');
 const { _ }                   = sg;
 const libUrl                  = require('url');
+const { omitDebug }           = ra;
 
 // -------------------------------------------------------------------------------------
 //  Data
@@ -170,8 +171,8 @@ module.exports.getReqParams = function(req, normalizeBodyFn = _.identity) {
   };
 
   // Join all the param sources
-  // reqParams.argv = reqParams.http.all = {...reqParams.http.ezHeaders, ...reqParams.http.body, ...reqParams.http.query};
-  reqParams.argv = reqParams.http.all = {...reqParams.http.body, ...reqParams.http.query, headers: ezHeaders, protocol, host};
+  reqParams.argvEx = reqParams.http.all = {...reqParams.http.body, ...reqParams.http.query, headers: ezHeaders, protocol, host};
+  reqParams.argv                        = {...reqParams.http.body, ...reqParams.http.query};
 
   return reqParams;
 };
@@ -246,10 +247,14 @@ exports.superagentPodErr = function(err) {
 };
 
 // --------------------------------------------------------------------
+var responders = {};
+
+// --------------------------------------------------------------------
+responders[200] =
 exports._200 = function(req, res, result_, dbg) {
   var result = {code:200, ok:true, ...result_, ...sg.debugInfo(dbg)};
 
-  console.log(`200 for ${req.url}`, sg.inspect({result}));
+  console.log(`200 for ${req.url}`, sg.inspect({result: sg.small(result)}));
 
   const strResult = JSON.stringify(result);
   res.statusCode = 200;
@@ -261,37 +266,59 @@ exports._200 = function(req, res, result_, dbg) {
 };
 
 // --------------------------------------------------------------------
-exports._400 = function(req, res, err, dbg) {
-  var result = {code:400, ok:false, ...sg.debugInfo(dbg)};
+exports._4XX = function(code, req, res, err, dbg) {
+  var result = {code, ok:false, ...sg.debugInfo(dbg)};
 
-  console.error(`400 for ${req.url}`, sg.inspect({result, err}));
+  console.error(`${code} for ${req.url}`, sg.inspect({result: sg.small(result), err}));
 
   if (sg.modes().debug) {
     result.error = err;
   }
 
   const strResult = JSON.stringify(result);
-  res.statusCode = 400;
+  res.statusCode = code;
   res.setHeader('Content-Type', 'application/json');
   res.setHeader('Content-Length', strResult.length);
   res.end(strResult);
 };
 
-// --------------------------------------------------------------------
-exports._500 = function(req, res, err, dbg) {
-  var result = {code:500, ok:false, ...sg.debugInfo(dbg)};
+responders[400] =
+exports._400 = function(req, res, err, dbg) {
+  return exports._4XX(400, req, res, err, dbg);
+};
 
-  console.error(`500 for ${req.url}`, sg.inspect({result, err}));
+responders[401] = exports._401 = function(...args) { return exports._4XX(401, ...args); };
+responders[403] = exports._403 = function(...args) { return exports._4XX(403, ...args); };
+responders[404] = exports._404 = function(...args) { return exports._4XX(404, ...args); };
+
+// --------------------------------------------------------------------
+exports._5XX = function(code, req, res, err, dbg) {
+  var result = {code, ok:false, ...sg.debugInfo(dbg)};
+
+  console.error(`${code} for ${req.url}`, sg.inspect({result: sg.small(result), err}));
 
   if (sg.modes().debug) {
     result.error = err;
   }
 
   const strResult = JSON.stringify(result);
-  res.statusCode = 500;
+  res.statusCode = code;
   res.setHeader('Content-Type', 'application/json');
   res.setHeader('Content-Length', strResult.length);
   res.end(strResult);
+};
+
+responders[500] =
+exports._500 = function(req, res, err, dbg) {
+  return exports._5XX(500, req, res, err, dbg);
+};
+
+responders[503] = exports._503 = function(...args) { return exports._5XX(503, ...args); };
+
+
+exports.mkResponse = function(code, ...rest) {
+  const responder = responders[code] || exports._400;
+  return responder(...rest);
 };
 
 // --------------------------------------------------------------------
@@ -313,6 +340,68 @@ exports.getEnvName = function(req) {
   }
 
   return result;
+};
+
+exports.jsonApiEx = function(mod, fnFilename, checkNum, name, calledLib, calledFnName, defs={}) {
+  return mod.reqHandler({[name]: function(req, res) {
+    const start = _.now();
+
+    sg.check(checkNum, fnFilename, {req}, {res}, 'runAnywhere.context');
+    console.log(`[express]/${name} invoked ${req.url}`);
+
+    const { rax }         = ra.getContext(req.runAnywhere.context, {});
+    return rax.iwrap2(function( /* abort */ ) {
+      const mods            = rax.invokers(calledLib, calledFnName);
+      const calledFunction  = mods[sg.firstKey(mods)];
+
+      if (!calledFunction) {
+        let msg = `Cannot find ${calledFnName} while trying to jsonApiEx (have: ${Object.keys(calledLib.async)})`;
+        sg.warn(msg);
+        return exports.mkResponse(500, req, res, {msg}, {msg});
+      }
+
+      const reqParams           = exports.getReqParams(req, sg.merge);
+      const { argvEx }          = reqParams;
+
+      return calledFunction({...defs, ...argvEx}, function(err, result) {
+        console.log(`[express]${req.url} 200 ${_.now() - start}`);
+        return exports._200(req, res, result);
+      });
+    });
+  }});
+};
+
+exports.jsonApi = function(mod, fnFilename, checkNum, name, calledLib, calledFnName, defs={}) {
+  return mod.reqHandler({[name]: function(req, res) {
+    const start = _.now();
+
+    sg.check(checkNum, fnFilename, {req}, {res}, 'runAnywhere.context');
+    console.log(`[express]/${name} invoked ${req.url}`);
+
+    const { rax }         = ra.getContext(req.runAnywhere.context, {});
+    return rax.iwrap2(function( /* abort */ ) {
+      const mods            = rax.invokers(calledLib, calledFnName, {cleanArgv:true});
+      const calledFunction  = mods[sg.firstKey(mods)];
+
+      if (!calledFunction) {
+        let msg = `Cannot find ${calledFnName} while trying to jsonApi (have: ${Object.keys(calledLib.async)})`;
+        sg.warn(msg);
+        return exports.mkResponse(500, req, res, {msg}, {msg});
+      }
+
+      const reqParams           = exports.getReqParams(req, sg.merge);
+      var   { argv, argvEx }    = reqParams;
+// console.log(`1`, sg.inspect({argvEx, argv}));
+
+      argvEx                    = omitDebug(argvEx);
+// console.log(`2`, sg.inspect({argvEx, argv}));
+
+      return calledFunction({...defs, ...argv}, function(err, result) {
+        console.log(`[express]${req.url} 200 ${_.now() - start}`);
+        return exports._200(req, res, result);
+      });
+    });
+  }});
 };
 
 

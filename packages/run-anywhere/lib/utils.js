@@ -7,9 +7,10 @@
 const _                       = require('lodash');
 var   lib                     = require('./v2/power');
 
-lib.sg                        = _.extend({}, lib.power);
+lib.sgsg                      = _.extend({}, lib.power);
 
-const sg                      = lib.power;
+const sg                      = require('sg-flow');
+lib.sg                        = sg;
 
 // -------------------------------------------------------------------------------------
 //  Data
@@ -44,11 +45,17 @@ exports.pad = function(s_, len, fill) {
 };
 
 exports.smallItems = function(obj, key = 'items') {
-  if (!obj[key] || !_.isArray(obj[key])) {
+  sg.warn_if(!obj, `${obj} detected in smallItems (${__filename})`);
+
+  if (!obj || !obj[key] || !_.isArray(obj[key])) {
     return obj;
   }
 
   return {...obj, [key]: [obj[key][0], `--- Plus ${obj[key].length-1} more items ---`]};
+};
+
+exports.omitDebug = function(obj) {
+  return _.omit(obj, 'debug', 'verbose', 'ddebug', 'vverbose', 'forceSilent', 'silent');
 };
 
 // -------------------- ARGV
