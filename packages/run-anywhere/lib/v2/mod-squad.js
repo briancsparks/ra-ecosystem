@@ -800,6 +800,43 @@ const FuncRa = function(argv, context, callback, origCallback, ractx, options_ =
   };
 
   /**
+   * Returns argv[one of the names], and removes the found keys.
+   *
+   * @param {*} argv            - The canonical run-anywhere argv argument.
+   * @param {*} names_          - Name of the arg, plus aliases to use.
+   * @param {*} [options={}]    - Options for the arg, like {required:true}
+   *
+   * @returns {*}               - The value, or `undefined` if not found.
+   */
+  self.extractArg = function(argv, names_, options = {}) {
+
+    // Get the result from `arg()`
+    const result = self.arg(argv, names_, options);
+
+    const names     = names_.split(',');
+
+    // Loop over the names and see if they are in argv
+    for (var i = 0; i < names.length; ++i) {
+      const name = names[i];
+
+      // If we have it, great!
+      if (name in argv)                         { removeKey(name); }
+
+      // If the real name starts with Caps, try the camel-case version
+      if (sg.isUpperCase(name[0]) && name.length > 1) {
+        if (sg.toLowerWord(name) in argv)       { removeKey(sg.toLowerWord(name)); }
+      }
+    }
+
+    return result;
+
+    // Remember the args that were used, for reporting
+    function removeKey(key) {
+      delete argv[key];
+    }
+  };
+
+  /**
    * Returns whether there was an error (actually returns the errors.)
    *
    * * Marking `{required:true}` while getting the value
@@ -860,6 +897,7 @@ exports.getContext            = getContext;
 exports.getRaContext          = getRaContext;
 exports.upsertRaContextForX   = upsertRaContextForX;
 exports.omitDebug             = utils.omitDebug;
+exports.extractDebug          = utils.extractDebug;
 
 function getRaContext(context) {
   return context.runAnywhere;

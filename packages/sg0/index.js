@@ -719,11 +719,21 @@ var kvSmart = sg.kvSmart = function(o, k, v) {
 exports.smallItems = function(obj, key = 'items') {
   sg.warn_if(sg.isnt(obj), `${obj} detected in smallItems (${__filename})`);
 
-  if (!obj || !obj[key] || !_.isArray(obj[key])) {
+  if (!obj)                 { return obj; }
+
+  if (!obj[key] || !_.isArray(obj[key])) {
+    key = 'payload';
+  }
+
+  if (!obj[key] || !_.isArray(obj[key])) {
     return obj;
   }
 
-  return {...obj, [key]: [obj[key][0], `--- Plus ${obj[key].length-1} more items ---`]};
+  var   arr = [];
+  if (obj[key].length > 0)    { arr = [obj[key][0]]; }
+  if (obj[key].length > 1)    { arr = [...arr, `--- Plus ${obj[key].length-1} more items ---`]; }
+
+  return {...obj, [key]: arr};
 };
 exports.small = exports.smallItems;
 

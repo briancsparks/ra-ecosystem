@@ -45,17 +45,42 @@ exports.pad = function(s_, len, fill) {
 };
 
 exports.smallItems = function(obj, key = 'items') {
-  sg.warn_if(!obj, `${obj} detected in smallItems (${__filename})`);
+  sg.warn_if(sg.isnt(obj), `${obj} detected in smallItems (${__filename})`);
 
-  if (!obj || !obj[key] || !_.isArray(obj[key])) {
+  if (!obj)                 { return obj; }
+
+  if (!obj[key] || !_.isArray(obj[key])) {
+    key = 'payload';
+  }
+
+  if (!obj[key] || !_.isArray(obj[key])) {
     return obj;
   }
 
-  return {...obj, [key]: [obj[key][0], `--- Plus ${obj[key].length-1} more items ---`]};
+  var   arr = [];
+  if (obj[key].length > 0)    { arr = [obj[key][0]]; }
+  if (obj[key].length > 1)    { arr = [...arr, `--- Plus ${obj[key].length-1} more items ---`]; }
+
+  return {...obj, [key]: arr};
+};
+exports.small = exports.smallItems;
+
+
+
+const debugKeys = ['debug', 'verbose', 'ddebug', 'vverbose', 'forceSilent', 'silent' ];
+exports.omitDebug = function(obj) {
+  return _.omit(obj, ...debugKeys);
 };
 
-exports.omitDebug = function(obj) {
-  return _.omit(obj, 'debug', 'verbose', 'ddebug', 'vverbose', 'forceSilent', 'silent');
+exports.extractDebug = function(obj) {
+  var   result = sg.extracts(obj, ...debugKeys);
+
+  delete obj._;
+
+  if (result.verbose)       { result.debug  = result.verbose; }
+  if (result.vverbose)      { result.ddebug = result.vverbose; }
+
+  return result;
 };
 
 // -------------------- ARGV
