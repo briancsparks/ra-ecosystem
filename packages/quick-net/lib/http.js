@@ -18,7 +18,8 @@ const { omitDebug }           = ra;
 //  Data
 //
 
-
+const AWS_ACCT_TYPE           = (process.env.AWS_ACCT_TYPE || '').toUpperCase();
+const NETLAB_PRIVATE_APIKEY   = process.env[`NETLAB_PRIVATE_APIKEY_${AWS_ACCT_TYPE}`];
 
 // -------------------------------------------------------------------------------------
 //  Functions
@@ -131,10 +132,7 @@ module.exports.getReqParams = function(req, normalizeBodyFn = _.identity) {
 
   var   headers   = {...req.headers};
 
-  var   ezHeaders = sg.reduce(req.headers, {}, (m, value, k) => {
-    const key = k.toLowerCase().replace(/[^a-z0-9]/gi, '_');
-    return sg.kv(m, key, value);
-  });
+  var   ezHeaders = mkEzHeaders(req);
 
   // Get parameters, event, context from API Gateway
   const apiGateway        = req.apiGateway                        || {};
@@ -195,10 +193,7 @@ exports.getHttpParams = module.exports.getHttpParams = function(req, normalizeBo
 
   var   headers   = {...req.headers};
 
-  var   ezHeaders = sg.reduce(req.headers, {}, (m, value, k) => {
-    const key = k.toLowerCase().replace(/[^a-z0-9]/gi, '_');
-    return sg.kv(m, key, value);
-  });
+  var   ezHeaders = mkEzHeaders(req);
 
   // Get parameters, event, context from API Gateway
   const apiGateway        = req.apiGateway                        || {};
@@ -316,6 +311,7 @@ exports._500 = function(req, res, err, dbg) {
 responders[503] = exports._503 = function(...args) { return exports._5XX(503, ...args); };
 
 
+const mkResponse =
 exports.mkResponse = function(code, ...rest) {
   const responder = responders[code] || exports._400;
   return responder(...rest);
@@ -391,10 +387,8 @@ exports.jsonApi = function(mod, fnFilename, checkNum, name, calledLib, calledFnN
 
       const reqParams           = exports.getReqParams(req, sg.merge);
       var   { argv, argvEx }    = reqParams;
-// console.log(`1`, sg.inspect({argvEx, argv}));
 
       argvEx                    = omitDebug(argvEx);
-// console.log(`2`, sg.inspect({argvEx, argv}));
 
       return calledFunction({...defs, ...argv}, function(err, result) {
         console.log(`[express]${req.url} 200 ${_.now() - start}`);
@@ -404,21 +398,31 @@ exports.jsonApi = function(mod, fnFilename, checkNum, name, calledLib, calledFnN
   }});
 };
 
-
-
-// -------------------------------------------------------------------------------------
-// routes
-//
-
-
 // -------------------------------------------------------------------------------------
 // exports
 //
+
+exports.protectRouteMw = protectRouteMw;
 
 
 // -------------------------------------------------------------------------------------
 //  Helper Functions
 //
+
+function protectRouteMw(options={}) {
+  return function(req, res, next) {
+
+    const headers = mkEzHeaders(req);
+
+    if (NETLAB_PRIVATE_APIKEY && headers.x_api_key === NETLAB_PRIVATE_APIKEY) {
+      return next();
+    }
+
+    sg.elog(`protectRouteMw fail api key`, {"x-api-key": headers.x_api_key});
+
+    return mkResponse(403, req, res);
+  };
+};
 
 function colonify(protocol) {
   if (!protocol.endsWith(':')) {
@@ -434,5 +438,13 @@ function makeSearch(query = {}) {
 
   return ['', ..._.compact([str])].join('?');
 }
+
+function mkEzHeaders(req) {
+  return sg.reduce(req.headers, {}, (m, value, k) => {
+    const key = k.toLowerCase().replace(/[^a-z0-9]/gi, '_');
+    return sg.kv(m, key, value);
+  });
+}
+
 
 
