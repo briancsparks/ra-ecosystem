@@ -1,6 +1,6 @@
 {
   "name": "quick-net",
-  "version": "1.0.61",
+  "version": "1.0.62",
   "description": "Create quick cloud network",
   "main": "index.js",
   "bin": {
@@ -34,8 +34,8 @@
     "get-stream": "^4.1.0",
     "js-yaml": "^3.12.2",
     "loud-rejection": "^1.6.0",
-    "run-anywhere": "^1.0.49",
-    "sg-clihelp": "^1.0.17",
+    "run-anywhere": "^1.0.50",
+    "sg-clihelp": "^1.0.18",
     "shelljs": "^0.8.3",
     "superagent": "^4.1.0",
     "superb": "^3.0.0"
