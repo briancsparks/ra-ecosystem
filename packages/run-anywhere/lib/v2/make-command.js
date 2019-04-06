@@ -82,9 +82,8 @@ exports.command2 = function(ARGV = sg.ARGV(), loadedMods = {}, modFnMap={}, allM
 
   if (cleanExit(ARGV, modfilename, mod, 'ENOFNINMODS', `Could not find function ${fnName} in mods`))      { return false; }
 
-
   // Otherwise, run it
-  return invoke0(ARGV.pod(), mod, fnName, function(err, ...rest) {
+  const invokeCallback = function(err, ...rest) {
     var exitCode = 0;
 
     // Is there an error?
@@ -136,62 +135,11 @@ exports.command2 = function(ARGV = sg.ARGV(), loadedMods = {}, modFnMap={}, allM
 
       process.stdout.write(result + '\n');
     });
-  });
+  };
+
+  const invoke = sg.extract(opts, 'invoke') || invoke0;
+  return invoke(ARGV.pod(), mod, fnName, invokeCallback, /*abort=*/null, {invoke0, ...opts});
 };
-
-function findMod(mods = {}, modFnMap={}, allMods=[], fnName) {
-  var    modFilename = sg.reduce(modFnMap, null, (m, v, modName) => {
-    if (m)  { return m; }
-
-    if (v.fnNames.indexOf(fnName) !== -1) {
-      return v.filename;
-    }
-
-    return m;
-  });
-
-  var mod;
-  if (modFilename) {
-    if (isTheMod(null, (mod = require(modFilename)))) {
-      return mod;
-    }
-  }
-
-  modFilename = sg.reduce(allMods, null, (m, filename) => {
-    if (isTheMod(null, require(filename))) {
-      return filename;
-    }
-  });
-
-  if (modFilename) {
-    if (isTheMod(null, (mod = require(modFilename)))) {
-      return mod;
-    }
-  }
-
-  mod = sg.reduce(mods.mods || mods, null, (m0, theMod0) => {
-
-    const theMod = isTheMod(m0, theMod0);
-    if (theMod) {
-      return theMod;
-    }
-
-    return sg.reduce(theMod0.mods || theMod0, m0, (m, theMod) => {
-      return isTheMod(m, theMod);
-    });
-  });
-
-  function isTheMod(m, mod) {
-    let fn = mod[fnName];
-    if (_.isFunction(fn)) {
-      if (m)        { sg.warn(`Duplicate ${fnName} functions in ${mod.modname || 'some_mod'} and ${m.modname || 'some_other_mod'}`); }
-
-      return mod;
-    }
-
-    return m;
-  }
-}
 
 
 // -------------------------------------------------------------------------------------
@@ -214,7 +162,8 @@ function cleanExit(ARGV, modfilename, condition, code, msg) {
 
 function noop(){}
 
-function invoke0(argv, mod, fnName, callback, abort_) {
+function invoke0(argv, mod, fnName, callback, abort_, options={}) {
+  var   passAlong = {mod, fnName};
 
   // Load up the function
   var   modjule               = {exports:{}};
@@ -231,11 +180,17 @@ function invoke0(argv, mod, fnName, callback, abort_) {
 
   const init = ROOT.xport({init: function(argv, context, callback) {
 
-    const { rax }    = ra.getContext(context, argv, 0);
+    const raContext  = ra.getContext(context, argv, 0);
+    const { rax }    = raContext;
 
     return rax.iwrap(..._.compact([abort_, function(abort) {
       const fns = rax.loads2(mod, fnName, options1, abort);
       const fn  = fns[fnName];
+
+      if (options.fn) {
+        passAlong = { ...passAlong, rax, ...options1 };
+        return options.fn({raContext, fn, abort, ...passAlong}, argv, rax.opts({}), callback);
+      }
 
       return fn(argv, rax.opts({}), callback);
     }]));
@@ -309,4 +264,60 @@ function invoke(opts, options, argv, ractx, callback, abort_) {
     return callback(err, data, ...rest);
   });
 }
+
+function findMod(mods = {}, modFnMap={}, allMods=[], fnName) {
+  var    modFilename = sg.reduce(modFnMap, null, (m, v, modName) => {
+    if (m)  { return m; }
+
+    if (v.fnNames.indexOf(fnName) !== -1) {
+      return v.filename;
+    }
+
+    return m;
+  });
+
+  var mod;
+  if (modFilename) {
+    if (isTheMod(null, (mod = require(modFilename)))) {
+      return mod;
+    }
+  }
+
+  modFilename = sg.reduce(allMods, null, (m, filename) => {
+    if (isTheMod(null, require(filename))) {
+      return filename;
+    }
+  });
+
+  if (modFilename) {
+    if (isTheMod(null, (mod = require(modFilename)))) {
+      return mod;
+    }
+  }
+
+  mod = sg.reduce(mods.mods || mods, null, (m0, theMod0) => {
+
+    const theMod = isTheMod(m0, theMod0);
+    if (theMod) {
+      return theMod;
+    }
+
+    return sg.reduce(theMod0.mods || theMod0, m0, (m, theMod) => {
+      return isTheMod(m, theMod);
+    });
+  });
+
+  function isTheMod(m, mod) {
+    let fn = mod[fnName];
+    if (_.isFunction(fn)) {
+      if (m)        { sg.warn(`Duplicate ${fnName} functions in ${mod.modname || 'some_mod'} and ${m.modname || 'some_other_mod'}`); }
+
+      return mod;
+    }
+
+    return m;
+  }
+}
+
+
 
