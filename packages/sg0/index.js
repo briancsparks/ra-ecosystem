@@ -34,6 +34,7 @@ sg.argvValue = function(key) {
 
 var stage       = sg.argvValue('stage');
 var fastFail    = sg.argvFlag('FASTFAIL');
+var warnStack   = sg.argvFlag('WARNSTACK');
 var cachedModes = null;     /* sg.modes() result cached */
 var forcedTestName;
 var forcedModes_;
@@ -360,6 +361,8 @@ sg.warn = function(msg_, arg0, ...args) {
 
   if (fastFail) {
     throw(new Error(`FastFail warning ${msg_}`));
+  } else if (warnStack) {
+    console.error(`Warning ${msg_}`, new Error(`Warning ${msg_}`).stack);
   }
 };
 
