@@ -287,6 +287,7 @@ function findMod(mods = {}, modFnMap={}, allMods=[], fnName) {
     if (isTheMod(null, require(filename))) {
       return filename;
     }
+    return m;
   });
 
   if (modFilename) {
