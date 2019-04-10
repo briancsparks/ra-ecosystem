@@ -17,7 +17,7 @@ const ra                        = require('../mod-squad');
 const dbUtils                   = require('./db-util');
 
 const {
-  getQuiet, getVerbose, raContext, inspect, qm
+  getQuiet, getVerbose, raContext, inspect, qm, smResult,
 }                               = utils;
 
 const mod                       = ra.modSquad(module, `raCrud`);
@@ -69,7 +69,7 @@ mod.xport({upsert: function(argv_, context, callback) {
 
       const updates     = dbUtils.updatify(updates, query, context);
       return updateOne(query, updates, {upsert:true}, function(err, result) {
-        if (!quiet) console.log(`updateOneSession`, sg.inspect({query, updates, result: smResult(result)}));
+        if (!quiet)     { sg.elog(`updateOneSession`, sg.inspect({query, updates, result: smResult(result)})); }
 
         close();
 
