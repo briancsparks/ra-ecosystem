@@ -55,8 +55,8 @@ exports.claudia2RaArgs = function(args, callback) {
 
   // TODO: parse all sources of params (body, path params)
   var   argv = {
+    ...(request.queryString || (request.proxyRequest && request.proxyRequest.queryStringParameters || {})),
     __request: request,
-    ...sg.extend(request.queryStringParameters),
   };
 
   var   context = {

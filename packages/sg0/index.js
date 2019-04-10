@@ -33,8 +33,8 @@ sg.argvValue = function(key) {
 
 
 var stage       = sg.argvValue('stage');
-var fastFail    = sg.argvFlag('FASTFAIL');
-var warnStack   = sg.argvFlag('WARNSTACK');
+var fastFail    = sg.argvFlag('fastfail');
+var warnStack   = sg.argvFlag('warnstack');
 var cachedModes = null;     /* sg.modes() result cached */
 var forcedTestName;
 var forcedModes_;

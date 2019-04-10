@@ -67,20 +67,38 @@ exports.small = exports.smallItems;
 
 
 
-const debugKeys = ['debug', 'verbose', 'ddebug', 'vverbose', 'forceSilent', 'silent' ];
+const debugKeys   = ['debug', 'verbose', 'ddebug', 'vverbose', 'forceSilent', 'silent'];
+const systemKeys  = ['warnstack', 'fastfail' ];
+
 exports.omitDebug = function(obj) {
   return _.omit(obj, ...debugKeys);
+};
+
+exports.omitSystem = function(obj) {
+  return _.omit(obj, ...systemKeys);
+};
+
+exports.pickDebug = function(obj) {
+  return _.pick(obj, ...debugKeys);
+};
+
+exports.pickParams = function(obj) {
+  return _.omit(obj, '_', ...debugKeys, ...systemKeys);
 };
 
 exports.extractDebug = function(obj) {
   var   result = sg.extracts(obj, ...debugKeys);
 
-  delete obj._;
-
   if (result.verbose)       { result.debug  = result.verbose; }
   if (result.vverbose)      { result.ddebug = result.vverbose; }
 
   return result;
+};
+
+exports.extractParams = function(obj) {
+  const params = exports.pickParams(obj);
+
+  return sg.extracts(obj, ...Object.keys(params));
 };
 
 // -------------------- ARGV

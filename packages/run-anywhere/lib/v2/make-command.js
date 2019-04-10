@@ -266,10 +266,12 @@ function invoke(opts, options, argv, ractx, callback, abort_) {
 }
 
 function findMod(mods = {}, modFnMap={}, allMods=[], fnName) {
-  var    modFilename = sg.reduce(modFnMap, null, (m, v, modName) => {
+  var   available = {};
+  var   modFilename = sg.reduce(modFnMap, null, (m, v, modName) => {
     if (m)  { return m; }
 
     if (v.fnNames.indexOf(fnName) !== -1) {
+      available[v.filename] = v.fnNames;
       return v.filename;
     }
 
@@ -284,7 +286,9 @@ function findMod(mods = {}, modFnMap={}, allMods=[], fnName) {
   }
 
   modFilename = sg.reduce(allMods, null, (m, filename) => {
-    if (isTheMod(null, require(filename))) {
+    const mod = require(filename);
+    available[filename] = sg.keys(mod.async);
+    if (isTheMod(null, mod)) {
       return filename;
     }
     return m;
@@ -307,6 +311,9 @@ function findMod(mods = {}, modFnMap={}, allMods=[], fnName) {
       return isTheMod(m, theMod);
     });
   });
+
+  if (!mod) { sg.elog(`Fail to load fn ${fnName}`, available); }
+  return mod;
 
   function isTheMod(m, mod) {
     let fn = mod[fnName];

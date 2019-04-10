@@ -898,6 +898,10 @@ exports.getRaContext          = getRaContext;
 exports.upsertRaContextForX   = upsertRaContextForX;
 exports.omitDebug             = utils.omitDebug;
 exports.extractDebug          = utils.extractDebug;
+exports.extractParams         = utils.extractParams;
+exports.omitSystem            = utils.omitSystem;
+exports.pickDebug             = utils.pickDebug;
+exports.pickParams            = utils.pickParams;
 
 function getRaContext(context) {
   return context.runAnywhere;
