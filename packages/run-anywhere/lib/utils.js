@@ -12,6 +12,8 @@ lib.sgsg                      = _.extend({}, lib.power);
 const sg                      = require('sg-flow');
 lib.sg                        = sg;
 
+const qmX                     = require('quick-merge').qm;
+
 // -------------------------------------------------------------------------------------
 //  Data
 //
@@ -19,6 +21,21 @@ lib.sg                        = sg;
 // -------------------------------------------------------------------------------------
 //  Functions
 //
+
+exports.qm = function(a, b, ...rest) {
+  var   result;
+
+  // Fix glitch that a zero-key object clobbers everything
+  if (sg.numKeys(a) === 0)          { result = b; }
+  else if (sg.numKeys(b) === 0)     { result = a; }
+  else                              { result = qmX(a,b); }
+
+  if (rest.length > 0) {
+    return exports.qm(result, ...rest);
+  }
+
+  return result;
+};
 
 exports.isDebug = function() {
   return process.env.NODE_ENV !== 'production';

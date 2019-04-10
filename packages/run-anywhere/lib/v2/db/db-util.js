@@ -7,11 +7,11 @@ const _                         = require('lodash');
 const utils                     = require('../../utils');
 const sg                        = utils.sg;
 const MongoClient               = require('mongodb').MongoClient;
-const { qm }                    = require('quick-merge');
+// const { qm }                    = require('quick-merge');
 const { registerSanityChecks }  = require('../sanity-checks');
 
 const {
-  getQuiet, getVerbose, raContext, inspect,
+  getQuiet, getVerbose, raContext, inspect, qm
 }                               = utils;
 
 // -------------------------------------------------------------------------------------
@@ -170,6 +170,69 @@ sanityChecks.push(async function({assert, ...context}) {
 
   return `db_close(),db_queryCursor()`;
 });
+
+/**
+ * Builds a MongoDB Cursor object in an easy way.
+ *
+ * @param {Object}    xyzDb     - The DB (collection)
+ * @param {Object}    context   - The run-anywhere context
+ * @param {string[]}  queryKeys - Array of strings that are the top-level items in the collection (a key mirror)
+ * @param {Object[]}  argvs     - Query arguments
+ *
+ * @returns {Object}        - The cursor object.
+ */
+const queryCursorEx = exports.queryCursorEx = function(xyzDb, context, queryKeys, ...argvs) {
+
+  var argv = _.reduce(argvs, (argv, arg) => {
+    if (typeof arg === 'string')    { return qm(argv, {query:{ [arg]: {$exists:true}}}); }
+
+    var   result = {};
+    const query = sg.reduce(arg, {}, (m,v,k) => {
+      if (k in queryKeys) {
+        return sg.kv(m,k,v);
+      }
+      result[k] = v;
+      return m;
+    });
+
+    return qm(argv, result, {query});
+  }, {});
+
+  // Default query is all
+  var query       = argv.query          || {};
+  var projection  = argv.projection;
+
+  var cursor;
+
+  console.log(`queryCursorEx`, sg.inspect({query}));
+
+  if (projection) {
+    cursor = xyzDb.find(query, {projection});
+  } else {
+    cursor = xyzDb.find(query);
+  }
+
+  // If we have no sort, yet, just use reverse-chrono
+  if (argv.sort) {
+    let sort = argv.sort;
+    if (sort === true)              { sort = 'mtime'; }
+    if (typeof sort === 'string')   { sort = {[sort]: -1}; }
+
+    cursor = cursor.sort(sort);
+  }
+
+  // skip
+  if (argv.skip) {
+    cursor = cursor.skip(+argv.skip);
+  }
+
+  // limit
+  if (argv.limit) {
+    cursor = cursor.limit(+argv.limit);
+  }
+
+  return cursor;
+};
 
 /**
  * When logging a result of querying, the list is usually big, and not meaningful to
