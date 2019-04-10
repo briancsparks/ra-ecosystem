@@ -14,6 +14,7 @@ const {
   getQuiet, getVerbose, raContext, inspect, qm
 }                               = utils;
 
+
 // -------------------------------------------------------------------------------------
 //  Data
 //
@@ -37,13 +38,15 @@ var   xyzDbs        = {};
  * This function allows the individual ra-invokable function to do the open/CRUD/close pattern, but if
  * the containing app has already setup the DB, then the function's open and close are noops.
  *
- * @param {String} collName - the name of the collection
- * @param {Object} context  - the context from AWS
- * @param {String} dbName   - the name of the DB
+ * @param {String} collName     - the name of the collection
+ * @param {Object} context      - the context from AWS
+ * @param {String} dbName       - the name of the DB
+ * @param {String} dbHostname   - the hostname for the DB instance
+ * @param {String} dbPortnum    - the db instance port
  *
- * @returns {Object}        -  The collection and a close function to call when done.
+ * @returns {Object}            -  The collection and a close function to call when done.
  */
-const getXyzDb = async function(collName, context, dbName) {
+const getXyzDb = async function(collName, context, dbName, dbHostname, dbPortnum = 27017) {
   const quiet           = getQuiet(context || {});
   const verbose         = getVerbose(context);
   var   raCtx           = context.runAnywhere     = context.runAnywhere   || {};
@@ -57,8 +60,8 @@ const getXyzDb = async function(collName, context, dbName) {
   var   meaningfulClose = false;
 
   if (!xyzDb) {
-    let   dbHost        = process.env.db || process.env.SERVERASSIST_DB_IP || 'db';
-    let   dbUrl         = `mongodb://${dbHost}:27017/${dbName}`;
+    let   dbHost        = dbHostname || process.env.db || process.env.SERVERASSIST_DB_IP || 'db';
+    let   dbUrl         = `mongodb://${dbHost}:${dbPortnum}/${dbName}`;
 
     let   conn          = await MongoClient.connect(dbUrl, {useNewUrlParser:true});
     let   db            = conn.db(dbName);
@@ -78,6 +81,7 @@ const getXyzDb = async function(collName, context, dbName) {
     [`${collName}Db`]:    xyzDb,
     collection:           xyzDb,
     coll:                 xyzDb,
+    xyzDb,
     close,
     meaningfulClose
   };
@@ -93,19 +97,21 @@ const getXyzDb = async function(collName, context, dbName) {
  * This is the entry-point fot the getXyzDb() function, which does all the real
  * work.
  *
- * @param {String} dbname     - the name of the DB.
- * @param {String} collname   - the name of the collection.
+ * @param {String} dbname       - the name of the DB.
+ * @param {String} collname     - the name of the collection.
+ * @param {String} dbHostname   - the hostname for the DB instance
+ * @param {String} dbPortnum    - the db instance port
  *
- * @returns {Object}          - The DB (collection)
+ * @returns {Object}            - The DB (collection)
  */
-exports.getGetXyzDb = function(dbname, collname) {
+exports.getGetXyzDb = function(dbname, collname, dbHostname, dbPortnum = 27017) {
 
   xyzDbs[dbname] = xyzDbs[dbname] || {};
 
   if (!xyzDbs[dbname][collname]) {
 
     xyzDbs[dbname][collname] = function(context) {
-      return getXyzDb(collname, context, dbname);
+      return getXyzDb(collname, context, dbname, dbHostname, dbPortnum);
     };
   }
 
@@ -204,7 +210,7 @@ const queryCursorEx = exports.queryCursorEx = function(xyzDb, context, queryKeys
 
   var cursor;
 
-  console.log(`queryCursorEx`, sg.inspect({query}));
+  sg.elog(`queryCursorEx`, {query});
 
   if (projection) {
     cursor = xyzDb.find(query, {projection});

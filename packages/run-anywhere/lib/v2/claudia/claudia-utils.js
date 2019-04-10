@@ -43,6 +43,22 @@ const {
  *          });
  * ```
  *
+ * And the `getFeed()` function would get params:
+ *
+ * ```js
+ *          argv = {
+ *            all_of_the_json_able_items_from: {url_query, body, path_params}
+ *            __meta__: {
+ *              __request: 'claudia_js_request_object',
+ *              orig: {
+ *                queryJson,
+ *                bodyJson,
+ *                pathParamsJson
+ *              }
+ *            }
+ *          }
+ * ```
+ *
  * @param {*} args - The standard args (request, context).
  * @param {*} callback - continuation
  *
@@ -53,10 +69,21 @@ exports.claudia2RaArgs = function(args, callback) {
 
   const [ request, context_ ] = args;
 
-  // TODO: parse all sources of params (body, path params)
+  // Parse all sources of params (body, path params)
+  const query       = request.queryString || (request.proxyRequest && request.proxyRequest.queryStringParameters) || {};
+  const body        = request.body || {};
+  const pathParams  = request.pathParams || {};
+
   var   argv = {
-    ...(request.queryString || (request.proxyRequest && request.proxyRequest.queryStringParameters || {})),
-    __request: request,
+    ...query,
+    ...body,
+    ...pathParams,
+    __meta__: {
+      __request: request,
+      orig: {
+        query, body, pathParams,
+      }
+    }
   };
 
   var   context = {

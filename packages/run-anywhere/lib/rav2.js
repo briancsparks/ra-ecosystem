@@ -14,9 +14,11 @@ const libModSquad               = require('./v2/mod-squad');
 const lambdaHandler             = require('./v2/lambda-handler');
 const expressHost               = require('./v2/express-host');
 const claudiaUtils              = require('./v2/claudia/claudia-utils');
-const dbUtils                   = require('./v2/db/db-util');
+var   dbUtils                   = require('./v2/db/db-util');
 const redisUtils                = require('./v2/redis/redis-util');
 const { promisify }             = require('util');
+
+dbUtils                         = _.extend({}, dbUtils, require('./v2/db/crud'));
 
 
 // -------------------------------------------------------------------------------------
