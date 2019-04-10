@@ -21,7 +21,7 @@ const pruneObj = function(strategy, x) {
   const len         = keys.length;
 
   if (len === 0 && strategy.pruneFalsy) {
-    return /* undefined */;
+    return; /* undefined */
   }
 
   var   missed = 0;
@@ -51,7 +51,7 @@ const pruneObj = function(strategy, x) {
   }
 
   if (copied === 0 && strategy.pruneFalsy) {
-    return /* undefined */;
+    return; /* undefined */
   }
 
   if (missed === 0) {
@@ -66,7 +66,8 @@ const mergeObjects = function(strategy, a, b) {
   var   [bKeys]               = keyMirrorFromObject(b);
   var   result                = {};
 
-  for (var i = 0; i < len; ++i) {
+  var i;
+  for (i = 0; i < len; ++i) {
     const key = keys[i];
     if (!bKeys[key]) {
       result[key] = merge(strategy, a[key], b[key]);
@@ -79,7 +80,7 @@ const mergeObjects = function(strategy, a, b) {
   // keys in b, but not in a
   keys  = Object.keys(bKeys);
   len   = keys.length;
-  for (var i = 0; i < len; ++i) {
+  for (i = 0; i < len; ++i) {
     const key = keys[i];
     result[key] = merge(strategy, a[key], b[key]);
   }
@@ -116,7 +117,7 @@ appendArrays = function(strategy, a, b) {
 
   if (g_prune) {
     if (catenated.reduce((m, x) => [...m, ...(x ? [x] : [])], []).length === 0) {
-      return /* undefined */;
+      return; /* undefined */
     }
   }
 
@@ -133,7 +134,7 @@ awins = function(strategy, a, b) {
   }
 
   return strategy.deepCopy(strategy, a);
-}
+};
 
 bwins = function(strategy, a, b) {
   if (strategy.isScalar(b)) {
@@ -141,7 +142,7 @@ bwins = function(strategy, a, b) {
   }
 
   return strategy.deepCopy(strategy, b);
-}
+};
 
 
 //
@@ -293,6 +294,8 @@ exports.quickMerge = exports.qm = function(a, b, c) {
 
   if (arguments.length === 2) {
     return quickMerge(basicMerges, a, b);
+  } else if (arguments.length === 1) {
+    return quickMerge(basicMerges, a);
   }
 
   return quickMerge(a, b, c);

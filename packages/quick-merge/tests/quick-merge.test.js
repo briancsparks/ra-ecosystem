@@ -84,7 +84,7 @@ test('quick-merge allows undefined B', t => {
 test('quick-merge is not tricked by function', t => {
   const a = {a:42, c:{d:'foo'}};
 
-  const fb = function() { return {e:'bar'}};
+  const fb = function() { return {e:'bar'}; };
   const b = {b:21, c:fb};
   const merged = qm(a, b);
   t.deepEqual(merged, {a:42, b:21, c:fb});
@@ -92,15 +92,15 @@ test('quick-merge is not tricked by function', t => {
 
 test('quick-merge is not tricked by function A', t => {
   const a = {a:42, c:{d:'foo'}};
-  const b = {b:21, c:function() { return {e:'bar'}}};
+  const b = {b:21, c:function() { return {e:'bar'}; }};
   const merged = qm(b, a);
   t.deepEqual(merged, {a:42, b:21, c:{d:'foo'}});
 });
 
 test('quick-merge is not tricked by function AB', t => {
-  const fa = function() { return {d:'foo'}};
+  const fa = function() { return {d:'foo'}; };
   const a = {a:42, c:fa};
-  const b = {b:21, c:function() { return {e:'bar'}}};
+  const b = {b:21, c:function() { return {e:'bar'}; }};
   const merged = qm(b, a);
   t.deepEqual(merged, {a:42, b:21, c:fa});
 });
@@ -147,21 +147,21 @@ test('quick-merge knows Date is not really an Object', t => {
 
 test('quick-merge-resolve handles resolve', t => {
   const a = {a:42, c:{d:'foo'}};
-  const b = {b:21, c:function() { return {e:'bar'}}};
+  const b = {b:21, c:function() { return {e:'bar'}; }};
   const merged = qmResolve(a, b);
   t.deepEqual(merged, {a:42, b:21, c:{d:'foo', e:'bar'}});
 });
 
 test('quick-merge-resolve handles resolve A', t => {
   const a = {a:42, c:{d:'foo'}};
-  const b = {b:21, c:function() { return {e:'bar'}}};
+  const b = {b:21, c:function() { return {e:'bar'}; }};
   const merged = qmResolve(a, b);
   t.deepEqual(merged, {a:42, b:21, c:{d:'foo', e:'bar'}});
 });
 
 test('quick-merge-resolve handles resolve AB', t => {
-  const a = {a:42, c:function() { return {d:'foo'}}};
-  const b = {b:21, c:function() { return {e:'bar'}}};
+  const a = {a:42, c:function() { return {d:'foo'}; }};
+  const b = {b:21, c:function() { return {e:'bar'}; }};
   const merged = qmResolve(a, b);
   t.deepEqual(merged, {a:42, b:21, c:{d:'foo', e:'bar'}});
 });
@@ -194,5 +194,29 @@ test('quick-merge top-level array', t => {
   const b = [8, 9];
   const merged = qm(a, b);
   t.deepEqual(merged, [1, 2, 3, 8, 9]);
+});
+
+test('quick-merge handles zero-key objects', t => {
+  const a       = {};
+  const b       = {boo:'ya'};
+  const merged  = qm(a, b);
+
+  t.deepEqual(merged, {boo:'ya'});
+});
+
+test('quick-merge handles zero-key objects2', t => {
+  const a       = {boo:'ya'};
+  const b       = {};
+  const merged  = qm(a, b);
+
+  t.deepEqual(merged, {boo:'ya'});
+});
+
+test('quick-merge handles zero-key objects3', t => {
+  var   query   = {a:'b'};
+
+  query  = qm({query});
+
+  t.deepEqual(query, {query:{a:'b'}});
 });
 
