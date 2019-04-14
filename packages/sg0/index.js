@@ -8,7 +8,7 @@ var util                      = require('util');
 
 var isnt, anyIsnt, is;
 
-var   sg = {_:_};
+var   sg = {_:_, libs:{util}};
 
 var seconds = sg.seconds = sg.second = 1000,        second = seconds;
 var minutes = sg.minutes = sg.minute = 60*seconds,  minute = minutes;
