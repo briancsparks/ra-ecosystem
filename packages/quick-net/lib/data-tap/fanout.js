@@ -51,7 +51,7 @@ mod.xport({pushData: function(argv, context, callback) {
 
     const status            = false;
     const dataTypeName      = (status ? 'status' : 'feed');
-    var   signalName        = rax.arg(argv, 'signalName,name');
+    var   signalName        = rax.arg(argv, 'signalName,name')            || ((argv._ && argv._.length) > 0 ? argv._.shift() : null);
     const key               = rax.arg(argv, 'key')                        || (signalName && `datatap:${dataTypeName}from:${signalName}`);
     const data_             = rax.arg(argv, 'data', {required:true});
 

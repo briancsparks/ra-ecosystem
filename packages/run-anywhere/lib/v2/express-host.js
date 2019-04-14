@@ -87,6 +87,12 @@ exports.express_hookIntoHost = function(app, name, stage, ARGV, options = {}) {
       });
     },
 
+    listen_port: function(port, callback) {
+      exports.express_listen_port(app, name, port, function(err, port) {
+        return callback(err, port);
+      });
+    },
+
     close: function() {
       exports.express_close();
     }
@@ -105,9 +111,23 @@ exports.express_hookIntoHost = function(app, name, stage, ARGV, options = {}) {
  * @returns {null}                - [[NOTE: the return statement is just to end control-flow, no meaningful data is returned.]]
  */
 exports.express_listen = function(app, name, callback) {
+  return exports.express_listen_port(app, name, null, callback);
+};
+
+/**
+ *  Calls Node.js listen function unless on Lambda, where Lambda will listen on a
+ *  domain socket for us.
+ *
+ * @param {*} app                 - The app.
+ * @param {*} name                - The name of the app.
+ * @param {number} port_          - The port to listen on.
+ * @param {*} callback            - The typical continuation function
+ * @returns {null}                - [[NOTE: the return statement is just to end control-flow, no meaningful data is returned.]]
+ */
+exports.express_listen_port = function(app, name, port_, callback) {
 
   if (!isAws()) {
-    const port  = getPort();
+    const port  = getPort(port_);
     if (port <= 0)  { console.log(`Not starting server`); return; }
 
     server = app.listen(port, () => {
