@@ -9,6 +9,10 @@
 
 const sg                      = require('sg-diag');
 const { _ }                   = sg;
+const fs                      = require('fs');
+const path                    = require('path');
+
+sg.libs = {...(sg.libs || {}), fs, path};
 
 // -------------------------------------------------------------------------------------
 //  Data
@@ -65,10 +69,39 @@ function ARGV(input = process.argv) {
     sg.mkInspect({fancy:true});
   }
 
+  const origKeys = sg.keys(argv);
+
+  argv._origKeys = function() {
+    return origKeys;
+  };
+
+  // See if any values are special values
+  origKeys.forEach(key => {
+    var   value = argv[key];
+    var   orig  = value;
+
+    if (Array.isArray(value) && value.length === 1 && typeof value[0] === 'string') {
+      value = value[0];
+    }
+
+    if (_.isString(value)) {
+      const m = value.match(/^@(.+)$/);
+      if (m) {
+        let filename  =  figureOutFile(m[1]);
+        if (filename) {
+          value = fs.readFileSync(filename, 'utf8');
+        }
+      }
+    }
+
+    if (value !== orig) {
+      argv[key] = value;
+    }
+  });
+
   // Add snake-cased keys
-  const keys = sg.keys(argv);
-  for (var i = 0; i < keys.length; ++i) {
-    let   key     = keys[i];
+  for (var i = 0; i < origKeys.length; ++i) {
+    let   key     = origKeys[i];
     let   snaked  = snake_case(key);
 
     if (key !== snaked) {
@@ -220,5 +253,22 @@ function argvGet(argv, names, options) {
       return argv[name];
     }
   });
+}
+
+function figureOutFile(filename_) {
+  var   filename  = filename_;
+  var   stats     = fs.statSync(filename);
+
+  if (stats.isFile()) {
+    return filename;
+  }
+
+  filename  = path.join(process.cwd(), filename);
+  stats     = fs.statSync(filename);
+
+  if (stats.isFile()) {
+    return filename;
+  }
+
 }
 
