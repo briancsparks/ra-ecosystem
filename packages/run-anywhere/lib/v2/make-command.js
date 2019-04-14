@@ -163,11 +163,16 @@ function cleanExit(ARGV, modfilename, condition, code, msg) {
 function noop(){}
 
 function invoke0(argv, mod, fnName, callback, abort_, options={}) {
+
+  // Fix argv -- remove the first param, if it is fnName
+  if (Array.isArray(argv._) && argv._[0] === fnName) {
+    argv._.shift();
+  }
+
   var   passAlong = {mod, fnName};
 
   // Load up the function
   var   modjule               = {exports:{}};
-  const sg0                   = require('sg-flow');
   const ra                    = require('./mod-squad');
   const ROOT                  = ra.modSquad(modjule, 'commandROOT');
 

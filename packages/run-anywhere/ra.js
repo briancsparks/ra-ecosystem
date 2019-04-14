@@ -37,16 +37,16 @@ libRa.v2.invoke = exports.invoke = function(...args) {     /* params_, spec_, fn
   if (typeof args[1] !== 'string' && typeof args[2] === 'function')     { return exports._invoke_(...args); }
 
   /* otherwise */
-  const [ pkgMod, fname, argv, callback ] = args;
+  const [ pkgMod, fnName, argv, callback ] = args;
   const mod = sg.reduce(pkgMod.mods || [], null, (m, mod) => {
     const asyncFnNames = Object.keys(mod.async || {});
-    if (asyncFnNames && asyncFnNames.length > 0 && (fname in mod.async)) {
+    if (asyncFnNames && asyncFnNames.length > 0 && (fnName in mod.async)) {
       return mod;
     }
     return m;
   });
 
-  return exports.invoke2(argv, mod, fname, function(err, ...rest) {
+  return exports.invoke2(argv, mod, fnName, function(err, ...rest) {
     return callback(err, ...rest);
   });
 };
@@ -98,7 +98,13 @@ exports._invoke_ = function(params_, spec_, fn, callback) {
  *      fn(argv, context, callback);
  *
  */
-libRa.v2.invoke2 = exports.invoke2 = function(argv, mod, fname, callback, abort_) {
+libRa.v2.invoke2 = exports.invoke2 = function(argv, mod, fnName, callback, abort_) {
+  const sg0   = require('sg-flow');
+
+  // Fix argv -- remove the first param, if it is fnName
+  if (Array.isArray(argv._) && argv._[0] === fnName) {
+    argv._.shift();
+  }
 
   // Get args
   const debug   = argv.debug;
@@ -109,7 +115,6 @@ libRa.v2.invoke2 = exports.invoke2 = function(argv, mod, fname, callback, abort_
   };
 
   // Load up the function
-  const sg0   = require('sg-flow');
   const ROOT  = require('./lib/v2/mod-squad').modSquad({exports:{}}, 'ROOT');
   const init  = ROOT.xport({root: function(argv, context, callback) {
 
@@ -117,8 +122,8 @@ libRa.v2.invoke2 = exports.invoke2 = function(argv, mod, fname, callback, abort_
     const { rax }   = ractx.ROOT__root;
 
     return rax.iwrap(abort_, function(abort) {
-      const fns = rax.loads(mod, fname, sg0.merge({debug, verbose}), abort);
-      const fn  = fns[fname];
+      const fns = rax.loads(mod, fnName, sg0.merge({debug, verbose}), abort);
+      const fn  = fns[fnName];
 
       return fn(argv, context, callback);
     });
