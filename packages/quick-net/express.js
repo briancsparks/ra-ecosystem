@@ -9,7 +9,7 @@ const sg                      = ra.get3rdPartyLib('sg-argv');
 const { _ }                   = sg;
 const quickNet                = require('.');
 const express                 = ra.get3rdPartyLib('express');
-const libRedis                = ra.get3rdPartyLib('redis');
+// const libRedis                = ra.get3rdPartyLib('redis');
 const router                  = express.Router();
 const {
   getReqParams, _200, _400, _500
@@ -98,7 +98,7 @@ function runExpressApp() {
   const mount                   = ARGV._get('mount')      || process.env.QUICKNET_MOUNT || `quicknet`;
   const port                    = ARGV._get('port')       || process.env.QUICKNET_PORT  || 3005;
 
-  redis                         = libRedis.createClient(redisPort, redisHost);
+  // redis                         = libRedis.createClient(redisPort, redisHost);
 
   const express                 = ra.get3rdPartyLib('express');
   const app                     = express();
@@ -110,32 +110,32 @@ function runExpressApp() {
 
   // TODO: call app.runAnywhere.close() when done
   app.runAnywhere.listen_port(port, (err, port) => {
-    return informRoutes(appName, stage, [mount], port, () => {
-    });
+    // return informRoutes(appName, stage, [mount], port, () => {
+    // });
   });
 
   return;
 }
 
-// TODO: Keep pushing into reids
-function informRoutes(appName, stage, mounts, port) {
+// // TODO: Keep pushing into reids
+// function informRoutes(appName, stage, mounts, port) {
 
-  var   redisKey = `ns:${appName}:server:target`;
-  var   redisVal = `http://localhost:${port}/`;
-  return redis.setex(redisKey, 5, redisVal, (err, receipt) => {
-    sg.elog(`inform redis: ${redisKey} := ${redisVal}`, {err, receipt});
+//   var   redisKey = `ns:${appName}:server:target`;
+//   var   redisVal = `http://localhost:${port}/`;
+//   return redis.setex(redisKey, 5, redisVal, (err, receipt) => {
+//     sg.elog(`inform redis: ${redisKey} := ${redisVal}`, {err, receipt});
 
 
-    redisKey = `ns:${appName}:server:routes`;
-    redisVal =  _.map(mounts, mount => {
-      return `/${stage}/${mount}`;
-    }).join('&');
+//     redisKey = `ns:${appName}:server:routes`;
+//     redisVal =  _.map(mounts, mount => {
+//       return `/${stage}/${mount}`;
+//     }).join('&');
 
-    return redis.setex(redisKey, 5, redisVal, (err, receipt) => {
-      sg.elog(`inform redis: ${redisKey} := ${redisVal}`, {err, receipt});
-    });
+//     return redis.setex(redisKey, 5, redisVal, (err, receipt) => {
+//       sg.elog(`inform redis: ${redisKey} := ${redisVal}`, {err, receipt});
+//     });
 
-  });
-}
+//   });
+// }
 
 

@@ -16,6 +16,8 @@ const { _ }                   = sg;
 //  Data
 //
 
+const debugKeys   = ['debug', 'verbose', 'ddebug', 'vverbose', 'forceSilent', 'silent'];
+const systemKeys  = ['warnstack', 'fastfail' ];
 
 
 // -------------------------------------------------------------------------------------
@@ -64,6 +66,41 @@ sg.bigNag = function(msg, ...args) {
 
   console.error(`${decorate(msg,3)}`, ...inspectedArgs);
 };
+
+
+// ---------- For argv ----------
+sg.omitDebug = function(obj) {
+  return _.omit(obj, ...debugKeys);
+};
+
+sg.omitSystem = function(obj) {
+  return _.omit(obj, ...systemKeys);
+};
+
+sg.pickDebug = function(obj) {
+  return _.pick(obj, ...debugKeys);
+};
+
+sg.pickParams = function(obj) {
+  return _.omit(obj, '_', ...debugKeys, ...systemKeys);
+};
+
+sg.extractDebug = function(obj) {
+  var   result = sg.extracts(obj, ...debugKeys);
+
+  if (result.verbose)       { result.debug  = result.verbose; }
+  if (result.vverbose)      { result.ddebug = result.vverbose; }
+
+  return result;
+};
+
+sg.extractParams = function(obj) {
+  const params = sg.pickParams(obj);
+
+  return sg.extracts(obj, ...Object.keys(params));
+};
+
+
 
 // -------------------------------------------------------------------------------------
 // exports
