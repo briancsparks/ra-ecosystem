@@ -77,6 +77,8 @@ function ARGV(input = process.argv) {
 
   // See if any values are special values
   origKeys.forEach(key => {
+    if (key === '_')      { return; }
+
     var   value = argv[key];
     var   orig  = value;
 

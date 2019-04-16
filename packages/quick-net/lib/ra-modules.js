@@ -9,7 +9,7 @@ const modFnMap = {
   },
   datatapFanout : {
     filename: path.join(__dirname, 'data-tap', 'fanout.js'),
-    fnNames:  ['pushData'],
+    fnNames:  ['pushData', 'pushAction'],
   },
   datatapRead : {
     filename: path.join(__dirname, 'data-tap', 'read.js'),
