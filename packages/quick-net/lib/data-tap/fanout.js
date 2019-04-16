@@ -92,6 +92,29 @@ mod.xport({pushData: function(argv, context, callback) {
   }
 }});
 
+mod.xport({pushAction: function(argv_, context, callback) {
+  var   argv = Object.assign(argv_);
+
+  /*
+    quick-net pushAction --name=tsvdata --type=ADD_SOMETHING_OR_OTHER --payload='{\"a\":42}'
+    quick-net pushAction --name=tsvdata --type=ADD_SOMETHING_OR_OTHER --payload='@filename'
+  */
+
+  const { rax }  = ra.getContext(context, argv);
+  return rax.iwrap2(function( /*abort*/ ) {
+    const { pushData } = rax.loads2('pushData');
+
+    const type              = rax.extractArg(argv, 'type',     {required:true});
+    const payload           = rax.extractArg(argv, 'payload',  {required:true, json:true});
+
+    if (rax.argErrors())    { return rax.abort(); }
+
+    const data = {type, payload};
+
+    return pushData({...argv, data}, callback);
+  });
+}});
+
 
 // -------------------------------------------------------------------------------------
 // routes

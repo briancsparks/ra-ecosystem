@@ -26,6 +26,8 @@ const systemKeys  = ['warnstack', 'fastfail' ];
 
 sg.check = function(id, filename, namedArg, x, ...rest) {
 
+  var   result    = true;
+
   const names     = sg.keys(namedArg);
   const name      = names[0];
   const arg       = namedArg[name];
@@ -33,30 +35,33 @@ sg.check = function(id, filename, namedArg, x, ...rest) {
 
   if (sg.isnt(arg)) {
     sg.bigNag(`check failed (${arg}) when checking (${id})(1) ${name} in ${filename}`);
+    result = false;
   }
 
   _.each(namedArg, function(value, key) {
     if (sg.isnt(value)) {
       sg.bigNag(`check failed (${value}) when checking (${id})(2) ${name}.${key} in ${filename}, have:`, argKeys);
+      result = false;
     }
   });
 
-  if (arguments.length <= 3)      { return; }
+  if (arguments.length <= 3)      { return result; }
 
   if (typeof x === 'string') {
     let   dottedKeysList = x.split(';');
     _.each(dottedKeysList, function(dottedKey) {
       if (sg.isnt(sg.deref(arg, dottedKey))) {
         sg.bigNag(`check failed (${sg.deref(arg, dottedKey)}) when checking (${id})(3) ${name}.${dottedKey} in ${filename}, have:`, argKeys);
+        result = false;
       }
     });
 
-    if (arguments.length === 4)   { return; }
+    if (arguments.length === 4)   { return result; }
 
-    return sg.check(id, filename, ...rest);
+    return sg.check(id, filename, ...rest) && result;
   }
 
-  return sg.check(id, filename, x, ...rest);
+  return sg.check(id, filename, x, ...rest) && result;
 };
 
 sg.bigNag = function(msg, ...args) {

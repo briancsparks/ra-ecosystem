@@ -779,6 +779,32 @@ const FuncRa = function(argv, context, callback, origCallback, ractx, options_ =
 
     // Remember the args that were used, for reporting
     function recordArg(value) {
+
+      if (options.json) {
+
+        // Do our best to corece it into JSON
+        if (!sg.isObject(value) && !_.isArray(value)) {
+          if (_.isString(value)) {
+            value = sg.safeJSONParse(value);
+          }
+        }
+
+        // If still not an Object or Array, might be an error
+        if (!sg.isObject(value) && !_.isArray(value)) {
+          if (required) {
+            self.argErrs = sg.ap(self.argErrs, {code: 'ENOTJSON', ...self.argTypes[defName]});
+            return recordArg2(def);
+
+          } else {
+            value = { __just__ : value };
+          }
+        }
+      }
+
+      return recordArg2(value);
+    }
+
+    function recordArg2(value) {
       if (!sg.isnt(value)) {
 
         // If the caller needs an array, arrayify it

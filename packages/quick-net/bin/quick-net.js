@@ -15,6 +15,10 @@ const ra                      = ra0.v2;
 const sg0                     = ra.get3rdPartyLib('sg-flow');
 const sg                      = sg0.merge(sg0, require('sg-clihelp'));
 const { _ }                   = sg;
+const raModules               = require('../lib/ra-modules');
+
+const raModFilenames          = raModules.filenames;
+const raModFnMap              = raModules.modFnMap;
 
 const { hardRejection }       = ra;
 const { argvGet }             = sg;
@@ -70,6 +74,14 @@ var   commands = {
 quickNet();
 
 function quickNet() {
+  return ra.command2(ARGV, /*loadedMods=*/ {}, raModFnMap || {}, raModFilenames, null, /*opts=*/ {}, commands, (err, data) => {
+    if (err) {
+      return quickNetX();
+    }
+  });
+}
+
+function quickNetX() {
   require('loud-rejection/register');
   require('exit-on-epipe');
 
