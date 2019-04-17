@@ -290,15 +290,23 @@ const quickMerge = function(strategy, a, b) {
   return merge(strategy, a, b);
 };
 
-exports.quickMerge = exports.qm = function(a, b, c) {
+exports.quickMerge = exports.qm = function(a, b, ...rest) {
 
   if (arguments.length === 2) {
     return quickMerge(basicMerges, a, b);
   } else if (arguments.length === 1) {
     return quickMerge(basicMerges, a);
+  } else if (arguments.length === 0) {
+    return {};
   }
 
-  return quickMerge(a, b, c);
+  var result = quickMerge(basicMerges, a, b);
+
+  if (rest.length > 0) {
+    return quickMerge(basicMerges, result, ...rest);
+  }
+
+  return result;
 };
 
 exports.quickMergeResolve = exports.qmResolve = function(a, b) {
