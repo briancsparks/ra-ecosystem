@@ -104,7 +104,10 @@ mod.xport({readData: function(argv, context, callback) {
 
       // Block and wait for data
       blockingClient.brpop(dataFeedName_, timeoutSecs, (err, data) => {
-        if (!quiet)  { sg.log(`brpop ${dataFeedName_}`, {err, data}); }
+        if (!quiet) {
+          sg.log(`------------------------------------------------`);
+          sg.log(`brpop ${dataFeedName_}`, {err, data});
+        }
 
         if (err)                { return allDone(err); }
         if (!data)              { return allDone(); }        /* timed out */
@@ -168,9 +171,10 @@ mod.xport({readData: function(argv, context, callback) {
       const next = _.after(fromList.length, cleanup);
 
       return fromList.forEach(fromClientId => {
-        // const feedFromKey = `river:feedfrom:${fromClientId}`;
-        // return redis.del(feedFromKey, function(err, receipt) {
-        //   if (!quiet)   console.log(`redis.DEL ${feedFromKey}`, {err, receipt});
+        // return redis.del(fromClientId, function(err, receipt) {
+        //   if (!quiet)   console.log(`redis.DEL ${fromClientId}`, {err, receipt});
+
+          // console.log(`redis.DEL-x ${fromClientId}`);
 
           return next();
         // });

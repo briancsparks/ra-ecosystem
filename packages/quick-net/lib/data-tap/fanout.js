@@ -46,8 +46,9 @@ mod.xport({pushData: function(argv, context, callback) {
 
   return rax.iwrap(localAbort, function(abort) {
 
-    const { smembers }    = rax.wrapFns(redis, 'smembers', rax.opts({emptyOk:true}));
-    const { lpush }       = rax.wrapFns(redis, 'lpush',    rax.opts({}));
+    const { SMEMBERS }    = rax.wrapFns(redis, 'SMEMBERS', rax.opts({emptyOk:true}));
+    const { LPUSH }       = rax.wrapFns(redis, 'LPUSH',    rax.opts({}));
+    const { EXPIRE }      = rax.wrapFns(redis, 'EXPIRE',   rax.opts({abort:false}));
 
     const status            = false;
     const dataTypeName      = (status ? 'status' : 'feed');
@@ -66,7 +67,7 @@ mod.xport({pushData: function(argv, context, callback) {
     }
 
     var   result = [];
-    return smembers(key, rax.opts({}), (err, destKeys) => {
+    return SMEMBERS(key, rax.opts({}), (err, destKeys) => {
 
       if (err)                        { return allDone(err); }
       if (!destKeys)                  { return allDone(null, result); }
@@ -76,10 +77,14 @@ mod.xport({pushData: function(argv, context, callback) {
       const dataStr = (_.isString(data) ? data : JSON.stringify(data));
 
       return destKeys.forEach(destKey => {
-        return lpush(destKey, dataStr, rax.opts({}), function(err, redisReceipt) {
-          if (!quiet)  { sg.log(`lpush ${destKey}`, {err, redisReceipt}); }
+        return LPUSH(destKey, dataStr, rax.opts({}), function(err, redisReceipt) {
+          if (!quiet)  { sg.log(`LPUSH ${destKey}`, {err, redisReceipt}); }
           result.push({[destKey]:{redisReceipt}});
-          return done(err, result);
+
+          return EXPIRE(destKey, 20, rax.opts({}), (err, receipt) => {
+            if (!quiet)  { sg.log(`EXPIRE ${destKey} 20`, {err, receipt}); }
+            return done(err, result);
+          });
         });
       });
 

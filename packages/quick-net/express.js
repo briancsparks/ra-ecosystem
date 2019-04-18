@@ -56,7 +56,11 @@ const binaryMimeTypes = [
 const notifyData =
 mod.reqHandler({notifyData: function(req, res) {
   sg.check(21, __filename, {req}, {res}, 'runAnywhere.context');
+  console.log(`------------------------------------------------------------`);
   console.log(`[express]/notifyData invoked ${req.url}`);
+
+  req.setTimeout(0);
+  res.setTimeout(0);
 
   const { rax }         = ra.getContext(req.runAnywhere.context, {});
   return rax.iwrap2(function( /* abort */ ) {
