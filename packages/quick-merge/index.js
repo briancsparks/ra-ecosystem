@@ -5,6 +5,7 @@
  */
 
  var g_prune = true;
+//  var g_prune = false;
 
 // Forward declarations
 var merge, appendArrays, appendToArray, awins, bwins;

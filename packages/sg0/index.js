@@ -952,6 +952,27 @@ sg.reduceObj = function(obj, initial, fn) {
 };
 
 /**
+ * Acts just like reduce, but stops calling fn once a single real value is produced.
+ *
+ * @param {*} collection       - The Object or Array to reduce
+ * @param {*} initial          - The initial state of the result
+ * @param {*} fn               - The reducer function
+ *
+ * @returns {*}                - Whatever the reducer function finds
+ */
+sg.reduceFirst = function(collection, initial, fn) {
+  var   found = false;
+
+  return sg.reduce(collection, initial, (m, v, k, ...rest) => {
+    if (found)    { return m; }
+
+    const res = fn(m, v, k, ...rest);
+    found     = !sg.isnt(res);
+    return res;
+  });
+};
+
+/**
  * Restore rest().
  *
  * @returns
