@@ -871,6 +871,8 @@ sg.augmentAllWith = function(aug, all) {
  * sg.choose('x.z', ['key', {key:{z:42},x:{w:'dubya'}}]) --> sg.choose('x.key.z', {key:{z:42},x:{w:'dubya',z:42}}) --> 42
  * sg.choose('x.z', [{z:42},{x:{w:'dubya'}}]) --> sg.choose('x.z', {x:{w:'dubya',z:42}}) --> 42
  *
+ * sg.choose('debug', ['prod', {prod:{res:42},debug:{msg:'leak info!'}}]) --> sg.choose('debug', {prod:{res:42},debug:{msg:'leak info!',res:42}}) --> {msg:'leak info!',res:42}
+ *
  * @param {*} key
  * @param {*} obj
  * @returns

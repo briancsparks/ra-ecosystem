@@ -76,7 +76,7 @@ exports.claudia2RaArgs = function(args, callback) {
   const query       = reQuery(request.queryString || (request.proxyRequest && request.proxyRequest.queryStringParameters) || {});
   const body        = request.body || {};
   const pathParams  = request.pathParams || {};
-sg.elog(`claudia2RaArgs`, {search, query2, query, body, pathParams});
+  sg.elog(`claudia2RaArgs`, {search, query2, query, body, pathParams});
 
   var   argv = {
     ...query,

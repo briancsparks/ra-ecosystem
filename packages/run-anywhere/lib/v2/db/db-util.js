@@ -194,7 +194,7 @@ const queryCursorEx = exports.queryCursorEx = function(xyzDb, context, queryKeys
 
     var   result = {};
     const query = sg.reduce(arg, {}, (m,v,k) => {
-      if (k in queryKeys) {
+      if (isIn(k, queryKeys)) {
         return sg.kv(m,k,v);
       }
       result[k] = v;
@@ -395,5 +395,15 @@ specials.re = specials.regexp = function(str, flags) {
 };
 
 registerSanityChecks(module, __filename, sanityChecks);
+
+function isIn(key, obj) {
+  if (key in obj)   { return true; }
+
+  return sg.reduceFirst(obj, false, (m,v,k) => {
+    if (k.startsWith(`${key}.`)) {
+      return true;
+    }
+  });
+}
 
 
