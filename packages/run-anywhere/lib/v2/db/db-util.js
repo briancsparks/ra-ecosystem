@@ -210,7 +210,7 @@ const queryCursorEx = exports.queryCursorEx = function(xyzDb, context, queryKeys
 
   var cursor;
 
-  sg.elog(`queryCursorEx`, {query});
+  sg.elog(`queryCursorEx`, {query, queryKeys, argvs});
 
   if (projection) {
     cursor = xyzDb.find(query, {projection});

@@ -12,6 +12,7 @@ const ra                      = require('run-anywhere').v2;
 const sg                      = ra.get3rdPartyLib('sg-flow');
 const { _ }                   = sg;
 const libUrl                  = require('url');
+const qs                      = require('qs');
 const { omitDebug }           = ra;
 
 // -------------------------------------------------------------------------------------
@@ -111,7 +112,8 @@ exports.decodeJSONBody = function(req) {
 exports.initialReqParams = function(req, res) {
   const url   = libUrl.parse(req.url, true);
 
-  return url.query;
+  // _.extend(query, url.query);
+  return qs.parse(url.search, {ignoreQueryPrefix:true});
 };
 
 // -------------------------------------------------------------------------------------
@@ -145,7 +147,8 @@ module.exports.getReqParams = function(req, normalizeBodyFn = _.identity) {
         stage             = getEnvName(req);
         real_ip           = ezHeaders.x_real_ip                   || (ezHeaders.x_forwarded_for || '').split(', ')[0]
                                                                   || sg.deref(requestContext, ['identity', 'sourceIp']);
-  _.extend(query, url.query);
+  // _.extend(query, url.query);
+  _.extend(query, qs.parse(url.search, {ignoreQueryPrefix:true}));
 
         host              = url.host                              || headers.host || '';
         pathname          = url.pathname                          || orig_path;
@@ -206,7 +209,8 @@ exports.getHttpParams = module.exports.getHttpParams = function(req, normalizeBo
         stage             = getEnvName(req);
         real_ip           = ezHeaders.x_real_ip                   || (ezHeaders.x_forwarded_for || '').split(', ')[0]
                                                                   || sg.deref(requestContext, ['identity', 'sourceIp']);
-  _.extend(query, url.query);
+  // _.extend(query, url.query);
+  _.extend(query, qs.parse(url.search, {ignoreQueryPrefix:true}));
 
         host              = url.host                              || headers.host || '';
         pathname          = url.pathname                          || orig_path;
@@ -357,6 +361,7 @@ exports.jsonApiEx = function(mod, fnFilename, checkNum, name, calledLib, calledF
       }
 
       const reqParams           = exports.getReqParams(req, sg.merge);
+      console.log(`jsonApiEx ${req.url}`, sg.inspect({reqParams}));
       const { argvEx }          = reqParams;
 
       return calledFunction({...defs, ...argvEx}, function(err, result) {
@@ -422,7 +427,7 @@ function protectRouteMw(options={}) {
 
     return mkResponse(403, req, res);
   };
-};
+}
 
 function colonify(protocol) {
   if (!protocol.endsWith(':')) {

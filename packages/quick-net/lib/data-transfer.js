@@ -136,6 +136,101 @@ mod.xport({fetchAndCache: function(argv, context, callback) {
   }
 }});
 
+mod.xport({fetchAndCacheSimple: function(argv, context, callback) {
+
+  // console.log(`fetchandcache`, sg.inspect({
+  //   argv,
+  //   context : {...qm(_.omit(context, 'runAnywhere'), {
+  //     runAnywhere: {..._.pick(context.runAnywhere, 'req_url', 'current', 'event', 'stage'),
+  //       current: {..._.omit(context.runAnywhere.current, 'rax')}
+  //     }
+  //   })}}));
+
+  // ra invoke lib\ec2\.js fetchAndCache --arg=
+
+
+  const { rax }           = ra.getContext(context, argv);
+  const { redis, close }  = redisUtils.getRedis(context);
+  const quiet             = getQuiet(context);
+
+  var   key, url;
+
+  return rax.iwrap2(rax.mkLocalAbort(allDone), function(abort) {
+    const { GET,EXPIRE }    = rax.wrapFns(redis, 'GET,EXPIRE', rax.opts({emptyOk:true, abort:false}));
+    const { SET }           = rax.wrapFns(redis, 'SET', rax.opts({emptyOk:true}));
+
+    key                     = rax.arg(argv, 'key');
+    url                     = rax.arg(argv, 'url', {required:true});
+
+    if (rax.argErrors())    { return rax.abort(); }
+
+    return rax.__run2({result:{}}, callback, [function(my, next, last) {
+      return GET(key, function(err, data) {
+        if (!quiet) { sg.elog(`GET ${key}`, {err, data: smJson(data)}); }
+
+        // We try to get from redis.
+
+        if (sg.ok(err) && data)  {
+
+          const result = sg.safeJSONParse(data) || {just:data};
+          // sg.elog(`alldone`, {result});
+
+          return allDone(null, result);
+        }
+
+        return next();
+      });
+
+    }, function(my, next) {
+
+      // Get the URL
+
+      return request.get(url).end(function(err, res) {
+        // const response = libHttp.superagentPodResponse(res);
+        // sg.elog(`superagent GET ${url}`, {err: libHttp.superagentPodErr(err), response});
+
+        if (sg.ok(err, res) && res.ok) {
+          // console.log(`super`, sg.keys(res), sg.inspect({body: res.body}));
+
+          if (res.body) {
+            my.body = res.body;
+            return next();
+          }
+        }
+
+        // The fetch failed.
+        return abort(libHttp.superagentPodErr(err), `fetch ${url} failed.`);
+      });
+
+    }, function(my, next) {
+
+      // Put the result into the cache
+
+      const json = JSON.stringify(my.body || {});
+      return SET([key, json], function(err, receipt) {
+        if (!quiet) { sg.elog(`SET ${key} |${smJson(json)}|`, {err, receipt}); }
+
+        const ttl = 1 * 60 * 60; /* one hour */
+        return EXPIRE([key, ttl], (err, receipt) => {
+          if (!quiet) { sg.elog(`EXPIRE ${key} ${ttl}`, {err, receipt}); }
+          return next();
+        });
+      });
+
+    }, function(my, next) {
+      return allDone(null, my.body);
+    }]);
+  });
+
+
+  function allDone(err, data) {
+    if (!quiet) { sg.elog(`fetchAndCache superagent(${url})`, {err, data: smJson(data)}); }
+
+    close();
+    return callback(err, data);
+  }
+}});
+
 // -------------------------------------------------------------------------------------
 // routes
 //
