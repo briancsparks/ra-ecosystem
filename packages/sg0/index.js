@@ -866,6 +866,11 @@ sg.augmentAllWith = function(aug, all) {
 /**
  * Returns obj[key].
  *
+ * sg.choose('a', {a:42}) --> 42
+ * sg.choose('a.b', {a:{b:42}}) --> 42
+ * sg.choose('x.z', ['key', {key:{z:42},x:{w:'dubya'}}]) --> sg.choose('x.key.z', {key:{z:42},x:{w:'dubya',z:42}}) --> 42
+ * sg.choose('x.z', [{z:42},{x:{w:'dubya'}}]) --> sg.choose('x.z', {x:{w:'dubya',z:42}}) --> 42
+ *
  * @param {*} key
  * @param {*} obj
  * @returns
@@ -930,20 +935,61 @@ sg.reduceObj = function(obj, initial, fn) {
 
   return _.reduce(obj, function(m, v, k, ...rest) {
     const res = fn(m, v, k, ...rest);
+
+    // `initial` must be an Object, for any of this to work. If it is not, just act like _.reduce
     if (!isObject)          { return res; }
+
+    // They can force the result to be any specific object they want by returning an Object
     if (sg.isObject(res))   { return res; }
+
+    //
+    // This is how the function is intended to be used. The user returns a non-Object, and we
+    // interpert it as follows.
+    //
 
     // They just returned, without returning any data... Just means 'unchanged'
     if (_.isUndefined(res))   { return m; }
 
-    // Key-Value pair(s)
+    // Key-Value pair(s) packed in an Array -- The primary way to use this fn
     if (Array.isArray(res)) {
+
+      // ['key', {value}], ['key', 'value'], ['key', value] -- value can be any type
+      if (res.length === 2 && _.isString(res[0])) {
+        return {...m, [res[0]]: res[1]};
+      }
+
+      // An Array, but not the primary 2-element method; Look at each element in turn
       return { ...m, ...sg.reduce(res, {}, function(m1, item) {
-        if (_.isString(item))   { return {[item]:item}; }
-        if (Array.isArray(item) && item.count === 2) {
-          return {[item[0]]: item[1]};
+
+        // A string Array is a key-mirror
+        // ['a', 'b', 'c'] -> {a:'a', b:'b', c:'c'}
+        if (_.isString(item))   { return {...m1, [item]:item}; }
+
+        if (Array.isArray(item)) {
+
+          // An empty array is just a null-ish item
+          // [[], 'b', 'c'] -> {b:'b', c:'c'}; (Otherwise ['b', 'c'] -> {b:'c'} via the primary method above)
+          if (item.length === 0) {
+            return m1;
+
+          } else if (item.length === 2) {
+            // Just like the primary method, but can have many
+            // ['a', 'b', ['q', {foo:'bar'}]] -> {a:'a', b:'b', q:{foo:'bar'}}
+            return {...m1, [item[0]]: item[1]};
+          }
+
+          // An Array of any other size is: {key: Array}
+
+          // ['a', 'b', ['z', 1,2,3]] -> {a:'a', b:'b', z:[1,2,3]}
+          return {...m1, [item[0]]: _.rest(item)};
+
+        } else if (sg.isObject(item)) {
+
+          // An Object is just added
+          // ['a', 'b', {foo:42}] -> {a:'a', b:'b', foo:42}
+          return {...m1, ...item};
         }
-        return item;
+        return {...m1, item};
       })};
     }
 

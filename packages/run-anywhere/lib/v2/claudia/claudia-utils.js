@@ -71,11 +71,12 @@ exports.claudia2RaArgs = function(args, callback) {
   const [ request, context_ ] = args;
 
   // Parse all sources of params (body, path params)
-  const search      = reQuery(request.queryString || (request.proxyRequest && request.proxyRequest.queryStringParameters) || {});
-  const query       = qs.parse(search, {ignoreQueryPrefix:true, allowDots:true});
+  const search      = reQuery2(request.queryString || (request.proxyRequest && request.proxyRequest.queryStringParameters) || {});
+  const query2      = qs.parse(search, {ignoreQueryPrefix:true, allowDots:true});
+  const query       = reQuery(request.queryString || (request.proxyRequest && request.proxyRequest.queryStringParameters) || {});
   const body        = request.body || {};
   const pathParams  = request.pathParams || {};
-sg.elog(`claudia2RaArgs`, {search, query, body, pathParams});
+sg.elog(`claudia2RaArgs`, {search, query2, query, body, pathParams});
 
   var   argv = {
     ...query,
@@ -191,6 +192,14 @@ function checkArgs(args) {
 }
 
 function reQuery(queryA) {
+  return sg.reduce(queryA, {}, (m,v,k) => {
+    const value = sg.smartValue(v);
+    sg.setOn(m, k, value);
+    return m;
+  });
+}
+
+function reQuery2(queryA) {
   return sg.reduce(queryA, '', (m,v,k) => {
     if (m.length > 0) {
       return '&' + [k,v].join('=');
