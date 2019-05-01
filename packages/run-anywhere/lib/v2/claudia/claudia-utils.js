@@ -6,6 +6,7 @@ const _                         = require('lodash');
 const utils                     = require('../../utils');
 const sg                        = utils.sg;
 const redisLib                  = require('redis');
+const qs                        = require('qs');
 const { registerSanityChecks }  = require('../sanity-checks');
 
 const {
@@ -70,7 +71,8 @@ exports.claudia2RaArgs = function(args, callback) {
   const [ request, context_ ] = args;
 
   // Parse all sources of params (body, path params)
-  const query       = request.queryString || (request.proxyRequest && request.proxyRequest.queryStringParameters) || {};
+  const search      = reQuery(request.queryString || (request.proxyRequest && request.proxyRequest.queryStringParameters) || {});
+  const query       = qs.parse(search, {ignoreQueryPrefix:true});
   const body        = request.body || {};
   const pathParams  = request.pathParams || {};
 
@@ -186,3 +188,16 @@ function checkArgs(args) {
     console.warn(`WWWW Checking claudia args: args.length !== 2, is: ${args.length}`, inspect({args}));
   }
 }
+
+function reQuery(queryA) {
+  return sg.reduce(queryA, '', (m,v,k) => {
+    if (m.length > 0) {
+      return '&' + [k,v].join('=');
+    }
+
+    return '?' + [k,v].join('=');
+  });
+}
+
+
+
