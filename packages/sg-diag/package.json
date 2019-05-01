@@ -1,6 +1,6 @@
 {
   "name": "sg-diag",
-  "version": "1.0.11",
+  "version": "1.0.12",
   "description": "Diagnostics",
   "author": "Brian C Sparks <briancsparks@gmail.com>",
   "homepage": "https://github.com/briancsparks/ra-ecosystem#readme",
@@ -14,6 +14,6 @@
   },
   "license": "MIT",
   "dependencies": {
-    "sg0": "^1.0.17"
+    "sg0": "^1.0.18"
   }
 }
