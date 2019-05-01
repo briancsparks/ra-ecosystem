@@ -72,7 +72,7 @@ exports.claudia2RaArgs = function(args, callback) {
 
   // Parse all sources of params (body, path params)
   const search      = reQuery(request.queryString || (request.proxyRequest && request.proxyRequest.queryStringParameters) || {});
-  const query       = qs.parse(search, {ignoreQueryPrefix:true});
+  const query       = qs.parse(search, {ignoreQueryPrefix:true, allowDots:true});
   const body        = request.body || {};
   const pathParams  = request.pathParams || {};
 sg.elog(`claudia2RaArgs`, {search, query, body, pathParams});
