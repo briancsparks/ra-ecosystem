@@ -75,6 +75,7 @@ exports.claudia2RaArgs = function(args, callback) {
   const query       = qs.parse(search, {ignoreQueryPrefix:true});
   const body        = request.body || {};
   const pathParams  = request.pathParams || {};
+sg.elog(`claudia2RaArgs`, {search, query, body, pathParams});
 
   var   argv = {
     ...query,
