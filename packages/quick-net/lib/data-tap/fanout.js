@@ -98,7 +98,7 @@ mod.xport({pushData: function(argv, context, callback) {
 }});
 
 mod.xport({pushAction: function(argv_, context, callback) {
-  var   argv = Object.assign(argv_);
+  var   argv = Object.assign({}, argv_);
 
   /*
     quick-net pushAction --name=tsvdata --type=ADD_SOMETHING_OR_OTHER --payload='{\"a\":42}'

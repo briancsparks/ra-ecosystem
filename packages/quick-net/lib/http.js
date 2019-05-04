@@ -113,7 +113,7 @@ exports.initialReqParams = function(req, res) {
   const url   = libUrl.parse(req.url, true);
 
   // _.extend(query, url.query);
-  return qs.parse(url.search, {ignoreQueryPrefix:true});
+  return qs.parse(url.search, {ignoreQueryPrefix:true, allowDots:true});
 };
 
 // -------------------------------------------------------------------------------------
@@ -148,7 +148,7 @@ module.exports.getReqParams = function(req, normalizeBodyFn = _.identity) {
         real_ip           = ezHeaders.x_real_ip                   || (ezHeaders.x_forwarded_for || '').split(', ')[0]
                                                                   || sg.deref(requestContext, ['identity', 'sourceIp']);
   // _.extend(query, url.query);
-  _.extend(query, qs.parse(url.search, {ignoreQueryPrefix:true}));
+  _.extend(query, qs.parse(url.search, {ignoreQueryPrefix:true, allowDots:true}));
 
         host              = url.host                              || headers.host || '';
         pathname          = url.pathname                          || orig_path;
@@ -210,7 +210,7 @@ exports.getHttpParams = module.exports.getHttpParams = function(req, normalizeBo
         real_ip           = ezHeaders.x_real_ip                   || (ezHeaders.x_forwarded_for || '').split(', ')[0]
                                                                   || sg.deref(requestContext, ['identity', 'sourceIp']);
   // _.extend(query, url.query);
-  _.extend(query, qs.parse(url.search, {ignoreQueryPrefix:true}));
+  _.extend(query, qs.parse(url.search, {ignoreQueryPrefix:true, allowDots:true}));
 
         host              = url.host                              || headers.host || '';
         pathname          = url.pathname                          || orig_path;
@@ -253,7 +253,9 @@ responders[200] =
 exports._200 = function(req, res, result_, dbg) {
   var result = {code:200, ok:true, ...result_, ...sg.debugInfo(dbg)};
 
-  console.log(`200 for ${req.url}`, sg.inspect({result: sg.small(result)}));
+  if (sg.modes().debug) {
+    console.log(`200 for ${req.url}`, sg.inspect({result: sg.small(result)}));
+  }
 
   const strResult = JSON.stringify(result);
   res.statusCode = 200;

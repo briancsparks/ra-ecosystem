@@ -936,18 +936,19 @@ sg.reduceObj = function(obj, initial, fn) {
   const isObject = sg.isObject(initial);
 
   return _.reduce(obj, function(m, v, k, ...rest) {
-    const res = fn(m, v, k, ...rest);
+    const res_ = fn(m, v, k, ...rest);
 
     // `initial` must be an Object, for any of this to work. If it is not, just act like _.reduce
-    if (!isObject)          { return res; }
+    if (!isObject)          { return res_; }
 
     // They can force the result to be any specific object they want by returning an Object
-    if (sg.isObject(res))   { return res; }
+    if (sg.isObject(res_))   { return res_; }
 
     //
     // This is how the function is intended to be used. The user returns a non-Object, and we
     // interpert it as follows.
     //
+    var   res  = res_;
 
     // They just returned, without returning any data... Just means 'unchanged'
     if (_.isUndefined(res))   { return m; }
@@ -955,9 +956,16 @@ sg.reduceObj = function(obj, initial, fn) {
     // Key-Value pair(s) packed in an Array -- The primary way to use this fn
     if (Array.isArray(res)) {
 
+      if (res.length === 0)     { return m; }   /* unchanged */
+
+      // Re-use key, replace value
+      if (res.length === 1) {
+        res = [k, ...res];
+      }
+
       // ['key', {value}], ['key', 'value'], ['key', value] -- value can be any type
-      if (res.length === 2 && _.isString(res[0])) {
-        return {...m, [res[0]]: res[1]};
+      if (res.length === 2 && (_.isString(res[0]) || res[0] === null)) {
+        return {...m, [keyOr(res[0])]: res[1]};
       }
 
       // An Array, but not the primary 2-element method; Look at each element in turn
@@ -965,7 +973,7 @@ sg.reduceObj = function(obj, initial, fn) {
 
         // A string Array is a key-mirror
         // ['a', 'b', 'c'] -> {a:'a', b:'b', c:'c'}
-        if (_.isString(item))   { return {...m1, [item]:item}; }
+        if (_.isString(item)) { return {...m1, [item]:item}; }
 
         if (Array.isArray(item)) {
 
@@ -973,17 +981,24 @@ sg.reduceObj = function(obj, initial, fn) {
           // [[], 'b', 'c'] -> {b:'b', c:'c'}; (Otherwise ['b', 'c'] -> {b:'c'} via the primary method above)
           if (item.length === 0) {
             return m1;
+          }
 
-          } else if (item.length === 2) {
+          if (item.length === 1) {
+            item = [k, ...item];
+          }
+
+          if (item.length === 2) {
             // Just like the primary method, but can have many
-            // ['a', 'b', ['q', {foo:'bar'}]] -> {a:'a', b:'b', q:{foo:'bar'}}
-            return {...m1, [item[0]]: item[1]};
+            // ['a', 'b', ['q', {foo:'bar'}]]  -> {a:'a', b:'b',   q:{foo:'bar'}}
+            // ['a', 'b', [null, {foo:'bar'}]] -> {a:'a', b:'b', [k]:{foo:'bar'}}
+            return {...m1, [keyOr(item[0])]: item[1]};
           }
 
           // An Array of any other size is: {key: Array}
 
-          // ['a', 'b', ['z', 1,2,3]] -> {a:'a', b:'b', z:[1,2,3]}
-          return {...m1, [item[0]]: _.rest(item)};
+          // ['a', 'b', ['z', 1,2,3]]  -> {a:'a', b:'b',   z:[1,2,3]}
+          // ['a', 'b', [null, 1,2,3]] -> {a:'a', b:'b', [k]:[1,2,3]}
+          return {...m1, [keyOr(item[0])]: _.rest(item)};
 
         } else if (sg.isObject(item)) {
 
@@ -991,11 +1006,22 @@ sg.reduceObj = function(obj, initial, fn) {
           // ['a', 'b', {foo:42}] -> {a:'a', b:'b', foo:42}
           return {...m1, ...item};
         }
-        return {...m1, item};
+
+        // Not Array or Object
+        return {...m1, [k]:item};
       })};
     }
 
-    return res;
+    return {...m, [k]:res};
+
+    function keyOr(x) {
+      if (x === null) {
+        return k;
+      }
+
+      return x;
+    }
+
   }, initial);
 };
 

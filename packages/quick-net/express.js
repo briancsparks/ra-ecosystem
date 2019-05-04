@@ -7,6 +7,7 @@
 const ra                      = require('run-anywhere').v2;
 const sg                      = ra.get3rdPartyLib('sg-argv');
 const { _ }                   = sg;
+const proxy                   = require('http-proxy-middleware');
 const quickNet                = require('.');
 const express                 = ra.get3rdPartyLib('express');
 // const libRedis                = ra.get3rdPartyLib('redis');
@@ -22,10 +23,13 @@ const ARGV                    = sg.ARGV();
 var   lib                     = {};
 var   redis;
 
+
 // -------------------------------------------------------------------------------------
 //  Data
 //
 
+const namespace               = process.env.NAMESPACE   || 'quicknet';
+const NAMESPACE               = namespace.toUpperCase();
 const redisPort               = process.env.redis_port  || process.env.REDIS_PORT || 6379;
 const redisHost               = process.env.redis       || process.env.REDIS;
 
@@ -41,10 +45,13 @@ const binaryMimeTypes = [
 	'image/svg+xml'
 ];
 
+const PRIVATE_APIKEY          = process.env[`${NAMESPACE}_PRIVATE_APIKEY`];
+
 
 // -------------------------------------------------------------------------------------
 // routes
 //
+
 
 
 /**
@@ -92,6 +99,8 @@ router.post('/notifyData',  notifyData);
 //  Functions
 //
 
+const apiMount    = '/latest';
+
 runExpressApp();
 
 function runExpressApp() {
@@ -110,6 +119,20 @@ function runExpressApp() {
   // Hook into host
   ra.express_hookIntoHost(app, appName, stage, ARGV, {dbName, collNames, binaryMimeTypes});
 
+  // Add the proxy
+  const proxyOptions = {
+    // https://x8edzeetn6.execute-api.us-east-1.amazonaws.com/latest/
+    target        : 'https://x8edzeetn6.execute-api.us-east-1.amazonaws.com',
+    changeOrigin  : true,
+    onProxyReq,
+    onProxyRes,
+    // selfHandleResponse: true,
+  };
+  const apiProxy = proxy(apiProxyFilter, proxyOptions);
+
+  app.use(apiMount, apiProxy);
+  app.use(apiMount, respondFromCache);
+
   app.runAnywhere.use(`/${mount}`, router);
 
   // TODO: call app.runAnywhere.close() when done
@@ -119,6 +142,79 @@ function runExpressApp() {
   });
 
   return;
+}
+
+var httpCache       = {};
+var cacheByteCount  = 0;
+function putInCache(data, route) {
+  cacheByteCount += data.length;
+  httpCache[route] = data;
+}
+
+function respondFromCache(req, res, next) {
+  // console.log(`need to handle ${req.url}`);
+
+  const route = `${apiMount}${req.url}`;
+  const data  = httpCache[route];
+  if (data) {
+    // let elapsed = new Date().getTime() - req.quickNet.start;
+    // console.log(`200 [${elapsed} ms] ${data.length} bytes cached -- ${req.url}`);
+    accessLog(req, res, 200, data);
+
+    const json = sg.safeJSONParse(data) || {no:'thing'};
+    return _200(req, res, json);
+  }
+
+  console.log(`respondFromCache could not find data ${route}`);
+  return next();
+}
+
+function apiProxyFilter(pathname, req, res) {
+  req.quickNet = {start:new Date().getTime()};
+
+  const route = `${apiMount}${req.url}`;
+  const data  = httpCache[route];
+
+  if (!data) {
+    return true;
+  }
+
+  return false;
+}
+
+function onProxyReq(proxyReq, req, res) {
+}
+
+function onProxyRes(proxyRes, req, res) {
+  var body = new Buffer('');
+  proxyRes.on('data', (data) => {
+    body = Buffer.concat([body, data]);
+  });
+  proxyRes.on('end', () => {
+    body = body.toString();
+
+    // const json = sg.safeJSONParse(body) || {no:'thing'};
+    // httpCache[req.url] = body;
+    putInCache(body, req.url);
+
+    // let elapsed = new Date().getTime() - req.quickNet.start;
+    // console.log(`200 [${elapsed} ms] ${body.length} bytes -- ${req.url}`);
+    accessLog(req, res, 200, body);
+  });
+}
+
+function accessLog(req, res, code, data) {
+  var elapsed = ''+ (new Date().getTime() - req.quickNet.start);
+  while (elapsed.length < 8) {
+    elapsed = ' '+elapsed;
+  }
+
+  var length = ''+data.length;
+  while (length.length < 8) {
+    length = ' '+length;
+  }
+
+  console.log(`${code} [${elapsed} ms] ${length} bytes -- ${req.url}`);
 }
 
 // // TODO: Keep pushing into reids

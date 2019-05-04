@@ -32,6 +32,8 @@
     "execa": "^1.0.0",
     "exit-on-epipe": "^1.0.1",
     "get-stream": "^4.1.0",
+    "http-proxy": "^1.17.0",
+    "http-proxy-middleware": "^0.19.1",
     "js-yaml": "^3.12.2",
     "loud-rejection": "^1.6.0",
     "qs": "^6.7.0",

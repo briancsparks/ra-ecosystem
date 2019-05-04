@@ -40,7 +40,7 @@ mod.xport({upsert: function(argv_, context, callback) {
     ra invoke lib\v2\db\crud.js upsert --arg=
   */
 
-  var   argv = Object.assign(argv_);
+  var   argv = Object.assign({}, argv_);
   var   meta = sg.extract(argv, '__meta__');
 
   const { body, pathParams }  = meta.orig || {};
@@ -80,7 +80,7 @@ mod.xport({upsert: function(argv_, context, callback) {
 }});
 
 mod.async({find: async function(argv_, context) {
-  var   argv = Object.assign(argv_);
+  var   argv = Object.assign({}, argv_);
   var   meta = sg.extract(argv, '__meta__');
 
   // const { body, pathParams }  = meta.orig || {};
