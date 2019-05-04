@@ -50,6 +50,8 @@ exports.anyIsnt = function(arr) {
   }, false);
 };
 
+exports.keyMirrorFromObject = keyMirrorFromObject;
+
 
 // -------------------------------------------------------------------------------------
 //  Helper Functions
@@ -67,4 +69,19 @@ function _isNaN(value) {
   var n = Number(value);
   return n !== n;
 }
+
+function keyMirrorFromObject(obj) {
+  var   result = {};
+  const keys    = Object.keys(obj);
+  const l       = keys.length;
+
+  for (var i = 0; i < l; ++i) {
+    const key = keys[i];
+    result[key] = key;
+  }
+
+  return [result, l, keys];
+}
+
+
 

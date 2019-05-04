@@ -237,6 +237,9 @@ exports.realTypeof            = realTypeof;
 const libStitch               = require('./lib/stitch');
 exports.stitch                = libStitch.stitch;
 
+const libImmutable            = require('./lib/immutable-merge');
+exports.quickMergeImmutable   = libImmutable.quickMergeImmutable;
+
 merge = function(strategy, a, b) {
   const { merges }  = strategy;
 
