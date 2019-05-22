@@ -1,6 +1,6 @@
 {
   "name": "run-anywhere",
-  "version": "1.0.63",
+  "version": "1.0.64",
   "description": "Write your Node.js functions in the run-anywhere format, and run them anywhere (CLI, AWS Lambda, etc.)",
   "main": "ra.js",
   "bin": {
@@ -28,10 +28,10 @@
     "lodash": "^4.17.11",
     "loud-rejection": "^1.6.0",
     "mongodb": "^3.1.10",
-    "quick-merge": "^1.0.16",
+    "quick-merge": "^1.0.17",
     "redis": "^2.8.0",
-    "sg-config": "^1.0.38",
-    "sg-flow": "^1.0.22",
+    "sg-config": "^1.0.39",
+    "sg-flow": "^1.0.23",
     "sgsg": "^0.9.54"
   },
   "devDependencies": {
