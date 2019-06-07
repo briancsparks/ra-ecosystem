@@ -28,7 +28,7 @@ const ARGV                    = sg.ARGV();
 // -------------------------------------------------------------------------------------
 //  Functions
 //
-const build = function() {
+const build = function(argv) {
   const type      = argv._.shift();
 
   // Get the script

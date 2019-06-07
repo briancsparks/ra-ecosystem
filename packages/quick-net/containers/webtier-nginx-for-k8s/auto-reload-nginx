@@ -1,0 +1,23 @@
+#!/bin/sh
+
+# Start nginx for the first time
+echo "----- Starting nginx -----"
+nginx "$@"
+
+# Use checksum -- do we need this?
+oldcksum="$(cksum /etc/nginx/conf.d/default.conf)"
+
+# When a change happens, reload the server
+inotifywait -e modify,move,create,delete -mr --timefmt '%d/%m/%y %H:%M' --format '%T' /etc/nginx/conf.d/ | while read date time; do
+
+  newcksum="$(cksum /etc/nginx/conf.d/default.conf)"
+  if [ "$newcksum" != "$oldcksum" ]; then
+
+    echo "Nginx config udated [${time} ${date}]."
+    oldcksum="$newcksum"
+
+    # Restart it
+    nginx -s reload
+  fi
+
+done

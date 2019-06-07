@@ -174,7 +174,7 @@ mod.xport({upsertInstance: function(argv, context, callback) {
     }
 
     var   InstanceId;
-    var   shellscript, mimeArchive;
+    var   userDataScript, mimeArchive;
     return rax.__run2({result:{}}, callback, [function(my, next, last) {
 
       // Itempotentcy -- use uniqueName so you can upsertInstance many times, and only launch once
@@ -276,50 +276,19 @@ mod.xport({upsertInstance: function(argv, context, callback) {
 
     }, function(my, next) {
 
-      const userdataEnv         = readJsonFile(envJsonFile) || {};
-      const shellscriptFilename = path.join(__dirname, 'userdata', `${distro}.sh`);
+      // Build up the user-data script
 
+      // The env file, and the user-data script file
+      const userdataEnv           = readJsonFile(envJsonFile) || {};
+      const shellscriptFilename   = path.join(__dirname, 'userdata', `${distro}.sh`);
+
+      // Read the user-data script file
       calling(`fs.readFile ${shellscriptFilename}`);
-      return fs.readFile(shellscriptFilename, 'utf8', function(err, shellscript_) {
-        if (!sg.ok(err, shellscript_))    { return abort(err, `fail reading ${distro}`); }
+      return fs.readFile(shellscriptFilename, 'utf8', function(err, userDataScript_) {
+        if (!sg.ok(err, userDataScript_))    { return abort(err, `fail reading ${distro}`); }
 
-        shellscript = shellscript_;
-
-        // Add any lines the caller wants
-        shellscript  += moreShellScript;
-
-        // Signal that the script is done running
-        shellscript  += `\n`;
-        shellscript  += `echo UserData script is done for ${uniqueName || 'instance'}`;
-        shellscript  += `\n`;
-
-        // Replace `quicknetuserdataenvcursor` with the script options (like `INSTALL_DOCKER`), and the env
-        shellscript = sg.reduce(shellscript.split('\n'), [], (m, line) => {
-          if (!line.match(/quicknetuserdataenvcursor/i)) { return [...m, line]; }
-
-          // Script options
-          var newlines = sg.reduce(_.isObject(userdataOpts) ? userdataOpts : {}, [], (m, v, k) => {
-
-            // For example, `set INSTALL_DOCKER="1"`  or `unset INSTALL_DOCKER`
-
-            var   newline = `${k}="${v === true ? '1' : v}"`;
-            if (v === false) {
-              newline = `unset ${k}`;
-            }
-
-            return [...m, newline];
-          });
-
-          // env vars
-          newlines = sg.reduce(userdataEnv, newlines, (m, v, k) => {
-            const newline = `echo '${k}="${v === true ? '1' : v === false ? '0' : v}"' >> /etc/environment`;
-
-            return [...m, newline];
-          });
-          newlines.push(line);
-
-          return [ ...m, ...newlines ];
-        }).join('\n');
+        // Process the user-data script
+        userDataScript  = fixUserDataScript(userDataScript_, {uniqueName, userdataOpts, userdataEnv, moreShellScript});
 
         return next();
       });
@@ -397,6 +366,35 @@ mod.xport({upsertInstance: function(argv, context, callback) {
         });
       }
 
+      // Install kubectl?
+
+      // Like:
+      // $ curl -LO http://storage.googleapis.com/kubernetes-release/release/$(curl -sS http://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
+      // $ chmod +x ./kubectl
+      // $ sudo mv ./kubectl /usr/local/bin/kubectl
+      //
+
+      // If you want kops:
+      // $ curl -LO https://github.com/kubernetes/kops/releases/download/$(curl -s https://api.github.com/repos/kubernetes/kops/releases/latest | jq -r '.tag_name')/kops-linux-amd64
+      // $ chmod +x kops-linux-amd64
+      // $ sudo mv kops-linux-amd64 /usr/local/bin/kops
+
+      if (userdataOpts.INSTALL_KUBERNETES) {
+        cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
+          packages: ['kubectl'],
+          apt:      {
+            preserve_sources_list: true,
+            sources: {
+              "kubernetes.list": {
+                // key: kubernetes_io_key(),
+                keyid: '6A030B21BA07F4FB',
+                source: `deb https://apt.kubernetes.io/ kubernetes-${osVersion} main`
+              }
+            }
+          }
+        });
+      }
+
       // Install tools for dev-ops?
       if (userdataOpts.INSTALL_OPS) {
         cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
@@ -418,7 +416,10 @@ mod.xport({upsertInstance: function(argv, context, callback) {
           message:    "Go on without me, boys... I'm done-fer [[rebooting now]]",
           // condition:  "test -f /var/run/reboot-required"
           condition:  true
-        }
+        },
+        runcmd: [
+          "sed -i -e '$aAcceptEnv TENABLE_IO_KEY' /etc/ssh/sshd_config",
+        ],
       });
 
       return next();
@@ -430,9 +431,9 @@ mod.xport({upsertInstance: function(argv, context, callback) {
 
       mimeArchive = new MimeBuilder('multipart/mixed');
 
-      if (shellscript) {
+      if (userDataScript) {
         mimeArchive.appendChild(new MimeBuilder('text/x-shellscript')
-          .setContent(shellscript)
+          .setContent(userDataScript)
           .setHeader('content-disposition', `attachment; filename=shellscript`)
           .setHeader('content-transfer-encoding', 'quoted-printable')                 /*  MUST use quoted-printable, so the lib does not use 'flowable' */
         );
@@ -514,6 +515,87 @@ function readJsonFile(filename_) {
 
   return require(filename);
 }
+
+function fixUserDataScript(shellscript_, options_) {
+  const options = options_ || {};
+
+  const uniqueName        = options.uniqueName;
+  const userdataOpts      = options.userdataOpts;
+  const userdataEnv       = options.userdataEnv;
+  const moreShellScript   = options.moreShellScript;
+
+  // The script starts as the read-in script, plus whatever the caller added
+  var shellscript         = shellscript_ + moreShellScript;
+
+  // Signal that the script is done running
+  shellscript            += `\n`;
+  shellscript            += `echo UserData script is done for ${uniqueName || 'instance'}`;
+  shellscript            += `\n`;
+
+
+  // Process each line in the file
+  var skipping;
+  shellscript = sg.reduce(shellscript.split('\n'), [], (m, line) => {
+    var installStr;
+
+    // Anything starting with `##` is removed
+    if (line.match(/^##/)) {
+      return m;
+    }
+
+    // #AAAA INSTALL_XYZ - starts a section to possibly skip
+    if ((installStr = line.match(/^#AAAA (INSTALL_.+)$/))) {
+      if (installStr[1] && (installStr[1] in userdataOpts) && !userdataOpts[installStr[1]]) {
+        skipping = installStr[1];
+      }
+      return m;
+    }
+
+    // #ZZZZ INSTALL_XYZ - ends the skip section
+    if (skipping && (installStr = line.match(/^#ZZZZ (INSTALL_.+)$/))) {
+      if (installStr[1] === skipping) {
+        skipping = null;
+      }
+      return m;
+    }
+
+    // Skip all between AAAA INSTALL_XYZ and ZZZZ INSTALL_XYZ
+    if (skipping) {
+      return m;
+    }
+
+    // Replace `# quicknetuserdataenvcursor` in the script with the script options (like `INSTALL_DOCKER`), and the env
+    if (line.match(/quicknetuserdataenvcursor/i)) {
+      // Script options
+      var newlines = sg.reduce(_.isObject(userdataOpts) ? userdataOpts : {}, [], (m, v, k) => {
+
+        // For example, `set INSTALL_DOCKER="1"`  or `unset INSTALL_DOCKER`
+
+        var   newline = `${k}="${v === true ? '1' : v}"`;
+        if (v === false) {
+          newline = `unset ${k}`;
+        }
+
+        return [...m, newline];
+      });
+
+      // env vars
+      newlines = sg.reduce(userdataEnv, newlines, (m, v, k) => {
+        const newline = `echo '${k}="${v === true ? '1' : v === false ? '0' : v}"' >> /etc/environment`;
+
+        return [...m, newline];
+      });
+      newlines.push(line);
+
+      return [ ...m, ...newlines ];
+    }
+
+    return [...m, line];
+  }).join('\n');
+
+  return shellscript;
+}
+
 
 // -----------------------------------------------------------------
 // Keys
@@ -673,5 +755,47 @@ jCxcpDzNmXpWQHEtHU7649OXHP7UeNST1mCUCH5qdank0V1iejF6/CfTFU4MfcrG
 YT90qFF93M3v01BbxP+EIY2/9tiIPbrd
 =0YYh
 -----END PGP PUBLIC KEY BLOCK-----`;
+}
+
+// curl -sSL "https://packages.cloud.google.com/apt/doc/apt-key.gpg"
+function kubernetes_io_key() {
+
+  // Have not tried this key
+
+  return `
+-----BEGIN PGP ARMORED FILE-----
+Version: GnuPG v1
+Comment: Use "gpg --dearmor" for unpacking
+
+mQENBFUd6rIBCAD6mhKRHDn3UrCeLDp7U5IE7AhhrOCPpqGF7mfTemZYHf/5Jdjx
+cOxoSFlK7zwmFr3lVqJ+tJ9L1wd1K6P7RrtaNwCiZyeNPf/Y86AJ5NJwBe0VD0xH
+TXzPNTqRSByVYtdN94NoltXUYFAAPZYQls0x0nUD1hLMlOlC2HdTPrD1PMCnYq/N
+uL/Vk8sWrcUt4DIS+0RDQ8tKKe5PSV0+PnmaJvdF5CKawhh0qGTklS2MXTyKFoqj
+XgYDfY2EodI9ogT/LGr9Lm/+u4OFPvmN9VN6UG+s0DgJjWvpbmuHL/ZIRwMEn/tp
+uneaLTO7h1dCrXC849PiJ8wSkGzBnuJQUbXnABEBAAG0QEdvb2dsZSBDbG91ZCBQ
+YWNrYWdlcyBBdXRvbWF0aWMgU2lnbmluZyBLZXkgPGdjLXRlYW1AZ29vZ2xlLmNv
+bT6JAT4EEwECACgFAlUd6rICGy8FCQWjmoAGCwkIBwMCBhUIAgkKCwQWAgMBAh4B
+AheAAAoJEDdGwginMXsPcLcIAKi2yNhJMbu4zWQ2tM/rJFovazcY28MF2rDWGOnc
+9giHXOH0/BoMBcd8rw0lgjmOosBdM2JT0HWZIxC/Gdt7NSRA0WOlJe04u82/o3OH
+WDgTdm9MS42noSP0mvNzNALBbQnlZHU0kvt3sV1YsnrxljoIuvxKWLLwren/GVsh
+FLPwONjw3f9Fan6GWxJyn/dkX3OSUGaduzcygw51vksBQiUZLCD2Tlxyr9NvkZYT
+qiaWW78L6regvATsLc9L/dQUiSMQZIK6NglmHE+cuSaoK0H4ruNKeTiQUw/EGFaL
+ecay6Qy/s3Hk7K0QLd+gl0hZ1w1VzIeXLo2BRlqnjOYFX4CwAgADmQENBFrBaNsB
+CADrF18KCbsZlo4NjAvVecTBCnp6WcBQJ5oSh7+E98jX9YznUCrNrgmeCcCMUvTD
+RDxfTaDJybaHugfba43nqhkbNpJ47YXsIa+YL6eEE9emSmQtjrSWIiY+2YJYwsDg
+sgckF3duqkb02OdBQlh6IbHPoXB6H//b1PgZYsomB+841XW1LSJPYlYbIrWfwDfQ
+vtkFQI90r6NknVTQlpqQh5GLNWNYqRNrGQPmsB+NrUYrkl1nUt1LRGu+rCe4bSaS
+mNbwKMQKkROE4kTiB72DPk7zH4Lm0uo0YFFWG4qsMIuqEihJ/9KNX8GYBr+tWgyL
+ooLlsdK3l+4dVqd8cjkJM1ExABEBAAG0QEdvb2dsZSBDbG91ZCBQYWNrYWdlcyBB
+dXRvbWF0aWMgU2lnbmluZyBLZXkgPGdjLXRlYW1AZ29vZ2xlLmNvbT6JAT4EEwEC
+ACgFAlrBaNsCGy8FCQWjmoAGCwkIBwMCBhUIAgkKCwQWAgMBAh4BAheAAAoJEGoD
+CyG6B/T78e8H/1WH2LN/nVNhm5TS1VYJG8B+IW8zS4BqyozxC9iJAJqZIVHXl8g8
+a/Hus8RfXR7cnYHcg8sjSaJfQhqO9RbKnffiuQgGrqwQxuC2jBa6M/QKzejTeP0M
+gi67pyrLJNWrFI71RhritQZmzTZ2PoWxfv6b+Tv5v0rPaG+ut1J47pn+kYgtUaKd
+sJz1umi6HzK6AacDf0C0CksJdKG7MOWsZcB4xeOxJYuy6NuO6KcdEz8/XyEUjIuI
+OlhYTd0hH8E/SEBbXXft7/VBQC5wNq40izPi+6WFK/e1O42DIpzQ749ogYQ1eode
+xPNhLzekKR3XhGrNXJ95r5KO10VrsLFNd8KwAgAD
+=ssty
+-----END PGP ARMORED FILE-----`;
 }
 

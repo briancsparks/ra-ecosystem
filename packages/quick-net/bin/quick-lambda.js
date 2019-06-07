@@ -92,7 +92,7 @@ if (sg.startupDone(ARGV, __filename))  { return; }
 
   // ------------------------------------------------------------------------------------
   // ----- Does the docker image (quick-lambda) need to be built? -----
-  var   imageInfo=[{}], epStats={};
+  var   imageInfo=[{}], epStats={};       // ep === entry point
 
   var   dockerImages      = sg.splitLn(await execa.stdout('docker', ['image', 'ls', '-a']));        /* The list of all images in Docker */
   var   haveImage         = dockerImages.filter(line => line.match(/^quick-lambda/i)).length > 0;   /* Is ours in the list? */

@@ -5,8 +5,9 @@ NODE_UTILS=""
 # What to install?
 INSTALL_DOCKER="1"
 INSTALL_OPS="1"
+INSTALL_AGENTS="1"
 
-# This next line will get replaced with vars that might override the above, and ENV vars that go into /etc/environment
+## This next line will get replaced with vars that might override the above, and ENV vars that go into /etc/environment
 # quicknetuserdataenvcursor
 
 
@@ -24,11 +25,12 @@ chown -R "${the_user_name}":"${the_user_name}" "${the_home_dir}/.config/"
 
 
 
-# ----------------------------------------------------------------------------------------------
+## ----------------------------------------------------------------------------------------------
 # Add node and global npm packages
 NODE_UTILS="${NODE_UTILS} pm2 run-anywhere cli-shezargs quick-net"
 
-# ----------------------------------------------------------------------------------------------
+#AAAA INSTALL_DOCKER
+## ----------------------------------------------------------------------------------------------
 # Add docker
 if [[ -n $INSTALL_DOCKER ]]; then
   pwd
@@ -37,6 +39,7 @@ if [[ -n $INSTALL_DOCKER ]]; then
   chmod ug+rwx  "${user_docker_conf_dir}"
 
 fi
+#ZZZZ INSTALL_DOCKER
 
 
 
@@ -49,8 +52,8 @@ ssh-keyscan github.azc.ext.hp.com   >> ~/.ssh/known_hosts
 
 
 
-
-# ----------------------------------------------------------------------------------------------
+#AAAA INSTALL_OPS
+## ----------------------------------------------------------------------------------------------
 # If devOps, make things easier
 if [[ -n $INSTALL_OPS ]]; then
   echo "Installing ops"
@@ -59,8 +62,11 @@ if [[ -n $INSTALL_OPS ]]; then
   pip install --upgrade pip
   pip install awscli --upgrade
 fi
+#ZZZZ INSTALL_OPS
 
-# ----------------------------------------------------------------------------------------------
+
+#AAAA INSTALL_DOCKER
+## ----------------------------------------------------------------------------------------------
 # Start docker
 if [[ -n $INSTALL_DOCKER ]]; then
   systemctl enable docker
@@ -71,11 +77,14 @@ if [[ -n $INSTALL_DOCKER ]]; then
   groupadd docker || true
   usermod -aG docker $the_user_name
 fi
+#ZZZZ INSTALL_DOCKER
 
 
-# ----------------------------------------------------------------------------------------------
+#AAAA INSTALL_AGENTS
+## ----------------------------------------------------------------------------------------------
 # Install script to compliant-ify instance
 
+if [[ -n $INSTALL_AGENTS ]]; then
 
 cat >> /home/ubuntu/mk-compliant  <<'EOF'
 #!/bin/bash -ex
@@ -117,7 +126,9 @@ fi
 
 EOF
 
-chmod +x "${the_home_dir}/mk-compliant"
-chown -R "${the_user_name}":"${the_user_name}" "${the_home_dir}/mk-compliant"
+  chmod +x "${the_home_dir}/mk-compliant"
+  chown -R "${the_user_name}":"${the_user_name}" "${the_home_dir}/mk-compliant"
+fi
+#ZZZZ INSTALL_AGENTS
 
 
