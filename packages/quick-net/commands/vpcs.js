@@ -554,6 +554,10 @@ mod.xport({launchInfo: function(argv, context, callback) {
           return sg.ap(m, securityGroup.GroupId);
         });
 
+        my.result.vpcIds = sg.reduce(data.vpcs, [], (m, vpc) => {
+          return sg.ap(m, vpc.VpcId);
+        });
+
         return next();
       });
     }, function(my, next) {
