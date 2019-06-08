@@ -1,0 +1,86 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx
+  labels:
+    app: nginx
+
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: nginx
+
+  template:
+    metadata:
+      labels:
+        app: nginx
+
+    spec:
+      volumes:
+        - name:  cert-volume
+          secret:
+            secretName: ingresscert
+
+        - name:  ingressconfig-volume
+          secret:
+            secretName: ingressconfigmap
+
+      containers:
+      - name: nginx
+
+        image: briancsparks/qucknet-nginx-ingress
+        command: ["/usr/bin/auto-reload-nginx"]
+        args: ["-g","daemon off;"]
+
+        ports:
+        - containerPort: 80
+        - containerPort: 443
+
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+
+        livenessProbe:
+          httpGet:
+            path: /index.html
+            port: 80
+          initialDelaySeconds: 30
+          timeoutSeconds: 1
+
+        volumeMounts:
+          - name:  cert-volume
+            mountPath:  /etc/nginx/ssl
+
+          - name:  ingressconfig-volume
+            mountPath:  /etc/nginx/conf.d
+
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/usr/sbin/nginx","-s","quit"]
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name:  nginx
+spec:
+  selector:
+    app: nginx
+  type: LoadBalancer
+  ports:
+  - name: http
+    protocol: TCP
+    port: 80
+    targetPort: 80
+
+  - name: https
+    protocol: TCP
+    port: 443
+    targetPort: 443
+

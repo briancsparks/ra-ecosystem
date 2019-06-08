@@ -1,0 +1,21 @@
+#!/bin/bash -e
+
+die() {
+  echo "$1"
+  exit 2
+}
+
+# ----- Do we need certs? ------
+NGINX_CRT="/tmp/nginx.crt"
+NGINX_KEY="/tmp/nginx.key"
+if [[ $(kubectl get secrets nginxcert 2> /dev/null | wc -l)  == 0 ]]; then
+  openssl req -x509 -nodes -days 365 -newkey rsa:4096 -keyout ${NGINX_KEY} -out ${NGINX_CRT} -subj "/CN=mario/O=mario"
+
+  kubectl create secret tls nginxcert --key ${NGINX_KEY} --cert ${NGINX_CRT}
+
+  rm -f ${NGINX_KEY}
+  rm -f ${NGINX_CRT}
+else
+  echo "Already have certs... skipping"
+fi
+
