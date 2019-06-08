@@ -8,5 +8,7 @@ script_dir="$(dirname $0)"
 
 ${script_dir}/setup-certs
 
-# vim: ft=bash:
+kubectl create configmap ingressconfigmap --from-file=${script_dir}/config/
+
+# vim: ft=sh:
 
