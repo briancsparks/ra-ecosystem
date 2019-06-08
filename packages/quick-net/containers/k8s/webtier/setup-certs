@@ -19,3 +19,5 @@ else
   echo "Already have certs... skipping"
 fi
 
+# vim: ft=bash:
+

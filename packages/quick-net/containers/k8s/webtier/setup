@@ -7,3 +7,6 @@ die() {
 script_dir="$(dirname $0)"
 
 ${script_dir}/setup-certs
+
+# vim: ft=bash:
+
