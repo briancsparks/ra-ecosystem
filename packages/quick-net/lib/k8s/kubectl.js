@@ -4,111 +4,269 @@
  */
 
 const ra                      = require('run-anywhere').v2;
-const sg                      = ra.get3rdPartyLib('sg-flow');
-const { _ }                   = sg;
+const sg0                     = ra.get3rdPartyLib('sg-argv');
+const { _ }                   = sg0;
+const qm                      = require('quick-merge').qm;
+const sg                      = sg0.merge(sg0, require('sg-exec'), require('sg-clihelp'));
+const Request                 = require('kubernetes-client/backends/request');
 const Client                  = require('kubernetes-client').Client;
-const config                  = require('kubernetes-client').config;
+const pem                     = require('pem');
+const util                    = require('util');
+const {execz,execa}           = sg;
+const {test}                  = sg.sh;
 
 const mod                     = ra.modSquad(module, 'kubectl');
 
+const backend                 = new Request(Request.config.fromKubeconfig(`${process.env.HOME}/.kube/config`));
+const client                  = new Client({backend, version: '1.13'});
 
-mod.async({kapply: async function(argv, context) {
-  const deploymentManifest      = nginxDeployment();
+sg.ARGV();
 
-  const client      = new Client({config: config.fromKubeconfig(), version: '1.14'});
+mod.async({nginxConfConfigMap: async function(argv, context) {
+  var result = {};
 
-  const namespaces  = await client.api.v1.namespaces.get();
-  sg.elog(`namespaces`, {namespaces});
+  try {
+    const confdir = theDir(argv, __dirname);
 
-  const create      = await client.apis.apps.v1.namespaces('default').deployments.post({body: deploymentManifest});
-  sg.elog(`create`, {create});
+    result = await execa.stdout('kubectl', ['create', 'configmap', 'nginxconfig', `--from-file=${confdir}`, '-o', 'json', '--dry-run']);
+    json   = sg.safeJSONParse(result);
 
-  const deployment  = await client.apis.apps.v1.namespaces('default').deployments(deploymentManifest.metadata.name).get();
-  sg.elog(`deployment`, {deployment});
+    var currentConfigMap;
+    try {
+      currentConfigMap = await client.api.v1.namespace(ns(argv)).configmap('nginxconfig').get();
+    } catch(err) {
+    }
 
-	//
-	// Change the Deployment Replica count to 10
-	//
+    if (currentConfigMap) {
+      result = await client.api.v1.namespace(ns(argv)).configmaps('nginxconfig').put({body: json});
+    } else {
+      result = await client.api.v1.namespace(ns(argv)).configmap.post({body: json});
+    }
 
-	const replica = {
-		spec: {
-			replicas: 10
-		}
-	};
+  } catch(err) {
+    throw err;
+  }
 
-	const replicaModify = await client.apis.apps.v1.namespaces('default').deployments(deploymentManifest.metadata.name).patch({ body: replica });
-	sg.elog('Replica Modification: ', {replicaModify});
+  return result;
+}});
 
-	//
-	// Modify the image tag
-	//
-	const newImage = {
-		spec: {
-			template: {
-				spec: {
-					containers: [{
-						name: 'nginx',
-						image: 'nginx:1.8.1'
-					}]
-				}
-			}
-		}
-	};
-	const imageSet = await client.apis.apps.v1.namespaces('default').deployments(deploymentManifest.metadata.name).patch({ body: newImage });
-	sg.elog('New Image: ', {imageSet});
+mod.async({ensureCerts: async function(argv, context) {
+  try {
+    const name = 'nginxcert';
+    const secret = await client.api.v1.namespaces(ns(argv)).secrets(name).get();
 
-	//
-	// Remove the Deployment we created.
-	//
-	const removed = await client.apis.apps.v1.namespaces('default').deployments(deploymentManifest.metadata.name).delete();
-	sg.elog('Removed: ', {removed});
+    return secret;
+  } catch(err) {
+    if (err.code !== 404) { throw err; }
+  }
 
-	return replicaModify;
+  //openssl req -x509 -nodes -days 365 -newkey rsa:4096 -keyout ${NGINX_KEY} -out ${NGINX_CRT} -subj "/CN=mario/O=mario"
+  const CN        = argv.CN || argv.cn || 'mario'
+  const crtfile   = '/tmp/nginx.crt';
+  const keyfile   = '/tmp/nginx.key';
+
+  const params = [
+    "req", "-x509", "-nodes",
+
+    "-days",   "365",               "-newkey", "rsa:4096",
+    "-keyout", keyfile,             "-out",    crtfile,
+    "-subj",   `/CN=${CN}/O=${CN}`
+  ];
+
+  const output = await execa.stdout("openssl", params);
+
+  //kubectl create secret tls nginxcert --key ${NGINX_KEY} --cert ${NGINX_CRT}
+  const result = await execa.stdout("kubectl", ["create", "secret", "tls", "nginxcert", "--key", keyfile, "--cert", crtfile]);
+
+  return {result};
+}});
+
+mod.async({deployWebtier: async function(argv, context) {
+  const manifest      = nginxDeployment();
+  var   createReceipt = await client.apis.apps.v1.namespaces(ns(argv)).deployments.post({body: manifest});
+  const deployment    = await client.apis.apps.v1.namespaces(ns(argv)).deployments(manifest.metadata.name).get();
+
+  const serviceSpec   = nginxService();
+  createReceipt       = await client.api.v1.namespaces(ns(argv)).services.post({body: serviceSpec});
+
+  return deployment;
 }});
 
 
+
+
+
+function base64(str) {
+  const buff = new Buffer(str);
+  return buff.toString('base64');
+}
+
+function ns(argv) {
+  return argv.namespace || argv.ns || 'default';
+}
+
 function nginxDeployment() {
 
-  return {
-    apiVersion:   'apps/v1',
-    kind:         'Deployment',
+  const options = {
+    ports: [{
+      containerPort: 80
+    },{
+      containerPort: 443
+    }]
+  };
 
-    metadata: {
-      labels: {
-        app: 'nginx'
+  var deployment = deploymentSeed('nginx', 'briancsparks/quicknet-nginx-ingress', {app:'nginx'}, options);
+
+  var spec          = deployment.spec.template.spec;
+  var container     = spec.containers[0];
+
+  spec              = addPodVolume(spec, {secretName: 'nginxcert'}, '/etc/nginx/ssl');
+  spec              = addPodVolume(spec, {configMapName: 'nginxconfig'}, '/etc/nginx/conf.d');
+
+  container         = {...container,
+    command:  ["/usr/bin/auto-reload-nginx"],
+    args:     ["-g","daemon off;"],
+
+    livenessProbe: {
+      httpGet: {
+        path: "/index.html",
+        port: 80
       },
-      name: 'nginx-deployment'
+      initialDelaySeconds: 30,
+     timeoutSeconds: 1
     },
 
-    spec: {
-      replicas: 1,
-      selector: {
-        matchLabels: {
-          app: 'nginx'
-        }
-      },
-
-      // The pod template
-      template: {
-        metadata: {
-          labels: {
-            app: 'nginx'
-          }
-        },
-
-        spec: {
-          containers: [{
-            image:  'nginx:1.7.9',
-            name:   'nginx',
-            ports: [{
-              containerPort: 80
-            },{
-              containerPort: 443
-            }]
-          }]
+    lifecycle: {
+      preStop: {
+        exec: {
+          command: ["/usr/sbin/nginx","-s","quit"]
         }
       }
     }
   };
+
+  spec.containers   = [container];
+  deployment.spec.template.spec   = spec;
+
+  return deployment;
+}
+
+function nginxService() {
+
+  const name = 'nginx';
+
+  return {
+    apiVersion:   'v1',
+    kind:         'Service',
+
+    metadata: {name},
+
+    spec: {
+      type: 'LoadBalancer',
+      selector: {app:name},
+      ports: [{
+        name: 'http',  protocol: 'TCP', port: 80,  targetPort: 80
+      }, {
+        name: 'https', protocol: 'TCP', port: 443, targetPort: 443
+      }]
+    }
+  };
+}
+
+function deploymentSeed(name, image, labels, options={}) {
+
+  var result = {
+    apiVersion:   'apps/v1',
+    kind:         'Deployment',
+
+    metadata: {labels, name},
+
+    spec: {
+      replicas: 1,
+      selector: {
+        matchLabels: labels
+      },
+
+      // The pod template
+      template: {
+        metadata:{labels},
+
+        spec: {
+          containers: [{image, name}]
+        }
+      }
+    }
+  };
+
+  if (options.port) {
+    const container = qm(result.spec.template.spec.containers[0], {ports: options.ports});
+    result.spec.template.spec.containers[0] = container;
+  }
+
+  return result;
+}
+
+function addPodVolume(podSpec_, nameSpec, mountPath) {
+
+  var podSpec     = _.extend({}, podSpec_);
+  var container   = podSpec.containers[0];
+  var name;
+
+  podSpec.volumes         = podSpec.volumes         || [];
+  container.volumeMounts  = container.volumeMounts  || [];
+
+  if (sg.firstKey(nameSpec) === 'secretName') {
+    name = nameSpec.secretName;
+    podSpec.volumes.push({name: `${name}-volume`, secret:{secretName: name}});
+  }
+
+  if (sg.firstKey(nameSpec) === 'configMapName') {
+    name = nameSpec.configMapName;
+    podSpec.volumes.push({name: `${name}-volume`, configMap:{name}});
+  }
+
+  container.volumeMounts.push({name: `${name}-volume`, mountPath});
+
+  return podSpec;
+}
+
+function tlsSecret(name, keys) {
+  return {
+    apiVersion:   'v1',
+    kind:         'Secret',
+    type:         'tls',
+
+    metadata: {
+      name
+    },
+
+    data: {
+      "tls.key": base64(keys.certificate),
+      "tls.crt": base64(keys.serviceKey)
+    }
+  };
+}
+
+function theDir(argv, dirname) {
+  var   confdir = argv.confdir;
+
+  // They might have sent in a full-path
+  if (confdir[0] === '/') {
+    return confdir;
+  }
+
+  // Or it might be relative to cwd
+  confdir = sg.path.join(process.cwd(), confdir);
+  if (test('-d', confdir)) {
+    return confdir;
+  }
+
+  // Or it might be relative to our dir
+  confdir = sg.path.join(dirname, confdir);
+  if (test('-d', confdir)) {
+    return confdir;
+  }
+
+  return;
 }
 

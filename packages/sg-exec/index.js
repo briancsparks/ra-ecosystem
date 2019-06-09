@@ -8,7 +8,7 @@
 // -------------------------------------------------------------------------------------
 //  Requirements
 //
-const sg                      = require('sg0');
+const sg                      = require('sg-argv');
 const { _ }                   = sg;
 // const qm                      = require('quick-merge');
 const execa                   = require('execa');
