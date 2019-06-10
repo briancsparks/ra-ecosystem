@@ -25,6 +25,9 @@ sg.ARGV();
 mod.async({nginxConfConfigMap: async function(argv, context) {
   var result = {};
 
+  // You can get the file back out of config-space:
+  // get configmaps nginxconfig -o json | jq -r '.data["default.conf"]'
+
   try {
     const confdir = theDir(argv, __dirname);
 
@@ -92,6 +95,82 @@ mod.async({deployWebtier: async function(argv, context) {
   return deployment;
 }});
 
+// -----------------------------
+// Certbot howto
+//
+// Here is how to do letsencrypt. this is the certbot-route53-auth-hook.js file:
+// -----------------------------
+
+// const AWS       = require('aws-sdk');
+// const route53   = new AWS.Route53();
+//
+// const [x,y, action, domain] = process.argv;
+//
+// (async function main() {
+//   try {
+//     const {HostedZones} = await route53.listHostedZonesByName({DNSName: domain}).promise();
+//
+//     if (HostedZones.length > 0) {
+//       const zone = HostedZones[0];
+//       if (zone.Name === `${domain}.`) {
+//         const HostedZoneId = zone.Id;
+//         const ChangeBatch = changeBatch();
+//         const {ChangeInfo} = await route53.changeResourceRecordSets({HostedZoneId, ChangeBatch}).promise();
+//         const result = await route53.waitFor('resourceRecordSetsChanged', {Id: ChangeInfo.Id}).promise();
+//       }
+//     }
+//   } catch(err) {
+//     console.error(err);
+//     process.exit(3);
+//   }
+// }());
+//
+// function changeBatch() {
+//   return {
+//     Changes: [{
+//       Action: action,
+//       ResourceRecordSet: {
+//         Name: `_acme-challenge.${process.env.CERTBOT_DOMAIN}.`,
+//         ResourceRecords: [{Value:`"${process.env.CERTBOT_VALIDATION}"`}],
+//         TTL: 30,
+//         Type: "TXT"
+//       }
+//     }],
+//   };
+// }
+
+// And here is the command to fire
+// #!/bin/bash -e
+//
+// die() {
+//   echo "$@"
+//   exit 2
+// }
+//
+// scripts_dir="$(dirname $0)"
+// out_dir="$HOME/.letsencrypt"
+//
+// [ -d "$out_dir" ] || die "Must have $out_dir dir"
+//
+// auth_domain="$1"
+// domains="$2"
+// emails="$3"
+//
+// [ -z "$auth_domain" ] && die "Usage: $(basename $0) auth_domain domains emails"
+// [ -z "$domains" ] && die "Usage: $(basename $0) auth_domain domains emails"
+// [ -z "$emails" ] && die "Usage: $(basename $0) auth_domain domains emails"
+//
+// certbot certonly --non-interactive --manual \
+//   --manual-auth-hook "${scripts_dir}/certbot-route53-auth-hook.sh UPSERT ${auth_domain}" \
+//   --manual-cleanup-hook "${scripts_dir}/certbot-route53-auth-hook.sh DELETE ${auth_domain}" \
+//   --preferred-challenge dns \
+//   --config-dir "$out_dir" \
+//   --work-dir "$out_dir" \
+//   --logs-dir "$out_dir" \
+//   --agree-tos \
+//   --manual-public-ip-logging-ok \
+//   --domains ${domains} \
+//   --email "$emails"
 
 
 
