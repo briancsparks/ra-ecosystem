@@ -15,7 +15,7 @@ sudo mv kops /usr/local/bin
 -------------------------------------------------------------------------------
 
 _Setup Environment_
-net
+
 Set the following variables.
 
 ```sh
@@ -103,16 +103,15 @@ Then, as needed:
 ```sh
 kops edit cluster
 kops update cluster --yes
+kops rolling-update cluster --yes
 kops get cluster
 #kops delete cluster --yes
 ```
 
 Notes:
 
-* My history does not have `--yes` on the `create secret` command, but it is probably
-  necessary.
-* `get cluster` is a quick one-lineer,
-* `validate cluster` gives details
-* `update cluster` rolls out changes to the cluster.
-* `edit cluster` -- I do not know if this only changes the cluster specs (I think so), or
-  if it also rolls out changes (I think not).
+* `kops get cluster` is a quick one-lineer,
+* `kops validate cluster` gives details
+* updating the cluster:
+  * `kops update cluster --yes` changes the cluster (after `kops edit cluster`).
+  * `kops rolling-update cluster --yes` might be needed to change the cluster (after `kops edit cluster`).

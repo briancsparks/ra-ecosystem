@@ -21,6 +21,7 @@ const awsKey                  = libAws.awsKey;
 
 const ec2                     = libAws.awsService('EC2');
 const iam                     = libAws.awsService('IAM');
+const s3                      = libAws.awsService('S3');
 
 const MimeBuilder             = MimeNode;
 
@@ -144,7 +145,7 @@ mod.xport({upsertInstance: function(argv, context, callback) {
     var   ImageId               = rax.arg(argv, 'ImageId,image');
     var   osVersion             = rax.arg(argv, 'osVersion,os-version');
     const InstanceType          = rax.arg(argv, 'InstanceType,instanceType,instance', {required:true});
-    const classB                = rax.arg(argv, 'classB,b');
+    const classB                = rax.arg(argv, 'class_b,classB,b');
     var   az                    = rax.arg(argv, 'AvailabilityZone,az');
     const KeyName               = rax.arg(argv, 'KeyName,key', {required:true});
     var   SecurityGroupIds      = rax.arg(argv, 'SecurityGroupIds,sgs', {required:true, array:true});
@@ -299,13 +300,13 @@ mod.xport({upsertInstance: function(argv, context, callback) {
       cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
         package_update: true,
         package_upgrade: true,
-        packages: ['ntp', 'tree', 'htop', 'zip', 'unzip', 'nodejs'],
+        packages: ['ntp', 'tree', 'htop', 'zip', 'unzip', 'nodejs', 'jq'],
         apt:      {
           preserve_sources_list: true,
           sources: {
             "nodesource.list": {
               key: nodesource_com_key(),
-              source: `deb https://deb.nodesource.com/node_8.x ${osVersion} main`
+              source: `deb https://deb.nodesource.com/node_12.x ${osVersion} main`
             }
           }
         }
@@ -347,25 +348,44 @@ mod.xport({upsertInstance: function(argv, context, callback) {
         });
       }
 
+      // Add mongodb to apt -- only install (below) if install is requested, but we want to be able to install clients
+      cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
+        // packages: ['mongodb-org'],
+        apt:      {
+          preserve_sources_list: true,
+          sources: {
+            "mongodb-org-4.0.list": {
+              keyid: '9DA31620334BD75D9DCB49F368818C72E52529D4',
+              source: `deb https://repo.mongodb.org/apt/ubuntu ${osVersion}/mongodb-org/4.0 multiverse`
+            }
+          },
+        }
+      });
+
       // Install mongodb?
       if (userdataOpts.INSTALL_MONGODB) {
-        // Not sure how to do:
-        // apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 9DA31620334BD75D9DCB49F368818C72E52529D4
-
         cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
           packages: ['mongodb-org'],
-          apt:      {
-            preserve_sources_list: true,
-            sources: {
-              "mongodb-org-4.0.list": {
-                // key: mongodb_org_key(),
-                source: `deb https://repo.mongodb.org/apt/ubuntu ${osVersion}/mongodb-org/4.0 multiverse`
-              }
-            }
-          }
+          // apt:      {
+          //   preserve_sources_list: true,
+          //   sources: {
+          //     "mongodb-org-4.0.list": {
+          //       keyid: '9DA31620334BD75D9DCB49F368818C72E52529D4',
+          //       source: `deb https://repo.mongodb.org/apt/ubuntu ${osVersion}/mongodb-org/4.0 multiverse`
+          //     }
+          //   }
+          // },
+          runcmd: [
+            "sed -i -e 's/127.0.0.1/0.0.0.0/' /etc/mongod.conf",
+          ],
         });
       }
 
+      if (userdataOpts.MONGO_CLIENTS) {
+        cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
+          packages: ['mongodb-clients'],
+        });
+      }
       // Install kubectl?
 
       // Like:
@@ -398,7 +418,7 @@ mod.xport({upsertInstance: function(argv, context, callback) {
       // Install tools for dev-ops?
       if (userdataOpts.INSTALL_OPS) {
         cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
-          packages: ['jq', 'python-pip']
+          packages: ['python-pip']
         });
       }
 
@@ -419,6 +439,7 @@ mod.xport({upsertInstance: function(argv, context, callback) {
         },
         runcmd: [
           "sed -i -e '$aAcceptEnv TENABLE_IO_KEY' /etc/ssh/sshd_config",
+          "sed -i -e '$aAcceptEnv CLOUDSTRIKE_ID' /etc/ssh/sshd_config",
         ],
       });
 
@@ -503,14 +524,57 @@ mod.xport({upsertInstance: function(argv, context, callback) {
       }, next);
 
     }, function(my, next) {
+      // Put stuff on S3 for the instance
+      const namespace = process.env.NAMESPACE;
+      const s3path = `s3://serverassist-net-state-store/quick-net/${namespace.toLowerCase()}`;
+      return copyFileToS3(path.join(__dirname, 'instance-help', 'install-dev-tools'), s3path, function(err, data) {
+        sg.debugLog(`Upload instance-help`, {err, data});
+        return next();
+      });
+    }, function(my, next) {
       return next();
     }]);
   });
 }});
 
+function copyFileToS3(pathname, s3path, callback) {
+  const filename = _.last(pathname.split(/[\\/]/));
+  const {Bucket,Key} = parseS3Path(`${s3path}/${filename}`);
+  const Body = fs.createReadStream(pathname);
+
+  if (!Bucket)    { sg.logError(`NoBucket`, `sending uplaod`, {Bucket,Key,pathname,s3path}); return callback(`NoBucket`); }
+  if (!Key)       { sg.logError(`NoKey`,    `sending uplaod`, {Bucket,Key,pathname,s3path}); return callback(`NoKey`); }
+  if (!Body)      { sg.logError(`NoBody`,   `sending uplaod`, {Bucket,Key,pathname,s3path}); return callback(`NoBody`); }
+
+  var upload = s3.upload({Bucket, Key, Body, ContentType:'text/plain'}, {partSize: 6 * 1024 * 1024});
+
+  upload.on('httpUploadProgress', (progress) => {
+    sg.debugLog(`uploading file`, {progress});
+  });
+
+  upload.send(function(err, data) {
+    if (!sg.ok(err, data))  { sg.logError(err, `sending upload`, {Bucket, Key}); }
+
+    return callback(err, data);
+  });
+}
+
+function parseS3Path(s3path) {
+  const m = s3path.match(/s3:[/][/]([^/]+)[/](.*)/);
+  if (!m) { return; }
+
+  const Bucket = m[1];
+  const Key = m[2];
+
+  return {Bucket,Key};
+}
+
 function readJsonFile(filename_) {
+  if (!filename_) {
+    return; /* undefined */
+  }
+
   const filename = path.join(process.cwd(), filename_);
-  // console.error(`rjf`, {filename});
   if (!fs.existsSync(filename)) { return; }
 
   return require(filename);

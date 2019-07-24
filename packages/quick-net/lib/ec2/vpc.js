@@ -818,9 +818,14 @@ mod.xport({createVpcEndpoint: function(argv, context, callback) {
         my.created  = 1;
         VpcEndpointId = my.result.VpcEndpoint.VpcEndpointId;
 
-        // Cannot tag VpcEndpoints
+        // Tag it
+        var   tags = {};
 
-        return next();
+        return tag({type:'VpcEndpoint', id: VpcEndpointId, rawTags: defaultTags, tags, adjective, suffix}, context, function(err, data) {
+          if (!sg.ok(err, data))  { console.error(err); }
+
+          return next();
+        });
       });
     }, function(my, next) {
 
@@ -920,7 +925,7 @@ mod.xport({getSubnets: function(argv, context, callback) {
             }
 
             return sg.reduce(subnetNames, m0, (m, subnetName) => {
-              if (subnetTag.startsWith(subnetName)) {
+              if (subnetTag.startsWith(subnetName.toLowerCase())) {
                 return sg.ap(m, subnet);
               }
               return m;

@@ -8,8 +8,8 @@
 #==    _ = [<dir=[.]>]
 #==
 #==    --name=[@json_from(package.json).config.quickNet.lambdaName]
-#==    --Bucket=[@json_from(_config/[stage]/env.json).DeployBucket]
 #==    --stage=[dev]
+#==    --Bucket=[@json_from(./_config/[stage]/env.json).DeployBucket]
 #==
 #==    --claudia-deploy
 #==

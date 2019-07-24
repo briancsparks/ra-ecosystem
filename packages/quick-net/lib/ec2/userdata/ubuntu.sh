@@ -55,13 +55,13 @@ ssh-keyscan github.azc.ext.hp.com   >> ~/.ssh/known_hosts
 #AAAA INSTALL_OPS
 ## ----------------------------------------------------------------------------------------------
 # If devOps, make things easier
-if [[ -n $INSTALL_OPS ]]; then
-  echo "Installing ops"
-
-  apt install -y python-pip
-  pip install --upgrade pip
-  pip install awscli --upgrade
-fi
+#if [[ -n $INSTALL_OPS ]]; then
+#  echo "Installing ops"
+#
+#  apt install -y python-pip
+#  pip install --upgrade pip
+#  pip install awscli --upgrade
+#fi
 #ZZZZ INSTALL_OPS
 
 
@@ -91,19 +91,19 @@ cat >> /home/ubuntu/mk-compliant  <<'EOF'
 
 group_name="mario-${AWS_ACCT_TYPE}"
 
-if [[ -n $tenable_io_key ]]; then
+if [[ -n $TENABLE_IO_KEY ]]; then
 
   mkdir -p ~/zz_packages && cd $_
   curl -s -O "https://s3.amazonaws.com/mobilewebprint-deploy/buildout/packages/NessusAgent-6.10.7-ubuntu1110_amd64.deb"
   sudo dpkg -i "$(find ./ -maxdepth 1 -type f | egrep 'NessusAgent.*\.deb$')"
 
-  sudo /opt/nessus_agent/sbin/nessuscli agent link --key="$tenable_io_key" --host=cloud.tenable.com --port=443 --groups="$group_name" --name="${HOSTNAME}"
+  sudo /opt/nessus_agent/sbin/nessuscli agent link --key="$TENABLE_IO_KEY" --host=cloud.tenable.com --port=443 --groups="$group_name" --name="${HOSTNAME}"
   sleep 3
   sudo service nessusagent start
 
 fi
 
-if [[ -n $cloudstrike_id ]]; then
+if [[ -n $CLOUDSTRIKE_ID ]]; then
 
   if ! which aws; then
     if ! which python-pip; then
@@ -119,7 +119,7 @@ if [[ -n $cloudstrike_id ]]; then
   sudo dpkg -i falcon-sensor_4.16.0-6109_amd64.deb || true
   sudo apt-get -f -y install
 
-  sudo /opt/CrowdStrike/falconctl -s --cid="${cloudstrike_id}"
+  sudo /opt/CrowdStrike/falconctl -s --cid="${CLOUDSTRIKE_ID}"
   sudo systemctl start falcon-sensor
 
 fi

@@ -11,6 +11,8 @@ const libTag                  = require('../lib/ec2/tags');
 const libVpc                  = require('../lib/ec2/vpc');
 const libCidr                 = require('../lib/ec2/cidr');
 const libDescribe             = require('../lib/ec2/vpc/describe');
+const awsDefs                 = require('../lib/aws-defs');
+const AWS                     = require('aws-sdk');
 const superb                  = require('superb');
 
 const firstIpInCidr           = libCidr.firstIpInCidr;
@@ -22,10 +24,14 @@ const getTag                  = utils.getTag;
 const tag                     = ra.load(libTag, 'tag');
 const mod                     = ra.modSquad(module, 'quickNet');
 
+const config                  = new AWS.Config({paramValidation:false, region:'us-east-1', ...awsDefs.options});
+const ec2                     = new AWS.EC2(config);
+
 var   sgsPlus = [];
 var   subnetKinds = [
   {name: 'worker',  bits:20, visibility:'private'},
-  {name: 'webtier', bits:24, visibility:'public',     publicIp:true},
+  {name: 'webtier', bits:24, visibility:'public',     publicIp:true,   nat:true},
+  {name: 'admin',   bits:24, visibility:'public',     publicIp:true},
   {name: 'db',      bits:24, visibility:'private'},
   {name: 'util',    bits:24, visibility:'private'},
 ];
@@ -37,13 +43,14 @@ const getSecurityGroupId = function(name) {
 
 mod.xport({manageVpc: function(argv, context, callback) {
 
-  // ra invoke packages\quick-net\commands\vpcs.js manageVpc --program=ratest --az=a,b,c --classB=111
-  // ra invoke packages\quick-net\commands\vpcs.js manageVpc --program=ratest --az=a     --classB=113
+  // ra invoke commands\vpcs.js manageVpc --program=ratest   --az=a,b,c --classB=111
+  // ra invoke commands\vpcs.js manageVpc --program=ratest   --az=a     --classB=113
+  // ra invoke commands\vpcs.js manageVpc --program=qnettest --az=c     --classB=21   --skip-nat --skip-endpoint-services
 
   const ractx     = context.runAnywhere || {};
   const { fra }   = (ractx.quickNet__manageVpc || ractx);
 
-  const sgs = [...sgsPlus, () => ({
+  var   sgs = [...sgsPlus, () => ({
     GroupName:    'wide',
     Description:  'Available to all within data center',
     ingress: [{
@@ -62,6 +69,19 @@ mod.xport({manageVpc: function(argv, context, callback) {
     }]
   })];
 
+  sgs = [...sgs, () => ({
+    GroupName:    'worldssh',
+    Description:  'Ssh for everyone',
+    ingress: [{
+      /*GroupId*/
+      IpProtocol:   'tcp',
+      CidrIp:       '0.0.0.0/0',
+      FromPort:     22,
+      ToPort:       22,
+      Description:  'ssh'
+    }]
+  })];
+
   return fra.iwrap(function(abort, calling) {
 
     const { describeVpcs } = fra.loads(libDescribe, 'describeVpcs', fra.opts({}), abort);
@@ -73,17 +93,19 @@ mod.xport({manageVpc: function(argv, context, callback) {
     const { createRoute } = fra.loads(libVpc, 'createRoute', fra.opts({abort:false}), abort);
     const { createVpcEndpoint } = fra.loads(libVpc, 'createVpcEndpoint', fra.opts({}), abort);
 
-    const region            = fra.arg(argv, 'region', {def: 'us-east-1'});
-    const skipNat           = fra.arg(argv, 'skip-nat,skipNat,skipNats');
+    const region                  = fra.arg(argv, 'region', {def: 'us-east-1'});
+    const skipNat                 = fra.arg(argv, 'skip_nat,skipNat,skipNats');
+    const skipEndpoints           = fra.arg(argv, 'skip_endpoints,skipEndpoint,skipEndpoints');
+    const skipEndpointServices    = fra.arg(argv, 'skip_endpoint_services,skipEndpointServices');
 
-    var    program           = fra.arg(argv, 'program', {required:true});
-    var    classB            = fra.arg(argv, 'classB,class-b', {required:true});
-    var    VpcId             = fra.arg(argv, 'VpcId,vpc');
-    var    vpcCidr           = fra.arg(argv, 'vpcCidr,cidr');
-    var    azLetters         = fra.arg(argv, 'azLetters,az', {array:true})                     || 'a,b'.split(',');
-    var    CidrBlock         = `10.${classB}.0.0/16`;
-    var    adjective         = fra.arg(argv, 'adjective,adj')                                  || getSuperb();
-    var    suffix            = fra.arg(argv, 'suffix');
+    var    program                 = fra.arg(argv, 'program', {required:true});
+    var    classB                  = fra.arg(argv, 'classB,class-b', {required:true});
+    var    VpcId                   = fra.arg(argv, 'VpcId,vpc');
+    var    vpcCidr                 = fra.arg(argv, 'vpcCidr,cidr');
+    var    azLetters               = fra.arg(argv, 'azLetters,az', {array:true})                     || 'a,b'.split(',');
+    var    CidrBlock               = `10.${classB}.0.0/16`;
+    var    adjective               = fra.arg(argv, 'adjective,adj')                                  || getSuperb();
+    var    suffix                  = fra.arg(argv, 'suffix');
 
     // if (fra.argErrors())    { return fra.abort(); }
 
@@ -100,9 +122,26 @@ mod.xport({manageVpc: function(argv, context, callback) {
     var   ids                 = {};
     var   azItems             = {};
 
-    var   vpc;
+    // ------------------------------ Fixup inputs ------------------------------
 
+    // If we do not have a NAT, make all the subnets public, with IP addresses
+    if (skipNat) {
+      subnetKinds = sg.reduce(subnetKinds, [], (m, kind) => {
+        return [...m, {...kind, visibility:'public', publicIp:true, nat:false}];
+      });
+    }
+sg.elog(`subnetKinds`, {subnetKinds});
+
+    // If the caller wants endpoint services, which require sgs
+    if (!skipEndpointServices) {
+      sgs = [...sgs, ...sgsForEndpointServices];
+    }
+
+    // ------------------------------ GO ------------------------------
+    var   vpc;
     return sg.__run2({result:{}}, callback, [function(my, next, last) {
+
+      // ---------------------------------------- Existing Vpc? ----------
 
       // Must figure out what vpc we are working with
       if (VpcId)           { return next(); }
@@ -113,12 +152,16 @@ mod.xport({manageVpc: function(argv, context, callback) {
           VpcId     = (vpc || {}).VpcId;
           vpcCidr   = (vpc || {}).CidrBlock;
           adjective = _.first((getTag(vpc, 'name') || '').split('-')) || adjective;
+
+          sg.elog(`described VPC: ${adjective}-Vpc`, {CidrBlock: vpcCidr, VpcId});
         }
 
         return next();
       });
 
     }, function(my, next) {
+
+      // ---------------------------------------- Existing program name ----------
 
       // Must figure out what program we are working with
       if (program)           { return next(); }
@@ -131,12 +174,9 @@ mod.xport({manageVpc: function(argv, context, callback) {
       return next();
 
     }, function(my, next) {
-      // console.error(`init`, sg.inspect({vpc, VpcId, program, classB, vpcCidr, adjective}));
-      // return callback(null, {});
-      return next();
-
-    }, function(my, next) {
       my.resources = [];
+
+      // ---------------------------------------- Upsert Vpc ----------
 
       const exampleVpcData = {
         found: 1,
@@ -162,8 +202,7 @@ mod.xport({manageVpc: function(argv, context, callback) {
         }
       };
 
-
-      // ---------------------------------------- Vpc ----------
+      sg.elog(`upserting VPC: ${adjective}-Vpc`, {CidrBlock});
       return upsertVpc({CidrBlock, adjective}, {}, function(err, data) {
         my.result.vpc = data.result;
 
@@ -173,21 +212,30 @@ mod.xport({manageVpc: function(argv, context, callback) {
 
         vpcCidr = CidrBlock;
 
-        return next();
+        sg.elog(`upserted VPC: ${adjective}-Vpc`, {CidrBlock, VpcId});
+
+        // Tag it
+        return ec2.createTags({
+          Resources : [VpcId],
+          Tags      : [
+            {Key:'quicknet:primaryaz', Value: (azLetters || ['a'])[0]}
+          ]
+        }, next);
+
       });
 
     }, function(my, next) {
 
+      // ---------------------------------------- Compute Subnet config ----------
+
       const firstVpcIp            = firstIpInCidr(vpcCidr);
       var   currCidrFirst         = firstVpcIp;
 
-      // ---------------------------------------- Subnets ----------
-
-      // Calculate the subnet params
+      // Calculate the subnet params (build up `subnetList`)
       var   subnetList = [];
       var   cidrBits;
 
-      my.result.subnets = {};
+      my.result.subnets = [];
       sg.__each(subnetKinds, function(kind, next) {
         const { publicIp } = kind;
 
@@ -208,12 +256,12 @@ mod.xport({manageVpc: function(argv, context, callback) {
           currCidrFirst = lastIpInCidr(CidrBlock) + 1;
           return next();
 
-        }, function() {
-          return next();
-        });
+        }, next);
       }, function() {
 
-        const exampleSubnetData = {
+      // ---------------------------------------- Upsert Subnets ----------
+
+      const exampleSubnetData = {
           found: 1,
           result: {
             Subnet: {
@@ -240,14 +288,17 @@ mod.xport({manageVpc: function(argv, context, callback) {
           const { name, visibility }                  = kind;
 
           // ----- Create the subnets
+          sg.elog(`upserting subnet: ${adjective}-${name}-${AvailabilityZone}`, {CidrBlock, subnet});
           return upsertSubnet(subnet, {}, function(err, data) {
-            my.result.subnets[AvailabilityZone] = data.result;
+            // my.result.subnets[AvailabilityZone] = data.result;
+            my.result.subnets.push(data.result.Subnet);
+
             my.resources.push(data.result.Subnet.SubnetId);
 
             if (publicIp) {
-              publicSubnets.push(data.result.Subnet);
+              publicSubnets.push({...subnet, ...data.result.Subnet});
             } else {
-              privateSubnets.push(data.result.Subnet);
+              privateSubnets.push({...subnet, ...data.result.Subnet});
             }
             allSubnets.push(data.result.Subnet);
             subnetByType[name] =  subnetByType[name] || [];
@@ -255,7 +306,16 @@ mod.xport({manageVpc: function(argv, context, callback) {
 
             sg.setOn(azItems, [AvailabilityZone, 'subnets', name], data.result.Subnet);
 
-            return next();
+            // Tag it
+            const Tags = [
+              {Key:'visibility', Value: visibility}
+            ];
+
+            return ec2.createTags({Resources : [data.result.Subnet.SubnetId], Tags}, function() {
+              sg.elog(`upserted subnet: ${adjective}-${name}-${AvailabilityZone}`, {CidrBlock, subnet: data.result.Subnet});
+              return next();
+            });
+
           });
         }, function() {
           return next();
@@ -271,6 +331,7 @@ mod.xport({manageVpc: function(argv, context, callback) {
           const secGroup = getSecGroup();
           const { GroupName, Description, ingress } = secGroup;
 
+          sg.elog(`upserting sg: ${adjective}-${GroupName}`, {GroupName, Description});
           return upsertSecurityGroup({VpcId, GroupName, Description, adjective}, {}, function(err, data) {
             const { GroupId } = data.result.SecurityGroup;
             my.result.securityGroups[GroupName] = data.result;
@@ -279,6 +340,7 @@ mod.xport({manageVpc: function(argv, context, callback) {
 
             return sg.__each(ingress, function(rule, next) {
               return upsertSecurityGroupIngress({GroupId, adjective, ...rule}, {}, function(err, data) {
+                sg.elog(`upserted sg and rule: ${adjective}-${GroupName}`, {GroupName, rule});
                 return next();
               });
             }, function() {
@@ -295,11 +357,13 @@ mod.xport({manageVpc: function(argv, context, callback) {
       }]);
 
     }, function(my, next) {
-      if (skipNat)  { return next(); }
+      // if (skipNat)  { return next(); }
 
       // ---------------------------------------- Gateway / NAT ----------
       my.result.natGateways = {};
       my.result.addresses = {};
+
+      sg.elog(`upserting internetGateway: ${adjective}-IG`);
       return createInternetGateway({VpcId, adjective}, {}, function(err, data) {
         const { InternetGatewayId } = data.result.InternetGateway;
         my.result.internetGateway = data.result;
@@ -308,9 +372,14 @@ mod.xport({manageVpc: function(argv, context, callback) {
         GatewayId       = InternetGatewayId;
         internetGateway = data.result.InternetGateway;
 
+        sg.elog(`upserted internetGateway: ${adjective}-IG`, {InternetGatewayId});
+
         return sg.__eachll(publicSubnets, function(subnet, next) {
           const { SubnetId, AvailabilityZone }  = subnet;
           const   suffix                        = zoneSuffix(AvailabilityZone);
+
+          // if (skipNat) { return next(); }
+          if (!subnet.kind.nat) { return next(); }
 
           return allocateAddress({VpcId, SubnetId, adjective, suffix}, {}, function(err, data) {
             const { AllocationId } = data.result.Address;
@@ -327,13 +396,14 @@ mod.xport({manageVpc: function(argv, context, callback) {
               return next();
             });
           });
+
         }, function() {
           return next();
         });
       });
 
     }, function(my, next) {
-      if (skipNat)  { return next(); }
+      // if (skipNat)  { return next(); }
 
       // ---------------------------------------- Public Route Table ----------
       return createRouteTable({VpcId, public:true, adjective, suffix:'public'}, {}, function(err, data) {
@@ -358,7 +428,7 @@ mod.xport({manageVpc: function(argv, context, callback) {
       });
 
     }, function(my, next) {
-      if (skipNat)  { return next(); }
+      // if (skipNat)  { return next(); }
 
       // ---------------------------------------- Private Route Tables ----------
 
@@ -372,12 +442,16 @@ mod.xport({manageVpc: function(argv, context, callback) {
           my.resources.push(RouteTableId);
           RouteTableIds.push(RouteTableId);
 
-          const { NatGatewayId } = sg.deref(azItems, [AvailabilityZone,  'NatGateway']);
-          return createRoute({RouteTableId, NatGatewayId, DestinationCidrBlock:'0.0.0.0/0', adjective}, {}, function(err, data) {
-            return associateRouteTable({SubnetId, RouteTableId, adjective}, {}, function(err, data) {
-              return next();
+          if (!skipNat) {
+            const { NatGatewayId } = sg.deref(azItems, [AvailabilityZone,  'NatGateway']);
+            return createRoute({RouteTableId, NatGatewayId, DestinationCidrBlock:'0.0.0.0/0', adjective}, {}, function(err, data) {
+              return associateRouteTable({SubnetId, RouteTableId, adjective}, {}, function(err, data) {
+                return next();
+              });
             });
-          });
+          }
+
+          return next();
         });
 
       }, function() {
@@ -385,19 +459,24 @@ mod.xport({manageVpc: function(argv, context, callback) {
       });
 
     }, function(my, next) {
-      if (skipNat)  { return next(); }
+      // if (skipNat)  { return next(); }
 
       // ---------------------------------------- Vpc Endpoints ----------
       var   ServiceName = `com.amazonaws.${region}.s3`;
-      return createVpcEndpoint({VpcId,ServiceName,RouteTableIds,adjective}, {}, function(err, data) {
+      const suffix      = _.last(ServiceName.split('.'));
+      return createVpcEndpoint({VpcId,ServiceName,RouteTableIds,adjective,suffix}, {}, function(err, data) {
 
         var   ServiceName = `com.amazonaws.${region}.dynamodb`;
-        return createVpcEndpoint({VpcId,ServiceName,RouteTableIds,adjective}, {}, function(err, data) {
+        const suffix      = _.last(ServiceName.split('.'));
+        return createVpcEndpoint({VpcId,ServiceName,RouteTableIds,adjective,suffix}, {}, function(err, data) {
 
           return next();
         });
       });
+
     }, function(my, next) {
+      if (skipEndpointServices)  { return next(); }
+
       // ---------------------------------------- Vpc Interface Endpoints ----------
       const VpcEndpointType     = 'Interface';
       const PrivateDnsEnabled   = true;
@@ -719,7 +798,9 @@ sgsPlus = [() => ({
     ToPort:       22,
     Description:  'SSH from admin instances'
   }]
-}), () => ({
+})];
+
+var sgsForEndpointServices = [() => ({
   GroupName:    'ECS_endpoint',      // <-------------------------------------------------------
   Description:  'Access to ECS Endpoint',
   ingress: [{
@@ -807,7 +888,9 @@ sgsPlus = [() => ({
     ToPort:       443,
     Description:  'ec2 Endpoint Access'
   }]
-})];
+})
+];
+
 
 
 function getSuperb() {

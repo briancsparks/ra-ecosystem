@@ -772,7 +772,7 @@ const FuncRa = function(argv, context, callback, origCallback, ractx, options_ =
 
     // If we get here, we did not find it.
     if (required) {
-      self.argErrs = sg.ap(self.argErrs, {code: 'ENOARG', ...self.argTypes[defName]});
+      self.argErrs = sg.ap(self.argErrs, {code: 'ENOARG0', ...self.argTypes[defName], defName, names_, options});
     }
 
     return recordArg(def);
@@ -883,7 +883,7 @@ const FuncRa = function(argv, context, callback, origCallback, ractx, options_ =
     } else {
       _.each(args, function(value, name) {
         if (sg.isnt(value)) {
-          self.argErrs = sg.ap(self.argErrs, {code: 'ENOARG', ...self.argTypes[name]});
+          self.argErrs = sg.ap(self.argErrs, {code: 'ENOARG1', ...self.argTypes[name], name, value:`${value}`, args, args_});
         }
       });
     }
