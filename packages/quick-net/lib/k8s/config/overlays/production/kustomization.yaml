@@ -1,0 +1,9 @@
+
+# overlays/production/kustomization
+
+commonLabels:
+  variant: prod
+bases:
+  - ../../base
+patches:
+  - patch-env.yaml

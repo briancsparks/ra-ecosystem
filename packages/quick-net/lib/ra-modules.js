@@ -19,6 +19,10 @@ const modFnMap = {
     filename: path.join(__dirname, 'data-tap', 'status.js'),
     fnNames:  ['pushStatus'],
   },
+  createConfigMap : {
+    filename: path.join(__dirname, 'k8s', 'lib', 'config-map.js'),
+    fnNames:  ['createConfigMap', '_createConfigMap_'],
+  },
   // ec2: {
   //   filename: path.join(__dirname, 'ec2', 'ec2.js'),
   //   fnNames:  ['upsertInstance'],

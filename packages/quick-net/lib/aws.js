@@ -11,6 +11,9 @@ const mod                     = ra.modSquad(module);
 const config_                 = {paramValidation:false, region:'us-east-1', ...awsDefs.options};
 const config                  = new AWS.Config(config_);
 const ec2                     = new AWS.EC2(config);
+const sts                     = new AWS.STS(config);
+
+exports.defs                  = awsDefs;
 
 const awsService = function(name, options) {
   const config  = new AWS.Config(sg.merge(config_, options));
@@ -81,7 +84,7 @@ const awsFns = function(service, names_, options1, abort) {
             if (sg.ok(err, data))   { return callback(err, data, ...rest); }
 
             /* is it one that says retriable, but really isnt? */
-            if (err.errno == 'EPIPE') {
+            if (err.errno === 'EPIPE') {
               console.error(`----------------------------------------------------------`);
               console.error(`  Error EPIPE might mean your proxy is not setup correctly`);
               console.error(`----------------------------------------------------------`);
@@ -181,6 +184,16 @@ const AwsFilterObject = function(obj, ...rest) {
   return result;
 };
 
+const getCallerAccount = async function() {
+  const identity = await sts.getCallerIdentity({}).promise();
+  return identity.Account;
+};
+
+const getCallerArn = async function() {
+  const identity = await sts.getCallerIdentity({}).promise();
+  return identity.Arn;
+};
+
 exports.awsService        = awsService;
 exports.awsFns            = awsFns;
 exports.awsFilters        = awsFilters;
@@ -191,3 +204,5 @@ exports.AwsFilterObject   = AwsFilterObject;
 exports.isAwsProp         = isAwsProp;
 exports.awsKey            = awsKey;
 exports.AWS               = AWS;
+exports.getCallerArn      = getCallerArn;
+exports.getCallerAccount  = getCallerAccount;

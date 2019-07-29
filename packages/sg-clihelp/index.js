@@ -18,7 +18,7 @@ const os   = sg.os            = require('os');
 const util = sg.util          = require('util');
 const sh   = sg.sh            = require('shelljs');
 
-var   ARGV;
+var   ARGV  = sg.ARGV();
 
 // -------------------------------------------------------------------------------------
 //  Data
@@ -35,6 +35,7 @@ sg.grepLines    = grepLines;
 sg.include      = include;
 sg.from         = from;
 sg.startupDone  = startupDone;
+sg.runTopAsync  = runTopAsync;
 
 // -------------------------------------------------------------------------------------
 // routes
@@ -105,7 +106,38 @@ function startupDone(ARGV, modfilename, failed, msg) {
   return false;
 }
 
-function from(...args) {
+/**
+ * Reads a key out of a .json file.
+ *
+ * @param    {string}  dirname   - The directory of the JSON file.
+ * @param    {string}  filename  - The filename of the JSON file.
+ * @param    {string}  key       - The dotted key to retrieve.
+ *
+ * @returns  {Object}            - The value read from the JSON file.
+ *
+ *//**
+ * Reads a key out of a .json file.
+ *
+ * @param    {string[]}   filename  - An Array of Strings to be joined to build the filename.
+ * @param    {string}     key       - The dotted key to retrieve.
+ *
+ * @returns  {Object}               - The value read from the JSON file.
+ *
+ *//**
+ * Reads a key out of a .json file.
+ *
+ * @param    {string}     filename  - The full filename.
+ * @param    {string}     key       - The dotted key to retrieve.
+ *
+ * @returns  {Object}               - The value read from the JSON file.
+ *
+ *//**
+ * Reads a key out of a .json file.
+ *
+ * @param    {...Object}  args   - Args.
+ * @returns  {Object}            - The value read from the JSON file.
+ */
+ function from(...args) {
   if (args.length === 3) {
     let [dirname,filename,key] = args;
     return _from_(path.join(dirname, filename), key);
@@ -122,6 +154,31 @@ function from(...args) {
   }
 
   return _from_(...args);
+}
+
+/**
+ * Runs an async function from the top-level.
+ *
+ * @param {function}  main            - The function to run.
+ * @param {string}    [name='main']   - The name of the function for display and debugging.
+ */
+function runTopAsync(main, name='main') {
+  (async () => {
+    var [err, result] = await main();
+    if (err) {
+      return announceError(err);
+    }
+
+    ARGV.d(`${name}:`, {result});
+  })().catch(err => {
+    // Deal with the fact the chain failed
+    console.error(`an error in ${name}`, err);
+  });
+
+  function announceError(err) {
+    ARGV.w(`Error in ${name}`, err);
+    return err;
+  }
 }
 
 function include(dirname, filename) {

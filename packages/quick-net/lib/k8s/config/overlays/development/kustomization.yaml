@@ -1,0 +1,9 @@
+
+# overlays/development/kustomization
+
+commonLabels:
+  variant: dev
+bases:
+  - ../../base
+patches:
+  - patch-env.yaml

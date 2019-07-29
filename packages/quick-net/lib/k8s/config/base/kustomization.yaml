@@ -1,0 +1,8 @@
+
+# base/kustomization
+
+resources:
+  - webtier/deployment.yaml
+  - webtier/services.yaml
+  - datatier/deployment.yaml
+  - datatier/services.yaml

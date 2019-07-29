@@ -1,0 +1,70 @@
+
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: nginx-ingress
+  labels:
+    app: nginx-ingress
+
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      app: nginx-ingress
+
+  # The PodTemplate
+  template:
+    metadata:
+      labels:
+        app: nginx-ingress
+
+    # The Pod
+    spec:
+
+      volumes:
+        - name: cert-volume
+          secret:
+            secretName: nginxcert
+
+        - name: nginxconfig-volume
+          configMap:
+            name: nginxconfig
+
+      containers:
+      - name: nginx-ingress
+        image: briancsparks/quicknet-k8s-nginx-ingress
+        command: ["/usr/bin/auto-reload-nginx"]
+        args: ["-g", "daemon off;"]
+
+        ports:
+        - containerPort: 80
+        - containerPort: 443
+
+        livenessProbe:
+          httpGet:
+            path: /index.html
+            port: 80
+          initialDelaySeconds: 30
+          timeoutSeconds: 1
+
+        volumeMounts:
+          - mountPath: /etc/nginx/ssl
+            name: cert-volume
+          - mountPath: /etc/nginx/conf.d
+            name: nginxconfig-volume
+
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/usr/bin/nginx", "-s", "quit"]
+
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+
+
+
+
+

@@ -1,0 +1,17 @@
+
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: redis
+
+spec:
+
+  # The PodTemplate
+  template:
+    spec:
+      containers:
+      - name: redis
+        envFrom:
+          - configMapRef:
+              name: prod-environment

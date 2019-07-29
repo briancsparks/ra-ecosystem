@@ -56,6 +56,11 @@ function ARGV(input = process.argv) {
   // Let `minimist` add what it does best
   argv    = sg.smartExtend(argv, require('minimist')(args));
 
+  // Active development means debug (unless quiet)
+  if (process.env.ACTIVE_DEVELOPMENT && !argv.quiet) {
+    argv.debug = true;
+  }
+
   // Verbose implies debug
   if (argv.verbose) {
     argv.debug = true;

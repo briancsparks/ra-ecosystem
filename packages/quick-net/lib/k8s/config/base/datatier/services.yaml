@@ -1,0 +1,37 @@
+
+# ----- MongoDB -----
+apiVersion: v1
+kind: Service
+
+metadata:
+  name: mongodb
+  labels:
+    name: mongodb
+
+spec:
+  selector:
+    app: mongodb
+
+  ports:
+  - port: 27017
+    targetPort: 27017
+
+---
+
+# ----- Redis -----
+apiVersion: v1
+kind: Service
+
+metadata:
+  name: redis
+  labels:
+    name: redis
+
+spec:
+  selector:
+    app: redis
+
+  ports:
+  - port: 6379
+    targetPort: 6379
+

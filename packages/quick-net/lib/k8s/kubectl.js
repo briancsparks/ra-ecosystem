@@ -6,6 +6,7 @@
 const ra                      = require('run-anywhere').v2;
 const sg0                     = ra.get3rdPartyLib('sg-argv');
 const { _ }                   = sg0;
+const os                      = require('os');
 const qm                      = require('quick-merge').qm;
 const sg                      = sg0.merge(sg0, require('sg-exec'), require('sg-clihelp'));
 const Request                 = require('kubernetes-client/backends/request');
@@ -17,7 +18,7 @@ const {test}                  = sg.sh;
 
 const mod                     = ra.modSquad(module, 'kubectl');
 
-const backend                 = new Request(Request.config.fromKubeconfig(`${process.env.HOME}/.kube/config`));
+const backend                 = new Request(Request.config.fromKubeconfig(`${os.homedir()}/.kube/config`));
 const client                  = new Client({backend, version: '1.13'});
 
 sg.ARGV();
@@ -31,8 +32,8 @@ mod.async({nginxConfConfigMap: async function(argv, context) {
   try {
     const confdir = theDir(argv, __dirname);
 
-    result = await execa.stdout('kubectl', ['create', 'configmap', 'nginxconfig', `--from-file=${confdir}`, '-o', 'json', '--dry-run']);
-    json   = sg.safeJSONParse(result);
+    result        = await execa.stdout('kubectl', ['create', 'configmap', 'nginxconfig', `--from-file=${confdir}`, '-o', 'json', '--dry-run']);
+    const json    = sg.safeJSONParse(result);
 
     var currentConfigMap;
     try {
@@ -64,7 +65,7 @@ mod.async({ensureCerts: async function(argv, context) {
   }
 
   //openssl req -x509 -nodes -days 365 -newkey rsa:4096 -keyout ${NGINX_KEY} -out ${NGINX_CRT} -subj "/CN=mario/O=mario"
-  const CN        = argv.CN || argv.cn || 'mario'
+  const CN        = argv.CN || argv.cn || 'mario';
   const crtfile   = '/tmp/nginx.crt';
   const keyfile   = '/tmp/nginx.key';
 
@@ -330,12 +331,12 @@ function theDir(argv, dirname) {
   var   confdir = argv.confdir;
 
   // They might have sent in a full-path
-  if (confdir[0] === '/') {
+  if (confdir && confdir[0] === '/') {
     return confdir;
   }
 
   // Or it might be relative to cwd
-  confdir = sg.path.join(process.cwd(), confdir);
+  confdir = sg.path.join(process.cwd(), confdir || '.');
   if (test('-d', confdir)) {
     return confdir;
   }

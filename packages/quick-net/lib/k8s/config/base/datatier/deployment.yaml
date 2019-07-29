@@ -1,0 +1,86 @@
+
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: mongodb
+  labels:
+    name: mongodb
+
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      app: mongodb
+
+  # The PodTemplate
+  template:
+    metadata:
+      labels:
+        app: mongodb
+
+    # The Pod
+    spec:
+      volumes:
+      - name: mongodb-persistent-storage
+        awsElasticBlockStore:
+          volumeID: aws://us-east-1/vol-07b922110071fc6bc
+          fsType: ext4
+
+      containers:
+      - name: mongodb
+        image: mongo
+
+        ports:
+        - name: mongodb
+          containerPort: 27017
+          hostPort: 27017
+
+        volumeMounts:
+        - name:  mongodb-persistent-storage
+          mountPath:  /data/db
+
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: redis
+  labels:
+    name: redis
+
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      app: redis
+
+  # The PodTemplate
+  template:
+    metadata:
+      labels:
+        app: redis
+
+    # The Pod
+    spec:
+
+      containers:
+      - name: redis
+        image: redis
+
+        ports:
+        - name: redis
+          containerPort: 6379
+          hostPort: 6379
+
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+

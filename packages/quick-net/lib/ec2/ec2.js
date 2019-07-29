@@ -348,9 +348,8 @@ mod.xport({upsertInstance: function(argv, context, callback) {
         });
       }
 
-      // Add mongodb to apt -- only install (below) if install is requested, but we want to be able to install clients
+      // Add mongodb to apt for everyone -- only install (below) if install is requested, but we want to be able to install clients
       cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
-        // packages: ['mongodb-org'],
         apt:      {
           preserve_sources_list: true,
           sources: {
@@ -366,17 +365,9 @@ mod.xport({upsertInstance: function(argv, context, callback) {
       if (userdataOpts.INSTALL_MONGODB) {
         cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
           packages: ['mongodb-org'],
-          // apt:      {
-          //   preserve_sources_list: true,
-          //   sources: {
-          //     "mongodb-org-4.0.list": {
-          //       keyid: '9DA31620334BD75D9DCB49F368818C72E52529D4',
-          //       source: `deb https://repo.mongodb.org/apt/ubuntu ${osVersion}/mongodb-org/4.0 multiverse`
-          //     }
-          //   }
-          // },
           runcmd: [
             "sed -i -e 's/127.0.0.1/0.0.0.0/' /etc/mongod.conf",
+            "systemctl enable mongod",
           ],
         });
       }
@@ -418,7 +409,10 @@ mod.xport({upsertInstance: function(argv, context, callback) {
       // Install tools for dev-ops?
       if (userdataOpts.INSTALL_OPS) {
         cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
-          packages: ['python-pip']
+          packages: ['python-pip'],
+          runcmd: [
+            "pip install --upgrade awscli",
+          ],
         });
       }
 
