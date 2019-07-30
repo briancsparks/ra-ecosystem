@@ -26,6 +26,13 @@ var getRawBody = sg.getRawBody = function(req, callback) {
   });
 };
 
+/**
+ * Gets the HTTP request body as JSON.
+ *
+ * @param {ClientRequest}   req       - The standard Node request object.
+ * @param {function}        callback  - The standard callback.
+ * @returns {Object}                  - The parsed JSON object.
+ */
 var getBodyJson = function(req, callback) {
   var json;
 

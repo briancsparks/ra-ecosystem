@@ -10,6 +10,26 @@ var isnt, anyIsnt, is;
 
 var   sg = {_:_, libs:{util}};
 
+/**
+ * Creates an Error object.
+ *
+ * @param   {string}  code      - The code (like 'ENOENT'.)
+ * @param   {string}  message   - Any message.
+ * @returns {Error}
+ */
+sg.error = function(code, message) {
+
+  // Check if arg1 is already an Error object
+  if (_.isError(code)) {
+    return code;
+  }
+
+  // Return our own Error
+  var   err = new Error(message || code);
+  err.code = code;
+  return err;
+};
+
 var seconds = sg.seconds = sg.second = 1000,        second = seconds;
 var minutes = sg.minutes = sg.minute = 60*seconds,  minute = minutes;
 var hours   = sg.hours   = sg.hour   = 60*minutes,  hour   = hours;
