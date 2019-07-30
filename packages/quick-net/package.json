@@ -25,6 +25,10 @@
     "lib": "lib",
     "test": "__tests__"
   },
+  "devDependencies": {
+    "mongodb": "^3.3.0-beta2",
+    "redis": "^2.8.0",
+  },
   "dependencies": {
     "aws-sdk": "^2.382.0",
     "conf": "^5.0.0",
