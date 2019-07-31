@@ -1,0 +1,45 @@
+
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: check-cluster
+  labels:
+    name: check-cluster
+
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: check-cluster
+
+  # The PodTemplate
+  template:
+    metadata:
+      labels:
+        app: check-cluster
+
+    # The Pod
+    spec:
+
+      containers:
+      - name: check-cluster
+        image: briancsparks/quicknet-k8s-check-cluster
+        command: ['node']
+        args: ['/home/node/app/index.js', '--verbose']
+
+        ports:
+        - containerPort: 3000
+
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 29
+          timeoutSeconds: 1
+
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+

@@ -8,12 +8,14 @@ const sg0                     = ra.get3rdPartyLib('sg-argv');
 // const { _ }                   = sg0;
 const sg                      = sg0.merge(sg0, require('sg-exec'), require('sg-clihelp'));
 const {execa}                 = sg;
+const util                    = require('util');
+const execz                   = util.promisify(sg.execz);
 
 const mod                     = ra.modSquad(module, 'pushNginxIngress');
 
 const ARGV                    = sg.ARGV();
 const root                    = sg.path.join(__dirname, '../../..');
-const dockerfileDir           = sg.path.join(root, 'lib/k8s/webtier');
+const dockerfileDir           = sg.path.join(root, 'lib/k8s/tiers/webtier');
 const nginx_ingress           = 'quicknet-k8s-nginx-ingress';
 
 const defs = {
@@ -34,30 +36,16 @@ const defs = {
  *
  * @returns {Object}                    - The {localImage, repoImage} names.
  */
-const _pushNginxIngress_ = mod.async({_pushNginxIngress_: async function(argv, context ={}) {
-  const {
-    registry,
-    repository,
-    tag
-  }                   = argv;
+const _pushNginxIngress_ = mod.async({_pushNginxIngress_: async function({registry, repository, tag}, context ={}) {
 
   // Build params for the Docker commands (the local and repo image names)
   const localImage    = `${nginx_ingress}:${tag}`;
   const repoImage     = `${registry || repository}/${nginx_ingress}:${tag}`;
 
-  // ARGV.d(`pushNginxIngress`, {nginx_ingress, localImage, repoImage, dockerfileDir, registry, repository, tag});
-
-  // docker build ...
-  const dockerBuild     = await execa.stdout('docker', ['build', '-t', nginx_ingress, '.'], {cwd: dockerfileDir});
-  ARGV.v(`pushNginxIngress`, {dockerBuild});
-
-  // docker tag ...
-  const dockerTag       = await execa.stdout('docker', ['tag', localImage, repoImage], {cwd: dockerfileDir});
-  ARGV.v(`pushNginxIngress`, {dockerTag});
-
-  // docker push ...
-  const dockerPush      = await execa.stdout('docker', ['push', repoImage], {cwd: dockerfileDir});
-  ARGV.v(`pushNginxIngress`, {dockerPush});
+  // docker build, tag, push ...
+  await execz('docker', 'build', ['-t', nginx_ingress], '.', {cwd: dockerfileDir});
+  await execz('docker', 'tag', localImage, repoImage, {cwd: dockerfileDir});
+  await execz('docker', 'push', repoImage, {cwd: dockerfileDir});
 
   return {localImage, repoImage};
 }});

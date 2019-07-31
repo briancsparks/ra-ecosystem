@@ -10,6 +10,7 @@
   "license": "MIT",
   "dependencies": {
     "sg-argv": "^1.0.31",
+    "sg-exec": "^1.0.26",
     "shelljs": "^0.8.3"
   }
 }

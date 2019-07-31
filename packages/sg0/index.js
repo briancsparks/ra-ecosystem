@@ -483,7 +483,15 @@ var dottedKv = sg.dottedKv = function(o, k, v) {
 /**
  *  Build [v]
  *
- *  Just like kv(), so you can return ap(m, 42) or ap(42)
+ *  Just like kv(), so you can return ap(m, 42) or ap(42).
+ *
+ *  Will fizzle on null or undefined values.
+ *
+ * @param {Array}       a     - The array to add to.
+ * @param {*}           v     - The value.
+ * @param {...Object}   rest  - More values.
+ *
+ * @returns {Array}           - The augmented array.
  */
 var ap = sg.ap = function(a, v, ...rest) {
   if (arguments.length === 1)   { return sg.ap(null, arguments[0]); }

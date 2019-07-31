@@ -8,8 +8,9 @@
 // -------------------------------------------------------------------------------------
 //  Requirements
 //
-const sg                      = require('sg-argv');
-const { _ }                   = sg;
+const sg0                     = require('sg-argv');
+const { _ }                   = sg0;
+const sg                      = sg0.merge(sg0, require('sg-exec'));
 
 // Additions
 const fs   = sg.fs            = require('fs');
@@ -53,6 +54,7 @@ _.each(sg, (fn, name) => {
 //  Helper Functions
 //
 
+// ------------------------------------------------------------------------------------------------------------------
 /**
  * Called when you are going to give up processing.
  *
@@ -67,6 +69,7 @@ function die(msg, code = 113) {
   return code;
 }
 
+// ------------------------------------------------------------------------------------------------------------------
 /**
  * Prints the captured parts of the lines to stdout.
  *
@@ -88,6 +91,7 @@ function grepLines(regex, filename) {
   });
 }
 
+// ------------------------------------------------------------------------------------------------------------------
 function startupDone(ARGV, modfilename, failed, msg) {
   if (ARGV.help) {
     if (modfilename)    { grepLines(/^#==(.*)/, modfilename); }
@@ -106,6 +110,7 @@ function startupDone(ARGV, modfilename, failed, msg) {
   return false;
 }
 
+// ------------------------------------------------------------------------------------------------------------------
 /**
  * Reads a key out of a .json file.
  *
@@ -156,6 +161,7 @@ function startupDone(ARGV, modfilename, failed, msg) {
   return _from_(...args);
 }
 
+// ------------------------------------------------------------------------------------------------------------------
 /**
  * Runs an async function from the top-level.
  *
@@ -181,10 +187,12 @@ function runTopAsync(main, name='main') {
   }
 }
 
+// ------------------------------------------------------------------------------------------------------------------
 function include(dirname, filename) {
   return _include_(path.join(dirname, filename));
 }
 
+// ------------------------------------------------------------------------------------------------------------------
 function _from_(filename, key) {
   const mod     = _include_(filename);
   const result  = sg.deref(mod, key);
@@ -196,6 +204,7 @@ function _from_(filename, key) {
   return result;
 }
 
+// ------------------------------------------------------------------------------------------------------------------
 function _include_(filename) {
   try {
     return require(filename);

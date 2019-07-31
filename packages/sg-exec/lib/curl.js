@@ -10,7 +10,7 @@
 //
 const sg                      = require('sg-argv');
 const { _ }                   = sg;
-const execz                   = require('./execz');
+const execy                   = require('./execz').execy;
 const execa                   = require('execa');
 const libUrl                  = require('url');
 
@@ -92,7 +92,7 @@ function _curl_(url, body, options, curl_options, execa_options_, callback) {
     return execa.stderr('curl', args, execa_options);
   }
 
-  return execz({show:false}, execa_options, 'curl', args, callback);
+  return execy({show:false}, execa_options, 'curl', args, callback);
 }
 
 function addQuery(url_, query) {

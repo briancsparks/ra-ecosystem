@@ -26,9 +26,7 @@ const {region}                = qnAws.defs;
 
 const ARGV                    = sg.ARGV();
 const root                    = sg.path.join(__dirname, '..');
-const nginxConfDir            = 'lib/k8s/webtier/data/nginx-config/etc/nginx/conf.d';
-const dockerfileDir           = sg.path.join(root, 'lib/k8s/webtier');
-const nginx_ingress           = 'quicknet-k8s-nginx-ingress';
+const nginxConfDir            = 'lib/k8s/tiers/webtier/data/nginx-config/etc/nginx/conf.d';
 
 async function main() {
   var   result = {};

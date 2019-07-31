@@ -1,0 +1,16 @@
+
+apiVersion: v1
+kind: Service
+
+metadata:
+  name: check-cluster
+  labels:
+    name: check-cluster
+
+spec:
+  selector:
+    app: check-cluster
+
+  ports:
+  - port: 80
+    targetPort: 3000

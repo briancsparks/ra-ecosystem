@@ -26,26 +26,23 @@ const {region}                = qnAws.defs;
 
 const ARGV                    = sg.ARGV();
 const root                    = sg.path.join(__dirname, '..');
-const nginxConfDir            = 'lib/k8s/webtier/data/nginx-config/etc/nginx/conf.d';
-const dockerfileDir           = sg.path.join(root, 'lib/k8s/webtier');
-const nginx_ingress           = 'quicknet-k8s-nginx-ingress';
 
 async function main() {
   const stage     = ARGV.stage  || 'development';
 
   var   result = {};
 
-  // // ---------- Create the webtier ----------
-  // const setupWebtier      = await execa.stdout('node', ['./scripts/setup-webtier.js'], {cwd: root});
-  // result = {...result, setupWebtier};
+  // ---------- Create the webtier ----------
+  const setupWebtier      = await execa.stdout('node', ['./scripts/setup-webtier.js'], {cwd: root});
+  result = {...result, setupWebtier};
 
-  // // ---------- Create the datatier ----------
-  // const setupDatatier     = await execa.stdout('node', ['./scripts/setup-datatier.js'], {cwd: root});
-  // result = {...result, setupDatatier};
+  // ---------- Create the datatier ----------
+  const setupDatatier     = await execa.stdout('node', ['./scripts/setup-datatier.js'], {cwd: root});
+  result = {...result, setupDatatier};
 
-  // // ---------- Launch ----------
-  // const envConfigMap      = await execa.stdout('kubectl', ['apply', '-f', `lib/k8s/config/overlays/${stage}/config-map-env.yaml`], {cwd: root});
-  // result = {...result, envConfigMap};
+  // ---------- Launch ----------
+  const envConfigMap      = await execa.stdout('kubectl', ['apply', '-f', `lib/k8s/config/overlays/${stage}/config-map-env.yaml`], {cwd: root});
+  result = {...result, envConfigMap};
 
   const applyStage        = await execa.stdout('kubectl', ['apply', '-k', `lib/k8s/config/overlays/${stage}/`, '--record'], {cwd: root});
   result = {...result, applyStage};

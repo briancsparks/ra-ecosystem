@@ -8,7 +8,7 @@ metadata:
     name: mongodb
 
 spec:
-  replicas: 0
+  replicas: 1
   selector:
     matchLabels:
       app: mongodb
@@ -56,7 +56,7 @@ metadata:
     name: redis
 
 spec:
-  replicas: 0
+  replicas: 1
   selector:
     matchLabels:
       app: redis

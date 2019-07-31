@@ -168,6 +168,19 @@ function ARGV(input = process.argv) {
     return sg.warn(msg, one, two, ...args);
   };
 
+  argv.iv = function(msg, i_params, v_params) {
+    if (argv.verbose) {
+      return argv.v(msg, {...i_params, ...v_params});
+    }
+
+    return argv.i(msg, i_params);
+  };
+
+  argv.iv_if = function(test, ...rest) {
+    if (!test) { return; }
+    return argv.iv(...rest);
+  };
+
   argv.pod = function() {
     return sg.reduce(argv, {}, (m,v,k) => {
       if (_.isFunction(v))  { return m; }
