@@ -1,0 +1,18 @@
+#!/bin/bash -e
+
+eval "$(cli-shezargs $@)"
+
+[ -f Dockerfile ] || die "Need ./Dockerfile"
+[ -z $name ] && die "Need --name="
+
+local_name="quicknet"
+[ -n $k8s ] && local_name="${local_name}-k8s"
+local_name="${local_name}-${name}"
+
+[ -z $label ] && label="latest"
+[ -z $repo ] && repo="briancsparks"
+
+docker build -t "${local_name}:${label}" .
+docker tag "${local_name}:${label}" "${repo}/${local_name}:${label}"
+docker push "${repo}/${local_name}:${label}"
+

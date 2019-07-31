@@ -4,6 +4,7 @@ kind: Deployment
 
 metadata:
   name: check-cluster
+  namespace: default
   labels:
     name: check-cluster
 
@@ -31,12 +32,12 @@ spec:
         ports:
         - containerPort: 3000
 
-        livenessProbe:
-          httpGet:
-            path: /
-            port: 3000
-          initialDelaySeconds: 29
-          timeoutSeconds: 1
+#        livenessProbe:
+#          httpGet:
+#            path: /
+#            port: 3000
+#          initialDelaySeconds: 30
+#          timeoutSeconds: 1
 
         resources:
           limits:

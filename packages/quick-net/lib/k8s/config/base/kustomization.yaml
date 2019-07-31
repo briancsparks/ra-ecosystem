@@ -6,5 +6,5 @@ resources:
   - webtier/services.yaml
   - datatier/deployment.yaml
   - datatier/services.yaml
-  - apps/check-cluster/deployment.yaml
-  - apps/check-cluster/services.yaml
+#  - apps/check-cluster/deployment.yaml
+#  - apps/check-cluster/services.yaml

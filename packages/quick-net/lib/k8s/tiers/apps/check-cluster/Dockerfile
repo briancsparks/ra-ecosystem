@@ -1,10 +1,12 @@
 
 # meta: {"image":"quicknet-k8s-check-cluster", "repository":"briancsparks"}
 
-FROM node:12
+# FROM node:alpine
+# RUN apk add --no-cache socat curl redis
 
-# RUN apk add --no-cache socat curl redis\
+FROM node:12
 RUN apt-get update && apt-get install -y dnsutils
+
 
 RUN mkdir -p            /home/node/app
 
