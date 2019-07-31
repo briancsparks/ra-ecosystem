@@ -44,8 +44,8 @@ async function main() {
   const envConfigMap      = await execa.stdout('kubectl', ['apply', '-f', `lib/k8s/config/overlays/${stage}/config-map-env.yaml`], {cwd: root});
   result = {...result, envConfigMap};
 
-  const applyStage        = await execa.stdout('kubectl', ['apply', '-k', `lib/k8s/config/overlays/${stage}/`, '--record'], {cwd: root});
-  result = {...result, applyStage};
+//  const applyStage        = await execa.stdout('kubectl', ['apply', '-k', `lib/k8s/config/overlays/${stage}/`, '--record'], {cwd: root});
+//  result = {...result, applyStage};
 
 
   return [null, result];
