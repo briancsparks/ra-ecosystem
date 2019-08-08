@@ -36,7 +36,6 @@ spec:
         image: briancsparks/quicknet-k8s-nginx-ingress
         command: ["/usr/bin/auto-reload-nginx"]
         args: ["-g", "daemon off;"]
-        imagePullPolicy: IfNotPresent
 
         ports:
         - containerPort: 80

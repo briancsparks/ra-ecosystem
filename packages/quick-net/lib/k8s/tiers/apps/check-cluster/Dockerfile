@@ -1,7 +1,7 @@
 
-# meta: {"image":"quicknet-k8s-check-cluster", "repository":"briancsparks"}
+# meta: {"repository":"briancsparks", "image":"quicknet-k8s-check-cluster"}
 
-FROM briancsparks/quicknet-k8s-node-xenial
+FROM briancsparks/quicknet-k8s-node-xenial:latest
 
 RUN mkdir -p            /home/node/app
 

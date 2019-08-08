@@ -3,16 +3,15 @@ apiVersion: v1
 kind: Pod
 
 metadata:
-  name: xenial
+  name: xdebug
   namespace: default
 
 spec:
   containers:
-  - name: xenial
-    image: briancsparks/quicknet-k8s-node-xenial
+  - name: xdebug
+    image: briancsparks/quicknet-k8s-debug
     command:
       - sleep
       - "3600"
-    imagePullPolicy: IfNotPresent
   restartPolicy: Always
 

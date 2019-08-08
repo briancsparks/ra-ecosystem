@@ -2,14 +2,21 @@
 
 eval "$(cli-shezargs $@)"
 
+if [[ $# > 0 ]]; then
+  location="$1"
+  [[ -d $location ]] && cd "$1"
+  [[ -f $location ]] && cd "$(dirname $1)"
+fi
+
 [ -f Dockerfile ] || die "Need ./Dockerfile"
 
 # Check if the Dockerfile has the image name and repo:
-#    {"image":"xyz-k8s-check-cluster", "repository":"briancsparks"}
+#    meta: {"repository":"briancsparks", "image":"xyz-k8s-service"}
 if [[ "$(sed -n 's/.*meta:\s\({.*}\)/\1/p' Dockerfile | wc -l)" == 1 ]]; then
-  echo "Got it"
   local_name="$(sed -n 's/.*meta:\s\({.*}\)/\1/p' Dockerfile | jq -r '.image')"
   repo="$(sed -n 's/.*meta:\s\({.*}\)/\1/p' Dockerfile | jq -r '.repository')"
+
+  echo "Got metadata from Dockerfile image: |${local_name}|, repo: |${repo}|"
 
 else
 
