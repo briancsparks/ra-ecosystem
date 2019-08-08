@@ -1,6 +1,6 @@
 {
   "name": "quick-net",
-  "version": "1.0.79",
+  "version": "1.0.80",
   "description": "Create quick cloud network",
   "main": "index.js",
   "bin": {
