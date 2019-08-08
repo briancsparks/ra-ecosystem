@@ -25,7 +25,7 @@
     "exit-on-epipe": "^1.0.1",
     "express": "^4.16.4",
     "hard-rejection": "^1.0.0",
-    "lodash": "^4.17.11",
+    "lodash": "^4.17.13",
     "loud-rejection": "^1.6.0",
     "mongodb": "^3.1.10",
     "quick-merge": "^1.0.17",

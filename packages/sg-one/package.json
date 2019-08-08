@@ -18,6 +18,6 @@
   },
   "homepage": "https://github.com/briancsparks/ra-ecosystem/tree/master/packages/sg-one#readme",
   "dependencies": {
-    "lodash": "^4.17.11"
+    "lodash": "^4.17.13"
   }
 }
