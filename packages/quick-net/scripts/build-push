@@ -3,11 +3,23 @@
 eval "$(cli-shezargs $@)"
 
 [ -f Dockerfile ] || die "Need ./Dockerfile"
-[ -z $name ] && die "Need --name="
 
-local_name="quicknet"
-[ -n $k8s ] && local_name="${local_name}-k8s"
-local_name="${local_name}-${name}"
+# Check if the Dockerfile has the image name and repo:
+#    {"image":"xyz-k8s-check-cluster", "repository":"briancsparks"}
+if [[ "$(sed -n 's/.*meta:\s\({.*}\)/\1/p' Dockerfile | wc -l)" == 1 ]]; then
+  echo "Got it"
+  local_name="$(sed -n 's/.*meta:\s\({.*}\)/\1/p' Dockerfile | jq -r '.image')"
+  repo="$(sed -n 's/.*meta:\s\({.*}\)/\1/p' Dockerfile | jq -r '.repository')"
+
+else
+
+  [ -z $name ] && die "Need --name="
+
+  local_name="quicknet"
+  [ -n "$k8s" ] && local_name="${local_name}-k8s"
+  local_name="${local_name}-${name}"
+
+fi
 
 [ -z $label ] && label="latest"
 [ -z $repo ] && repo="briancsparks"

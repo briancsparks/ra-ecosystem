@@ -27,6 +27,7 @@ const {region}                = qnAws.defs;
 const ARGV                    = sg.ARGV();
 const root                    = sg.path.join(__dirname, '..');
 const nginxConfDir            = 'lib/k8s/tiers/webtier/data/nginx-config/etc/nginx/conf.d';
+const CN                      = ARGV.CN || 'quack.netlabzero.net';
 
 async function main() {
   var   result = {};
@@ -41,13 +42,14 @@ async function main() {
   result = {...result, nginxConfConfigMap};
 
   // ---------- Create secret for the nginx server certs ----------
-  // TODO: Fix hardcode quack...
-  const tlsSecretResult = await ensureTlsSecret({...ARGV.pod(), CN: 'quack.netlabzero.net', name: 'nginxcert'});
+  const tlsSecretResult = await ensureTlsSecret({...ARGV.pod(), CN, name: 'nginxcert'});
   result = {...result, tlsSecretResult};
 
   // ---------- Create web-tier Docker container ----------
-  const ingressResult   = await pushNginxIngress({...ARGV.pod()});
-  result = {...result, ingressResult};
+  if (ARGV.push_nginx || ARGV.pushNginx) {
+    const ingressResult   = await pushNginxIngress({...ARGV.pod()});
+    result = {...result, ingressResult};
+  }
 
   return [null, result];
 }

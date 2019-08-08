@@ -34,7 +34,7 @@ spec:
         ports:
         - name: mongodb
           containerPort: 27017
-          hostPort: 27017
+  #          hostPort: 27017
 
         volumeMounts:
         - name:  mongodb-persistent-storage
@@ -77,7 +77,7 @@ spec:
         ports:
         - name: redis
           containerPort: 6379
-          hostPort: 6379
+  #          hostPort: 6379
 
         resources:
           limits:

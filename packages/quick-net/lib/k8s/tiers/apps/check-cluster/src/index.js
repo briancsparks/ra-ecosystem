@@ -10,6 +10,7 @@ const main = function() {
   const port = 3000;
 
   const server = http.createServer((req, res) => {
+    console.log(`Request for ${req.url}`);
 
     // Note: to test, use query={host:'localhost'}
     const query = {};

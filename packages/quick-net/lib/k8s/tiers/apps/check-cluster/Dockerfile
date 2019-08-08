@@ -1,12 +1,7 @@
 
 # meta: {"image":"quicknet-k8s-check-cluster", "repository":"briancsparks"}
 
-# FROM node:alpine
-# RUN apk add --no-cache socat curl redis
-
-FROM node:12
-RUN apt-get update && apt-get install -y dnsutils
-
+FROM briancsparks/quicknet-k8s-node-xenial
 
 RUN mkdir -p            /home/node/app
 
@@ -18,3 +13,4 @@ WORKDIR                 /home/node/app
 RUN npm install --production
 
 EXPOSE 3000
+
