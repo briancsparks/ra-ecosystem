@@ -13,7 +13,7 @@ const config                  = new AWS.Config(config_);
 const ec2                     = new AWS.EC2(config);
 const sts                     = new AWS.STS(config);
 
-exports.defs                  = awsDefs;
+exports.defs                  = {...awsDefs.options, options:awsDefs.options};
 
 const awsService = function(name, options) {
   const config  = new AWS.Config(sg.merge(config_, options));

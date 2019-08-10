@@ -80,17 +80,19 @@ function ARGV(input = process.argv) {
     return origKeys;
   };
 
-  // See if any values are special values
+  // See if any values are special values (like reading from file)
   origKeys.forEach(key => {
     if (key === '_')      { return; }
 
     var   value = argv[key];
     var   orig  = value;
 
+    // A value that is an Array of one string is just the string
     if (Array.isArray(value) && value.length === 1 && typeof value[0] === 'string') {
       value = value[0];
     }
 
+    // `@filename` means read from the file
     if (_.isString(value)) {
       const m = value.match(/^@(.+)$/);
       if (m) {

@@ -1256,6 +1256,24 @@ sg.arrayify = function(x, skipSplitStrings) {
 };
 
 /**
+ * Returns true if the string startsWith any of the strings in the Array.
+ *
+ * @param {*} str   - The string to test.
+ * @param {*} arr   - The list of strings.
+ *
+ * @returns {boolean} - true if the string starts with any of the items in the `arr`
+ */
+sg.startsWithOneOf = function(str, arr) {
+  for (let s of arr) {
+    if (str.startsWith(s)) {
+      return true;
+    }
+  }
+
+  return false;
+};
+
+/**
  * Just like filter, but returns both lists [items-that-were-true, items-that-were-false].
  *
  * @param {Array}     arr   - The array to split.
