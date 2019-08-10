@@ -14,4 +14,4 @@ async function main() {
   return [null, {ok:true}];
 }
 
-sg.runTopAsync(main, 'k apply');
+sg.runTopAsync(main, 'kubectl apply -k');

@@ -1255,6 +1255,27 @@ sg.arrayify = function(x, skipSplitStrings) {
   return _.compact([x]);
 };
 
+/**
+ * Just like filter, but returns both lists [items-that-were-true, items-that-were-false].
+ *
+ * @param {Array}     arr   - The array to split.
+ * @param {function}  cb    - The predicate function.
+ *
+ * @returns {Array[]}
+ */
+sg.splitArray = function(arr, cb) {
+  var a = [],  b = [], len = arr.length;
+
+  for (let i = 0; i < len; ++i) {
+    if (cb(arr[i])) {
+      a.push(arr[i]);
+    } else {
+      b.push(arr[i]);
+    }
+  }
+
+  return [a,b];
+};
 
 
 

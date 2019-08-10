@@ -178,7 +178,7 @@ function runTopAsync(main, name='main') {
     ARGV.d(`${name}:`, {result});
   })().catch(err => {
     // Deal with the fact the chain failed
-    console.error(`an error in ${name}`, err);
+    console.error(`++++++++++++++++++++++ an error in ${name}`, err);
   });
 
   function announceError(err) {

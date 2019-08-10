@@ -45,6 +45,13 @@ function execzX(...args_) {
 }
 
 // ------------------------------------------------------------------------------------------------------------------
+
+/*
+ * Launch an executable, effectively like calling a script.
+ *
+ * Like: await execz('docker', 'build', ['-t', nginx_ingress], '.' [, options={cwd: dockerfileDir} [,context={}]] [, callback]);
+ *
+ */
 function exec_ez(...args_) {
   var   args          = _.toArray(args_);
   var   optionses     = [];
@@ -78,20 +85,47 @@ function exec_ez(...args_) {
 }
 
 // ------------------------------------------------------------------------------------------------------------------
+
+/**
+ * Launch an executable, effectively like calling a script.
+ *
+ * @param {Object}     argv                 - The standard argv.
+ * @param {Array}      argv.args            - The arguments to be `stitched` together.
+ * @param {boolean}    [argv.noShow=false]  - Show the output?
+ * @param {Object}     argv.execa_options   - Options to send to execa
+ * @param {Object}     [context={}]         - The context object
+ * @param {function}   [callback=noop]      - The callback.
+ *
+ * @returns {Object} - callback(err, stdout)
+ */
 function execz(argv, context ={}, callback =noop) {
   if (typeof arguments[0] === 'string') { return exec_ez(..._.toArray(arguments)); }
 
   const noShow          = argv.noShow   || argv.no_show;
   const execa_options   = argv.execa    || argv.execa_options   || {};
   const args            = argv.args;
+  const rest            = _.omit(argv, 'noShow', 'no_show', 'execa_options', 'args');
 
   // TODO: fail for wrong params
 
-  return _execz_({noShow, execa_options, args}, context, callback);
+  return _execz_({noShow, execa_options, ...rest, args}, context, callback);
 }
 
 // ------------------------------------------------------------------------------------------------------------------
-function _execz_({args, noShow, execa_options}, context ={}, callback =noop) {
+
+/**
+ * Launch an executable, effectively like calling a script.
+ *
+ * @param {Object}     argv                 - The standard argv.
+ * @param {Array}      argv.args            - The arguments to be `stitched` together.
+ * @param {boolean}    [argv.noShow=false]  - Show the output?
+ * @param {Object}     argv.execa_options   - Options to send to execa
+ * @param {Object}     [context={}]         - The context object
+ * @param {function}   [callback=noop]      - The callback.
+ *
+ * @returns {Object} - callback(err, stdout)
+ */
+function _execz_({args, noShow, quiet, execa_options}, context ={}, callback =noop) {
   const cmdline                   = qm.stitch(args);
   const [file, command, ...rest]  = cmdline;
   const cliArgs                   = _.compact([command, ...rest]);
@@ -100,7 +134,7 @@ function _execz_({args, noShow, execa_options}, context ={}, callback =noop) {
   var   showPipedOut  = !noShow;
   var   showSummary   = true;
 
-  if (ARGV.quiet) {
+  if (ARGV.quiet || quiet) {
     showPipedOut = showSummary = false;
   }
 
@@ -110,7 +144,7 @@ function _execz_({args, noShow, execa_options}, context ={}, callback =noop) {
     return callback(null, 'dry-run');
   }
 
-  ARGV.v_if(!ARGV.quiet, `execz`, {file, cliArgs, execa_options, noShow, showPipedOut, showSummary});
+  ARGV.v_if(!ARGV.quiet && !quiet, `execz`, {file, cliArgs, execa_options, noShow, showPipedOut, showSummary});
 
   const exe = execa(file, cliArgs, execa_options);
 
@@ -119,9 +153,25 @@ function _execz_({args, noShow, execa_options}, context ={}, callback =noop) {
     exe.stderr.pipe(process.stderr);
   }
 
+  var std_out, std_err, then_result, catch_result = null;
   getStream(exe.stdout).then(content => {
     ARGV.v_if(showSummary, `----------\n  exec(${file}) exit, ${sg.splitLn(content).length} lines\n----------------------------------------------------------`);
-    return callback(null, content);
+    std_out = content;
+  });
+
+  getStream(exe.stderr).then(err => {
+    ARGV.v_if(showSummary, `----------\n  exec(${file}) exit, ${sg.splitLn(err).length} stderr lines\n----------------------------------------------------------`);
+    std_err = err;
+  });
+
+  exe.then(then_result_ => {
+    then_result = then_result_;
+    return callback(catch_result, {std_out, std_err, then_result, catch_result});
+  });
+
+  exe.catch(catch_result_ => {
+    catch_result = catch_result_;
+    return callback(catch_result, {std_out, std_err, then_result, catch_result});
   });
 }
 

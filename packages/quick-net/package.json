@@ -31,6 +31,7 @@
   },
   "dependencies": {
     "aws-sdk": "^2.382.0",
+    "commander": "^2.20.0",
     "conf": "^5.0.0",
     "deep-equal": "^1.0.1",
     "emailjs-mime-builder": "^2.0.5",
@@ -38,8 +39,10 @@
     "exit-on-epipe": "^1.0.1",
     "fs-jetpack": "^2.2.2",
     "get-stream": "^4.1.0",
+    "hard-rejection": "^2.1.0",
     "http-proxy": "^1.17.0",
     "http-proxy-middleware": "^0.19.1",
+    "inquirer": "^6.5.0",
     "js-yaml": "^3.13.1",
     "kubernetes-client": "^8.2.0",
     "loud-rejection": "^1.6.0",
