@@ -162,6 +162,30 @@ function startupDone(ARGV, modfilename, failed, msg) {
 }
 
 // ------------------------------------------------------------------------------------------------------------------
+function _from_(filename, key) {
+  const mod     = _include_(filename);
+  const result  = sg.deref(mod, key);
+
+  if (sg.isnt(result)) {
+    (ARGV = ARGV || sg.ARGV()).d(`Getting ${key} from ${filename} failed, mod:`, {mod});
+  }
+
+  return result;
+}
+
+// ------------------------------------------------------------------------------------------------------------------
+function include(dirname, filename) {
+  return _include_(path.join(dirname, filename));
+}
+
+// ------------------------------------------------------------------------------------------------------------------
+function _include_(filename) {
+  try {
+    return require(filename);
+  } catch(error) {}
+}
+
+// ------------------------------------------------------------------------------------------------------------------
 /**
  * Runs an async function from the top-level.
  *
@@ -185,30 +209,6 @@ function runTopAsync(main, name='main') {
     ARGV.w(`Error in ${name}`, err);
     return err;
   }
-}
-
-// ------------------------------------------------------------------------------------------------------------------
-function include(dirname, filename) {
-  return _include_(path.join(dirname, filename));
-}
-
-// ------------------------------------------------------------------------------------------------------------------
-function _from_(filename, key) {
-  const mod     = _include_(filename);
-  const result  = sg.deref(mod, key);
-
-  if (sg.isnt(result)) {
-    (ARGV = ARGV || sg.ARGV()).d(`Getting ${key} from ${filename} failed, mod:`, {mod});
-  }
-
-  return result;
-}
-
-// ------------------------------------------------------------------------------------------------------------------
-function _include_(filename) {
-  try {
-    return require(filename);
-  } catch(error) {}
 }
 
 

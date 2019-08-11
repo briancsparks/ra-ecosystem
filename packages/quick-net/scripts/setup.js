@@ -30,113 +30,147 @@ const clusterName             = restOfName.reverse().join('.');
 
 
 async function main() {
-
   var   result          = {};
-  var   clusterConfig   = {};
 
-  var {vpc, subnets, sgs, vpcId, subnetIds, sgIds} = await getVpcSubnetsSgs(ARGV);
+  var   command         = ARGV._command;
 
-  if (!vpc) {
-    return [null, {...result, clusterConfig, ok:false}];
+  if (!command) {
+    let code = sg.die(`No command.  Use 'setup kops-cluster' or 'setup deployments'`, 5);
+    return [sg.error(code, 'ENOCOMMAND')];
   }
 
-  var   azLetter = (getAwsTag(vpc, 'quicknet:primaryaz') || 'c').toLowerCase();
+  switch (command) {
+    case 'kops-cluster':
+    case 'cluster':
+      return await doKopsCluster();
 
-  // ---------- Create the cluster ----------
+    case 'deployments':
+    case 'deployment':
+    case 'deploy':
+      return await doDeployments();
 
-  // The params
-  clusterConfig = {
-    node_count              : 2,
-    zones                   : `${region}${azLetter}`, // 'us-east-1c',
-    master_zones            : `${region}${azLetter}`, // 'us-east-1c',
-    node_size               : 't3.medium',
-    master_size             : 't3.medium',
-    networking              : 'kube-router',
-    vpc                     : vpcId,
-    subnets                 : subnetIds,
-    dns_zone,
-  };
+    default:
+      let code = sg.die(`Command ${command} is not known.  Use 'setup kops-cluster' or 'setup deployments'`, 6);
+      return [sg.error(code, 'EBADCOMMAND')];
+  }
 
-  ARGV.v(`cluster`, {qnAws: _.omit(qnAws, 'AWS'), vpc, azLetter, region});
 
-  // return [null, {...result, clusterConfig, ok:true}];
 
-  // The cluster is down (false), up (true), or changing ('working')
-  var   cluster_is_valid = await validate_cluster();
 
-  // ---------- If the cluster is not built, do that first ----------
-  if (cluster_is_valid !== true) {
-    if (cluster_is_valid !== false) {
-      cluster_is_valid = ! await wait_for_cluster_down();
+  // =====================================================================
+  // Helpers
+  // =====================================================================
+
+  async function doKopsCluster() {
+    var   clusterConfig   = {};
+
+    var {vpc, subnets, sgs, vpcId, subnetIds, sgIds} = await getVpcSubnetsSgs(ARGV);
+
+    if (!vpc) {
+      return [null, {...result, clusterConfig, ok:false}];
     }
 
-    if (cluster_is_valid === false) {
-      //  kops create cluster ...
-      await execz('kops', 'create', 'cluster', ...prs(clusterConfig));
-      await execz('kops', 'create', 'secret', ['sshpublickey', "admin"], ['-i', sg.path.join(sg.os.homedir(), `.ssh/id_rsa.pub`)]);
-      await execz('kops', 'update', 'cluster', '--yes');
+    var   azLetter = (getAwsTag(vpc, 'quicknet:primaryaz') || 'c').toLowerCase();
 
-      // Add an inline policy so the master can AttachVolume on the node for MongoDB
-      const PolicyDocument    = JSON.stringify(policy_AttachVolume());
-      const PolicyName        = `${clusterName.replace(/[.]/g, '-')}-master-attachvolume`;
-      const RoleName          = `masters.${dns_zone}`;
+    // ---------- Create the cluster ----------
 
-      const roleResult = await iam.putRolePolicy({PolicyDocument,PolicyName,RoleName}).promise();
+    // The params
+    clusterConfig = {
+      node_count              : 2,
+      zones                   : `${region}${azLetter}`, // 'us-east-1c',
+      master_zones            : `${region}${azLetter}`, // 'us-east-1c',
+      node_size               : 't3.medium',
+      master_size             : 't3.medium',
+      networking              : 'kube-router',
+      vpc                     : vpcId,
+      subnets                 : subnetIds,
+      dns_zone,
+    };
 
-      ARGV.v(`Creating policy for master instance role`, {PolicyDocument,PolicyName,RoleName,roleResult});
+    ARGV.v(`cluster`, {qnAws: _.omit(qnAws, 'AWS'), vpc, azLetter, region});
 
-      // This takes a long time, so give a message and exit
-      ARGV.i(`\nMust wait for cluster...\n\nUse kops validate cluster to watch`);
-      return [null, {...result, clusterConfig, ok:true}];
+    // return [null, {...result, clusterConfig, ok:true}];
+
+    // The cluster is down (false), up (true), or changing ('working')
+    var   cluster_is_valid = await validate_cluster();
+
+    // ---------- If the cluster is not built, do that first ----------
+    if (cluster_is_valid !== true) {
+      if (cluster_is_valid !== false) {
+        cluster_is_valid = ! await wait_for_cluster_down();
+      }
+
+      if (cluster_is_valid === false) {
+        //  kops create cluster ...
+        await execz('kops', 'create', 'cluster', ...prs(clusterConfig));
+        await execz('kops', 'create', 'secret', ['sshpublickey', "admin"], ['-i', sg.path.join(sg.os.homedir(), `.ssh/id_rsa.pub`)]);
+        await execz('kops', 'update', 'cluster', '--yes');
+
+        // Add an inline policy so the master can AttachVolume on the node for MongoDB
+        const PolicyDocument    = JSON.stringify(policy_AttachVolume());
+        const PolicyName        = `${clusterName.replace(/[.]/g, '-')}-master-attachvolume`;
+        const RoleName          = `masters.${dns_zone}`;
+
+        const roleResult = await iam.putRolePolicy({PolicyDocument,PolicyName,RoleName}).promise();
+
+        ARGV.v(`Creating policy for master instance role`, {PolicyDocument,PolicyName,RoleName,roleResult});
+
+        // This takes a long time, so give a message and exit
+        ARGV.i(`\nMust wait for cluster...\n\nUse kops validate cluster to watch`);
+        return [null, {...result, clusterConfig, ok:true}];
+      }
+
+      ARGV.w(`\Cluster is not in right state`, {cluster_is_valid});
+      return [null, {...result, clusterConfig, ok:false}];
     }
 
-    ARGV.w(`\Cluster is not in right state`, {cluster_is_valid});
-    return [null, {...result, clusterConfig, ok:false}];
   }
 
+  async function doDeployments() {
 
-  // ---------- Create the webtier ----------
+    // ---------- Create the webtier ----------
 
-  const {createConfigMap}       = require('../lib/k8s/lib/config-map').async;     // Note: this fails if done before there is a cluster
-  const {ensureTlsSecret}       = require('../lib/k8s/lib/tls-secret').async;
+    const {createConfigMap}       = require('../lib/k8s/lib/config-map').async;     // Note: this fails if done before there is a cluster
+    const {ensureTlsSecret}       = require('../lib/k8s/lib/tls-secret').async;
 
-  result.applied = [];
+    var   applied = [];
 
-  // The nginx configuration and certs
-  await createConfigMap({...ARGV.pod(), root, dir: nginxConfDir, name: 'nginxconfig'});
-  await ensureTlsSecret({...ARGV.pod(), CN, name: 'nginxcert'});
+    // The nginx configuration and certs
+    await createConfigMap({...ARGV.pod(), root, dir: nginxConfDir, name: 'nginxconfig'});
+    await ensureTlsSecret({...ARGV.pod(), CN, name: 'nginxcert'});
 
-  // // ---------- Create the datatier ----------
-  // const setupDatatier     = await execa.stdout('node', ['./scripts/setup-datatier.js'], {cwd: root});
-  // result = {...result, setupDatatier};
+    // // ---------- Create the datatier ----------
+    // const setupDatatier     = await execa.stdout('node', ['./scripts/setup-datatier.js'], {cwd: root});
+    // result = {...result, setupDatatier};
 
-  // ---------- Stage-wide config ----------
-  result.applied.push(await execz('kubectl', 'apply', ['-f', `lib/k8s/config/overlays/${stage}/config-map-env.yaml`], {cwd: root}));
+    // ---------- Stage-wide config ----------
+    applied.push(await execz('kubectl', 'apply', ['-f', `lib/k8s/config/overlays/${stage}/config-map-env.yaml`], {cwd: root}).std_out);
 
-  // ---------- All the service/deployment config files ----------
-  const {serviceConfigs,mongoDeploy,deployConfigs}     = getConfigFiles();
+    // ---------- All the service/deployment config files ----------
+    const {serviceConfigs,mongoDeploy,deployConfigs}     = getConfigFiles();
 
-  // Insert the services first, so DNS and ENV_VARS are available to all the deployments
-  for (let service of serviceConfigs) {
-    result.applied.push(await execz('kubectl', 'apply', ['-f', service], {cwd: root}));
+    // Insert the services first, so DNS and ENV_VARS are available to all the deployments
+    for (let service of serviceConfigs) {
+      applied.push(await execz('kubectl', 'apply', ['-f', service], {cwd: root}).std_out);
+    }
+
+    // Deploy MongoDB first, it needs to attach the data volume
+    for (let config of mongoDeploy) {
+      applied.push(await execz('kubectl', 'apply', ['-f', config], {cwd: root}).std_out);
+    }
+
+    // Wait while MongoDB attaches and starts
+    ARGV.i(`\nWaiting to let Mongo have first chance. See:\n  kubectl describe pod mongodb-\n`);
+    await msleep(8000);
+
+    // Start the other deployments
+    for (let config of deployConfigs) {
+      applied.push(await execz('kubectl', 'apply', ['-f', config], {cwd: root}).std_out);
+    }
+
+    // ---------- Done ----------
+    return [null, {...result, applied: applied.join('\n'), ok:true}];
   }
-
-  // Deploy MongoDB first, it needs to attach the data volume
-  for (let config of mongoDeploy) {
-    result.applied.push(await execz('kubectl', 'apply', ['-f', config], {cwd: root}));
-  }
-
-  // Wait while MongoDB attaches and starts
-  ARGV.i(`\nWaiting to let Mongo have first chance. See:\n  kubectl describe pod mongodb-\n`);
-  await msleep(8000);
-
-  // Start the other deployments
-  for (let config of deployConfigs) {
-    result.applied.push(await execz('kubectl', 'apply', ['-f', config], {cwd: root}));
-  }
-
-  // ---------- Done ----------
-  return [null, {...result, ok:true}];
 }
 
 sg.runTopAsync(main, 'setup');

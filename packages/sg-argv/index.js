@@ -56,6 +56,9 @@ function ARGV(input = process.argv) {
   // Let `minimist` add what it does best
   argv    = sg.smartExtend(argv, require('minimist')(args));
 
+  // Remember what keys the user specified (we potentially add more.)
+  const userKeys = sg.keys(argv);
+
   // Active development means debug (unless quiet)
   if (process.env.ACTIVE_DEVELOPMENT && !argv.quiet) {
     argv.debug = true;
@@ -74,10 +77,16 @@ function ARGV(input = process.argv) {
     sg.mkInspect({fancy:true});
   }
 
+  // Remember the "original" keys -- later we alias these keys, but before that, we process them
+  // so knowing the `origKeys` means we can keep from double-processing.
   const origKeys = sg.keys(argv);
 
   argv._origKeys = function() {
     return origKeys;
+  };
+
+  argv._userKeys = function() {
+    return userKeys;
   };
 
   // See if any values are special values (like reading from file)
@@ -118,7 +127,15 @@ function ARGV(input = process.argv) {
     }
   }
 
+  // ----------------------------------------------------------
   // Augment
+  // ----------------------------------------------------------
+
+  // The first non-flag is usually a command
+  if (argv._.length > 0) {
+    argv._command = argv._[0];
+  }
+
   argv._plus = function(more) {
     _.each(more, (v,k) => {
       argv[k] = v;
@@ -183,12 +200,25 @@ function ARGV(input = process.argv) {
     return argv.iv(...rest);
   };
 
-  argv.pod = function() {
+  argv.pod = argv._pod = function() {
     return sg.reduce(argv, {}, (m,v,k) => {
       if (_.isFunction(v))  { return m; }
 
       return sg.kv(m, k, v);
     });
+  };
+
+  // Get the args as a JavaScript object, using camelCase keys
+  argv._options = function() {
+    const options = sg.reduce(argv._origKeys(), {}, (m,k) => {
+      const v = argv[k];
+      if (_.isFunction(v))  { return m; }
+
+      return sg.kv(m, toCamelCase(k), v);
+    });
+
+    // Deep copy
+    return JSON.parse(JSON.stringify(options));
   };
 
   return argv;
@@ -255,6 +285,14 @@ function arrayParam(i, _, args, argv) {
 
 function snake_case(key) {
   return key.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+}
+
+function toCamelCase(key) {
+  var parts = key.split(/[^a-zA-Z0-9]/);
+  var first = parts.unshift();
+  return sg.reduce(parts, first, (s, part) => {
+    return s + sg.toUpperWord(part);
+  });
 }
 
 /**
