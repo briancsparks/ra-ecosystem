@@ -3,10 +3,6 @@
 
 FROM ubuntu:xenial
 
-# from https://github.com/nodesource/distributions#deb
-#RUN   apt-get update && apt-get install -y curl software-properties-common && \
-#      apt-get clean && \
-#      rm -rf /var/lib/apt/lists
 RUN   apt-get update && apt-get install -y curl software-properties-common
 
 # See: https://askubuntu.com/questions/490468/add-apt-repository-throws-python-error-unicodedecodeerror-ascii-codec-cant

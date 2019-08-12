@@ -1,0 +1,23 @@
+
+# A version for development,  See: https://blog.docker.com/2019/07/keep-nodejs-rockin-in-docker/
+#
+# Moves node_modules up one level, so deps can be installed on the container OS, which may not
+# be the same as the host
+
+# xmeta: {"repository":"briancsparks", "image":"quicknet-k8s-check-cluster"}
+
+FROM briancsparks/quicknet-k8s-node-xenial:latest
+
+WORKDIR   /opt/node_app
+COPY      src/package.json    ./
+
+RUN npm install --no-optional --production && npm cache clean --force
+ENV PATH /opt/node_app/node_modules/.bin:$PATH
+
+WORKDIR   /opt/node_app/app
+COPY      .                   .
+
+EXPOSE 3000
+
+# vim: ft=dockerfile:
+

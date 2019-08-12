@@ -3,29 +3,29 @@ apiVersion: apps/v1
 kind: Deployment
 
 metadata:
-  name: check-cluster
+  name: express-example
   namespace: default
   labels:
-    name: check-cluster
+    name: express-example
 
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: check-cluster
+      app: express-example
 
   # The PodTemplate
   template:
     metadata:
       labels:
-        app: check-cluster
+        app: express-example
 
     # The Pod
     spec:
 
       containers:
-      - name: check-cluster
-        image: briancsparks/quicknet-k8s-check-cluster
+      - name: express-example
+        image: briancsparks/quicknet-k8s-express-example
         command: ['node']
         args: ['/opt/node_app/app/index.js', '--verbose']
         imagePullPolicy: Always

@@ -8,6 +8,8 @@ if [[ $# > 0 ]]; then
   [[ -f $location ]] && cd "$(dirname $1)"
 fi
 
+announce "Building Dockerfile and pushing from $(pwd)"
+
 [ -f Dockerfile ] || die "Need ./Dockerfile"
 
 # Check if the Dockerfile has the image name and repo:

@@ -3,12 +3,8 @@
 
 FROM briancsparks/quicknet-k8s-node-xenial:latest
 
-RUN mkdir -p            /home/node/app
-
-COPY src/index.js       /home/node/app
-COPY src/package.json   /home/node/app
-
-WORKDIR                 /home/node/app
+WORKDIR  /opt/node_app/app
+COPY     src/* ./
 
 RUN npm install --production
 

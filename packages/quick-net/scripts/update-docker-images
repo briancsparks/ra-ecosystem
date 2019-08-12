@@ -3,9 +3,10 @@
 script_dir="$(dirname $0)"
 
 ${script_dir}/build-push ./lib/k8s/tiers/base/ubuntu/Dockerfile
+${script_dir}/build-push ./lib/k8s/tiers/debug/ubuntu/Dockerfile
 ${script_dir}/build-push ./lib/k8s/tiers/webtier/Dockerfile
 ${script_dir}/build-push ./lib/k8s/tiers/apps/check-cluster/Dockerfile
-${script_dir}/build-push ./lib/k8s/tiers/debug/ubuntu/Dockerfile
+${script_dir}/build-push ./lib/k8s/tiers/apps/express/Dockerfile
 
 # vim: ft=sh:
 
