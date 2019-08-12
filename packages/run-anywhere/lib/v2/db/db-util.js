@@ -60,7 +60,7 @@ const getXyzDb = async function(collName, context, dbName, dbHostname, dbPortnum
   var   meaningfulClose = false;
 
   if (!xyzDb) {
-    let   dbHost        = dbHostname || process.env.db || process.env.SERVERASSIST_DB_IP || 'db';
+    let   dbHost        = dbHostname || process.env.db || process.env.SERVERASSIST_DB_IP || 'mongodb';
     let   dbUrl         = `mongodb://${dbHost}:${dbPortnum}/${dbName}`;
 
     let   conn          = await MongoClient.connect(dbUrl, {useNewUrlParser:true});

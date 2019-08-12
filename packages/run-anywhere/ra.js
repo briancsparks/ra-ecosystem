@@ -443,7 +443,7 @@ libRa.bootServices = function(fname, options_, argv, context, outerCb, callback)
   return sg.__run([function(next) {
     if (db || !needDb) { return next(); }
 
-    const dbAddress   = process.env.LAYER67_DB_IP || options.dbIp  || 'db';
+    const dbAddress   = process.env.LAYER67_DB_IP || options.dbIp  || 'mongodb';
     var   dbUrl       = 'mongodb://'+dbAddress+':27017/'+namespace;
 
     return MongoClient.connect(dbUrl, function(err, db_) {

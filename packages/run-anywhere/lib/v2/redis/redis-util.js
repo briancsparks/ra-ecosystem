@@ -18,7 +18,7 @@ const {
 
 
 const redisPort               = process.env.redis_port  || process.env.REDIS_PORT || 6379;
-const redisHost               = process.env.redis       || process.env.REDIS;
+const redisHost               = process.env.redis       || process.env.REDIS      || 'redis';
 
 // -------------------------------------------------------------------------------------
 //  Functions
