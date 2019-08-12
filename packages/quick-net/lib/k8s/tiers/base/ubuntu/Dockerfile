@@ -17,7 +17,9 @@ RUN   curl -sL https://deb.nodesource.com/setup_12.x | bash - && \
       add-apt-repository -y ppa:rmescandon/yq && \
       echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list && \
       apt-get update && \
-      apt-get install -y --no-install-recommends nodejs yarn jq yq inotify-tools gcc g++ make dnsutils socat telnet && \
+      apt-get install -y --no-install-recommends nodejs yarn jq yq inotify-tools \
+          vim \
+          gcc g++ make dnsutils socat telnet && \
       apt-get clean && \
       rm -rf /var/lib/apt/lists && \
       which node && node -v && npm -v

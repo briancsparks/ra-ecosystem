@@ -66,8 +66,9 @@ async function main() {
 
     var {vpc, subnets, sgs, vpcId, subnetIds, sgIds} = await getVpcSubnetsSgs(ARGV);
 
+    // TODO: If the user does not set --vpc, or --class-b, it should be OK -- kops will create a new VPC
     if (!vpc) {
-      return [null, {...result, clusterConfig, ok:false}];
+      return [null, {...result, clusterConfig, ok:false, error: 'No --vpc'}];
     }
 
     var   azLetter = (getAwsTag(vpc, 'quicknet:primaryaz') || 'c').toLowerCase();

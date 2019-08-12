@@ -26,23 +26,19 @@ spec:
       containers:
       - name: check-cluster
         image: briancsparks/quicknet-k8s-check-cluster
-  #        command:
-  #          - sleep
-  #          - "3600"
         command: ['node']
         args: ['/home/node/app/index.js', '--verbose']
-  #        imagePullPolicy: IfNotPresent
         imagePullPolicy: Always
 
         ports:
         - containerPort: 3000
 
-  #        livenessProbe:
-  #          httpGet:
-  #            path: /
-  #            port: 3000
-  #          initialDelaySeconds: 30
-  #          timeoutSeconds: 1
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 30
+          timeoutSeconds: 1
 
         resources:
           limits:

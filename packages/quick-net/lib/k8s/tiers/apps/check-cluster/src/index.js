@@ -1,6 +1,7 @@
 
 
 const http                    = require('http');
+const util                    = require('util');
 const MongoClient             = require('mongodb').MongoClient;
 const redisLib                = require('redis');
 
@@ -10,6 +11,8 @@ const main = function() {
   const port = 3000;
 
   const server = http.createServer((req, res) => {
+    const start = Date.now();
+
     console.log(`Request for ${req.url}`);
 
     // Note: to test, use query={host:'localhost'}
@@ -31,6 +34,8 @@ const main = function() {
           res.statusCode = 500;
           res.setHeader('Content-Type', 'application/json');
           res.end(JSON.stringify(result));
+
+          console.log(`Response 500 (${Date.now() - start} ms) for ${req.url}`, util.inspect({result}, false, null, true));
           return;
         }
 
@@ -41,6 +46,8 @@ const main = function() {
         res.statusCode = 200;
         res.setHeader('Content-Type', 'application/json');
         res.end(JSON.stringify(result));
+
+        console.log(`Response 200 (${Date.now() - start} ms) for ${req.url}`, util.inspect({result}, false, null, true));
       });
     });
   });
