@@ -30,11 +30,11 @@ var   redis;
 
 const namespace               = process.env.NAMESPACE   || 'quicknet';
 const NAMESPACE               = namespace.toUpperCase();
-const redisPort               = process.env.redis_port  || process.env.REDIS_PORT || 6379;
-const redisHost               = process.env.redis       || process.env.REDIS;
+const redisPort               = 6379;
+const redisHost               = 'redis';
 
-const collNames               = (process.env.QUICKNET_COLLECTIONS || 'users').split(',');
-const dbName                  = process.env.QUICKNET_DB_NAME      || 'quicknet';
+const collNames               = (process.env[`${NAMESPACE}_COLLECTIONS`] || 'users').split(',');
+const dbName                  = process.env[`${NAMESPACE}_DB_NAME`]      || 'quicknet';
 const binaryMimeTypes = [
 	'application/octet-stream',
 	'font/eot',
