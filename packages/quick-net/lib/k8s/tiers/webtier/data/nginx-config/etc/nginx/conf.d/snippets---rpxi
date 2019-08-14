@@ -1,6 +1,4 @@
 
-# vim: set ft=NGINX:
-
   #
   # Put these lines (with a corrected proxy_pass value) AFTER you include this file.
   #
@@ -139,4 +137,6 @@
 
     proxy_pass http://$other_uri$is_args$args;
   }
+
+# vim: ft=nginx:
 

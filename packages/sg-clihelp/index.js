@@ -65,7 +65,11 @@ _.each(sg, (fn, name) => {
  */
 function die(msg, code = 113) {
   console.error(msg);
-  process.exit(code);
+
+  setTimeout(function() {
+    process.exit(code);
+  }, 0);
+
   return code;
 }
 
@@ -199,7 +203,8 @@ function runTopAsync(main, name='main') {
       return announceError(err);
     }
 
-    ARGV.d(`${name}:`, {result});
+    const message = sg.extract(result, 'finalMessage');
+    ARGV.i(`function ${name} finished:`, {result}, message);
   })().catch(err => {
     // Deal with the fact the chain failed
     console.error(`++++++++++++++++++++++ an error in ${name}`, err);
@@ -207,6 +212,9 @@ function runTopAsync(main, name='main') {
 
   function announceError(err) {
     ARGV.w(`Error in ${name}`, err);
+    if ('code' in err) {
+      process.exit(err.code);
+    }
     return err;
   }
 }

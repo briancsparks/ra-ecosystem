@@ -36,6 +36,7 @@ async function main() {
 
   if (!command) {
     let code = sg.die(`No command.  Use 'setup kops-cluster' or 'setup deployments'`, 5);
+//    console.log(`No command.  Use 'setup kops-cluster' or 'setup deployments'`);
     return [sg.error(code, 'ENOCOMMAND')];
   }
 
@@ -68,7 +69,7 @@ async function main() {
 
     // TODO: If the user does not set --vpc, or --class-b, it should be OK -- kops will create a new VPC
     if (!vpc) {
-      return [null, {...result, clusterConfig, ok:false, error: 'No --vpc'}];
+      return [sg.error(13, 'ENOVPC'), {...result, clusterConfig, ok:false, error: 'No --vpc'}];
     }
 
     var   azLetter = (getAwsTag(vpc, 'quicknet:primaryaz') || 'c').toLowerCase();
@@ -117,8 +118,16 @@ async function main() {
         ARGV.v(`Creating policy for master instance role`, {PolicyDocument,PolicyName,RoleName,roleResult});
 
         // This takes a long time, so give a message and exit
-        ARGV.i(`\nMust wait for cluster...\n\nUse kops validate cluster to watch`);
-        return [null, {...result, clusterConfig, ok:true}];
+        //ARGV.i(`\nMust wait for cluster...\n\nUse kops validate cluster to watch`);
+        const finalMessage = `
+          -------------------------------------------------
+          Must wait for cluster, use:
+
+            kops validate cluster
+
+          Next, run "setup deploy"`;
+
+        return [null, {...result, clusterConfig, ok:true, finalMessage}];
       }
 
       ARGV.w(`\Cluster is not in right state`, {cluster_is_valid});
@@ -170,7 +179,13 @@ async function main() {
     }
 
     // ---------- Done ----------
-    return [null, {...result, applied: applied.join('\n'), ok:true}];
+    const finalMessage = `
+      -------------------------------------------------
+      Must wait for pods, use:
+
+        kubectl get pods`;
+
+    return [null, {...result, applied: applied.join('\n'), ok:true, finalMessage}];
   }
 }
 

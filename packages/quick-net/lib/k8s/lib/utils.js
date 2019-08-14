@@ -1,12 +1,29 @@
 
 const sg                      = require('sg-clihelp');
+const crypto                  = require('crypto');
 const {test}                  = sg.sh;
 
 
+module.exports.sha256 = sha256;
 module.exports.base64 = base64;
 module.exports.ns     = ns;
 module.exports.isFile = isFile;
 module.exports.isDir  = isDir;
+
+function sha256(strlist) {
+  if (!Array.isArray(strlist))  { return sha256([strlist]); }
+sg.elog(`sha`, {strlist});
+
+  var   hash = crypto.createHash('sha256');
+  var   data;
+
+  for (item of strlist) {
+sg.elog(`sha2`, {item});
+    data = hash.update(item, 'utf8');
+  }
+
+  return data.digest('hex');
+}
 
 function base64(str) {
   const buff = new Buffer(str);

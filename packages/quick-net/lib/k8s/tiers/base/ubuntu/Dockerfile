@@ -14,7 +14,7 @@ RUN   curl -sL https://deb.nodesource.com/setup_12.x | bash - && \
       echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list && \
       apt-get update && \
       apt-get install -y --no-install-recommends nodejs yarn jq yq inotify-tools \
-          vim \
+          vim tree \
           gcc g++ make dnsutils socat telnet && \
       apt-get clean && \
       rm -rf /var/lib/apt/lists && \

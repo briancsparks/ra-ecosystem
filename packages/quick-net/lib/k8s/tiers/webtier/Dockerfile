@@ -20,5 +20,9 @@ RUN  mkdir -p /usr/share/nginx/html/
 COPY data/nginx-config/usr/share/nginx/html/index.html /usr/share/nginx/html/
 COPY data/nginx-config/usr/share/nginx/html/index.json /usr/share/nginx/html/
 
+COPY data/nginx-config/etc/nginx/nginx.conf                       /etc/nginx/
+COPY data/nginx-config/etc/nginx/conf.d/server-default.conf       /etc/nginx/conf.d/
+COPY data/nginx-config/etc/nginx/conf.d/snippets---rpxi           /etc/nginx/conf.d/
+
 EXPOSE 80
 

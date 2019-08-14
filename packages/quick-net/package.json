@@ -30,6 +30,7 @@
     "redis": "^2.8.0"
   },
   "dependencies": {
+    "@kubernetes/client-node": "^0.10.2",
     "aws-sdk": "^2.382.0",
     "commander": "^2.20.0",
     "conf": "^5.0.0",
