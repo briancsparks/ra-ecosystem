@@ -151,7 +151,7 @@ const ModSquad = function(otherModule, otherModuleName = 'mod') {
             if (msg) { sg.logError(err, msg, {}, {EFAIL: fnName}); }
 
             if (rax_) {
-              sg.elog(longFnName(), {err});
+              sg.elog(rax_.longFnName(), {err});
             }
 
             const code = decodeErrForHttp(err, msg);
@@ -323,7 +323,7 @@ const FuncRa = function(argv, context, callback, origCallback, ractx, options_ =
   const silent          = argv.silent       || (context.ARGV && context.ARGV.silent)   || forceSilent;
   const argOptions      = sg.merge({debug, verbose, ddebug, vverbose, forceSilent, silent});
 
-  const longFnName = function() {
+  const longFnName = self.longFnName = function() {
     if (self.fnName) {
       return `${self.modname}__${self.fnName}`;
     }
