@@ -272,7 +272,8 @@ function policy_AttachVolume() {
 }
 
 function getConfigFiles() {
-  const configFiles       = sh.find(sg.path.join(k8sConfigDir, 'base'));                            // Everything in the base config dirs
+  const allConfigFiles    = sh.find(sg.path.join(k8sConfigDir, 'base'));                            // Everything in the base config dirs
+  const configFiles       = allConfigFiles.filter(file => file.match(/[/]examples[/]/i));
   const serviceConfigs    = configFiles.filter(file => file.match(/services\.yaml$/i));             // The service configs
   const allDeployConfigs  = configFiles.filter(file => file.match(/deployment\.yaml$/i));           // All the deployment configs
   const [

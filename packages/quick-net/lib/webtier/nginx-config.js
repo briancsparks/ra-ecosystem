@@ -52,14 +52,13 @@ function formatServerAndUpstream(argv, context) {
     # ----- ${server_name} -----
     server {
             listen 80;
-            listen [::]:80 ipv6only=on;
-
-            listen 443 ssl;
+            listen [::]:80  ipv6only=on;
+            listen 443      ssl;
+            server_name     ${server_name};
 
             root /usr/share/nginx/html;
             index index.html;
 
-            server_name ${server_name};
             ssl_certificate /etc/nginx/ssl/tls.crt;
             ssl_certificate_key /etc/nginx/ssl/tls.key;
 

@@ -151,7 +151,7 @@ const ModSquad = function(otherModule, otherModuleName = 'mod') {
             if (msg) { sg.logError(err, msg, {}, {EFAIL: fnName}); }
 
             if (rax_) {
-              sg.elog(rax_.longFnName(), {err});
+              sg.elog(longFnName(), {err});
             }
 
             const code = decodeErrForHttp(err, msg);

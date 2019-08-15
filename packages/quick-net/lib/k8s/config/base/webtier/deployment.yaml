@@ -8,7 +8,7 @@ metadata:
     app: nginx-ingress
 
 spec:
-  replicas: 0
+  replicas: 1
   selector:
     matchLabels:
       app: nginx-ingress

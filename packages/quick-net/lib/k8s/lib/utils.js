@@ -12,13 +12,11 @@ module.exports.isDir  = isDir;
 
 function sha256(strlist) {
   if (!Array.isArray(strlist))  { return sha256([strlist]); }
-sg.elog(`sha`, {strlist});
 
   var   hash = crypto.createHash('sha256');
   var   data;
 
   for (item of strlist) {
-sg.elog(`sha2`, {item});
     data = hash.update(item, 'utf8');
   }
 

@@ -1,17 +1,26 @@
 #!/bin/sh
 
+touch /var/log/nginx/auto-reload.log
+chmod a+rw /var/log/nginx/auto-reload.log
+
 nginx "$@"
 oldcksum=`cksum /etc/nginx/conf.d/hash`
 
-inotifywait -e modify,move,create,delete -mr --timefmt '%d/%m/%y %H:%M' --format '%T' /etc/nginx/conf.d/ | while read date time; do
+#inotifywait -e modify,move,create,delete -mr --timefmt '%d/%m/%y %H:%M' --format '%T' /etc/nginx/conf.d/ | while read date time; do
 
+for ((;;)); do
   newcksum=`cksum /etc/nginx/conf.d/hash`
+
+  echo "old: $oldcksum;  new $newcksum at $time on $date" >> /var/log/nginx/auto-reload.log
   if [ "$newcksum" != "$oldcksum" ]; then
-    echo "At ${time} on ${date}, config file update detected."
+    echo "At ${time} on ${date}, config file update detected." >> /var/log/nginx/auto-reload.log
     oldcksum=$newcksum
     nginx -s reload
   fi
 
+  sleep 5
 done
+
+#done
 
 # vim: ft=sh:
