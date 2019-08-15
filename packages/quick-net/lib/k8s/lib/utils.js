@@ -16,7 +16,7 @@ function sha256(strlist) {
   var   hash = crypto.createHash('sha256');
   var   data;
 
-  for (item of strlist) {
+  for (let item of strlist) {
     data = hash.update(item, 'utf8');
   }
 
