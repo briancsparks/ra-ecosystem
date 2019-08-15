@@ -91,7 +91,7 @@ async function main() {
 
     ARGV.v(`cluster`, {qnAws: _.omit(qnAws, 'AWS'), vpc, azLetter, region});
 
-    // return [null, {...result, clusterConfig, ok:true}];
+    var PolicyDocument, PolicyName, RoleName;
 
     // The cluster is down (false), up (true), or changing ('working')
     var   cluster_is_valid = await validate_cluster();
@@ -109,13 +109,22 @@ async function main() {
         await execz('kops', 'update', 'cluster', '--yes');
 
         // Add an inline policy so the master can AttachVolume on the node for MongoDB
-        const PolicyDocument    = JSON.stringify(policy_AttachVolume());
-        const PolicyName        = `${clusterName.replace(/[.]/g, '-')}-master-attachvolume`;
-        const RoleName          = `masters.${dns_zone}`;
+        PolicyDocument    = JSON.stringify(policy_AttachVolume());
+        PolicyName        = `${clusterName.replace(/[.]/g, '-')}-master-attachvolume`;
+        RoleName          = `masters.${dns_zone}`;
 
-        const roleResult = await iam.putRolePolicy({PolicyDocument,PolicyName,RoleName}).promise();
+        const attachVolumeRoleResult = await iam.putRolePolicy({PolicyDocument,PolicyName,RoleName}).promise();
 
-        ARGV.v(`Creating policy for master instance role`, {PolicyDocument,PolicyName,RoleName,roleResult});
+        ARGV.v(`Creating policy for master instance role`, {PolicyDocument,PolicyName,RoleName,attachVolumeRoleResult});
+
+        // Add an inline policy so the nodes can use S3
+        PolicyDocument    = JSON.stringify(policy_S3DataAccess());
+        PolicyName        = `${clusterName.replace(/[.]/g, '-')}-nodes-dataaccess`;
+        RoleName          = `nodes.${dns_zone}`;
+
+        const dataAccessRoleResult = await iam.putRolePolicy({PolicyDocument,PolicyName,RoleName}).promise();
+
+        ARGV.v(`Creating policy for nodes instance role`, {PolicyDocument,PolicyName,RoleName,dataAccessRoleResult});
 
         // This takes a long time, so give a message and exit
         //ARGV.i(`\nMust wait for cluster...\n\nUse kops validate cluster to watch`);
@@ -269,6 +278,49 @@ function policy_AttachVolume() {
       ]
     }]
   };
+}
+
+function policy_S3DataAccess() {
+  // quack-node-dataaccess
+	return {
+		"Version": "2012-10-17",
+		"Statement": [
+		{
+			"Effect": "Allow",
+				"Action": [
+					"s3:PutBucketNotification",
+					"s3:ListBucketByTags",
+					"s3:GetBucketTagging",
+					"s3:PutBucketWebsite",
+					"s3:PutBucketTagging",
+					"s3:PutBucketLogging",
+					"s3:ListBucketVersions",
+					"s3:ListBucket",
+					"s3:PutBucketCORS",
+					"s3:GetBucketLocation"
+				],
+				"Resource": "arn:aws:s3:::*"
+			},
+			{
+				"Effect": "Allow",
+				"Action": [
+					"s3:PutObject",
+					"s3:GetObject",
+					"s3:GetObjectVersionTagging",
+					"s3:PutObjectVersionTagging",
+					"s3:GetObjectTagging",
+					"s3:PutObjectTagging",
+					"s3:GetObjectVersion"
+				],
+				"Resource": "arn:aws:s3:::*/*"
+			},
+			{
+				"Effect": "Allow",
+				"Action": "s3:ListAllMyBuckets",
+				"Resource": "*"
+			}
+		]
+	};
 }
 
 function getConfigFiles() {
