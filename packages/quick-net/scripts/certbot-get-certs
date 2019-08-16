@@ -7,6 +7,12 @@ die() {
   exit 4
 }
 
+if ! hash certbot 2> /dev/null; then
+  echo "certbot is not installed. Use:"
+  echo ""
+  die '  sudo add-apt-repository ppa:certbot/certbot && sudo apt-get install -y certbot'
+fi
+
 scripts_dir="$(dirname $0)"
 out_dir="$HOME/.quick-net/certs"
 
