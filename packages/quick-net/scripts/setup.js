@@ -149,6 +149,7 @@ async function main() {
 
     // ---------- Create the webtier ----------
 
+    const {kclient}               = require('../lib/k8s/lib/k8s');
     const {createConfigMap}       = require('../lib/k8s/lib/config-map').async;     // Note: this fails if done before there is a cluster
     const {ensureTlsSecret}       = require('../lib/k8s/lib/tls-secret').async;
 
@@ -219,6 +220,7 @@ sg.runTopAsync(main, 'setup');
 // ====================================================================================================
 // Helpers
 // ====================================================================================================
+
 
 // Should return [[--node-count, 2], [...]]
 function prs(obj) {
@@ -334,7 +336,7 @@ function policy_S3DataAccess() {
 
 function getConfigFiles() {
   const allConfigFiles    = sh.find(sg.path.join(k8sConfigDir, 'base'));                            // Everything in the base config dirs
-  const configFiles       = allConfigFiles.filter(file => file.match(/[/]examples[/]/i));
+  const configFiles       = allConfigFiles.filter(file => !file.match(/[/]examples[/]/i));
   const serviceConfigs    = configFiles.filter(file => file.match(/services\.yaml$/i));             // The service configs
   const allDeployConfigs  = configFiles.filter(file => file.match(/deployment\.yaml$/i));           // All the deployment configs
   const [

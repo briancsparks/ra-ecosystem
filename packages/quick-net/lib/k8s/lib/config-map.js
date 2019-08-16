@@ -17,9 +17,12 @@ const Request                 = require('kubernetes-client/backends/request');
 const Client                  = require('kubernetes-client').Client;
 const pem                     = require('pem');
 const util                    = require('util');
+const libAws                  = require('../../aws');
 const {execz,execa}           = sg;
 const {test}                  = sg.sh;
 const kubeconfig              = new KubeConfig();
+const route53                 = libAws.awsService('Route53');
+
 
 const mod                     = ra.modSquad(module, 'configMap');
 
@@ -62,6 +65,14 @@ mod.async({addServiceRoute: async function(argv, context ={}) {
   var   nginxconfig   = await serverAndUpstream(argv, context);
 
   var   result        = await addToConfigMap({...argv, configItems: nginxconfig}, context);
+
+  // ---------- Register LB as our subdomain ----------
+  const ingressService  = await client.api.v1.namespace(namespace).service('nginx-ingress').get();
+  const lbHostName      = sg.deref(ingressService, 'body.status.loadBalancer.ingress')[0].hostname;
+  const ChangeBatch     = changeBatch('UPSERT', server_name, lbHostName);
+
+  const domainName = sg.last(server_name.split('.'), 2).join('.');
+  await updateDomainName(domainName, ChangeBatch);
 
   return result;
 }});
@@ -239,6 +250,40 @@ async function getHasConfigmap(namespace, name) {
 
   const matching = (sg.deref(configmaps, 'body.items') || []).filter(cmap => cmap.metadata.name === name);
   return matching.length > 0;
+}
+
+/**
+ * Updates a DNS entry.
+ *
+ * @param {string} domain       -- The domain name to add the sub-domain to.
+ * @param {Object} ChangeBatch  -- The ChangeBatch info.
+ */
+async function updateDomainName(domain, ChangeBatch) {
+  const {HostedZones} = await route53.listHostedZonesByName({DNSName: domain}).promise();
+
+  for (let i = 0; i < HostedZones.length; ++i) {
+    const zone = HostedZones[i];
+    if (zone.Name === `${domain}.`) {
+      const HostedZoneId = zone.Id;
+      const {ChangeInfo} = await route53.changeResourceRecordSets({HostedZoneId, ChangeBatch}).promise();
+      const result = await route53.waitFor('resourceRecordSetsChanged', {Id: ChangeInfo.Id}).promise();
+     }
+  }
+
+}
+
+function changeBatch(action, server_name, Value) {
+  return {
+    Changes: [{
+      Action: action,
+      ResourceRecordSet: {
+        Name: server_name,
+        ResourceRecords: [{Value}],
+        TTL: 30,
+        Type: "CNAME"
+      }
+    }],
+  };
 }
 
 
