@@ -22,15 +22,6 @@ spec:
     # The Pod
     spec:
 
-      volumes:
-        - name: cert-volume
-          secret:
-            secretName: nginxcert
-
-        - name: nginxconfig-volume
-          configMap:
-            name: nginxconfig
-
       containers:
       - name: nginx-ingress
         image: briancsparks/quicknet-k8s-nginx-ingress
@@ -48,12 +39,6 @@ spec:
           initialDelaySeconds: 30
           timeoutSeconds: 1
 
-        volumeMounts:
-          - mountPath: /etc/nginx/ssl
-            name: cert-volume
-          - mountPath: /etc/nginx/conf.d
-            name: nginxconfig-volume
-
         lifecycle:
           preStop:
             exec:
@@ -63,6 +48,85 @@ spec:
           limits:
             memory: "128Mi"
             cpu: "500m"
+
+        volumeMounts:
+          - mountPath: /etc/nginx/conf.d
+            name: nginxconfig-volume
+
+          - mountPath: /etc/nginx/ssl/server
+            name: cert-volume
+
+          - mountPath: /etc/nginx/ssl/server-1
+            name: cert-volume-1
+
+          - mountPath: /etc/nginx/ssl/server-2
+            name: cert-volume-2
+
+          - mountPath: /etc/nginx/ssl/server-3
+            name: cert-volume-3
+
+          - mountPath: /etc/nginx/ssl/server-4
+            name: cert-volume-4
+
+          - mountPath: /etc/nginx/ssl/server-5
+            name: cert-volume-5
+
+          - mountPath: /etc/nginx/ssl/server-6
+            name: cert-volume-6
+
+          - mountPath: /etc/nginx/ssl/server-7
+            name: cert-volume-7
+
+          - mountPath: /etc/nginx/ssl/server-8
+            name: cert-volume-8
+
+          - mountPath: /etc/nginx/ssl/server-9
+            name: cert-volume-9
+
+      volumes:
+        - name: nginxconfig-volume
+          configMap:
+            name: nginxconfig
+
+        - name: cert-volume
+          secret:
+            secretName: nginxcert
+
+        - name: cert-volume-1
+          secret:
+            secretName: nginxcert-1
+
+        - name: cert-volume-2
+          secret:
+            secretName: nginxcert-2
+
+        - name: cert-volume-3
+          secret:
+            secretName: nginxcert-3
+
+        - name: cert-volume-4
+          secret:
+            secretName: nginxcert-4
+
+        - name: cert-volume-5
+          secret:
+            secretName: nginxcert-5
+
+        - name: cert-volume-6
+          secret:
+            secretName: nginxcert-6
+
+        - name: cert-volume-7
+          secret:
+            secretName: nginxcert-7
+
+        - name: cert-volume-8
+          secret:
+            secretName: nginxcert-8
+
+        - name: cert-volume-9
+          secret:
+            secretName: nginxcert-9
 
 
 

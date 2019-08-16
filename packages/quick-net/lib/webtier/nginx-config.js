@@ -29,9 +29,10 @@ module.exports.formatServerAndUpstream = formatServerAndUpstream;
  */
 mod.xport({serverAndUpstream: function(argv, context, callback) {
   var   {server_name = 'server'}  = argv;
+  const {server_num}              = argv;
   const config                    = formatServerAndUpstream(argv, context);
 
-  return callback(null, {[`server-${server_name.replace(/[.]/g, '-')}.conf`]:config});
+  return callback(null, {[`server-${server_num}-${server_name.replace(/[.]/g, '-')}.conf`]:config});
 }});
 
 /**
@@ -40,9 +41,9 @@ mod.xport({serverAndUpstream: function(argv, context, callback) {
  */
 function formatServerAndUpstream(argv, context) {
 
-  const {service, stage, server_name, port} = argv;
+  const {service, stage, server_name, server_num, port} = argv;
 
-  var   lines = [...nagMissing({service, stage, server_name, port})];
+  var   lines = [...nagMissing({service, stage, server_name, server_num, port})];
 
   lines = [...lines, `
     upstream ${service} {
@@ -56,11 +57,11 @@ function formatServerAndUpstream(argv, context) {
             listen 443      ssl;
             server_name     ${server_name};
 
-            root /usr/share/nginx/html;
+            root /usr/share/nginx/default/html;
             index index.html;
 
-            ssl_certificate /etc/nginx/ssl/tls.crt;
-            ssl_certificate_key /etc/nginx/ssl/tls.key;
+            ssl_certificate /etc/nginx/ssl/server-${server_num}/tls.crt;
+            ssl_certificate_key /etc/nginx/ssl/server-${server_num}/tls.key;
 
             location ~* ^/${stage}/* {
               include /etc/nginx/conf.d/proxy-params;

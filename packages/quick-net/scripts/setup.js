@@ -157,6 +157,15 @@ async function main() {
     // The nginx configuration and certs
     await createConfigMap({...ARGV.pod(), root, dir: nginxConfDir, name: 'nginxconfig'});
     await ensureTlsSecret({...ARGV.pod(), CN, name: 'nginxcert'});
+    await ensureTlsSecret({...ARGV.pod(), CN, name: 'nginxcert-1'});
+    await ensureTlsSecret({...ARGV.pod(), CN, name: 'nginxcert-2'});
+    await ensureTlsSecret({...ARGV.pod(), CN, name: 'nginxcert-3'});
+    await ensureTlsSecret({...ARGV.pod(), CN, name: 'nginxcert-4'});
+    await ensureTlsSecret({...ARGV.pod(), CN, name: 'nginxcert-5'});
+    await ensureTlsSecret({...ARGV.pod(), CN, name: 'nginxcert-6'});
+    await ensureTlsSecret({...ARGV.pod(), CN, name: 'nginxcert-7'});
+    await ensureTlsSecret({...ARGV.pod(), CN, name: 'nginxcert-8'});
+    await ensureTlsSecret({...ARGV.pod(), CN, name: 'nginxcert-9'});
 
     // // ---------- Create the datatier ----------
     // const setupDatatier     = await execa.stdout('node', ['./scripts/setup-datatier.js'], {cwd: root});

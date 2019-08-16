@@ -39,6 +39,16 @@ var   addToConfigMap;
 /**
  *  Adds a route for the service.
  *
+ *  To make a cert, see scripts/certbot*.
+ *
+ *  This will put certs into ~/.quick-net/certs/live/api.example.com/*.pem
+ *
+ *  To put a cert into a deployment (and note `nginxcert-4`):
+ *
+ *    kubectl create  secret tls nginxcert-4 \
+ *        --key ~/.quick-net/certs/live/api.example.com/privkey.pem \
+ *        --cert ~/.quick-net/certs/live/api.example.com/fullchain.pem \
+ *        -o json --dry-run | kubectl replace -f -`
  */
 mod.async({addServiceRoute: async function(argv, context ={}) {
 
@@ -47,7 +57,7 @@ mod.async({addServiceRoute: async function(argv, context ={}) {
   const configMapDir  = isDir({root, ...argv});
   const name          = argv.name;
 
-  const {service, stage, server_name, port} = argv;
+  const {service, stage, server_name, server_num, port} = argv;
 
   var   nginxconfig   = await serverAndUpstream(argv, context);
 
@@ -81,7 +91,7 @@ addToConfigMap = mod.async({addToConfigMap: async function(argv, context ={}) {
 _addToConfigMap_ = mod.async({_addToConfigMap_: async function(argv, context ={}) {
   var result = {};
 
-  const {namespace,configMapDir,name,configItems} = argv;
+  const {namespace,configMapDir,name,configItems,server_num} = argv;
 
   // ---------- Get the configmap to change ----------
 
