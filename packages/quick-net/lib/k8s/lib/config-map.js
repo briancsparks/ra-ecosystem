@@ -34,7 +34,7 @@ const {ns,isFile,isDir,sha256}       = Kutils;
 
 const serverAndUpstream       = nginxConfig.async.serverAndUpstream;
 
-sg.ARGV();
+const ARGV                    = sg.ARGV();
 var   addToConfigMap;
 
 
@@ -72,7 +72,7 @@ mod.async({addServiceRoute: async function(argv, context ={}) {
   const ChangeBatch     = changeBatch('UPSERT', server_name, lbHostName);
 
   const domainName = sg.last(server_name.split('.'), 2).join('.');
-  await updateDomainName(domainName, ChangeBatch);
+  await updateDomainName(domainName, ChangeBatch, server_name);
 
   return result;
 }});
@@ -258,7 +258,7 @@ async function getHasConfigmap(namespace, name) {
  * @param {string} domain       -- The domain name to add the sub-domain to.
  * @param {Object} ChangeBatch  -- The ChangeBatch info.
  */
-async function updateDomainName(domain, ChangeBatch) {
+async function updateDomainName(domain, ChangeBatch, server_name) {
   const {HostedZones} = await route53.listHostedZonesByName({DNSName: domain}).promise();
 
   for (let i = 0; i < HostedZones.length; ++i) {
@@ -266,7 +266,11 @@ async function updateDomainName(domain, ChangeBatch) {
     if (zone.Name === `${domain}.`) {
       const HostedZoneId = zone.Id;
       const {ChangeInfo} = await route53.changeResourceRecordSets({HostedZoneId, ChangeBatch}).promise();
+      ARGV.v(`Updating domain name for HostedZone ${HostedZoneId}`, {ChangeBatch});
+
+      ARGV.d(`Waiting for recordset to propigate (${server_name})`);
       const result = await route53.waitFor('resourceRecordSetsChanged', {Id: ChangeInfo.Id}).promise();
+      ARGV.d(`Done waiting`);
      }
   }
 
