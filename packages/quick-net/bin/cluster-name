@@ -1,0 +1,7 @@
+#!/bin/bash -e
+
+cluster_name="$QUICK_NET_CLUSTER_NAME"
+[[ -z $cluster_name ]] && cluster_name="$KOPS_CLUSTER_NAME"
+[[ -z $cluster_name ]] && cluster_name="no-such-cluster-name__set-QUICK_NET_CLUSTER_NAME"
+
+echo $cluster_name

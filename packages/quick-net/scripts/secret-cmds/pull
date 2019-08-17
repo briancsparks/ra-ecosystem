@@ -1,0 +1,39 @@
+#!/bin/bash -e
+
+STATE_STORE="$(state-store)"
+CLUSTER_NAME="$(cluster-name)"
+region="us-east-1"
+
+eval "$(cli-shezargs $@)"
+
+[[ $realm == 1 ]] && die "Need --realm="
+[[ -z $realm   ]] && die "Need --realm"
+
+S3_ROOT="${STATE_STORE}/quick-net/configs/${CLUSTER_NAME}/secrets/${realm}"
+
+secret_file="${PWD}/$1"
+secret_file_in="$(basename $secret_file).enc"
+
+# Make a secure place to work
+mkdir -p ~/stmp && chmod og-rwx ~/stmp && cd ~/stmp
+mkdir -p "$$"   && chmod og-rwx "$$"   && cd "$$"
+# ---------------------------------
+
+
+# -- Get data-key
+aws --region "$region" s3 cp "${S3_ROOT}/data-key.json" ./
+cat data-key.json | jq -r '.CiphertextBlob' | base64 --decode > binary-blob
+key="$(aws --region "$region" kms decrypt --ciphertext-blob fileb://binary-blob | jq -r '.Plaintext')"
+rm binary-blob
+
+aws --region "$region" s3 cp "${S3_ROOT}/${secret_file_in}" ./"${secret_file_in}"
+openssl enc -aes-256-cbc -d -a -in "${secret_file_in}" -out "${secret_file}" -k "$key"
+
+
+
+# ---------------------------------
+rm -f data-key.json
+rm -f "$secret_file_in"
+cd ..
+[[ -d "$$" ]] && rm -rf "$$"
+

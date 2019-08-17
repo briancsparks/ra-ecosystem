@@ -1,0 +1,37 @@
+#!/bin/bash -e
+
+set -x
+
+STATE_STORE="$(state-store)"
+CLUSTER_NAME="$(cluster-name)"
+region="us-east-1"
+
+eval "$(cli-shezargs $@)"
+
+[[ $realm == 1 ]] && die "Need --realm="
+[[ -z $realm   ]] && die "Need --realm"
+[[ -z $name    ]] && dir "Need --name"
+
+safename="$(echo $name | tr '.' '-')"
+
+# Make a secure place to work
+mkdir -p ~/stmp && chmod og-rwx ~/stmp && cd ~/stmp
+mkdir -p "$$"   && chmod og-rwx "$$"   && cd "$$"
+# ---------------------------------
+
+
+# -- Generate the cert / key
+openssl genrsa -out "${safename}-root-client-ca.key" 4096
+openssl req -new -x509 -days 7399 -key "${safename}-root-client-ca.key" -out "${safename}-root-client-ca.crt" -subj "$($scripts_dir/subj 'CE2E' 'CE2E Root Client CA')"
+
+# -- Copy to S3
+${script_dir}/../secret push --realm="$realm" "${safename}-root-client-ca.crt"
+${script_dir}/../secret push --realm="$realm" "${safename}-root-client-ca.key"
+
+
+# ---------------------------------
+rm -f "${safename}-root-client-ca.crt"
+rm -f "${safename}-root-client-ca.key"
+cd ..
+rmdir "$$"
+

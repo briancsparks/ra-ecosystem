@@ -1,0 +1,8 @@
+#!/bin/bash -e
+
+state_store="$QUICK_NET_STATE_STORE"
+[[ -z $state_store ]] && state_store="$KOPS_STATE_STORE"
+[[ -z $state_store ]] && state_store="no-such-state-store__set-QUICK_NET_STATE_STORE"
+
+echo $state_store
+

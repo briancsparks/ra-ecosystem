@@ -1,0 +1,14 @@
+#!/bin/bash -e
+
+subject="/C=US/ST=California/L=San Diego/O=HPI"
+
+if [[ $# > 1 ]]; then
+  cn="$2"
+  subject="$subject/OU=$1"
+else
+  cn="$1"
+fi
+subject="$subject/CN=$cn"
+
+echo "$subject"
+

@@ -1,0 +1,28 @@
+#!/bin/bash -e
+
+STATE_STORE="$(state-store)"
+CLUSTER_NAME="$(cluster-name)"
+region="us-east-1"
+
+eval "$(cli-shezargs $@)"
+
+[[ $realm == 1 ]] && die "Need --realm="
+[[ -z $realm   ]] && die "Need --realm"
+
+S3_ROOT="${STATE_STORE}/quick-net/configs/${CLUSTER_NAME}/secrets/${realm}"
+
+# Make a secure place to work
+mkdir -p ~/stmp && chmod og-rwx ~/stmp && cd ~/stmp
+mkdir -p "$$"   && chmod og-rwx "$$"   && cd "$$"
+# ---------------------------------
+
+
+aws --region "$region" kms generate-data-key --key-id "alias/serverassist-system-deploy" --key-spec "AES_256" | jq '{KeyId: .KeyId, CiphertextBlob: .CiphertextBlob}' > data-key.json
+aws --region "$region" s3 cp data-key.json "${S3_ROOT}/data-key.json"
+
+
+# ---------------------------------
+rm -f data-key.json
+cd ..
+rmdir "$$"
+
