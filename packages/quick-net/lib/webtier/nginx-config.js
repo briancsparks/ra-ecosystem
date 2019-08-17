@@ -42,6 +42,9 @@ mod.xport({serverAndUpstream: function(argv, context, callback) {
 function formatServerAndUpstream(argv, context) {
 
   const {service, stage, server_name, server_num, port} = argv;
+  const {client_certs}                                  = argv;
+
+  const dashed_server_name      = server_name.replace(/[.]/g, '-');
 
   var   lines = [...nagMissing({service, stage, server_name, server_num, port})];
 
@@ -60,17 +63,28 @@ function formatServerAndUpstream(argv, context) {
             root /usr/share/nginx/default/html;
             index index.html;
 
+            ssl_protocols TLSv1.1 TLSv1.2;
             ssl_certificate /etc/nginx/ssl/server-${server_num}/tls.crt;
-            ssl_certificate_key /etc/nginx/ssl/server-${server_num}/tls.key;
+            ssl_certificate_key /etc/nginx/ssl/server-${server_num}/tls.key;`];
 
-            location ~* ^/${stage}/* {
-              include /etc/nginx/conf.d/proxy-params;
-              proxy_pass http://${service};
+            if (client_certs) {
+              lines = [...lines, `
+                # See https://arcweb.co/securing-websites-nginx-and-client-side-certificate-authentication-linux/
+
+                # Client certificates
+                ssl_client_certificate /etc/nginx/ssl/client-certs/${dashed_server_name}-root-client-ca.crt;
+                ssl_verify_client optional;`];
             }
 
-            location / {
-              try_files $uri $uri/ =404;
-            }
+            lines = [...lines, `
+              location ~* ^/${stage}/* {
+                include /etc/nginx/conf.d/proxy-params;
+                proxy_pass http://${service};
+              }
+
+              location / {
+                try_files $uri $uri/ =404;
+              }
     }
 
     # vim: ft=nginx:`];

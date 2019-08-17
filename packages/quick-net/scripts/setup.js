@@ -157,6 +157,7 @@ async function main() {
 
     // The nginx configuration and certs
     await createConfigMap({...ARGV.pod(), root, dir: nginxConfDir, name: 'nginxconfig'});
+    await ensureTlsSecret({...ARGV.pod(), CN, name: 'nginxclientcert'});
     await ensureTlsSecret({...ARGV.pod(), CN, name: 'nginxcert'});
     await ensureTlsSecret({...ARGV.pod(), CN, name: 'nginxcert-1'});
     await ensureTlsSecret({...ARGV.pod(), CN, name: 'nginxcert-2'});

@@ -1,6 +1,7 @@
 #!/bin/bash -e
 
-set -x
+# See also: https://fardog.io/blog/2017/12/30/client-side-certificate-authentication-with-nginx/
+# and: https://arcweb.co/securing-websites-nginx-and-client-side-certificate-authentication-linux/
 
 STATE_STORE="$(state-store)"
 CLUSTER_NAME="$(cluster-name)"

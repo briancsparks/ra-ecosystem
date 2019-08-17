@@ -53,6 +53,9 @@ spec:
           - mountPath: /etc/nginx/conf.d
             name: nginxconfig-volume
 
+          - mountPath: /etc/nginx/ssl/client-certs
+            name: client-cert-volume
+
           - mountPath: /etc/nginx/ssl/server
             name: cert-volume
 
@@ -87,6 +90,10 @@ spec:
         - name: nginxconfig-volume
           configMap:
             name: nginxconfig
+
+        - name: client-cert-volume
+          secret:
+            secretName: nginxclientcert
 
         - name: cert-volume
           secret:
