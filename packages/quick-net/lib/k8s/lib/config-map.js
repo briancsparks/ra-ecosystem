@@ -56,10 +56,10 @@ var   addToConfigMap;
  *        -o json --dry-run | kubectl replace -f -`
  */
 mod.async({addServiceRoute: async function(argv, context ={}) {
+  ARGV.v(`addServiceRoute`, {argv});
 
   const namespace     = ns(argv);
   const root          = argv.cwd || argv.root || process.cwd();
-  const configMapDir  = isDir({root, ...argv});
   const config_name   = argv.config_name;
 
   const {service, stage, server_name, server_num, port} = argv;
@@ -82,6 +82,7 @@ mod.async({addServiceRoute: async function(argv, context ={}) {
 // -------------------------------------------------------------------------------------------------------------------------------------------------------
 var   _addToConfigMap_;
 addToConfigMap = mod.async({addToConfigMap: async function(argv, context ={}) {
+  ARGV.v(`addToConfigMap`, {argv});
 
   const namespace     = ns(argv);
   const root          = argv.cwd || argv.root || process.cwd();
@@ -102,6 +103,7 @@ addToConfigMap = mod.async({addToConfigMap: async function(argv, context ={}) {
  *
  */
 _addToConfigMap_ = mod.async({_addToConfigMap_: async function(argv, context ={}) {
+  ARGV.v(`_addToConfigMap_`, {argv});
   var result = {};
 
   const {namespace,configMapDir,config_name,configItems,server_num} = argv;

@@ -35,6 +35,10 @@ function ns(argv) {
 function isFile(argv) {
   const {file,root}    = argv;
 
+  if (file[0] === '/' && test('-f', file)) {
+    return file;
+  }
+
   if (!root || !file)      { return; }
 
   const fileitem  = sg.path.join(root, file);
@@ -48,6 +52,10 @@ function isFile(argv) {
 
 function isDir(argv) {
   const {dir,root}     = argv;
+
+  if (dir[0] === '/' && test('-d', dir)) {
+    return dir;
+  }
 
   if (!root || !dir)       { return; }
 

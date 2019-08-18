@@ -160,22 +160,22 @@ function ARGV(input = process.argv) {
 
   argv.d = function(msg, one='', two='', ...args) {
     if (!argv.debug) { return; }
-    return sg.log(msg, one, two, ...args);
+    return sg.elog(msg, one, two, ...args);
   };
 
   argv.d_if = function(test, msg, one='', two='', ...args) {
     if (!argv.debug || !test) { return; }
-    return sg.log(msg, one, two, ...args);
+    return sg.elog(msg, one, two, ...args);
   };
 
   argv.v = function(msg, one='', two='', ...args) {
     if (!argv.verbose) { return; }
-    return sg.log(msg, one, two, ...args);
+    return sg.elog(msg, one, two, ...args);
   };
 
   argv.v_if = function(test, msg, one='', two='', ...args) {
     if (!argv.verbose || !test) { return; }
-    return sg.log(msg, one, two, ...args);
+    return sg.elog(msg, one, two, ...args);
   };
 
   argv.w = function(msg, one='', two='', ...args) {
