@@ -1,0 +1,18 @@
+#!/bin/bash -e
+
+STATE_STORE="$(state-store)"
+CLUSTER_NAME="$(cluster-name)"
+region="us-east-1"
+
+eval "$(cli-shezargs $@)"
+
+[[ -z $realm       ]] && die "Need --realm"
+[[ $realm == 1     ]] && die "Need --realm="
+
+[[ -z $file        ]] && file="$1"
+
+S3_ROOT="${STATE_STORE}/quick-net/configs/${CLUSTER_NAME}/secrets"
+
+aws --region "$region" s3 rm "${S3_ROOT}/${realm}/${file}.enc"
+
+

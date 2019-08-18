@@ -1,0 +1,51 @@
+#!/bin/bash -e
+
+#
+# Generate a CSR
+#
+
+# ====================================
+eval "$(cli-shezargs $@)"
+
+[[ -z $realm       ]] && realm="certs"
+[[ $realm == 1     ]] && die "Need --realm="
+
+[[ -z $server_name ]] && die "Need --server-name="
+[[ -z $user_name   ]] && die "Need --user-name="
+
+dashed_server="$(echo $server_name | tr '.' '-')"
+cert_name="${dashed_server}-${user_name}-client"
+
+# Make a secure place to work
+mkdir -p ~/stmp && chmod og-rwx ~/stmp && cd ~/stmp
+mkdir -p "$$"   && chmod og-rwx "$$"   && cd "$$"
+# ====================================
+
+set -x
+
+key="$(${script_dir}/get-data-key --realm=$realm)"
+
+${script_dir}/pull --realm="${realm}" "${dashed_server}-root-client-ca.crt"
+${script_dir}/pull --realm="${realm}" "${dashed_server}-root-client-ca.key"
+mv "../${cert_name}.csr" ./
+
+openssl x509 -req -days 375 -in "${cert_name}.csr" -CA "${dashed_server}-root-client-ca.crt" -CAkey "${dashed_server}-root-client-ca.key" -set_serial 01 -out "${cert_name}.crt"
+
+
+# ====================================
+rm -f data-key.json
+rm -f "${dashed_server}-root-client-ca.crt"
+rm -f "${dashed_server}-root-client-ca.key"
+
+
+# ====================================
+mkdir -p "${dashed_server}-${user_name}"
+mv "${cert_name}.csr" "${dashed_server}-${user_name}/"
+mv "${cert_name}.crt" "${dashed_server}-${user_name}/"
+
+qn-secret push --realm=certs "${dashed_server}-${user_name}/"
+
+tree
+cd ..
+[[ -d "$$" ]] && rm -rf "$$"
+

@@ -1,0 +1,62 @@
+#!/bin/bash -e
+
+#
+# Build the user cert.
+#
+
+#subj() {
+#	subject="/C=US/ST=California/L=San Diego/O=HPI"
+#
+#	if [[ $# > 1 ]]; then
+#		cn="$2"
+#		subject="$subject/OU=$1"
+#	else
+#		cn="$1"
+#	fi
+#	subject="$subject/CN=$cn"
+#
+#	echo "$subject"
+#}
+
+# ====================================
+eval "$(cli-shezargs $@)"
+
+[[ -z $realm        ]] && realm="certs"
+#[[ $realm == 1     ]] && die "Need --realm="
+#[[ -z $realm       ]] && die "Need --realm"
+
+[[ -z $server_name ]] && die "Need --server-name="
+[[ -z $user_name   ]] && die "Need --user-name="
+[[ -z $email 			 ]] && die "Need --email="
+
+[[ -z $user_key 	 ]] && user_key="${HOME}/.ssh/id_rsa"
+[[ -f $user_key    ]] || die "$user_key: file does not exist"
+
+dashed_server="$(echo $server_name | tr '.' '-')"
+cert_name="${dashed_server}-${user_name}-client"
+
+die_must_have_user_key() {
+  echo "Must have a user key. You can generate one with:"
+  echo ""
+  echo "  mkdir -p ~/.ssh/qn-client-certs && cd \$_"
+  echo "  openssl genrsa -out \"${cert_name}.key\" 4096"
+  echo ""
+
+  exit 5
+}
+
+
+mkdir -p ~/.ssh/qn-client-certs && cd ~/.ssh/qn-client-certs
+
+[[ -f $user_key ]] || user_key="${cert_name}.key"
+[[ -f $user_key ]] || die_must_have_user_key
+
+# ==============================
+if ! [[ -f "${cert_name}.csr" ]]; then
+  openssl req -new -key "${user_key}" -out "${cert_name}.csr" -subj "$(${script_dir}/subj 'HPI' ${email})"
+fi
+
+#scpix "${cert_name}.csr" awsdev:stmp/
+
+cp "${cert_name}.csr" ~/stmp/
+

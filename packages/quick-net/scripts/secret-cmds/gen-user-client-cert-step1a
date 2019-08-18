@@ -1,0 +1,36 @@
+#!/bin/bash -e
+
+#
+# Build the user cert.
+#
+
+# ====================================
+eval "$(cli-shezargs $@)"
+
+#[[ -z $realm        ]] && realm="certs"
+##[[ $realm == 1     ]] && die "Need --realm="
+##[[ -z $realm       ]] && die "Need --realm"
+
+[[ -z $server_name ]] && die "Need --server-name="
+[[ -z $user_name   ]] && die "Need --user-name="
+[[ -z $email 			 ]] && die "Need --email="
+
+[[ -z $user_key 	 ]] && user_key="${HOME}/.ssh/id_rsa"
+[[ -f $user_key    ]] || die "$user_key: file does not exist.  Use `openssl genrsa -out output.key` 4096"
+
+dashed_server="$(echo $server_name | tr '.' '-')"
+cert_name="${dashed_server}-${user_name}-client"
+
+
+
+mkdir -p ~/.ssh/qn-client-certs && cd ~/.ssh/qn-client-certs
+
+[[ -f $user_key ]] || user_key="${cert_name}.key"
+[[ -f $user_key ]] || die_must_have_user_key
+
+# ==============================
+openssl req -new -key "${user_key}" -out "${cert_name}.csr" -subj "$(${script_dir}/subj 'HPI' ${email})"
+
+scpix "${cert_name}.csr" awsdev:stmp/
+
+

@@ -6,8 +6,8 @@ region="us-east-1"
 
 eval "$(cli-shezargs $@)"
 
+[[ -z $realm   ]] && realm="certs"
 [[ $realm == 1 ]] && die "Need --realm="
-[[ -z $realm   ]] && die "Need --realm"
 
 S3_ROOT="${STATE_STORE}/quick-net/configs/${CLUSTER_NAME}/secrets/${realm}"
 
