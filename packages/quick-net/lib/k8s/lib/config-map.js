@@ -8,7 +8,7 @@ const sg0                     = ra.get3rdPartyLib('sg-argv');
 const { _ }                   = sg0;
 const qm                      = require('quick-merge').qm;
 const sg                      = sg0.merge(sg0, require('sg-exec'), require('sg-clihelp'));
-const nginxConfig             = require('../../webtier/nginx-config');
+const nginxConfigLib          = require('../../webtier/nginx-config');
 const Kutils                  = require('./utils');
 const os                      = require('os');
 const k8s                     = require('@kubernetes/client-node');
@@ -32,7 +32,9 @@ const client                  = new Client({backend, version: '1.13'});
 
 const {ns,isFile,isDir,sha256}       = Kutils;
 
-const serverAndUpstream       = nginxConfig.async.serverAndUpstream;
+const serverAndUpstreamBlocks = nginxConfigLib.async.serverAndUpstreamBlocks;
+const serverBlock             = nginxConfigLib.async.serverBlock;
+const upstreamBlock           = nginxConfigLib.async.upstreamBlock;
 
 const ARGV                    = sg.ARGV();
 var   addToConfigMap;
@@ -58,13 +60,13 @@ mod.async({addServiceRoute: async function(argv, context ={}) {
   const namespace     = ns(argv);
   const root          = argv.cwd || argv.root || process.cwd();
   const configMapDir  = isDir({root, ...argv});
-  const name          = argv.name;
+  const config_name   = argv.config_name;
 
   const {service, stage, server_name, server_num, port} = argv;
 
-  var   nginxconfig   = await serverAndUpstream(argv, context);
+  var   serverconfig  = await serverAndUpstreamBlocks(argv, context);
 
-  var   result        = await addToConfigMap({...argv, configItems: nginxconfig}, context);
+  var   result        = await addToConfigMap({...argv, configItems: {...serverconfig}}, context);
 
   // ---------- Register LB as our subdomain ----------
   const ingressService  = await client.api.v1.namespace(namespace).service('nginx-ingress').get();
@@ -84,12 +86,12 @@ addToConfigMap = mod.async({addToConfigMap: async function(argv, context ={}) {
   const namespace     = ns(argv);
   const root          = argv.cwd || argv.root || process.cwd();
   const configMapDir  = isDir({root, ...argv});
-  const name          = argv.name;
+  const config_name   = argv.config_name;
 
   // TODO: exit if we don't have params
-  // console.log(`ccm`, {argv,context,namespace,root,configMapDir,name});
+  // console.log(`ccm`, {argv,context,namespace,root,configMapDir,config_name});
 
-  return _addToConfigMap_({...argv, namespace, configMapDir, name}, context);
+  return _addToConfigMap_({...argv, namespace, configMapDir, config_name}, context);
 }});
 
 // -------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -102,26 +104,26 @@ addToConfigMap = mod.async({addToConfigMap: async function(argv, context ={}) {
 _addToConfigMap_ = mod.async({_addToConfigMap_: async function(argv, context ={}) {
   var result = {};
 
-  const {namespace,configMapDir,name,configItems,server_num} = argv;
+  const {namespace,configMapDir,config_name,configItems,server_num} = argv;
 
   // ---------- Get the configmap to change ----------
 
   var   configmap;
-  const hasConfigMap = await getHasConfigmap(namespace, name);
+  const hasConfigMap = await getHasConfigmap(namespace, config_name);
 
   // Get the configmap from the API, or...
   if (hasConfigMap) {
-    configmap = await client.api.v1.namespace(namespace).configmap(name).get();
+    configmap = await client.api.v1.namespace(namespace).configmap(config_name).get();
     configmap = configmap.body || {};
 
   } else {
     // ...get the configmap from our seed dir
-    let fromfile  = await execa.stdout('kubectl', ['create', 'configmap', name, `--from-file=${configMapDir}`, '-o', 'json', '--dry-run']);
+    let fromfile  = await execa.stdout('kubectl', ['create', 'configmap', config_name, `--from-file=${configMapDir}`, '-o', 'json', '--dry-run']);
     configmap     = sg.safeJSONParse(fromfile);
   }
 
   // Make sure we have something
-  configmap = configmap || {metadata:{name}, data:{}};
+  configmap = configmap || {metadata:{name: config_name}, data:{}};
 
   // ---------- Add / replace the item(s) ----------
 
@@ -130,13 +132,13 @@ _addToConfigMap_ = mod.async({_addToConfigMap_: async function(argv, context ={}
 
   // The body to send to the API
   var   body = {
-    metadata: {name},
+    metadata: {name: config_name},
     data: configmapData,
   };
 
   // Put data back to k8s
   if (hasConfigMap) {
-    result = await client.api.v1.namespace(namespace).configmaps(name).put({body});
+    result = await client.api.v1.namespace(namespace).configmaps(config_name).put({body});
   } else {
     result = await client.api.v1.namespace(namespace).configmap.post({body});
   }
@@ -153,12 +155,12 @@ mod.async({createConfigMap: async function(argv, context ={}) {
   const namespace     = ns(argv);
   const root          = argv.cwd || argv.root || process.cwd();
   const configMapDir  = isDir({root, ...argv});
-  const name          = argv.name;
+  const config_name   = argv.config_name;
 
   // TODO: exit if we don't have params
-  // console.log(`ccm`, {argv,context,namespace,root,configMapDir,name});
+  // console.log(`ccm`, {argv,context,namespace,root,configMapDir,config_name});
 
-  return await _createConfigMap_({...argv, namespace, configMapDir, name}, context);
+  return await _createConfigMap_({...argv, namespace, configMapDir, config_name}, context);
 }});
 
 // -------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -172,15 +174,15 @@ _createConfigMap_ = mod.async({_createConfigMap_: async function(argv, context =
   var result = {};
 
   try {
-    const {namespace,configMapDir,name} = argv;
+    const {namespace,configMapDir,config_name} = argv;
 
     // Get the config from the dir
-    result              = await execa.stdout('kubectl', ['create', 'configmap', name, `--from-file=${configMapDir}`, '-o', 'json', '--dry-run']);
+    result              = await execa.stdout('kubectl', ['create', 'configmap', config_name, `--from-file=${configMapDir}`, '-o', 'json', '--dry-run']);
     const configmap     = sg.safeJSONParse(result);
     const data          = mergeConfigMap(configmap.data || {});
 
-    if (await getHasConfigmap(namespace, name)) {
-      result = await client.api.v1.namespace(namespace).configmaps(name).put({body: {...configmap, data}});
+    if (await getHasConfigmap(namespace, config_name)) {
+      result = await client.api.v1.namespace(namespace).configmaps(config_name).put({body: {...configmap, data}});
     } else {
       result = await client.api.v1.namespace(namespace).configmap.post({body: {...configmap, data}});
     }
@@ -214,7 +216,8 @@ _createConfigMap_ = mod.async({_createConfigMap_: async function(argv, context =
  *
  */
 function mergeConfigMap(configmap_, items ={}) {
-  var   configmap = sg.reduce(items, _.omit(configmap_, 'hash'), (m, contents, name) => {
+  var   configmap = sg.reduce(items, _.omit(configmap_, 'hash'), (m, contents_, name) => {
+    const contents = contents_.lines || contents_;
     return sg.kv(m, name, stringify(contents));
   });
 
@@ -259,6 +262,9 @@ async function getHasConfigmap(namespace, name) {
  * @param {Object} ChangeBatch  -- The ChangeBatch info.
  */
 async function updateDomainName(domain, ChangeBatch, server_name) {
+
+  // TODO: First, check if it is already correct
+
   const {HostedZones} = await route53.listHostedZonesByName({DNSName: domain}).promise();
 
   for (let i = 0; i < HostedZones.length; ++i) {

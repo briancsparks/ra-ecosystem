@@ -69,4 +69,25 @@ exports.smJson = function(json_) {
   return `"${json.substr(0, 23)}..." length: ${json.length}`;
 };
 
+exports.__asJSON = function(type, id, spec_) {
+  const spec = {type, id, spec:spec_};
+  return ['__asJSON: '+JSON.stringify(spec), spec];
+};
+
+exports.parseAsJSON = function(lines) {
+  if (!Array.isArray(lines))  { return exports.parseAsJSON(lines.split('\n')); }
+
+  const len   = lines.length;
+
+  for (let i = 0; i < len; ++i) {
+    let m = lines[i].match(/ __asJSON:\s(.*)/);
+    if (m) {
+      let json = sg.safeJSONParse(m[1]);
+      if (json) {
+        return json;
+      }
+    }
+  }
+}
+
 // console.log(exports.localIp());
