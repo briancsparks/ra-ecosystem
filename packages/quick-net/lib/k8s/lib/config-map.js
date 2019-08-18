@@ -74,7 +74,7 @@ mod.async({addServiceRoute: async function(argv, context ={}) {
   const ChangeBatch     = changeBatch('UPSERT', server_name, lbHostName);
 
   const domainName = sg.last(server_name.split('.'), 2).join('.');
-  await updateDomainName(domainName, ChangeBatch, server_name);
+  await updateDomainName(domainName, ChangeBatch, server_name, lbHostName);
 
   return result;
 }});
@@ -263,7 +263,7 @@ async function getHasConfigmap(namespace, name) {
  * @param {string} domain       -- The domain name to add the sub-domain to.
  * @param {Object} ChangeBatch  -- The ChangeBatch info.
  */
-async function updateDomainName(domain, ChangeBatch, server_name) {
+async function updateDomainName(domain, ChangeBatch, server_name, Value) {
 
   // TODO: First, check if it is already correct
 
@@ -273,8 +273,27 @@ async function updateDomainName(domain, ChangeBatch, server_name) {
     const zone = HostedZones[i];
     if (zone.Name === `${domain}.`) {
       const HostedZoneId = zone.Id;
-      const {ChangeInfo} = await route53.changeResourceRecordSets({HostedZoneId, ChangeBatch}).promise();
+
       ARGV.v(`Updating domain name for HostedZone ${HostedZoneId}`, {ChangeBatch});
+
+      // See if we already have pushed this entry to route53
+      const {ResourceRecordSets} = await route53.listResourceRecordSets({HostedZoneId}).promise();
+      for (let j = 0; j < ResourceRecordSets.length; ++j) {
+        let rr = ResourceRecordSets[j];
+        if (rr.Name === `${server_name}.`) {
+          for (let k = 0; k < rr.ResourceRecords.length; ++k) {
+            let record = rr.ResourceRecords[k];
+            if (record.Value === Value) {
+
+              // Already done
+              ARGV.d(`Updates for zone already done ${HostedZoneId}`, {record});
+              return;
+            }
+          }
+        }
+      }
+
+      const {ChangeInfo} = await route53.changeResourceRecordSets({HostedZoneId, ChangeBatch}).promise();
 
       ARGV.d(`Waiting for recordset to propigate (${server_name})`);
       const result = await route53.waitFor('resourceRecordSetsChanged', {Id: ChangeInfo.Id}).promise();

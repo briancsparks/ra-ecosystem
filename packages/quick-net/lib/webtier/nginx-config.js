@@ -11,6 +11,7 @@
 const ra                      = require('run-anywhere').v2;
 const sg                      = ra.get3rdPartyLib('sg-argv');
 const { _ }                   = sg;
+const nginxValidators         = require('./nginx-validate');
 const utils                   = require('../utils');
 const { getQuiet }            = ra.utils;
 const {
@@ -87,6 +88,7 @@ function formatServerBlock(argv, context) {
   var   upstreamName            = argv.upstreamName || argv.upstream_name || argv.upstream || service;
   let   server_prefix           = (argv.server_name ||'').replace(/[.]/g, '_');
   upstreamName                  = _.compact([server_prefix, upstreamName]).join('_');
+  client_certs                  = nginxValidators.ssl_verify_client(client_certs) || false;
 
   var   spec_                   = {upstreamName, client_certs, service, stage, server_name, server_num: +server_num};
 
@@ -135,9 +137,9 @@ function formatServerBlock(argv, context) {
                 # See https://arcweb.co/securing-websites-nginx-and-client-side-certificate-authentication-linux/
 
                 # Client certificates
-                #ssl_client_certificate /etc/nginx/ssl/client-certs/${dashed_server_name}-root-client-ca.crt;
-                ssl_client_certificate /etc/nginx/ssl/client-certs/tls.crt;
-                ssl_verify_client optional;`];
+                ssl_client_certificate /etc/nginx/ssl/client-cert-${server_num}/tls.crt;
+                ssl_verify_client ${client_certs};
+              `];
             }
 
             lines = [...lines, `

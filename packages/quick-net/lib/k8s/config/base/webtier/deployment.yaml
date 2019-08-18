@@ -53,9 +53,6 @@ spec:
           - mountPath: /etc/nginx/conf.d
             name: nginxconfig-volume
 
-          - mountPath: /etc/nginx/ssl/client-certs
-            name: client-cert-volume
-
           - mountPath: /etc/nginx/ssl/server
             name: cert-volume
 
@@ -86,14 +83,37 @@ spec:
           - mountPath: /etc/nginx/ssl/server-9
             name: cert-volume-9
 
+          - mountPath: /etc/nginx/ssl/client-cert-1
+            name: client-cert-volume-1
+
+          - mountPath: /etc/nginx/ssl/client-cert-2
+            name: client-cert-volume-2
+
+          - mountPath: /etc/nginx/ssl/client-cert-3
+            name: client-cert-volume-3
+
+          - mountPath: /etc/nginx/ssl/client-cert-4
+            name: client-cert-volume-4
+
+          - mountPath: /etc/nginx/ssl/client-cert-5
+            name: client-cert-volume-5
+
+          - mountPath: /etc/nginx/ssl/client-cert-6
+            name: client-cert-volume-6
+
+          - mountPath: /etc/nginx/ssl/client-cert-7
+            name: client-cert-volume-7
+
+          - mountPath: /etc/nginx/ssl/client-cert-8
+            name: client-cert-volume-8
+
+          - mountPath: /etc/nginx/ssl/client-cert-9
+            name: client-cert-volume-9
+
       volumes:
         - name: nginxconfig-volume
           configMap:
             name: nginxconfig
-
-        - name: client-cert-volume
-          secret:
-            secretName: nginxclientcert
 
         - name: cert-volume
           secret:
@@ -134,6 +154,42 @@ spec:
         - name: cert-volume-9
           secret:
             secretName: nginxcert-9
+
+        - name: client-cert-volume-1
+          secret:
+            secretName: nginxclientcert-1
+
+        - name: client-cert-volume-2
+          secret:
+            secretName: nginxclientcert-2
+
+        - name: client-cert-volume-3
+          secret:
+            secretName: nginxclientcert-3
+
+        - name: client-cert-volume-4
+          secret:
+            secretName: nginxclientcert-4
+
+        - name: client-cert-volume-5
+          secret:
+            secretName: nginxclientcert-5
+
+        - name: client-cert-volume-6
+          secret:
+            secretName: nginxclientcert-6
+
+        - name: client-cert-volume-7
+          secret:
+            secretName: nginxclientcert-7
+
+        - name: client-cert-volume-8
+          secret:
+            secretName: nginxclientcert-8
+
+        - name: client-cert-volume-9
+          secret:
+            secretName: nginxclientcert-9
 
 
 
