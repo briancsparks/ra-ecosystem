@@ -7,30 +7,57 @@
 # ====================================
 eval "$(cli-shezargs $@)"
 
+mk_cert_name() {
+  fixed_server="$(echo $1 | tr '.' '-')"
+  fixed_email="$(echo $2 | tr '@' '_' | tr '.' '-')"
+
+  echo "${fixed_server}__${fixed_email}__$3"
+}
+
 #[[ -z $realm        ]] && realm="certs"
 ##[[ $realm == 1     ]] && die "Need --realm="
 ##[[ -z $realm       ]] && die "Need --realm"
 
 [[ -z $server_name ]] && die "Need --server-name="
-[[ -z $user_name   ]] && die "Need --user-name="
+# [[ -z $user_name   ]] && die "Need --user-name="
 [[ -z $email 			 ]] && die "Need --email="
 
+[[ -z $user_key    ]] && user_key="$key"
 [[ -z $user_key 	 ]] && user_key="${HOME}/.ssh/id_rsa"
 [[ -f $user_key    ]] || die "$user_key: file does not exist.  Use `openssl genrsa -out output.key` 4096"
 
-dashed_server="$(echo $server_name | tr '.' '-')"
-cert_name="${dashed_server}-${user_name}-client"
+# dashed_server="$(echo $server_name | tr '.' '-')"
+# cert_name="${dashed_server}-${user_name}-client"
+
+cert_name="$(mk_cert_name $server_name $email 'client')"
 
 
-
-mkdir -p ~/.ssh/qn-client-certs && cd ~/.ssh/qn-client-certs
-
-[[ -f $user_key ]] || user_key="${cert_name}.key"
-[[ -f $user_key ]] || die_must_have_user_key
 
 # ==============================
+mkdir -p ~/.ssh/qn-client-certs && chmod og-rwx ~/.ssh/qn-client-certs && cd ~/.ssh/qn-client-certs
+
 openssl req -new -key "${user_key}" -out "${cert_name}.csr" -subj "$(${script_dir}/subj 'HPI' ${email})"
 
+echo scpix "${cert_name}.csr" awsdev:stmp/
 scpix "${cert_name}.csr" awsdev:stmp/
+
+
+# ==============================
+#sshix awsdev "dev/ra-ecosystem/packages/quick-net/scripts/qn-secret gen-user-client-cert-step2 --server-name=$server_name --email=$email --save"
+
+# Wait for completion
+echo "Log into awsdev and do the work to make the cert:"
+echo ""
+echo "  qn-secret gen-user-client-cert-step2 --server-name=$server_name --email=$email --save"
+echo ""
+read -p "Press Enter to continue" xyz
+
+
+scpix "awsdev:stmp/${cert_name}.crt" ./
+sshix awsdev "rm stmp/${cert_name}.crt"
+
+# Make .pem
+cat "${cert_name}.crt" "${user_key}" > "${cert_name}.pem"
+openssl pkcs12 -export -clcerts -in "${cert_name}.crt" -inkey "${user_key}" -passout 'pass:' -out "${cert_name}.p12"
 
 
