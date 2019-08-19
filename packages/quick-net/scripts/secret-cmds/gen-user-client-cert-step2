@@ -7,45 +7,68 @@
 # ====================================
 eval "$(cli-shezargs $@)"
 
+mk_cert_root() {
+  fixed_server="$(echo $1 | tr '.' '-')"
+  fixed_email="$(echo $2 | tr '@' '_' | tr '.' '-')"
+
+  echo "${fixed_server}__${fixed_email}"
+}
+
+mk_cert_name() {
+  echo "$(mk_cert_root $1 $2)__$3"
+}
+
+
 [[ -z $realm       ]] && realm="certs"
 [[ $realm == 1     ]] && die "Need --realm="
 
 [[ -z $server_name ]] && die "Need --server-name="
-[[ -z $user_name   ]] && die "Need --user-name="
 
 dashed_server="$(echo $server_name | tr '.' '-')"
-cert_name="${dashed_server}-${user_name}-client"
+
+cert_root="$(mk_cert_root $server_name $email)"
+cert_name="$(mk_cert_name $server_name $email 'client')"
+
+[[ -z $pid ]] && pid="$$"
+
 
 # Make a secure place to work
 mkdir -p ~/stmp && chmod og-rwx ~/stmp && cd ~/stmp
-mkdir -p "$$"   && chmod og-rwx "$$"   && cd "$$"
+mkdir -p "$pid"   && chmod og-rwx "$pid"   && cd "$pid"
 # ====================================
-
-set -x
 
 key="$(${script_dir}/get-data-key --realm=$realm)"
 
 ${script_dir}/pull --realm="${realm}" "${dashed_server}-root-client-ca.crt"
 ${script_dir}/pull --realm="${realm}" "${dashed_server}-root-client-ca.key"
-mv "../${cert_name}.csr" ./
+mv ../${cert_name}.* .
 
+# Finally. do it.
 openssl x509 -req -days 375 -in "${cert_name}.csr" -CA "${dashed_server}-root-client-ca.crt" -CAkey "${dashed_server}-root-client-ca.key" -set_serial 01 -out "${cert_name}.crt"
 
 
 # ====================================
+
+# Clean up
 rm -f data-key.json
 rm -f "${dashed_server}-root-client-ca.crt"
 rm -f "${dashed_server}-root-client-ca.key"
 
 
 # ====================================
-mkdir -p "${dashed_server}-${user_name}"
-mv "${cert_name}.csr" "${dashed_server}-${user_name}/"
-mv "${cert_name}.crt" "${dashed_server}-${user_name}/"
 
-qn-secret push --realm=certs "${dashed_server}-${user_name}/"
+# Make a .tar file of all the parts, and put it on qn-secrets
+mkdir -p "${cert_root}"
+mv ${cert_name}.* "${cert_root}/"
 
-tree
+qn-secret push --realm=certs "${cert_root}/"
+
+if [[ -n $save ]]; then
+  mv "${cert_root}/${cert_name}.crt" ../
+  [[ -f ${cert_root}/${cert_name}.key ]] && mv "${cert_root}/${cert_name}.key" ../
+fi
+
+#tree
 cd ..
-[[ -d "$$" ]] && rm -rf "$$"
+[[ -d "$pid" ]] && rm -rf "$pid"
 
