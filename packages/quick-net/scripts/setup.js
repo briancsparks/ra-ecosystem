@@ -408,6 +408,8 @@ async function getVpcSubnetsSgs(ARGV) {
     var   classB  = ARGV._get('class_b,classB') || vpcId;
     if (!classB)  { return; }
 
+    classB = getClassB(classB);
+
     // Make it a string
     classB = ''+classB;
 
@@ -460,6 +462,26 @@ function getAwsTag(obj, key) {
     }
     return m;
   });
+}
+
+function getClassB(ip) {
+  if (_.isNumber(ip))             { return ip; }
+  if (!_.isString(ip))            { return; }
+  if (!ip.match(/^[.0-9]+$/))     { return; }
+
+  const parts = ip.split('.');
+
+  // Just a string representation of a number
+  if (parts.length === 1)  {
+    return +parts[0];
+  }
+
+  // It was an IP address.
+  if (parts.length !== 4)       { return; }
+  if (parts[1].length > 3)      { return; }
+  if (parts[1].length === 0)    { return; }
+
+  return +parts[1];
 }
 
 
