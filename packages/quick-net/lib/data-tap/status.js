@@ -30,6 +30,10 @@ const mod                     = ra.modSquad(module, 'datatapStatus');
 
 mod.xport({pushStatus: function(argv, context, callback) {
 
+  if (process.env.NO_REDIS) {
+    return callback(null, []);
+  }
+
   /*
     quick-net pushStatus --name=them --data='{\"msg\":\"myUpdatedStatus\"}'
   */

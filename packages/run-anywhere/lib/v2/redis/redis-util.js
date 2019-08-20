@@ -47,6 +47,10 @@ exports.getRedis = function(context) {
 
   var   close           = function(){};
 
+  if (process.env.NO_REDIS) {
+    return {redis:{}, close};
+  }
+
   if (!redis) {
     redis               = redisLib.createClient(redisPort, redisHost);
     raCtx.redis         = redis;

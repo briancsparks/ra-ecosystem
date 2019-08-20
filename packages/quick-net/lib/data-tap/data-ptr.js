@@ -23,6 +23,10 @@ const mod                     = ra.modSquad(module, 'datatapDataPtr');
 
 mod.xport({pushDataPtr: function(argv, context, callback) {
 
+  if (process.env.NO_REDIS) {
+    return callback(null, {});
+  }
+
   /*
     quick-net pushDataPtr --name=them --data=magic --loc=magic
   */

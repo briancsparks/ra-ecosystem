@@ -46,8 +46,8 @@ mod.xport({fetchAndCache: function(argv, context, callback) {
 
   const ractx             = context.runAnywhere || {};
   const { rax }           = ractx.dataTransfer__fetchAndCache;
-  const { redis, close }  = redisUtils.getRedis(context);
   const quiet             = getQuiet(context);
+  const { redis, close }  = process.env.NO_REDIS ? {redis:{}, close:noop} : redisUtils.getRedis(context);
 
   var   key, url;
   var   haveGivenResult = false;
@@ -62,6 +62,7 @@ mod.xport({fetchAndCache: function(argv, context, callback) {
     if (rax.argErrors())    { return rax.abort(); }
 
     return sg.__run2({result:{}}, callback, [function(my, next, last) {
+      if (process.env.NO_REDIS) { return next(); }
 
       return GET(key, function(err, data) {
         if (!quiet) { sg.elog(`GET ${key}`, {err, data: smJson(data)}); }
@@ -106,6 +107,8 @@ mod.xport({fetchAndCache: function(argv, context, callback) {
       });
 
     }, function(my, next) {
+      if (process.env.NO_REDIS) { return next(); }
+
       const json = JSON.stringify(my.body || {});
       return SET([key, json], function(err, receipt) {
         if (!quiet) { sg.elog(`SET ${key} |${smJson(json)}|`, {err, receipt}); }
@@ -150,7 +153,7 @@ mod.xport({fetchAndCacheSimple: function(argv, context, callback) {
 
 
   const { rax }           = ra.getContext(context, argv);
-  const { redis, close }  = redisUtils.getRedis(context);
+  const { redis, close }  = process.env.NO_REDIS ? {redis:{}, close:noop} : redisUtils.getRedis(context);
   const quiet             = getQuiet(context);
 
   var   key, url;
@@ -165,6 +168,8 @@ mod.xport({fetchAndCacheSimple: function(argv, context, callback) {
     if (rax.argErrors())    { return rax.abort(); }
 
     return rax.__run2({result:{}}, callback, [function(my, next, last) {
+      if (process.env.NO_REDIS) { return next(); }
+
       return GET(key, function(err, data) {
         if (!quiet) { sg.elog(`GET ${key}`, {err, data: smJson(data)}); }
 
@@ -203,6 +208,7 @@ mod.xport({fetchAndCacheSimple: function(argv, context, callback) {
       });
 
     }, function(my, next) {
+      if (process.env.NO_REDIS) { return next(); }
 
       // Put the result into the cache
 
@@ -245,4 +251,5 @@ mod.xport({fetchAndCacheSimple: function(argv, context, callback) {
 //  Helper Functions
 //
 
+function noop(){}
 

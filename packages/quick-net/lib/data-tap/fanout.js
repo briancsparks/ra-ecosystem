@@ -29,6 +29,10 @@ const mod                     = ra.modSquad(module, 'datatapFanout');
 
 mod.xport({pushData: function(argv, context, callback) {
 
+  if (process.env.NO_REDIS) {
+    return callback(null, {});
+  }
+
   /*
     quick-net pushData --name=them --data='{\"a\":42}'
   */

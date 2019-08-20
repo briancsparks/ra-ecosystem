@@ -30,6 +30,10 @@ const mod                     = ra.modSquad(module, 'datatapRead');
 
 mod.xport({readData: function(argv, context, callback) {
 
+  if (process.env.NO_REDIS) {
+    return callback(null, []);
+  }
+
   /*
     quick-net readData --name=us --from=them --hold=500
     quick-net readData --name=us --from=them --hold=500 --status

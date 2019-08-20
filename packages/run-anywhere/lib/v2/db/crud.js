@@ -33,8 +33,11 @@ const mod                       = ra.modSquad(module, `raCrud`);
 //  Functions
 //
 
-
 mod.xport({upsert: function(argv_, context, callback) {
+
+  if (process.env.NO_MONGO) {
+    return callback(null, {modifiedCount: 1, upsertedCount: 0, matchedCount: 1});
+  }
 
   /*
     ra invoke lib\v2\db\crud.js upsert --arg=
@@ -80,6 +83,11 @@ mod.xport({upsert: function(argv_, context, callback) {
 }});
 
 mod.async({find: async function(argv_, context) {
+
+  if (process.env.NO_MONGO) {
+    return {items:[]};
+  }
+
   var   argv = Object.assign({}, argv_);
   var   meta = sg.extract(argv, '__meta__');
 

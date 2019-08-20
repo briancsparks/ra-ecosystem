@@ -19,8 +19,20 @@ const {
 //  Data
 //
 
-var   sanityChecks  = [];
-var   xyzDbs        = {};
+var   sanityChecks        = [];
+var   xyzDbs              = {};
+var   theFakeDbCollection = {
+};
+
+var TheFakeCursor = function() {
+  var self = this;
+
+  self.toArray = async function() {
+    return [];
+  };
+};
+
+
 
 
 // -------------------------------------------------------------------------------------
@@ -58,6 +70,10 @@ const getXyzDb = async function(collName, context, dbName, dbHostname, dbPortnum
   var   close           = function(){};
   var   xyzDb           = connections[`${dbName}/${collName}`];
   var   meaningfulClose = false;
+
+  if (process.env.NO_MONGO) {
+    xyzDb = theFakeDbCollection;
+  }
 
   if (!xyzDb) {
     let   dbHost        = dbHostname || process.env.db || process.env.SERVERASSIST_DB_IP || 'mongodb';
@@ -118,7 +134,6 @@ exports.getGetXyzDb = function(dbname, collname, dbHostname, dbPortnum = 27017) 
   return xyzDbs[dbname][collname];
 };
 
-
 /**
  * Builds a MongoDB Cursor object in an easy way.
  *
@@ -129,6 +144,10 @@ exports.getGetXyzDb = function(dbname, collname, dbHostname, dbPortnum = 27017) 
  * @returns {Object}        - The cursor object.
  */
 const queryCursor = exports.queryCursor = function(xyzDb, context, ...argvs) {
+
+  if (process.env.NO_MONGO) {
+    return new TheFakeCursor();
+  }
 
   var argv = _.reduce(argvs, (argv, arg) => {
     if (typeof arg === 'string')    { return qm(argv, {query:{ [arg]: {$exists:true}}}); }
@@ -188,6 +207,10 @@ sanityChecks.push(async function({assert, ...context}) {
  * @returns {Object}        - The cursor object.
  */
 const queryCursorEx = exports.queryCursorEx = function(xyzDb, context, queryKeys, ...argvs) {
+
+  if (process.env.NO_MONGO) {
+    return new TheFakeCursor();
+  }
 
   var argv = _.reduce(argvs, (argv, arg) => {
     if (typeof arg === 'string')    { return qm(argv, {query:{ [arg]: {$exists:true}}}); }
