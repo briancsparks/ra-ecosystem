@@ -20,7 +20,7 @@ const { omitDebug }           = ra;
 //
 
 const AWS_ACCT_TYPE           = (process.env.AWS_ACCT_TYPE || '').toUpperCase();
-const NETLAB_PRIVATE_APIKEY   = process.env[`NETLAB_PRIVATE_APIKEY_${AWS_ACCT_TYPE}`];
+const NETLAB_PRIVATE_APIKEY   = (process.env[`NETLAB_PRIVATE_APIKEY_${AWS_ACCT_TYPE}`] ||'').split(',');
 
 // -------------------------------------------------------------------------------------
 //  Functions
@@ -421,8 +421,12 @@ function protectRouteMw(options={}) {
 
     const headers = mkEzHeaders(req);
 
-    if (NETLAB_PRIVATE_APIKEY && headers.x_api_key === NETLAB_PRIVATE_APIKEY) {
-      return next();
+    if (NETLAB_PRIVATE_APIKEY && NETLAB_PRIVATE_APIKEY.length > 0) {
+      for (let i = 0; i < NETLAB_PRIVATE_APIKEY.length; ++i) {
+        if (NETLAB_PRIVATE_APIKEY[i] && headers.x_api_key === NETLAB_PRIVATE_APIKEY[i]) {
+          return next();
+        }
+      }
     }
 
     sg.elog(`protectRouteMw fail api key`, {"x-api-key": headers.x_api_key});
