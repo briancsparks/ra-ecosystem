@@ -363,7 +363,7 @@ exports.jsonApiEx = function(mod, fnFilename, checkNum, name, calledLib, calledF
       }
 
       const reqParams           = exports.getReqParams(req, sg.merge);
-      console.log(`jsonApiEx ${req.url}`, sg.inspect({reqParams}));
+      //console.log(`jsonApiEx ${req.url}`, sg.inspect({reqParams}));
       const { argvEx }          = reqParams;
 
       return calledFunction({...defs, ...argvEx}, function(err, result) {
@@ -429,7 +429,7 @@ function protectRouteMw(options={}) {
       }
     }
 
-    sg.elog(`protectRouteMw fail api key`, {"x-api-key": headers.x_api_key});
+    sg.elog(`protectRouteMw fail api key`, {"x-api-key": headers.x_api_key, NETLAB_PRIVATE_APIKEY});
 
     return mkResponse(403, req, res);
   };
