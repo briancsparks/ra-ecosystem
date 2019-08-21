@@ -55,7 +55,7 @@ exports.command = function(ARGV = sg.ARGV(), mods = {}, fnName, opts={}, command
  *
  * @returns {null}                - [[return is only used for control-flow.]]
  */
-exports.command2 = function(ARGV = sg.ARGV(), loadedMods = {}, modFnMap={}, allMods=[], fnName_, opts={}, commands = {}, callback=null) {
+exports.command2 = function(ARGV = sg.ARGV(), loadedMods = {}, modFnMap={}, allMods=[], fnName_, opts={}, commands = {}, callback=null) {   // INDEX: Your commands run with `ra invoke`
   require('loud-rejection/register');
   require('exit-on-epipe');
 
@@ -162,7 +162,7 @@ function cleanExit(ARGV, modfilename, condition, code, msg) {
 
 function noop(){}
 
-function invoke0(argv, mod, fnName, callback, abort_, options={}) {
+function invoke0(argv, mod, fnName, callback, abort_, options={}) {   // INDEX: Your commands run via `ra invoke` -- the invoke part
 
   // Fix argv -- remove the first param, if it is fnName
   if (Array.isArray(argv._) && argv._[0] === fnName) {
@@ -270,41 +270,65 @@ function invoke(opts, options, argv, ractx, callback, abort_) {
   });
 }
 
-function findMod(mods = {}, modFnMap={}, allMods=[], fnName) {
-  var   available = {};
-  var   modFilename = sg.reduce(modFnMap, null, (m, v, modName) => {
-    if (m)  { return m; }
+/**
+ * Find the mod that contains the function `fnName`.
+ *
+ * A mod is a loaded js file (const mod = require(filename))
+ *
+ * @param {Array}   [mods=[]]       -- Already-loaded module list.
+ * @param {Object}  [modFnMap={}]   -- Filename-to-fnName mapping
+ * @param {Array}   [allMods=[]]    -- Array of filenames to blindly check
+ * @param {string}  fnName          -- Function name
+ *
+ * @returns {module}
+ */
+function findMod(mods = [], modFnMap={}, allMods=[], fnName) {            // INDEX: the fn that determines the fn within mods for ra to invoke
+  var mod;    // Returned
 
+  // Full list of everything we have seen, to show if we do not find the function
+  var   available = {};
+
+  // Returns the first filename that contains the fnName function
+  var   modFilename = sg.reduce(modFnMap, null, (m, v, modName) => {
+    available[v.filename] = [...(available[v.filename] ||[]), ...v.fnNames];    // Remember what we have seen
+
+    if (m)  { return m; }                 // Just find the first one
+
+    // Is the fnName that we are looking for in the list of fnNames for this filename?
     if (v.fnNames.indexOf(fnName) !== -1) {
-      available[v.filename] = v.fnNames;
       return v.filename;
     }
 
+    // Not found, just return what we already have (null)
     return m;
   });
 
-  var mod;
+  // We have a guess at the module filename... load it and verify
   if (modFilename) {
     if (isTheMod(null, (mod = require(modFilename)))) {
       return mod;
     }
   }
 
+  // allMods is a collection of filenames of mods
   modFilename = sg.reduce(allMods, null, (m, filename) => {
     const mod = require(filename);
-    available[filename] = sg.keys(mod.async);
+    available[filename] = [...(available[filename] ||[]), ...sg.keys(mod.async)];
+
     if (isTheMod(null, mod)) {
       return filename;
     }
     return m;
   });
 
+  // We have another guess at the module filename... load it and verify
   if (modFilename) {
     if (isTheMod(null, (mod = require(modFilename)))) {
       return mod;
     }
   }
 
+  // This is a list (or maybe a list of lists) of already-loaded mods. Check them to see if they have our fnName
   mod = sg.reduce(mods.mods || mods, null, (m0, theMod0) => {
 
     const theMod = isTheMod(m0, theMod0);

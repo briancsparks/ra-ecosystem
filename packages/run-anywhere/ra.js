@@ -551,6 +551,18 @@ libRa.v2.get3rdPartyLib = function(name) {
   return sgConfig;
 };
 
+// The canonical functions to use
+const cannonical = {
+  command:    libRa.v2.command2,
+  invoke:     libRa.v2.invoke0,
+};
+
+libRa.canonical = {};
+libRa.v2.canonical = {}
+_.each(cannonical, function(fn, fnName) {
+  libRa.canonical[fnName] = libRa.v2.canonical[fnName] = fn;
+});
+
 // Export the libRa object.
 _.each(libRa, function(value, key) {
   exports[key] = value;

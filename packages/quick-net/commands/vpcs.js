@@ -130,7 +130,6 @@ mod.xport({manageVpc: function(argv, context, callback) {
         return [...m, {...kind, visibility:'public', publicIp:true, nat:false}];
       });
     }
-sg.elog(`subnetKinds`, {subnetKinds});
 
     // If the caller wants endpoint services, which require sgs
     if (!skipEndpointServices) {
@@ -644,6 +643,144 @@ mod.xport({launchInfo: function(argv, context, callback) {
     }]);
   });
 }});
+
+mod.async({getVpcSubnetsSgs: async function(argv, context) {
+  return await _getVpcSubnetsSgs_(argv);
+}});
+
+async function _getVpcSubnetsSgs_(argv) {
+  var   vpc,subnets,sgs;
+  var   vpcId         = argv.vpc;
+  var   subnetIds     = sg.arrayify(argv.subnets  || argv.subnet);
+  var   sgIds         = sg.arrayify(argv.sgs      || argv.security_groups);
+
+  // Do we already have it?
+  if (vpcId && vpcId.match(/^vpc-[0-9a-z]+$/i)) {
+    return {vpcId, subnetIds, sgIds};
+  }
+
+  // Get all the data
+  const describeVpcsPromise             = ec2.describeVpcs({}).promise();
+  const describeSecurityGroupsPromise   = ec2.describeSecurityGroups({}).promise();
+  const describeSubnetsPromise          = ec2.describeSubnets({}).promise();
+
+  const allVpcs                         = (await describeVpcsPromise).Vpcs;
+  const allSgs                          = (await describeSecurityGroupsPromise).SecurityGroups;
+  const allSubnets                      = (await describeSubnetsPromise).Subnets;
+
+  // Find the VPC object
+  vpc         = findVpcById() || findVpcByClassB() || findVpcByName();
+  if (!vpc) { return {}; }
+
+  subnets     = [...findSubnetsById(vpc), ...findSubnetsByName(vpc)];
+  sgs         = findSgsByName(vpc);
+
+  vpcId       = vpc.VpcId;
+  subnetIds   = _.map(subnets, subnet => subnet.SubnetId);
+  sgIds       = _.map(sgs,     sgroup => sgroup.GroupId);
+
+  // ARGV.v(`getVpcSubnetsSgs:`, {vpc, subnets, sgs, vpcId, subnetIds, sgIds});
+  return {vpc, subnets, sgs, vpcId, subnetIds, sgIds};
+
+  // =============================================================
+  // Helper functions
+  // =============================================================
+
+  // Note: in the findVpc... fns, we use `vpcId`, which is from the containing fn;
+  //       in the other find... fns, we use `vpc.VpcId`, where `vpc` is passed in.
+
+  // ----- Vpcs -----
+  function findVpcById() {
+    if (!vpcId) { return; }
+
+    const foundVpcs = _.filter(allVpcs, vpc => vpc.VpcId === vpcId);
+    return foundVpcs[0];
+  }
+
+  function findVpcByClassB() {
+    var   classB  = argv.classb || argv.classB || argv.class_b || vpcId;
+    if (!classB)  { return; }
+
+    classB = getClassB(classB);
+
+    // Make it a string
+    classB = ''+classB;
+
+    // Must be a number 1..255
+    let m = classB.match(/^([1-9][0-9]*)$/);
+    if (m && m[1].length <= 3) {
+      classB = m[1];
+    }
+
+    const foundVpcs = _.filter(allVpcs, vpc => (vpc.CidrBlock||'').split('.')[1] === classB);
+    return foundVpcs[0];
+  }
+
+  function findVpcByName() {
+    const name = argv.name || vpcId;
+    if (!name) { return; }
+
+    const foundVpcs = _.filter(allVpcs, vpc => getAwsTag(vpc, 'Name').toLowerCase().startsWith(name));
+    return foundVpcs[0];
+  }
+
+  // ----- Subnets -----
+  function findSubnetsById(vpc) {
+    const foundSubnets = _.filter(allSubnets, subnet => subnet.VpcId === vpc.VpcId && subnetIds.indexOf(subnet.SubnetId) !== -1);
+    return foundSubnets;
+  }
+
+  function findSubnetsByName(vpc) {
+    const names = ['worker', ...subnetIds];
+    const foundSubnets = _.filter(allSubnets, subnet => {
+      const found = subnet.VpcId === vpc.VpcId && sg.startsWithOneOf(getAwsTag(subnet, 'Name').toLowerCase(), names);
+      return found;
+    });
+    return foundSubnets;
+  }
+
+  // ----- Security Groups -----
+  function findSgsByName(vpc) {
+    const foundSgs = _.filter(allSgs, sgroup => {
+      return sgroup.VpcId === vpc.VpcId && sgIds.indexOf(sgroup.GroupName) !== -1;
+    });
+    return foundSgs;
+  }
+}
+
+function getAwsTag(obj, key) {
+  return sg.reduce(obj.Tags||[], null, (m, tag) => {
+    if (tag.Key === key) {
+      return tag.Value;
+    }
+    return m;
+  }) || '';
+}
+
+function getClassB(ip) {
+  if (_.isNumber(ip))             { return ip; }
+  if (!_.isString(ip))            { return; }
+  if (!ip.match(/^[.0-9]+$/))     { return; }
+
+  const parts = ip.split('.');
+
+  // Just a string representation of a number
+  if (parts.length === 1)  {
+    return +parts[0];
+  }
+
+  // It was an IP address.
+  if (parts.length !== 4)       { return; }
+  if (parts[1].length > 3)      { return; }
+  if (parts[1].length === 0)    { return; }
+
+  return +parts[1];
+}
+
+
+
+
+
 
 sgsPlus = [() => ({
   GroupName:    'lambda',     // <-------------------------------------------------------

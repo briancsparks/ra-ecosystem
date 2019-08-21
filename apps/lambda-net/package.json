@@ -1,0 +1,36 @@
+{
+  "name": "lambda-net",
+  "private": true,
+  "version": "1.0.1",
+  "description": "lambda-net",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Brian C Sparks <briancsparks@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "aws-sdk": "^2.382.0",
+    "http-proxy": "^1.17.0",
+    "http-proxy-middleware": "^0.19.1",
+    "js-yaml": "^3.13.1",
+    "lodash": "^4.17.13",
+    "mongodb": "^3.1.10",
+    "quick-merge": "^1.0.15",
+    "quick-net": "^1.0.94",
+    "redis": "^2.8.0",
+    "run-anywhere": "^1.0.75",
+    "sg-argv": "^1.0.34",
+    "sg-config": "^1.0.45",
+    "sg-diag": "^1.0.18",
+    "sg-echo": "^1.0.32",
+    "sg-flow": "^1.0.10",
+    "sg-http": "^1.0.1",
+    "sg-one": "^1.0.3",
+    "sg-template": "^1.0.41",
+    "sg0": "^1.0.23",
+    "superagent": "^4.1.0",
+    "superb": "^3.0.0",
+    "underscore": "^1.9.1"
+  }
+}

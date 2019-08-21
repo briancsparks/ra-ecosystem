@@ -1,4 +1,14 @@
 
+
+/**
+ * @file
+ *
+ * Use RA as the host for your Express app.
+ *
+ * Allows you to use your ra-ified functions in Express, and to use your Express
+ * app in Lambda.
+ */
+
 // -------------------------------------------------------------------------------------
 //  requirements
 //

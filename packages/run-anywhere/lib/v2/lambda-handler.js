@@ -1,4 +1,14 @@
 
+/**
+ * @file
+ *
+ * The AWS Lambda handler function (`lambda_handler`).
+ *
+ * * Call `expressServerlessRoutes` to register your Express routes.
+ * * Call `claudiaServerlessApi` to register your ClaudiaJs API-Builder functions.
+ *
+ */
+
 
 // -------------------------------------------------------------------------------------
 //  requirements

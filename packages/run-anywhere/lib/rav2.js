@@ -18,6 +18,9 @@ var   dbUtils                   = require('./v2/db/db-util');
 const redisUtils                = require('./v2/redis/redis-util');
 const { promisify }             = require('util');
 
+const platform_entrypoint_aws_lambda = require('../platform/entrypoint/aws-lambda');
+const platform_host_aws_lambda  = require('../platform/host/aws-lambda');
+
 dbUtils                         = _.extend({}, dbUtils, require('./v2/db/crud'));
 
 
@@ -67,7 +70,13 @@ module.exports.express = {
 };
 module.exports.paramsFromExpress = libExpress.paramsFromExpress;
 
+module.exports.entrypoints = {
+  aws_lambda        : platform_entrypoint_aws_lambda,
+};
 
+module.exports.hosts = {
+  aws_lambda        : platform_host_aws_lambda,
+};
 
 // -------------------------------------------------------------------------------------
 //  Helper functions

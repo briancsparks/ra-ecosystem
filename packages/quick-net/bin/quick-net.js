@@ -78,6 +78,8 @@ function quickNet() {
     if (err) {
       return quickNetX();
     }
+
+    console.log(JSON.stringify(data));
   });
 }
 

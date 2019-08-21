@@ -23,6 +23,18 @@ const modFnMap = {
     filename: path.join(__dirname, 'k8s', 'lib', 'config-map.js'),
     fnNames:  ['createConfigMap', '_createConfigMap_'],
   },
+  lambdaLayers : {
+    filename: path.join(__dirname, '..', 'commands', 'lambda-deploy', 'layer.js'),
+    fnNames:  ['mkDepLayer'],
+  },
+  deployLambda : {
+    filename: path.join(__dirname, '..', 'commands', 'lambda-deploy', 'deploy.js'),
+    fnNames:  ['lambdaDeploy'],
+  },
+  vpcs: {
+    filename: path.join(__dirname, '..', 'commands', 'vpcs.js'),
+    fnNames:  ['getVpcSubnetsSgs'],
+  },
   // ec2: {
   //   filename: path.join(__dirname, 'ec2', 'ec2.js'),
   //   fnNames:  ['upsertInstance'],

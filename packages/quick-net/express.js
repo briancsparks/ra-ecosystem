@@ -1,5 +1,11 @@
 
-
+/**
+ * @file
+ *
+ * Uses RA Express server (not in Lambda, though) to (1) reverse-proxy, and (2) use redis
+ * to do `notifyData`.
+ *
+ */
 
 // -------------------------------------------------------------------------------------
 //  Requirements
