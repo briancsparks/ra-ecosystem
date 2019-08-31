@@ -571,6 +571,50 @@ var isObject = sg.isObject = function(x) {
 };
 
 /**
+ * Returns the object, if it is truly an Object, or `def` otherwise.
+ *
+ * This allows:
+ *
+ * ```javascript
+ *
+ *  sg.objekt(x) || {}
+ *  sg.objekt(x, {})
+ *  sg.objekt(x, {}).attr
+ *
+ * ```
+ *
+ * @param {Object|null|undefined} x -- The Object to test
+ * @param {*} def                   -- The default
+ *
+ * @returns {Object|null|undefined|def}
+ */
+sg.objekt = function(x, def) {
+  if (isObject(x))  { return x; }
+  return def;
+};
+var objekt = sg.objekt;
+
+/**
+ *  Always returns an Object.
+ *
+ * * {}  -> x
+ * * []  -> {items:x}
+ * * *   -> {just:x}
+ *
+ * @param {*}       x   -- The thing to Object-ify.
+ * @param {string}  key -- The object key (replacing `items` or `just`)
+ * @returns {Object}
+ */
+sg.asObject = function(x, key) {
+  if (isObject(x))          { return x; }
+  if (Array.isArray(x))     { return {[key || 'items']:x}; }
+  if (sg.isnt(x))           { return {}; }
+
+  return {[key || 'just']:x};
+};
+var asObject = sg.asObject;
+
+/**
  *
  */
 var isPod = sg.isPod = function(x) {

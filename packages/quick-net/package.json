@@ -52,6 +52,7 @@
     "run-anywhere": "^1.0.75",
     "sg-argv": "^1.0.34",
     "sg-clihelp": "^1.0.33",
+    "sg-diag": "^1.0.18",
     "sg-exec": "^1.0.29",
     "shelljs": "^0.8.3",
     "superagent": "^4.1.0",

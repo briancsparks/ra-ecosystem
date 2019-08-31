@@ -11,144 +11,66 @@
 const sg                      = require('sg0');
 const { _ }                   = sg;
 
+const sgDiagnostic            = require('./lib/diagnostic');
+const sgCheck                 = require('./lib/check');
+const sgParams                = require('./lib/params');
+
 
 // -------------------------------------------------------------------------------------
 //  Data
 //
-
-const debugKeys   = ['debug', 'verbose', 'ddebug', 'vverbose', 'forceSilent', 'silent'];
-const systemKeys  = ['warnstack', 'fastfail' ];
 
 
 // -------------------------------------------------------------------------------------
 //  Functions
 //
 
-/**
- * Checks to see if vars (usually function arguments) are null or undefined.
- *
- * sg.check('abc', __filename, {argv}, 'coke.and;smile', {context}, 'foo;bar.baz');
- *
- * * `argv` must not be null or undefined.
- * * `argv.coke.and` must not be null or undefined.
- * * `argv.smile` must not be null or undefined.
- * * `context` must not be null or undefined.
- * * `context.foo` must not be null or undefined.
- * * `context.bar.baz` must not be null or undefined.
- *
- * @param {string|number}   id        - The id of this checker
- * @param {string}          filename  - The filename of the caller (is usually __filename)
- * @param {object}          namedArg  - An object like {options} ('options' is the name of the arg)
- * @param {[string]}        x         - Semicolon separated list of dotted keys.
- * @param {*}               rest      - The rest of the params
- *
- * @returns {boolean}       `false` if the check fails.
- */
-sg.check = function(id, filename, namedArg, x, ...rest) {
+module.exports.DIAG_ = function(mod) {
+  // sg.elog(`DIAG`, {mod:sg.keys(mod)});
+  // const {id, path, filename, paths} = mod;
+  // sg.elog(`DIAG`, {id, path, filename, paths});
 
-  var   result    = true;
+  var   self = this;
 
-  const names     = sg.keys(namedArg);            // ['argv']
-  const name      = names[0];                     // 'argv'
-  const arg       = namedArg[name];               // {coke:{and:'jack'},smile:42}
-  const argKeys   = sg.keys(arg);                 // ['coke','smile']
+  self.usages = {};
 
-  if (sg.isnt(arg)) {
-    sg.bigNag(`check failed (${arg}) when checking (${id})(1) ${name} in ${filename}`);
-    result = false;
-  }
+  var   modFilename = mod.filename;
+  var   modDirname  = mod.path;
 
-  _.each(namedArg, function(value, key) {         // [{and:jack},'coke']; then [42,'smile']
-    if (sg.isnt(value)) {
-      sg.bigNag(`check failed (${value}) when checking (${id})(2) ${name}.${key} in ${filename}, have:`, argKeys);
-      result = false;
-    }
-  });
+  self.usage = function(options ={}) {
+    self.usages = _.extend({}, self.usages, options);
+  };
 
-  if (arguments.length <= 3)      { return result; }
+  self.diagnostic = function(...args) {
+    var diag = sgDiagnostic.diagnostic(...args);
 
-  if (typeof x === 'string') {
-    let   dottedKeysList = x.split(';');          // ['coke.and','smile']
-    _.each(dottedKeysList, function(dottedKey) {
-      if (sg.isnt(sg.deref(arg, dottedKey))) {
-        sg.bigNag(`check failed (${sg.deref(arg, dottedKey)}) when checking (${id})(3) ${name}.${dottedKey} in ${filename}, have:`, argKeys);
-        result = false;
-      }
-    });
+    // TODO: stuff diag with info
 
-    // Are we done?
-    if (arguments.length === 4)   { return result; }
+    diag.DIAG = self;
+    return diag;
+  };
 
-    // Not done... continue on with the rest of the params (like checking context)
-    return sg.check(id, filename, ...rest) && result;
-  }
-
-  // Not done... continue on with the rest of the params (like checking context)
-  return sg.check(id, filename, x, ...rest) && result;
 };
 
-/**
- * Log a big, flashy error.
- *
- * @param {string} msg  - The message to write
- * @param {object} args - An object to dump
- */
-sg.bigNag = function(msg, ...args) {
-  var inspectedArgs = _.map(args, (arg) => {
-    return sg.inspect(args);
-  });
-
-  console.error(`${decorate(msg,3)}`, ...inspectedArgs);
+module.exports.DIAG = function(...args) {
+  return new module.exports.DIAG_(...args);
 };
-
-
-// ---------- For argv ----------
-sg.omitDebug = function(obj) {
-  return _.omit(obj, ...debugKeys);
-};
-
-sg.omitSystem = function(obj) {
-  return _.omit(obj, ...systemKeys);
-};
-
-sg.pickDebug = function(obj) {
-  return _.pick(obj, ...debugKeys);
-};
-
-sg.pickParams = function(obj) {
-  return _.omit(obj, '_', ...debugKeys, ...systemKeys);
-};
-
-sg.extractDebug = function(obj) {
-  var   result = sg.extracts(obj, ...debugKeys);
-
-  if (result.verbose)       { result.debug  = result.verbose; }
-  if (result.vverbose)      { result.ddebug = result.vverbose; }
-
-  return result;
-};
-
-sg.extractParams = function(obj) {
-  const params = sg.pickParams(obj);
-
-  return sg.extracts(obj, ...Object.keys(params));
-};
-
 
 
 // -------------------------------------------------------------------------------------
 // exports
 //
 
-_.each(sg, (v,k) => {
-  module.exports[k] = v;
-});
+module.exports.Diagnostic = sgDiagnostic.Diagnostic;
+module.exports.diagnostic = sgDiagnostic.diagnostic;
+
+_.each(sgCheck,  xport_it);
+_.each(sgParams, xport_it);
 
 // -------------------------------------------------------------------------------------
 //  Helper Functions
 //
 
-function decorate(str, level=1) {
-  return `     -----     ${str}     -----`;
+function xport_it(v,k) {
+  module.exports[k] = v;
 }
-

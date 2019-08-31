@@ -25,7 +25,7 @@ const modFnMap = {
   },
   lambdaLayers : {
     filename: path.join(__dirname, '..', 'commands', 'lambda-deploy', 'layer.js'),
-    fnNames:  ['mkDepLayer'],
+    fnNames:  ['mkDepLayer', 'depLayer'],
   },
   deployLambda : {
     filename: path.join(__dirname, '..', 'commands', 'lambda-deploy', 'deploy.js'),

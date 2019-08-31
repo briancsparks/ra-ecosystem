@@ -75,11 +75,11 @@ quickNet();
 
 function quickNet() {
   return ra.command2(ARGV, /*loadedMods=*/ {}, raModFnMap || {}, raModFilenames, null, /*opts=*/ {}, commands, (err, data) => {
-    if (err) {
-      return quickNetX();
-    }
+    // if (err) {
+    //   return quickNetX();
+    // }
 
-    console.log(JSON.stringify(data));
+    console.log({err}, JSON.stringify(data));
   });
 }
 

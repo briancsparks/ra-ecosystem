@@ -211,10 +211,10 @@ _createConfigMap_ = mod.async({_createConfigMap_: async function(argv, context =
  *  Merges the config map, and computes the sha256, putting that into a config file `hash`
  *
  *
- * @param {Object} configmap -- The already-existing configmap
- * @param {Object} items     -- The new items for the configmap
+ * @param {Object} configmap_ -- The already-existing configmap
+ * @param {Object} items      -- The new items for the configmap
  *
- * @returns {Object}         -- The new full configmap
+ * @returns {Object}          -- The new full configmap
  *
  */
 function mergeConfigMap(configmap_, items ={}) {
@@ -231,6 +231,10 @@ function mergeConfigMap(configmap_, items ={}) {
 // -------------------------------------------------------------------------------------------------------------------------------------------------------
 /**
  * Turn the input into a string.
+ *
+ * @param {*} x -- The thing to turn into a string.
+ * @returns {string} The string.
+ *
  */
 function stringify(x) {
   if (sg.isnt(x))         { return x; }
@@ -262,6 +266,8 @@ async function getHasConfigmap(namespace, name) {
  *
  * @param {string} domain       -- The domain name to add the sub-domain to.
  * @param {Object} ChangeBatch  -- The ChangeBatch info.
+ * @param {string} server_name  -- The name.
+ * @param {Object} Value        -- The value.
  */
 async function updateDomainName(domain, ChangeBatch, server_name, Value) {
 
