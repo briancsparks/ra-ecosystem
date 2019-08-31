@@ -30,7 +30,7 @@ DIAG.usage({
 });
 
 mod.async({deployLayer: async function(argv, context) {
-  // sg.elog(`mkDepLayer`, {argv});
+  // sg.elog(`deployLayer`, {argv, context});
   const diag          = DIAG.diagnostic({argv, context});
 
   diag.v(`deployLayer`, {argv, context});

@@ -26,25 +26,21 @@ DIAG.usage({
       lambdaName:       {aliases: 'name,lambda_name'},
       class_b:          {aliases: 'classB,b'},
       AWS_PROFILE:      {aliases: 'aws_profile,profile'},
-    },
-    aliases: {
-      lambdaName: 'name,lambda_name',
-      class_b:    'classB,b'
     }
   }
 });
 
 
-mod.async({lambdaDeploy: async function(argv, context) {
-  // sg.elog(`lambdaDeploy`, {argv});
-  const diag          = DIAG.diagnostic({argv, context});
+mod.async(DIAG.async({lambdaDeploy: async function(argv, context) {
+  // sg.elog(`lambdaDeploy`, {argv, context});
+  const diag                  = DIAG.diagnostic({argv, context});
 
   const {
     stage,lambdaName,class_b
-  }                           = diag.args('lambdaDeploy');
+  }                           = diag.args();
   var {
     Bucket,AWS_PROFILE
-  }                           = diag.args('lambdaDeploy');
+  }                           = diag.args();
 
 
   var   packageDir    = sg.path.join(process.cwd(), argv._[0] || '.');
@@ -88,6 +84,6 @@ mod.async({lambdaDeploy: async function(argv, context) {
   await docker;
 
   return {ok:true};
-}});
+}}));
 
 

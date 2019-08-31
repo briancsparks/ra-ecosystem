@@ -4,21 +4,30 @@ const { _ }                   = sg;
 const { util }                = sg.libs;
 const { toError }             = require('./error');
 
-module.exports.Diagnostic = Diagnostic;
-module.exports.diagnostic = diagnostic;
+module.exports.Diagnostic     = Diagnostic;
+module.exports.diagnostic     = diagnostic;
+module.exports.fromContext    = fromContext;
+module.exports.setContextItem = setContextItem;
+module.exports.getContextItem = getContextItem;
 
 function Diagnostic(...args) {
   var   self    = this;
 
   self.DIAG     = {};
+  self.bits     = {};
   self.options  = rootOptions(...args);
   self.errors   = null;
 
   // TODO: return args from argv, DIAG.usages
-  self.args = function(fnName = '') {
-    const argv    = getArgv(...args);
-    const usages  = self.DIAG.usages || {};
-    const usage   = usages[fnName]   || {};
+  self.args = function(fnName) {
+    const argv        = getArgv(...args);
+    const currFnName  = self.DIAG.getCurrFnName()         || fnName   || '';
+    // const usages      = self.DIAG.usages                  || {};
+    // const usageX      = usages[fnName]                    || {};
+    // const mainjson    = self.DIAG.getMainJson()           || {};
+    const usage       = self.DIAG.getUsages(currFnName)   || {};
+
+// sg.elog(`sdfjlj`, {DIAG: self.DIAG, argv, currFnName, mainjson, usage});
 
     // Get all the data items
     var   result = sg.reduce(argv, {}, (m, v, k) => {
@@ -295,13 +304,31 @@ function diagnostic(...args) {
 
 function fromContext(...args) {
 
-  var   diag = sg.objekt(args[0].context, {}).sgDiagnostic;
+  var   sgDiagnostic  = sg.objekt(args[0].context, {}).sgDiagnostic || {};
+  var   diag          = sgDiagnostic.diag;
+
   if (!diag) {
     diag = new Diagnostic(...args);
 
-    args[0].context.sgDiagnostic = diag;
+    setContextItem(args[0].context, 'diag', diag);
+    // args[0].context.sgDiagnostic = diag;
   }
   return diag;
+}
+
+function getContextItem(context, name) {
+  if (!context || !name)      { return; }
+
+  context.sgDiagnostic        = context.sgDiagnostic || {};
+  return context.sgDiagnostic[name];
+}
+
+function setContextItem(context, name, item) {
+  // if (!context) { return item; }
+
+  context.sgDiagnostic        = context.sgDiagnostic || {};
+  context.sgDiagnostic[name]  = item;
+  return item;
 }
 
 
