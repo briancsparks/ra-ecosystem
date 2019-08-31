@@ -5,7 +5,10 @@
   "description": "lambda-net",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "deploy:lambda:dev": "cross-env-shell STAGE=dev \"npm run deploy:lambda\"",
+    "deploy:lambda:prod": "cross-env-shell STAGE=prod \"npm run deploy:lambda\"",
+    "deploy:lambda": "cross-env-shell quick-net deployLayer --name= $npm_package_name --stage= $STAGE && cross-env-shell quick-net lambdaDeploy --name= $npm_package_name --class-b=21 --sgs=wide --stage= $STAGE"
   },
   "author": "Brian C Sparks <briancsparks@gmail.com>",
   "license": "MIT",
@@ -32,5 +35,8 @@
     "superagent": "^4.1.0",
     "superb": "^3.0.0",
     "underscore": "^1.9.1"
+  },
+  "devDependencies": {
+    "cross-env": "^5.2.0"
   }
 }

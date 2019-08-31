@@ -45,15 +45,6 @@ if ! aws lambda list-functions | jq -r ".Functions[].FunctionArn" | egrep ":${LA
       --memory-size "128" \
       --vpc-config "SubnetIds=${subnet_ids},SecurityGroupIds=${sg_ids}"
 
-  # Now, we have to attach the layer
-  LAYER_ARN="$(aws lambda list-layers | jq -r ".Layers[].LatestMatchingVersion.LayerVersionArn" | egrep ":${LAYER_NAME}:")"
-  # echo "layerarn | $LAYER_ARN |"
-
-  if [[ -n $LAYER_ARN ]]; then
-    printf "\nAttaching layer ${LAYER_ARN}\n"
-    aws lambda update-function-configuration --function-name "$LAMBDA_NAME" --layers $LAYER_ARN | jq -r '.FunctionArn'
-  fi
-
 else
   # ---------------------------------
   # ----- Updating code         -----
@@ -61,11 +52,13 @@ else
   aws lambda update-function-code  --function-name "$LAMBDA_NAME" --zip-file "fileb:///work/package.zip" | jq -r '.FunctionArn'
 fi
 
+# Now, we have to attach the layer
+LAYER_ARN="$(aws lambda list-layers | jq -r ".Layers[].LatestMatchingVersion.LayerVersionArn" | egrep ":${LAYER_NAME}:")"
 
-
-
-# layer_arn="$(cat publish-layer-version-result.json | jq -r '.LayerVersionArn')"
-# echo "Layer ARN: | $layer_arn |"
+if [[ -n $LAYER_ARN ]]; then
+  printf "\nAttaching layer ${LAYER_ARN}\n"
+  aws lambda update-function-configuration --function-name "$LAMBDA_NAME" --layers $LAYER_ARN | jq -r '.FunctionArn'
+fi
 
 
 

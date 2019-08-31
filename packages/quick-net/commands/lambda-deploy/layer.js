@@ -21,7 +21,7 @@ const config                  = new AWS.Config({paramValidation:false, region});
 const s3                      = new AWS.S3(config);
 
 DIAG.usage({
-  depLayer:{
+  deployLayer:{
     args: {
       lambdaName:       {aliases: 'name,lambda_name'},
       AWS_PROFILE:      {aliases: 'aws_profile,profile'},
@@ -29,16 +29,18 @@ DIAG.usage({
   }
 });
 
-mod.async({depLayer: async function(argv, context) {
+mod.async({deployLayer: async function(argv, context) {
   // sg.elog(`mkDepLayer`, {argv});
   const diag          = DIAG.diagnostic({argv, context});
 
+  diag.v(`deployLayer`, {argv, context});
+
   const {
     stage,lambdaName,force,
-  }                           = diag.args('depLayer');
+  }                           = diag.args('deployLayer');
   var {
     Bucket,AWS_PROFILE
-  }                           = diag.args('depLayer');
+  }                           = diag.args('deployLayer');
 
   var   packageDir    = sg.path.join(process.cwd(), argv._[0] || '.');
   Bucket              = argv.Bucket   || sg.from([packageDir, '_config', stage, 'env.json'], 'DeployBucket');
@@ -50,6 +52,7 @@ mod.async({depLayer: async function(argv, context) {
   if (!force) {
     const packageDeps       = sg.from(packageDir, 'package.json', 'dependencies');
     const prevPackageJson   = await getPrevPackageJsonAsync(Bucket, lambdaName);
+
     if (deepEqual(packageDeps, prevPackageJson.dependencies)) {
       diag.i(`package.json deps have not changed (use --force if needed)`, {packageDeps, prevPackageJson: prevPackageJson.dependencies});
       return {ok:true};
@@ -60,7 +63,7 @@ mod.async({depLayer: async function(argv, context) {
   const dockerfile      = sg.path.join(dockerfileDir, 'Dockerfile');
   var   docker;
 
-  diag.d(`depLayer`, {args: qm.stitch([`build`, [`-t`, 'quick-net-lambda-layer-deploy'], ['--progress', 'tty'], ['-f', dockerfile], '.']), dockerfileDir});
+  diag.d(`deployLayer`, {args: qm.stitch([`build`, [`-t`, 'quick-net-lambda-layer-deploy'], ['--progress', 'tty'], ['-f', dockerfile], '.']), dockerfileDir});
   docker = execa('docker', qm.stitch([`build`, [`-t`, 'quick-net-lambda-layer-deploy'], ['--progress', 'tty'], ['-f', dockerfile], '.']), {cwd: dockerfileDir});
   docker.stdout.pipe(process.stdout);
   await docker;
@@ -74,7 +77,7 @@ mod.async({depLayer: async function(argv, context) {
     'quick-net-lambda-layer-deploy'
   ];
 
-  diag.d(`depLayer`, {args: qm.stitch(['run', '--rm', ...runArgs])});
+  diag.d(`deployLayer`, {args: qm.stitch(['run', '--rm', ...runArgs])});
   docker = execa('docker', qm.stitch(['run', '--rm', ...runArgs]), {cwd: dockerfileDir});
   docker.stdout.pipe(process.stdout);
   await docker;
@@ -86,7 +89,9 @@ async function getPrevPackageJsonAsync(Bucket, lambdaName, callback) {
   const layerName   = `layer-for-${lambdaName}`;
   const Key         = `quick-net/lambda-layers/${layerName}/package.json`;
 
-  return s3.getObject({Bucket, Key}).promise();
+  var data = await s3.getObject({Bucket, Key}).promise();
+
+  return sg.safeJSONParse(''+data.Body);
 }
 
 
