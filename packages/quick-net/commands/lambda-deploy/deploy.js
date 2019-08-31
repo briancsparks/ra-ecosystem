@@ -73,11 +73,12 @@ mod.async({lambdaDeploy: async function(argv, context) {
   const runArgs = [
     [`-v`, `${sg.os.homedir()}/.aws:/aws`],
     [`-v`, `${process.cwd()}:/src`],
-    [`-e`, [`AWS_PROFILE=`,     AWS_PROFILE]],
-    [`-e`, [`LAMBDA_NAME=`,     lambdaName]],
-    [`-e`, [`BUCKET_NAME=`,     Bucket]],
-    ['-e', ['subnet_ids=',      subnet_ids]],
-    ['-e', ['sg_ids=',          sg_ids]],
+    [`-e`, [`AWS_PROFILE=`,       AWS_PROFILE]],
+    [`-e`, [`LAMBDA_NAME=`,       lambdaName]],
+    [`-e`, [`BUCKET_NAME=`,       Bucket]],
+    [`-e`, [`ENVIRONMENT_FILE=`,  ['_config', stage, 'env.json'].join('/')]],
+    ['-e', ['subnet_ids=',        subnet_ids]],
+    ['-e', ['sg_ids=',            sg_ids]],
     'quick-net-lambda-layer-deploy'
   ];
 

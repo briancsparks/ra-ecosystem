@@ -60,5 +60,7 @@ if [[ -n $LAYER_ARN ]]; then
   aws lambda update-function-configuration --function-name "$LAMBDA_NAME" --layers $LAYER_ARN | jq -r '.FunctionArn'
 fi
 
+printf "\nAdding env\n"
+aws lambda update-function-configuration --function-name "$LAMBDA_NAME" --environment "{\"Variables\":$(cat $ENVIRONMENT_FILE)}"
 
 

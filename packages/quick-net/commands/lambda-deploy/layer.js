@@ -54,7 +54,7 @@ mod.async({deployLayer: async function(argv, context) {
     const prevPackageJson   = await getPrevPackageJsonAsync(Bucket, lambdaName);
 
     if (deepEqual(packageDeps, prevPackageJson.dependencies)) {
-      diag.i(`package.json deps have not changed (use --force if needed)`, {packageDeps, prevPackageJson: prevPackageJson.dependencies});
+      diag.i(`package.json deps have not changed (use --force if needed)`);
       return {ok:true};
     }
   }
