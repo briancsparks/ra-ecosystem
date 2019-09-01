@@ -18,7 +18,7 @@ function Diagnostic(...args) {
   self.options  = rootOptions(...args);
   self.errors   = null;
 
-  // TODO: return args from argv, DIAG.usages
+
   self.args = async function(fnName) {
     const argv        = getArgv(...args);
     const currFnName  = self.DIAG.getCurrFnName()         || fnName   || '';
@@ -310,8 +310,8 @@ function fromContext(...args) {
     diag = new Diagnostic(...args);
 
     setContextItem(args[0].context, 'diag', diag);
-    // args[0].context.sgDiagnostic = diag;
   }
+
   return diag;
 }
 
@@ -323,7 +323,6 @@ function getContextItem(context, name) {
 }
 
 function setContextItem(context, name, item) {
-  // if (!context) { return item; }
 
   context.sgDiagnostic        = context.sgDiagnostic || {};
   context.sgDiagnostic[name]  = item;

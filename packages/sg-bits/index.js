@@ -26,8 +26,6 @@ function Bits(mod) {
 
   self.pieces = {};
 
-  // var   mainjson, mainjson_rz;
-
   const [dirname, basename, ext]    = splitFilepath(mod.filename);
   const bitsdir                     = sg.path.join(dirname, '_sg-bits');
   const mainfile                    = sg.path.join(bitsdir, `${basename}.json`);
@@ -43,37 +41,15 @@ function Bits(mod) {
     var   subPieces = {};
     try {
       subPieces     = await fs_readFile(mainfile);
-      self.pieces   = sg.extend(self.pieces, sg.safeJSONParse(subPieces));
+      self.pieces   = sg.extend(self.pieces, sg.safeJSONParse(subPieces) || {});
 
     } catch(err) {
       // If theres an error, just let it fall thru (we already have self.pieces)
       console.error(`getjson error`, err);
     }
 
-    // const stats = await fs_stat(bitsdir);
-    // if (stats.isDirectory()) {
-    //   mainjson_rz = /*nowait*/ fs_readFile(mainfile);
-    // }
-
-    // if (!mainjson_rz) {
-    //   // It was never fs_readFile'd
-    //   return {};
-    // }
-
-    // self.pieces = sg.safeJSONParse(await mainjson_rz);
-
     return self.pieces;
   };
-
-  // finalizeCtor();
-  // async function finalizeCtor() {
-  //   try {
-  //     const stats = await fs_stat(bitsdir);
-  //     if (stats.isDirectory()) {
-  //       mainjson_rz = /*nowait*/ fs_readFile(mainfile);
-  //     }
-  //   } catch(e) {}
-  // }
 }
 
 

@@ -4,7 +4,7 @@ ra.get3rdPartyLib('loud-rejection/register');
 
 const sg0                     = ra.get3rdPartyLib('sg-clihelp');
 const { _,sh }                = sg0;
-const sg                      = sg0.merge(sg0, require('sg-exec'), require('sg-diag'), require('../../../sg-env'));
+const sg                      = sg0.merge(sg0, require('sg-exec'), require('sg-diag'), require('sg-env'));
 const qm                      = require('quick-merge');
 const {getVpcSubnetsSgs}      = require('../vpcs').async;
 const execa                   = sg.execa;

@@ -50,52 +50,33 @@ const sgParams                = require('./lib/params');
 module.exports.DIAG_ = function(mod) {
   var   self = this;
 
-  self.usages     = {};
-  self.config     = {};
-  // self.xfns       = {};
   self.context    = null;
   self.bits       = sg.bits(mod);
 
-  var   modFilename = mod.filename;
-  var   modDirname  = mod.path;
 
   self.usage = function(data ={}) {
     self.bits.setJson({fns: data});
-
-    self.usages = _.extend({}, self.usages, data);
-    self.config = qm(self.config, {fns:data});
   };
 
   self.getCurrFnName = function() {
     var diagFunctions = sgDiagnostic.getContextItem(self.context, 'diagFunctions') || [];
     return diagFunctions[0].fnName;
-
-    // var currFnNames = sgDiagnostic.getContextItem(self.context, 'currFnNames') || [];
-    // return currFnNames[0];
   };
-
-  // self.getJson = async function() {
-  //   return await self.bits.getJson();
-  // };
 
   self.getAliases = async function(fnName) {
     const currFnName  = self.getCurrFnName()          || fnName   || '';
     const mainjson    = await self.bits.getJson()     || {};
 
-    // const fnSpec       = {...(self.fnSpecs || {})[currFnName], ...(mainjson.fns || {})[currFnName]};
-    const fnSpecX      = {...(self.config.fns || {})[currFnName]};
-    const fnSpecY      = {...(self.usages || {})[currFnName]};
-    const fnSpec       = {...(mainjson.fns || {})[currFnName]};
-
+    const fnSpec      = {...(mainjson.fns || {})[currFnName]};
     return fnSpec;
   };
 
   // Hijack the mods function, returning our own
   self.async = function(xfn) {
+
     // Remember the passed-in fn
     const fnName        = firstFnName(xfn);
     const intercepted   = xfn[fnName];
-    // self.xfns[fnName]   = intercepted;
 
     // Build an impostor to hand out -- this fn will be called, and needs to call the real fn
     const interceptorFn = async function(argv, context) {
@@ -105,9 +86,6 @@ module.exports.DIAG_ = function(mod) {
 
       var diagFunctions = sgDiagnostic.getContextItem(context, 'diagFunctions') || [];
       sgDiagnostic.setContextItem(context, 'diagFunctions', [info, ...diagFunctions]);
-
-      // var currFnNames = sgDiagnostic.getContextItem(context, 'currFnNames') || [];
-      // sgDiagnostic.setContextItem(context, 'currFnNames', [fnName, ...currFnNames]);
 
       self.context = context;
 
@@ -119,7 +97,6 @@ module.exports.DIAG_ = function(mod) {
       const result = await intercepted(argv, context);
 
 
-      // TODO: any cleanup
       // sgDiagnostic.setContextItem(context, 'currFnNames', currFnNames);
       sgDiagnostic.setContextItem(context, 'diagFunctions', diagFunctions);
 
