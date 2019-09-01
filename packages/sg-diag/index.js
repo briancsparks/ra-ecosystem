@@ -59,9 +59,11 @@ module.exports.DIAG_ = function(mod) {
   var   modFilename = mod.filename;
   var   modDirname  = mod.path;
 
-  self.usage = function(options ={}) {
-    self.usages = _.extend({}, self.usages, options);
-    self.config = qm(self.config, {fns:options});
+  self.usage = function(data ={}) {
+    self.bits.setJson({fns: data});
+
+    self.usages = _.extend({}, self.usages, data);
+    self.config = qm(self.config, {fns:data});
   };
 
   self.getCurrFnName = function() {
@@ -72,19 +74,20 @@ module.exports.DIAG_ = function(mod) {
     // return currFnNames[0];
   };
 
-  self.getJson = function() {
-    return self.bits.getJson();
-  };
+  // self.getJson = async function() {
+  //   return await self.bits.getJson();
+  // };
 
-  self.getFnSpec = function(fnName) {
+  self.getAliases = async function(fnName) {
     const currFnName  = self.getCurrFnName()          || fnName   || '';
-    const mainjson    = self.getJson()                || {};
+    const mainjson    = await self.bits.getJson()     || {};
 
-    // const usage       = {...(self.usages || {})[currFnName], ...(mainjson.fns || {})[currFnName]};
-    // const usage       = {...(self.config.fns || {})[currFnName]};
-    const usage       = {...(self.usages || {})[currFnName]};
+    // const fnSpec       = {...(self.fnSpecs || {})[currFnName], ...(mainjson.fns || {})[currFnName]};
+    const fnSpecX      = {...(self.config.fns || {})[currFnName]};
+    const fnSpecY      = {...(self.usages || {})[currFnName]};
+    const fnSpec       = {...(mainjson.fns || {})[currFnName]};
 
-    return usage;
+    return fnSpec;
   };
 
   // Hijack the mods function, returning our own

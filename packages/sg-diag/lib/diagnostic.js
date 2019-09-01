@@ -19,10 +19,9 @@ function Diagnostic(...args) {
   self.errors   = null;
 
   // TODO: return args from argv, DIAG.usages
-  self.args = function(fnName) {
+  self.args = async function(fnName) {
     const argv        = getArgv(...args);
     const currFnName  = self.DIAG.getCurrFnName()         || fnName   || '';
-    // const fnSpec       = self.DIAG.getFnSpec(currFnName)   || {};
 
     // -------------------- Get argv elements --------------------
 
@@ -36,7 +35,7 @@ function Diagnostic(...args) {
     });
 
     // Handle aliases
-    const fnSpec = self.DIAG.getFnSpec(currFnName)   || {};
+    const fnSpec = await self.DIAG.getAliases(currFnName)   || {};
     argvOut = sg.reduce(fnSpec.args, argvOut, (m, arg, name) => {
       const aliases = (arg.aliases || '').split(',');
       _.each(aliases, alias => {
@@ -55,16 +54,7 @@ function Diagnostic(...args) {
     return argvOut;
   };
 
-  self.addError = function(err) {
-    if (!err) { return; }
-
-    self.errors = self.errors || [];
-    self.errors.push(err);
-
-    return self.errors.length;
-  };
-
-  self.haveArgs = function(args) {
+  self.haveArgs = async function(args) {
     _.each(args, (arg, name) => {
       if (sg.isnt(arg)) {
         self.addError(`Need arg "${name}"`);
@@ -72,6 +62,15 @@ function Diagnostic(...args) {
     });
 
     return !self.errors || self.errors.length === 0;
+  };
+
+  self.addError = function(err) {
+    if (!err) { return; }
+
+    self.errors = self.errors || [];
+    self.errors.push(err);
+
+    return self.errors.length;
   };
 
   self.exit = function(err, ...results) {

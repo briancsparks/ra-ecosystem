@@ -1,6 +1,7 @@
 
 var   sg                      = require('sg0');
 const { _ }                   = sg;
+const { qm }                  = require('quick-merge');
 const fs                      = require('fs');
 
 sg.path                       = require('path');
@@ -22,34 +23,57 @@ function bits(...args) {
 
 function Bits(mod) {
   var   self = this;
-console.log(`bits`, {mod: sg.keys(mod)});
-  // const {id, path, filename, paths} = mod;
 
-  var   mainjson, mainjson_rz;
+  self.pieces = {};
+
+  // var   mainjson, mainjson_rz;
 
   const [dirname, basename, ext]    = splitFilepath(mod.filename);
   const bitsdir                     = sg.path.join(dirname, '_sg-bits');
   const mainfile                    = sg.path.join(bitsdir, `${basename}.json`);
 
-  self.getJson = async function() {
-    if (!mainjson_rz) {
-      // It was never fs_readFile'd
-      return {};
-    }
-
-    mainjson = mainjson || sg.safeJSONParse(await mainjson_rz);
-    return mainjson;
+  self.setJson = function(data) {
+    self.pieces = qm(self.pieces, data);
   };
 
-  finalizeCtor();
-  async function finalizeCtor() {
+  self.getJson = async function() {
+
+    var   result = self.pieces || {};
+
+    var   subPieces = {};
     try {
-      const stats = await fs_stat(bitsdir);
-      if (stats.isDirectory()) {
-        mainjson_rz = /*nowait*/ fs_readFile(mainfile);
-      }
-    } catch(e) {}
-  }
+      subPieces     = await fs_readFile(mainfile);
+      self.pieces   = sg.extend(self.pieces, sg.safeJSONParse(subPieces));
+
+    } catch(err) {
+      // If theres an error, just let it fall thru (we already have self.pieces)
+      console.error(`getjson error`, err);
+    }
+
+    // const stats = await fs_stat(bitsdir);
+    // if (stats.isDirectory()) {
+    //   mainjson_rz = /*nowait*/ fs_readFile(mainfile);
+    // }
+
+    // if (!mainjson_rz) {
+    //   // It was never fs_readFile'd
+    //   return {};
+    // }
+
+    // self.pieces = sg.safeJSONParse(await mainjson_rz);
+
+    return self.pieces;
+  };
+
+  // finalizeCtor();
+  // async function finalizeCtor() {
+  //   try {
+  //     const stats = await fs_stat(bitsdir);
+  //     if (stats.isDirectory()) {
+  //       mainjson_rz = /*nowait*/ fs_readFile(mainfile);
+  //     }
+  //   } catch(e) {}
+  // }
 }
 
 

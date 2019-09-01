@@ -9,7 +9,8 @@
       "request": "launch",
       "name": "Debug current run-anywhere",
       "program": "${workspaceFolder}/packages/run-anywhere/bin.js",
-      "args": ["invoke", "${file}", "lambdaDeploy", "--stage=dev", "--name=lambda-net", "--class-b=21", "--sgs=wide", "--debug"]
+      "args": ["invoke", "${file}", "lambdaDeploy", "--stage=dev", "--name=lambda-net", "--class-b=21", "--sgs=wide", "--debug"],
+      "cwd": "C:/Users/sparksb/dev/bcs/ra-ecosystem/apps/lambda-net",
     },
     {
       "type": "node",
@@ -23,7 +24,7 @@
       "name": "ra invoke",
       "program": "${workspaceFolder}/ra.js",
       "args": [ "invoke", "lib/loading.js", "testHook", "--a", "--verbose" ],
-      "cwd": "C:/Users/sparksb/dev/bcs/run-anywhere",
+      "cwd": "C:/Users/sparksb/dev/bcs/ra-ecosystem",
     }
   ]
 }
