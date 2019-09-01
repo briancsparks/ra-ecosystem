@@ -22,15 +22,12 @@ function Diagnostic(...args) {
   self.args = function(fnName) {
     const argv        = getArgv(...args);
     const currFnName  = self.DIAG.getCurrFnName()         || fnName   || '';
-    // const usages      = self.DIAG.usages                  || {};
-    // const usageX      = usages[fnName]                    || {};
-    // const mainjson    = self.DIAG.getMainJson()           || {};
-    const usage       = self.DIAG.getUsages(currFnName)   || {};
+    // const fnSpec       = self.DIAG.getFnSpec(currFnName)   || {};
 
-// sg.elog(`sdfjlj`, {DIAG: self.DIAG, argv, currFnName, mainjson, usage});
+    // -------------------- Get argv elements --------------------
 
-    // Get all the data items
-    var   result = sg.reduce(argv, {}, (m, v, k) => {
+    // Get all the data from the `argv` that was passed in at the beginning of the fn
+    var   argvOut = sg.reduce(argv, {}, (m, v, k) => {
       if (!_.isFunction(v)) {
         return sg.kv(m, k, v);
       }
@@ -39,7 +36,8 @@ function Diagnostic(...args) {
     });
 
     // Handle aliases
-    result = sg.reduce(usage.args, result, (m, arg, name) => {
+    const fnSpec = self.DIAG.getFnSpec(currFnName)   || {};
+    argvOut = sg.reduce(fnSpec.args, argvOut, (m, arg, name) => {
       const aliases = (arg.aliases || '').split(',');
       _.each(aliases, alias => {
 
@@ -52,7 +50,9 @@ function Diagnostic(...args) {
       return m;
     });
 
-    return result;
+    // Now we have the users proposed argv -- validate it
+
+    return argvOut;
   };
 
   self.addError = function(err) {

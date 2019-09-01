@@ -31,7 +31,7 @@ console.log(`bits`, {mod: sg.keys(mod)});
   const bitsdir                     = sg.path.join(dirname, '_sg-bits');
   const mainfile                    = sg.path.join(bitsdir, `${basename}.json`);
 
-  self.getMainJson = async function() {
+  self.getJson = async function() {
     if (!mainjson_rz) {
       // It was never fs_readFile'd
       return {};

@@ -7,6 +7,13 @@
     {
       "type": "node",
       "request": "launch",
+      "name": "Debug current run-anywhere",
+      "program": "${workspaceFolder}/packages/run-anywhere/bin.js",
+      "args": ["invoke", "${file}", "lambdaDeploy", "--stage=dev", "--name=lambda-net", "--class-b=21", "--sgs=wide", "--debug"]
+    },
+    {
+      "type": "node",
+      "request": "launch",
       "name": "Debug Current File",
       "program": "${file}"
     },

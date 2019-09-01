@@ -31,6 +31,7 @@ DIAG.usage({
 });
 
 
+// lambdaDeploy --stage=dev --name=lambda-net --class-b=21 --sgs=wide --debug
 mod.async(DIAG.async({lambdaDeploy: async function(argv, context) {
   // sg.elog(`lambdaDeploy`, {argv, context});
   const diag                  = DIAG.diagnostic({argv, context});
@@ -43,7 +44,7 @@ mod.async(DIAG.async({lambdaDeploy: async function(argv, context) {
   }                           = diag.args();
 
 
-  var   packageDir    = sg.path.join(process.cwd(), argv._[0] || '.');
+  var   packageDir    = sg.path.join(process.cwd(), '.');
   Bucket              = Bucket        ||  argv.Bucket   || sg.from([packageDir, '_config', stage, 'env.json'], 'DeployBucket');
   AWS_PROFILE         = AWS_PROFILE   || ENV.at('AWS_PROFILE');
 
