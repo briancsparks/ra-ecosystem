@@ -34,7 +34,7 @@ ls -l /work/layer-for-package.zip
 aws lambda publish-layer-version  --layer-name "$LAYER_NAME"                     \
                                   --description "dependencies for $LAMBDA_NAME function"    \
                                   --zip-file "fileb:///work/layer-for-package.zip"                \
-                                  --compatible-runtimes "nodejs8.10" > "publish-layer-version-result.json"
+                                  --compatible-runtimes "nodejs10.x" > "publish-layer-version-result.json"
 
 layer_arn="$(cat publish-layer-version-result.json | jq -r '.LayerVersionArn')"
 echo "Layer ARN: | $layer_arn |"

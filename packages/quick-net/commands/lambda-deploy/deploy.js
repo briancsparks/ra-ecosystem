@@ -38,17 +38,17 @@ mod.async(DIAG.async({lambdaDeploy: async function(argv, context) {
 
   const {
     stage,lambdaName,class_b
-  }                           = await diag.args();
+  }                           = diag.args();
   var {
     Bucket,AWS_PROFILE
-  }                           = await diag.args();
+  }                           = diag.args();
 
 
   var   packageDir    = sg.path.join(process.cwd(), '.');
   Bucket              = Bucket        ||  argv.Bucket   || sg.from([packageDir, '_config', stage, 'env.json'], 'DeployBucket');
   AWS_PROFILE         = AWS_PROFILE   || ENV.at('AWS_PROFILE');
 
-  if (!(await diag.haveArgs({lambdaName,packageDir,class_b,Bucket,AWS_PROFILE})))                { return diag.exit(); }
+  if (!(diag.haveArgs({lambdaName,packageDir,class_b,Bucket,AWS_PROFILE})))                { return diag.exit(); }
 
   // Notice we invoke getVpcSubnetsSgs here, but await the result after we do `docker build ...`
   var   vpcSubnetSgs    = /*nowait*/ getVpcSubnetsSgs(argv, context);

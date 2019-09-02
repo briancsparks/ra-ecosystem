@@ -34,7 +34,7 @@ function Bits(mod) {
     self.pieces = qm(self.pieces, data);
   };
 
-  self.getJson = async function() {
+  self.loadJson = async function() {
 
     var   result = self.pieces || {};
 
@@ -48,6 +48,10 @@ function Bits(mod) {
       console.error(`getjson error`, err);
     }
 
+    return self.pieces;
+  };
+
+  self.getJson = function() {
     return self.pieces;
   };
 }

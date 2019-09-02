@@ -19,7 +19,7 @@ function Diagnostic(...args) {
   self.errors   = null;
 
 
-  self.args = async function(fnName) {
+  self.args = function(fnName) {
     const argv        = getArgv(...args);
     const currFnName  = self.DIAG.getCurrFnName()         || fnName   || '';
 
@@ -35,7 +35,7 @@ function Diagnostic(...args) {
     });
 
     // Handle aliases
-    const fnSpec = await self.DIAG.getAliases(currFnName)   || {};
+    const fnSpec = self.DIAG.getAliases() || {};
     argvOut = sg.reduce(fnSpec.args, argvOut, (m, arg, name) => {
       const aliases = (arg.aliases || '').split(',');
       _.each(aliases, alias => {
@@ -49,17 +49,19 @@ function Diagnostic(...args) {
       return m;
     });
 
-    // Now we have the users proposed argv -- validate it
-
     return argvOut;
   };
 
-  self.haveArgs = async function(args) {
+  self.haveArgs = function(args) {
     _.each(args, (arg, name) => {
       if (sg.isnt(arg)) {
         self.addError(`Need arg "${name}"`);
       }
     });
+
+    // Now we have the users proposed argv -- validate it
+    const currFnName  = self.DIAG.getCurrFnName()   || '';
+    const schema      = self.DIAG.getSchema()       || {};
 
     return !self.errors || self.errors.length === 0;
   };

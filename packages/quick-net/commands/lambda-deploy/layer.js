@@ -29,7 +29,7 @@ DIAG.usage({
   }
 });
 
-mod.async({deployLayer: async function(argv, context) {
+mod.async(DIAG.async({deployLayer: async function(argv, context) {
   // sg.elog(`deployLayer`, {argv, context});
   const diag          = DIAG.diagnostic({argv, context});
 
@@ -37,12 +37,12 @@ mod.async({deployLayer: async function(argv, context) {
 
   const {
     stage,lambdaName,force,
-  }                           = diag.args('deployLayer');
+  }                           = diag.args();
   var {
     Bucket,AWS_PROFILE
-  }                           = diag.args('deployLayer');
+  }                           = diag.args();
 
-  var   packageDir    = sg.path.join(process.cwd(), argv._[0] || '.');
+  var   packageDir    = sg.path.join(process.cwd(), '.');
   Bucket              = argv.Bucket   || sg.from([packageDir, '_config', stage, 'env.json'], 'DeployBucket');
   AWS_PROFILE         = AWS_PROFILE   || ENV.at('AWS_PROFILE');
 
@@ -54,7 +54,7 @@ mod.async({deployLayer: async function(argv, context) {
     const prevPackageJson   = await getPrevPackageJsonAsync(Bucket, lambdaName);
 
     if (deepEqual(packageDeps, prevPackageJson.dependencies)) {
-      diag.i(`package.json deps have not changed (use --force if needed)`);
+      diag.i(`package.json deps have not changed (use --force if needed)` /*, {previous: prevPackageJson.dependencies, current: packageDeps} */);
       return {ok:true};
     }
   }
@@ -83,7 +83,7 @@ mod.async({deployLayer: async function(argv, context) {
   await docker;
 
   return {ok:true};
-}});
+}}));
 
 async function getPrevPackageJsonAsync(Bucket, lambdaName, callback) {
   const layerName   = `layer-for-${lambdaName}`;

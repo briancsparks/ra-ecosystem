@@ -58,14 +58,27 @@ module.exports.DIAG_ = function(mod) {
     self.bits.setJson({fns: data});
   };
 
+  self.loadData = async function(fnName) {
+    const mainjson    = await self.bits.loadJson()     || {};
+    return mainjson;
+  };
+
   self.getCurrFnName = function() {
     var diagFunctions = sgDiagnostic.getContextItem(self.context, 'diagFunctions') || [];
     return diagFunctions[0].fnName;
   };
 
-  self.getAliases = async function(fnName) {
-    const currFnName  = self.getCurrFnName()          || fnName   || '';
-    const mainjson    = await self.bits.getJson()     || {};
+  self.getAliases = function() {
+    const currFnName  = self.getCurrFnName()    || '';
+    const mainjson    = self.bits.getJson()     || {};
+
+    const fnSpec      = {...(mainjson.fns || {})[currFnName]};
+    return fnSpec;
+  };
+
+  self.getSchema = function() {
+    const currFnName  = self.getCurrFnName()    || '';
+    const mainjson    = self.bits.getJson()     || {};
 
     const fnSpec      = {...(mainjson.fns || {})[currFnName]};
     return fnSpec;
@@ -89,6 +102,11 @@ module.exports.DIAG_ = function(mod) {
 
       self.context = context;
 
+      // ---------- Load all data ----------
+      await self.loadData(fnName);
+
+
+      // ---------- Create a diag object for this invocation ----------
       var diag = sgDiagnostic.fromContext({argv, context});
       self.initDiagnostic(diag);
 
@@ -97,7 +115,6 @@ module.exports.DIAG_ = function(mod) {
       const result = await intercepted(argv, context);
 
 
-      // sgDiagnostic.setContextItem(context, 'currFnNames', currFnNames);
       sgDiagnostic.setContextItem(context, 'diagFunctions', diagFunctions);
 
       return result;

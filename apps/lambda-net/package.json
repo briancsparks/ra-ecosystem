@@ -8,7 +8,9 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "deploy:lambda:dev": "cross-env-shell STAGE=dev \"npm run deploy:lambda\"",
     "deploy:lambda:prod": "cross-env-shell STAGE=prod \"npm run deploy:lambda\"",
-    "deploy:lambda": "cross-env-shell quick-net deployLayer --name= $npm_package_name --stage= $STAGE && cross-env-shell quick-net lambdaDeploy --name= $npm_package_name --class-b=21 --sgs=wide --stage= $STAGE"
+    "deploy:lambda": "cross-env-shell quick-net deployLayer --name= $npm_package_name --stage= $STAGE && cross-env-shell quick-net lambdaDeploy --name= $npm_package_name --class-b=21 --sgs=wide --stage= $STAGE",
+    "deploy:lambdalayer": "cross-env-shell STAGE=dev quick-net deployLayer --name= $npm_package_name --stage= $STAGE",
+    "deploy:lambdafn": "cross-env-shell STAGE=dev quick-net lambdaDeploy --debug --name= $npm_package_name --class-b=21 --sgs=wide --stage= $STAGE"
   },
   "author": "Brian C Sparks <briancsparks@gmail.com>",
   "license": "MIT",
@@ -20,9 +22,9 @@
     "lodash": "^4.17.13",
     "mongodb": "^3.1.10",
     "quick-merge": "^1.0.15",
-    "quick-net": "^1.0.95",
+    "quick-net": "^1.0.96",
     "redis": "^2.8.0",
-    "run-anywhere": "^1.0.76",
+    "run-anywhere": "^1.0.77",
     "sg-argv": "^1.0.35",
     "sg-config": "^1.0.46",
     "sg-diag": "^1.0.19",
