@@ -51,7 +51,6 @@ sg.argvValue = function(key) {
 
 
 
-
 var stage       = sg.argvValue('stage');
 var fastFail    = sg.argvFlag('fastfail');
 var warnStack   = sg.argvFlag('warnstack');
