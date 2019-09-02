@@ -80,8 +80,11 @@ module.exports.DIAG_ = function(mod) {
     const currFnName  = self.getCurrFnName()    || '';
     const mainjson    = self.bits.getJson()     || {};
 
-    const fnSpec      = {...(mainjson.fns || {})[currFnName]};
-    return fnSpec;
+    const schema      = ((mainjson.validations || {})[currFnName] ||{}).args || {};
+    return schema;
+
+    // const fnSpec      = {...(mainjson.fns || {})[currFnName]};
+    // return fnSpec;
   };
 
   // Hijack the mods function, returning our own

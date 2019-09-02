@@ -40,15 +40,18 @@ SgError.prototype.constructor = SgError;
  * @returns {*} An Error-derived object.
  */
 var toError = function(e, e2) {
-  if (e instanceof Error)     { return e; }
-  if (_.isString(e))          { return new SgError(e, e2); }
-  if (_.isArray(e))           { return new Error(JSON.stringify(e), e); }
+  if (e instanceof Error)         { return e; }
+  if (_.isString(e))              { return new SgError(e, e2); }
+  if (_.isArray(e))               { return new Error(JSON.stringify(e), e); }
 
   if (_.isObject(e)) {
-    if (_.isString(e.error))  { return new SgError(e.error, e); }
-    if (_.isString(e.Error))  { return new SgError(e.Error, e); }
-    if (_.isString(e.err))    { return new SgError(e.err,   e); }
-    if (_.isString(e.Err))    { return new SgError(e.Err,   e); }
+    if (_.isString(e.error))      { return new SgError(e.error,     e); }
+    if (_.isString(e.Error))      { return new SgError(e.Error,     e); }
+    if (_.isString(e.err))        { return new SgError(e.err,       e); }
+    if (_.isString(e.Err))        { return new SgError(e.Err,       e); }
+
+    if (_.isString(e.message))    { return new SgError(e.message,   e); }
+    if (_.isString(e.msg))        { return new SgError(e.msg,       e); }
   }
 
   if (e === null)             { return e; }

@@ -1,6 +1,7 @@
 
 const sg                      = require('sg0');
 const { _ }                   = sg;
+const Ajv                     = require('ajv');
 const { util }                = sg.libs;
 const { toError }             = require('./error');
 
@@ -16,7 +17,7 @@ function Diagnostic(...args) {
   self.DIAG     = {};
   self.bits     = {};
   self.options  = rootOptions(...args);
-  self.errors   = null;
+  self.errors   = [];
 
 
   self.args = function(fnName) {
@@ -28,7 +29,7 @@ function Diagnostic(...args) {
     // Get all the data from the `argv` that was passed in at the beginning of the fn
     var   argvOut = sg.reduce(argv, {}, (m, v, k) => {
       if (!_.isFunction(v)) {
-        return sg.kv(m, k, v);
+        return sg.kv(m, k, sg.smartValue(v));
       }
 
       return m;
@@ -52,27 +53,44 @@ function Diagnostic(...args) {
     return argvOut;
   };
 
-  self.haveArgs = function(args) {
-    _.each(args, (arg, name) => {
+  self.haveArgs = function(inputArgs, computedArgs) {
+
+    // See what's missing out of the caller-supplied args
+    _.each(inputArgs, (arg, name) => {
       if (sg.isnt(arg)) {
-        self.addError(`Need arg "${name}"`);
+        const msg = `Need arg "${name}"`;
+        self.e(msg);
+        self.errors.push(toError(msg));
+      }
+    });
+
+    // See whats missing from the computed args
+    _.each(computedArgs, (arg, name) => {
+      if (sg.isnt(arg)) {
+        const msg = `Could not determine "${name}"`;
+        self.e(msg);
+        self.errors.push(toError(msg));
       }
     });
 
     // Now we have the users proposed argv -- validate it
-    // const currFnName  = self.DIAG.getCurrFnName()   || '';
     const schema      = self.DIAG.getSchema()       || {};
 
-    return !self.errors || self.errors.length === 0;
-  };
+    // TODO: Add {useDefaults:"empty", coerceTypes:true} once we can handle the data being changed
+    var   validator   = new Ajv({allErrors: true, verbose: true});
+    const valid       = validator.validate(schema, {...inputArgs, ...computedArgs});
 
-  self.addError = function(err) {
-    if (!err) { return; }
+    if (!valid) {
+      self.e(validator.errorsText());
+      if (getArgv(...args).verbose) {
+        self.e(`Diagnostic.haveArgs`, ...validator.errors);
+      }
 
-    self.errors = self.errors || [];
-    self.errors.push(err);
+      self.errors = [...self.errors, ...(validator.errors.map(e => toError(e)))];
+      self.errors.push(toError(validator.errorsText()));
+    }
 
-    return self.errors.length;
+    return self.errors.length === 0;
   };
 
   self.exit = function(err, ...results) {
@@ -80,7 +98,7 @@ function Diagnostic(...args) {
 
     // TODO: Check self.errors, callback, etc.
     if (sg.isnt(callback)) {
-      if (self.errors && self.errors.length > 0) {
+      if (self.errors.length > 0) {
         // TODO: Make mechanism so we can throw, or return 'success' with error in the data
 
         throw toError('ENOTVALID', self.errors);
@@ -91,7 +109,7 @@ function Diagnostic(...args) {
     }
 
     if (_.isFunction(callback)) {
-      if (self.errors && self.errors.length > 0) {
+      if (self.errors.length > 0) {
         return callback(self.errors);
       }
 
@@ -157,12 +175,20 @@ function Diagnostic(...args) {
     return self.v(msg, ...rest);
   };
 
+  function showBigAnnoyingMessage(msg, options, ...rest) {
+    const {banner='-----', stream='error'} = options || {};
+
+    var msg_ = `\n\n     ${banner}     ${banner}     ${msg}     ${banner}     ${banner}\n\n`;
+    console[stream](...logged(msg_, ...rest));
+  }
+
   self.w = function(msg, ...rest) {
     msgArgv = msgArgv || getArgv(...args);
     if (msgArgv.quiet)    { return; }
 
-    var msg_ = `\n\n     #####     #####     ${msg}     #####     #####\n\n`;
-    console.log(...logged(msg_, ...rest));
+    showBigAnnoyingMessage(msg, {banner: '#####', stream: 'log'}, ...rest);
+    // var msg_ = `\n\n     #####     #####     ${msg}     #####     #####\n\n`;
+    // console.log(...logged(msg_, ...rest));
 
     if (fastFail()) {
       throw(new Error(`FastFail warning ${msg}`));
@@ -174,6 +200,27 @@ function Diagnostic(...args) {
   self.w_if = function(test, msg, ...rest) {
     if (!test) { return; }
     return self.w(msg, ...rest);
+  };
+
+  // TODO: This needs a lot of work.
+  self.e = function(msg, ...rest) {
+    msgArgv = msgArgv || getArgv(...args);
+
+    // TODO: `quiet` in this context should mean that the active developer doesnt want to be bugged
+    if (msgArgv.quiet && activeDevelopment)    { return; }
+
+    showBigAnnoyingMessage(msg, {banner: '!!!!!!!!!!'}, ...rest);
+
+    if (fastFail()) {
+      throw(new Error(`FastFail warning ${msg}`));
+    } else if (warnStack()) {
+      console.warn(`Warning ${msg}`, new Error(`Warning ${msg}`).stack);
+    }
+  };
+
+  self.assert = self.e_if = function(test, msg, ...rest) {
+    if (!test) { return; }
+    return self.e(msg, ...rest);
   };
 
   self.iv = function(msg, i_params, v_params) {

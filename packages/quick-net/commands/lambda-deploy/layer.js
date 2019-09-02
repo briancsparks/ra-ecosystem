@@ -46,7 +46,7 @@ mod.async(DIAG.async({deployLayer: async function(argv, context) {
   Bucket              = argv.Bucket   || sg.from([packageDir, '_config', stage, 'env.json'], 'DeployBucket');
   AWS_PROFILE         = AWS_PROFILE   || ENV.at('AWS_PROFILE');
 
-  if (!diag.haveArgs({lambdaName,packageDir,Bucket,AWS_PROFILE}))                     { return diag.exit(); }
+  if (!diag.haveArgs({stage,lambdaName,Bucket}, {packageDir,AWS_PROFILE}))                     { return diag.exit(); }
 
   // Determine if package is out of date, forcing a rebuild
   if (!force) {

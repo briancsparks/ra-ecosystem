@@ -1,14 +1,20 @@
 {
   "validations": {
     "lambdaDeploy": {
+
       "args": {
         "$schema": "http://json-schema.org/schema#",
         "type": "object",
         "properties": {
-          "lambdaName": {"type":"string"},
-          "class_b": {"type":"number"}
+          "stage":        {"type":"string", "minLength": 1},
+          "lambdaName":   {"type":"string", "minLength": 1},
+          "class_b":      {"type":"number"},
+          "Bucket":       {"type":"string", "minLength": 1},
+          "packageDir":   {"type":"string", "minLength": 1},
+          "AWS_PROFILE":  {"type":"string", "minLength": 1}
         }
       }
+
     }
   }
 }

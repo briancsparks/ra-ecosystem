@@ -1,0 +1,19 @@
+{
+  "validations": {
+    "deployLayer": {
+
+      "args": {
+        "$schema": "http://json-schema.org/schema#",
+        "type": "object",
+        "properties": {
+          "stage":        {"type":"string", "minLength": 1},
+          "lambdaName":   {"type":"string", "minLength": 1},
+          "Bucket":       {"type":"string", "minLength": 1},
+          "packageDir":   {"type":"string", "minLength": 1},
+          "AWS_PROFILE":  {"type":"string", "minLength": 1}
+        }
+      }
+
+    }
+  }
+}
