@@ -1,0 +1,14 @@
+{
+  "validations": {
+    "lambdaDeploy": {
+      "args": {
+        "$schema": "http://json-schema.org/schema#",
+        "type": "object",
+        "properties": {
+          "lambdaName": {"type":"string"},
+          "class_b": {"type":"number"}
+        }
+      }
+    }
+  }
+}

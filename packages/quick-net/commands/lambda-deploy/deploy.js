@@ -55,12 +55,8 @@ mod.async(DIAG.async({lambdaDeploy: async function(argv, context) {
 
   const dockerfileDir   = sg.path.join(__dirname, 'deploy');
   const dockerfile      = sg.path.join(dockerfileDir, 'Dockerfile');
-  var   docker;
 
-  diag.d(`lambdaDeploy`, {args: qm.stitch([`build`, [`-t`, 'quick-net-lambda-layer-deploy'], ['--progress', 'tty'], ['-f', dockerfile], '.']), dockerfileDir});
-  docker = execa('docker', qm.stitch([`build`, [`-t`, 'quick-net-lambda-layer-deploy'], ['--progress', 'tty'], ['-f', dockerfile], '.']), {cwd: dockerfileDir});
-  docker.stdout.pipe(process.stdout);
-  await docker;
+  runDocker(qm.stitch([`build`, [`-t`, 'quick-net-lambda-layer-deploy'], ['--progress', 'tty'], ['-f', dockerfile], '.']), {cwd: dockerfileDir});
 
   vpcSubnetSgs  = await vpcSubnetSgs;
 
@@ -79,12 +75,26 @@ mod.async(DIAG.async({lambdaDeploy: async function(argv, context) {
     'quick-net-lambda-layer-deploy'
   ];
 
-  diag.d(`lambdaDeploy`, {args: qm.stitch(['run', '--rm', ...runArgs])});
-  docker = execa('docker', qm.stitch(['run', '--rm', ...runArgs]), {cwd: dockerfileDir});
-  docker.stdout.pipe(process.stdout);
-  await docker;
+  runDocker(qm.stitch(['run', '--rm', ...runArgs]), {cwd: dockerfileDir});
 
   return {ok:true};
+
+
+
+
+  async function runDocker(params, options) {
+    var   docker;
+    diag.d(`lambdaDeploy`, {args: params, dockerfileDir});
+
+    if (argv.dry_run || process.env.QUICKNET_DRY_RUN) {
+      diag.d(`:::DRYRUN:::`);
+      return;
+    }
+
+    docker = execa('docker', params, {cwd: dockerfileDir});
+    docker.stdout.pipe(process.stdout);
+    await docker;
+  }
 }}));
 
 

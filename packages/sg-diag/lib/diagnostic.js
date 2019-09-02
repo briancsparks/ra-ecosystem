@@ -60,7 +60,7 @@ function Diagnostic(...args) {
     });
 
     // Now we have the users proposed argv -- validate it
-    const currFnName  = self.DIAG.getCurrFnName()   || '';
+    // const currFnName  = self.DIAG.getCurrFnName()   || '';
     const schema      = self.DIAG.getSchema()       || {};
 
     return !self.errors || self.errors.length === 0;

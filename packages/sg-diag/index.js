@@ -93,6 +93,7 @@ module.exports.DIAG_ = function(mod) {
 
     // Build an impostor to hand out -- this fn will be called, and needs to call the real fn
     const interceptorFn = async function(argv, context) {
+      const logApi    = argv.log_api || process.env.SG_LOG_API;
 
       // Info about the current invocation
       var   info = {argv, context, fnName};
@@ -109,6 +110,8 @@ module.exports.DIAG_ = function(mod) {
       // ---------- Create a diag object for this invocation ----------
       var diag = sgDiagnostic.fromContext({argv, context});
       self.initDiagnostic(diag);
+
+      diag.i_if(logApi, `--> ${fnName}:`, {argv});
 
 
       // ========== Call the intercepted function ==========
