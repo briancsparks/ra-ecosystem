@@ -1,4 +1,4 @@
-# `sg-echo`
+# `@sg0/sg-echo`
 
 > TODO: description
 
