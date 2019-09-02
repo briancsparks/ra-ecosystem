@@ -1,6 +1,6 @@
 {
   "name": "@sg0/sg-echo",
-  "version": "1.0.35",
+  "version": "1.0.36",
   "description": "> TODO: description",
   "author": "Brian C Sparks <briancsparks@gmail.com>",
   "homepage": "https://github.com/briancsparks/ra-ecosystem#readme",
@@ -24,7 +24,7 @@
     "url": "https://github.com/briancsparks/ra-ecosystem/issues"
   },
   "dependencies": {
-    "sg0": "^1.0.24"
+    "sg0": "^1.0.25"
   },
   "devDependencies": {
     "ava": "^2.3.0"
