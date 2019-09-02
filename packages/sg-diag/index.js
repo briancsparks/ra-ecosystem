@@ -10,7 +10,7 @@
 //
 const sg0                     = require('sg0');
 const { _ }                   = sg0;
-const sg                      = sg0.merge(sg0, require('../sg-bits'));
+const sg                      = sg0.merge(sg0, require('sg-bits'));
 const { qm }                  = require('quick-merge');
 
 const sgDiagnostic            = require('./lib/diagnostic');
