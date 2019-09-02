@@ -1,11 +1,11 @@
 {
-  "name": "sg-echo",
+  "name": "@sg0/sg-echo",
   "version": "1.0.33",
   "description": "> TODO: description",
   "author": "Brian C Sparks <briancsparks@gmail.com>",
   "homepage": "https://github.com/briancsparks/ra-ecosystem#readme",
   "license": "MIT",
-  "main": "lib/sg-echo.js",
+  "main": "index.js",
   "directories": {
     "lib": "lib",
     "test": "__tests__"
@@ -25,5 +25,8 @@
   },
   "dependencies": {
     "sg0": "^1.0.24"
+  },
+  "devDependencies": {
+    "ava": "^2.3.0"
   }
 }

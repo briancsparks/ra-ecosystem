@@ -2,7 +2,7 @@
 const raLib                   = require('run-anywhere');
 const ra                      = raLib.v2;
 const mod                     = ra.modSquad(module);
-const echo                    = require('sg-echo').echo;
+const echo                    = require('@sg0/sg-echo').echo;
 
 
 mod.xport({echo: function(argv, context, callback) {
