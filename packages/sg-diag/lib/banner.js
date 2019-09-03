@@ -11,5 +11,5 @@ module.exports.bigBanner = function(color, input, longerMessage) {
   msg += `===========================================================================================================\n`;
 
 
-  console.error(chalk['green'](msg));
+  console.error(chalk[color](msg));
 };

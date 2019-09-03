@@ -9,7 +9,7 @@
     "deploy:lambda:dev": "cross-env-shell STAGE=dev \"npm run deploy:lambda\"",
     "deploy:lambda:prod": "cross-env-shell STAGE=prod \"npm run deploy:lambda\"",
     "deploy:lambda": "cross-env-shell quick-net deployLayer --name= $npm_package_name --stage= $STAGE && cross-env-shell quick-net lambdaDeploy --name= $npm_package_name --class-b=21 --sgs=wide --stage= $STAGE",
-    "deploy:lambdalayer": "cross-env-shell STAGE=dev quick-net deployLayer --name= $npm_package_name --stage= $STAGE",
+    "deploy:lambdalayer": "cross-env-shell STAGE=dev quick-net deployLayer --debug --name= $npm_package_name --stage= $STAGE",
     "deploy:lambdafn": "cross-env-shell STAGE=dev quick-net lambdaDeploy --debug --name= $npm_package_name --class-b=21 --sgs=wide --stage= $STAGE"
   },
   "author": "Brian C Sparks <briancsparks@gmail.com>",
@@ -21,7 +21,7 @@
     "quick-net": "^1.0.102",
     "run-anywhere": "^1.0.82",
     "sg-argv": "^1.0.41",
-    "sg-config": "^1.0.52",
+    "sg-config": "^1.0.51",
     "sg0": "^1.0.26"
   }
 }

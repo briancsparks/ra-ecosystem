@@ -57,7 +57,7 @@ mod.async(DIAG.async({lambdaDeploy: async function(argv, context) {
   const dockerfileDir   = sg.path.join(__dirname, 'deploy');
   const dockerfile      = sg.path.join(dockerfileDir, 'Dockerfile');
 
-  sg.bigBanner('yellow', `Building deployer Docker image ###`);
+  sg.bigBanner('green', `Building deployer Docker image ###`);
   runDocker(qm.stitch([`build`, [`-t`, 'quick-net-lambda-layer-deploy'], ['--progress', 'tty'], ['-f', dockerfile], '.']), {cwd: dockerfileDir});
 
   vpcSubnetSgs  = await vpcSubnetSgs;
@@ -77,10 +77,10 @@ mod.async(DIAG.async({lambdaDeploy: async function(argv, context) {
     'quick-net-lambda-layer-deploy'
   ];
 
-  sg.bigBanner('yellow', `Running ${lambdaName} deployer in Docker ###`);
+  sg.bigBanner('green', `Running ${lambdaName} deployer in Docker ###`);
   runDocker(qm.stitch(['run', '--rm', ...runArgs]), {cwd: dockerfileDir});
 
-  sg.bigBanner('yellow', `Done running ${lambdaName} deployer in Docker`);
+  sg.bigBanner('green', `Done running ${lambdaName} deployer in Docker`);
   return {ok:true};
 
 

@@ -63,7 +63,7 @@ mod.async(DIAG.async({deployLayer: async function(argv, context) {
   const dockerfileDir   = sg.path.join(__dirname, 'layer');
   const dockerfile      = sg.path.join(dockerfileDir, 'Dockerfile');
 
-  sg.bigBanner('yellow', `Building Docker image ###`);
+  sg.bigBanner('green', `Building Docker image ###`);
 
   runDocker(qm.stitch([`build`, [`-t`, 'quick-net-lambda-layer-deploy'], ['--progress', 'tty'], ['-f', dockerfile], '.']), {cwd: dockerfileDir});
 
@@ -76,10 +76,10 @@ mod.async(DIAG.async({deployLayer: async function(argv, context) {
     'quick-net-lambda-layer-deploy'
   ];
 
-  sg.bigBanner('yellow', `Running layer-builder-deployer in Docker ###`);
+  sg.bigBanner('green', `Running layer-builder-deployer in Docker ###`);
   runDocker(qm.stitch(['run', '--rm', ...runArgs]), {cwd: dockerfileDir});
 
-  sg.bigBanner('yellow', `Done running layer-builder-deployer in Docker`);
+  sg.bigBanner('green', `Done running layer-builder-deployer in Docker`);
   return {ok:true};
 
 

@@ -97,7 +97,7 @@ module.exports.DIAG_ = function(mod) {
     const fnName        = firstFnName(xfn);
     const intercepted   = xfn[fnName];
 
-    bigBanner('yellow', `Launching the overall function: ${fnName}`);
+    bigBanner('green', `Launching the overall function: ${fnName}`);
 
     // Build an impostor to hand out -- this fn will be called, and needs to call the real fn
     const interceptorFn = async function(argv, context) {
