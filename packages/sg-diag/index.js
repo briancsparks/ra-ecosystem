@@ -1,3 +1,4 @@
+if (process.env.SG_VVVERBOSE) console[process.env.SG_LOAD_STREAM || 'log'](`Loading ${__filename}`);
 
 /**
  * @file
@@ -12,10 +13,12 @@ const sg0                     = require('sg0');
 const { _ }                   = sg0;
 const sg                      = sg0.merge(sg0, require('sg-bits'));
 const { qm }                  = require('quick-merge');
+const banner                  = require('./lib/banner');
 
 const sgDiagnostic            = require('./lib/diagnostic');
 const sgCheck                 = require('./lib/check');
 const sgParams                = require('./lib/params');
+const { bigBanner }           = banner;
 
 
 // -------------------------------------------------------------------------------------
@@ -94,6 +97,8 @@ module.exports.DIAG_ = function(mod) {
     const fnName        = firstFnName(xfn);
     const intercepted   = xfn[fnName];
 
+    bigBanner('yellow', `Launching the overall function: ${fnName}`);
+
     // Build an impostor to hand out -- this fn will be called, and needs to call the real fn
     const interceptorFn = async function(argv, context) {
       const logApi    = argv.log_api || process.env.SG_LOG_API;
@@ -160,6 +165,7 @@ module.exports.diagnostic = sgDiagnostic.diagnostic;
 
 _.each(sgCheck,  xport_it);
 _.each(sgParams, xport_it);
+_.each(banner,   xport_it);
 
 // -------------------------------------------------------------------------------------
 //  Helper Functions

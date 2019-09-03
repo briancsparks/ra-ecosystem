@@ -26,7 +26,8 @@
       "type": "node",
       "request": "launch",
       "name": "Debug Current File",
-      "program": "${file}"
+      "program": "${file}",
+      "internalConsoleOptions": "openOnSessionStart",
     },
     {
       "type": "node",

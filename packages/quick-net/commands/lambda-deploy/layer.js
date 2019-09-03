@@ -1,3 +1,4 @@
+if (process.env.SG_VVVERBOSE) console[process.env.SG_LOAD_STREAM || 'log'](`Loading ${__filename}`);
 
 const ra                      = require('run-anywhere').v2;
 ra.get3rdPartyLib('loud-rejection/register');
@@ -62,6 +63,8 @@ mod.async(DIAG.async({deployLayer: async function(argv, context) {
   const dockerfileDir   = sg.path.join(__dirname, 'layer');
   const dockerfile      = sg.path.join(dockerfileDir, 'Dockerfile');
 
+  sg.bigBanner('yellow', `Building Docker image ###`);
+
   runDocker(qm.stitch([`build`, [`-t`, 'quick-net-lambda-layer-deploy'], ['--progress', 'tty'], ['-f', dockerfile], '.']), {cwd: dockerfileDir});
 
   const runArgs = [
@@ -73,8 +76,10 @@ mod.async(DIAG.async({deployLayer: async function(argv, context) {
     'quick-net-lambda-layer-deploy'
   ];
 
+  sg.bigBanner('yellow', `Running layer-builder-deployer in Docker ###`);
   runDocker(qm.stitch(['run', '--rm', ...runArgs]), {cwd: dockerfileDir});
 
+  sg.bigBanner('yellow', `Done running layer-builder-deployer in Docker`);
   return {ok:true};
 
 

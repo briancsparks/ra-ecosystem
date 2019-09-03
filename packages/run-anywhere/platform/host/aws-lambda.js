@@ -7,7 +7,8 @@ var   dispatcher    = dispatch;
 
 exports.platform_host_lambda_handler = function(event, context, callback) {
 
-  return dispatch(event, context, callback);
+  // return dispatch(event, context, callback);
+  return dispatcher(event, context, callback);
 };
 
 exports.setDispatcher = function(d) {

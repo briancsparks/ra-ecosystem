@@ -23,7 +23,7 @@ function dispatch(event, context, callback) {
   });
 
   if (!handled) {
-    console.log(`lambda_handler not found`);
+    console.log(`lambda_handler not found while dispatching from the platform entrypoint.`);
   }
 }
 
