@@ -3,6 +3,9 @@
   "version": "1.0.40",
   "description": "Utilities for writing cli apps",
   "main": "index.js",
+  "bin": {
+    "sg-clihelp": "bin/sg-clihelp.js"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },

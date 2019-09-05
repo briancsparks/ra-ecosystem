@@ -1,6 +1,7 @@
 
 const sg                      = require('sg0');
 const { _ }                   = sg;
+const { JsonSocketIoLogger }  = require('./logging-json-to-socket-io');
 const Ajv                     = require('ajv');
 const { util }                = sg.libs;
 const { toError }             = require('./error');
@@ -19,9 +20,16 @@ function Diagnostic(...args) {
   self.options  = rootOptions(...args);
   self.errors   = [];
 
+  self.logger   = null;
+  self.logger   = new JsonSocketIoLogger();
+
+  self.close = function() {
+    self.logger.close();
+  };
+
 
   self.args = function(fnName) {
-    const argv        = getArgv(...args);
+    const argv        = self.getArgv(...args);
     const currFnName  = self.DIAG.getCurrFnName()         || fnName   || '';
 
     // -------------------- Get argv elements --------------------
@@ -82,7 +90,7 @@ function Diagnostic(...args) {
 
     if (!valid) {
       self.e(validator.errorsText());
-      if (getArgv(...args).verbose) {
+      if (self.getArgv(...args).verbose) {
         self.e(`Diagnostic.haveArgs`, ...validator.errors);
       }
 
@@ -129,13 +137,20 @@ function Diagnostic(...args) {
   var msgArgv;
 
   self.i = function(msg, ...rest) {
-    msgArgv = msgArgv || getArgv(...args);
+    msgArgv = msgArgv || self.getArgv(...args);
     if (msgArgv.quiet) { return; }
 
-    if (stdoutIsDataOnly()) {
-      return self.infoOut(2, msg, ...rest);
+    var standard = true;
+    if (self.logger) {
+      standard = !self.logger.i(msg, ...rest);
     }
-    return self.out(msg, ...rest);
+
+    if (standard) {
+      if (self.stdoutIsDataOnly()) {
+        return self.infoOut(2, msg, ...rest);
+      }
+      return self.out(msg, ...rest);
+    }
   };
 
   self.i_if = function(test, msg, ...rest) {
@@ -144,14 +159,21 @@ function Diagnostic(...args) {
   };
 
   self.d = function(msg, ...rest) {
-    msgArgv = msgArgv || getArgv(...args);
+    msgArgv = msgArgv || self.getArgv(...args);
     if (msgArgv.quiet)  { return; }
     if (!msgArgv.debug) { return; }
 
-    if (stdoutIsDataOnly()) {
-      return self.infoOut(2, msg, ...rest);
+    var standard = true;
+    if (self.logger) {
+      standard = !self.logger.d(msg, ...rest);
     }
-    return self.out(msg, ...rest);
+
+    if (standard) {
+      if (self.stdoutIsDataOnly()) {
+        return self.infoOut(2, msg, ...rest);
+      }
+      return self.out(msg, ...rest);
+    }
   };
 
   self.d_if = function(test, msg, ...rest) {
@@ -160,14 +182,21 @@ function Diagnostic(...args) {
   };
 
   self.v = function(msg, ...rest) {
-    msgArgv = msgArgv || getArgv(...args);
+    msgArgv = msgArgv || self.getArgv(...args);
     if (msgArgv.quiet)    { return; }
     if (!msgArgv.verbose) { return; }
 
-    if (stdoutIsDataOnly()) {
-      return self.infoOut(2, msg, ...rest);
+    var standard = true;
+    if (self.logger) {
+      standard = !self.logger.v(msg, ...rest);
     }
-    return self.out(msg, ...rest);
+
+    if (standard) {
+      if (self.stdoutIsDataOnly()) {
+        return self.infoOut(2, msg, ...rest);
+      }
+      return self.out(msg, ...rest);
+    }
   };
 
   self.v_if = function(test, msg, ...rest) {
@@ -183,17 +212,24 @@ function Diagnostic(...args) {
   }
 
   self.w = function(msg, ...rest) {
-    msgArgv = msgArgv || getArgv(...args);
+    msgArgv = msgArgv || self.getArgv(...args);
     if (msgArgv.quiet)    { return; }
 
-    showBigAnnoyingMessage(msg, {banner: '#####', stream: 'log'}, ...rest);
-    // var msg_ = `\n\n     #####     #####     ${msg}     #####     #####\n\n`;
-    // console.log(...logged(msg_, ...rest));
+    var standard = true;
+    if (self.logger) {
+      standard = !self.logger.w(msg, ...rest);
+    }
 
-    if (fastFail()) {
-      throw(new Error(`FastFail warning ${msg}`));
-    } else if (warnStack()) {
-      console.warn(`Warning ${msg}`, new Error(`Warning ${msg}`).stack);
+    if (standard) {
+      showBigAnnoyingMessage(msg, {banner: '#####', stream: 'log'}, ...rest);
+      // var msg_ = `\n\n     #####     #####     ${msg}     #####     #####\n\n`;
+      // console.log(...logged(msg_, ...rest));
+
+      if (fastFail()) {
+        throw(new Error(`FastFail warning ${msg}`));
+      } else if (warnStack()) {
+        console.warn(`Warning ${msg}`, new Error(`Warning ${msg}`).stack);
+      }
     }
   };
 
@@ -204,17 +240,24 @@ function Diagnostic(...args) {
 
   // TODO: This needs a lot of work.
   self.e = function(msg, ...rest) {
-    msgArgv = msgArgv || getArgv(...args);
+    msgArgv = msgArgv || self.getArgv(...args);
 
     // TODO: `quiet` in this context should mean that the active developer doesnt want to be bugged
     if (msgArgv.quiet && activeDevelopment)    { return; }
 
-    showBigAnnoyingMessage(msg, {banner: '!!!!!!!!!!'}, ...rest);
+    var standard = true;
+    if (self.logger) {
+      standard = !self.logger.e(msg, ...rest);
+    }
 
-    if (fastFail()) {
-      throw(new Error(`FastFail warning ${msg}`));
-    } else if (warnStack()) {
-      console.warn(`Warning ${msg}`, new Error(`Warning ${msg}`).stack);
+    if (standard) {
+      showBigAnnoyingMessage(msg, {banner: '!!!!!!!!!!'}, ...rest);
+
+      if (fastFail()) {
+        throw(new Error(`FastFail warning ${msg}`));
+      } else if (warnStack()) {
+        console.warn(`Warning ${msg}`, new Error(`Warning ${msg}`).stack);
+      }
     }
   };
 
@@ -224,7 +267,7 @@ function Diagnostic(...args) {
   };
 
   self.iv = function(msg, i_params, v_params) {
-    msgArgv = msgArgv || getArgv(...args);
+    msgArgv = msgArgv || self.getArgv(...args);
     if (msgArgv.verbose) {
       return self.v(msg, {...i_params, ...v_params});
     }
@@ -262,6 +305,16 @@ function Diagnostic(...args) {
     return self._out_(channel, msg, ...rest);
   };
 
+  self.stdoutIsDataOnly = function() {
+    // TODO: Fix
+
+    return process.env.SG_STDOUT_IS_DATA_ONLY || false;
+  };
+
+  self.getArgv = function(...args) {
+    return args[0] && args[0].argv;
+  };
+
   // ---------- Helpers ----------
   self.inspect      = inspect;
   self.production   = production;
@@ -280,7 +333,7 @@ function Diagnostic(...args) {
   }
 
   function inspect(x, colors =true) {
-    msgArgv = msgArgv || getArgv(...args);
+    msgArgv = msgArgv || self.getArgv(...args);
 
     if (fancy()) {
       return util.inspect(x, {depth:null, colors});
@@ -292,7 +345,7 @@ function Diagnostic(...args) {
   }
 
   function fancy() {
-    msgArgv = msgArgv || getArgv(...args);
+    msgArgv = msgArgv || self.getArgv(...args);
     if (msgArgv.fancy)          { return true; }
 
     if (production())           { return false; }
@@ -304,7 +357,7 @@ function Diagnostic(...args) {
 
   // Multi-line but not colored (human-readable, but not fancy, but `jq` parsable)
   function readable() {
-    msgArgv = msgArgv || getArgv(...args);
+    msgArgv = msgArgv || self.getArgv(...args);
     if (msgArgv.readable)       { return true; }
 
     if (production())           { return false; }
@@ -319,7 +372,7 @@ function Diagnostic(...args) {
       return process.env.SG_FAST_FAIL;
     }
 
-    msgArgv = msgArgv || getArgv(...args);
+    msgArgv = msgArgv || self.getArgv(...args);
     return msgArgv.fastfail;
   }
 
@@ -328,15 +381,10 @@ function Diagnostic(...args) {
       return process.env.SG_WARN_STACK;
     }
 
-    msgArgv = msgArgv || getArgv(...args);
+    msgArgv = msgArgv || self.getArgv(...args);
     return msgArgv.warnstack;
   }
 
-  function stdoutIsDataOnly() {
-    // TODO: Fix
-
-    return process.env.SG_STDOUT_IS_DATA_ONLY || false;
-  }
 }
 
 
@@ -379,9 +427,6 @@ function setContextItem(context, name, item) {
 }
 
 
-function getArgv(...args) {
-  return args[0] && args[0].argv;
-}
 
 function getCallback(...args) {
   return args[0] && args[0].callback;

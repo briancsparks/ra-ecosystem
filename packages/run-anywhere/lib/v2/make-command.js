@@ -56,7 +56,7 @@ exports.command = function(ARGV = sg.ARGV(), mods = {}, fnName, opts={}, command
  *
  * @returns {null}                - [[return is only used for control-flow.]]
  */
-exports.command2 = function(ARGV = sg.ARGV(), loadedMods = {}, modFnMap={}, allMods=[], fnName_, opts={}, commands = {}, callback=null) {   // INDEX: Your commands run with `ra invoke`
+exports.command2 = function(ARGV = sg.ARGV(), loadedMods = {}, modFnMap={}, allMods=[], fnName_, opts={}, commands = {}, callback=null) {   // CODE_INDEX: Your commands run with `ra invoke`
   require('loud-rejection/register');
   require('exit-on-epipe');
 
@@ -163,7 +163,7 @@ function cleanExit(ARGV, modfilename, condition, code, msg) {
 
 function noop(){}
 
-function invoke0(argv, mod, fnName, callback, abort_, options={}) {   // INDEX: Your commands run via `ra invoke` -- the invoke part
+function invoke0(argv, mod, fnName, callback, abort_, options={}) {   // CODE_INDEX: Your commands run via `ra invoke` -- the invoke part
 
   // Fix argv -- remove the first param, if it is fnName
   if (Array.isArray(argv._) && argv._[0] === fnName) {
@@ -206,7 +206,8 @@ function invoke0(argv, mod, fnName, callback, abort_, options={}) {   // INDEX: 
 
   // Build up or get the context
   var   context_ = {
-    isRaInvoked:  true
+    isRaInvoked:    true,
+    invokedFnName:  fnName
   };
 
   const { event, context } = ensureThreeArgvContext(argv, context_);
@@ -283,7 +284,7 @@ function invoke(opts, options, argv, ractx, callback, abort_) {
  *
  * @returns {module}
  */
-function findMod(mods = [], modFnMap={}, allMods=[], fnName) {            // INDEX: the fn that determines the fn within mods for ra to invoke
+function findMod(mods = [], modFnMap={}, allMods=[], fnName) {            // CODE_INDEX: the fn that determines the fn within mods for ra to invoke
   var mod;    // Returned
 
   // Full list of everything we have seen, to show if we do not find the function

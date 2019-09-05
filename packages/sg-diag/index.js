@@ -55,7 +55,13 @@ module.exports.DIAG_ = function(mod) {
 
   self.context    = null;
   self.bits       = sg.bits(mod);
+  self.diag       = null;
 
+  self.close = function() {
+    if (self.diag) {
+      self.diag.close();
+    }
+  };
 
   self.usage = function(data ={}) {
     self.bits.setJson({fns: data});
@@ -125,8 +131,14 @@ module.exports.DIAG_ = function(mod) {
       // ========== Call the intercepted function ==========
       const result = await intercepted(argv, context);
 
+      // ---------- Clean up ----------
 
       sgDiagnostic.setContextItem(context, 'diagFunctions', diagFunctions);
+
+      // Close things if this is just a one-time run
+      if (fnName === (context.runAnywhere ||{}).invokedFnName || '') {
+        self.close();
+      }
 
       return result;
     };
@@ -144,6 +156,7 @@ module.exports.DIAG_ = function(mod) {
   };
 
   self.initDiagnostic = function(diag) {
+    self.diag = diag;
     diag.DIAG = self;
     diag.bits = self.bits;
     return diag;
