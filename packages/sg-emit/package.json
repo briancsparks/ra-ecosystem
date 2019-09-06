@@ -1,0 +1,32 @@
+{
+  "name": "@sg0/sg-emit",
+  "version": "1.0.0",
+  "description": "> TODO: description",
+  "author": "Brian C Sparks <briancsparks@gmail.com>",
+  "homepage": "https://github.com/briancsparks/ra-ecosystem#readme",
+  "license": "MIT",
+  "main": "index.js",
+  "directories": {
+    "lib": "lib",
+    "test": "__tests__"
+  },
+  "files": [
+    "*"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/briancsparks/ra-ecosystem.git"
+  },
+  "scripts": {
+    "test": "echo \"Error: run tests from root\" && exit 1"
+  },
+  "bugs": {
+    "url": "https://github.com/briancsparks/ra-ecosystem/issues"
+  },
+  "dependencies": {
+    "sg0": "^1.0.26"
+  },
+  "devDependencies": {
+    "ava": "^2.3.0"
+  }
+}

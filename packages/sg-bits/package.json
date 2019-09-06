@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
+  "author": "Brian C Sparks <briancsparks@gmail.com>",
   "license": "MIT",
   "dependencies": {
     "quick-merge": "^1.0.17",

@@ -1,6 +1,6 @@
 {
-  "name": "sg-env",
-  "version": "1.0.2",
+  "name": "@sg0/sg-naming",
+  "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
