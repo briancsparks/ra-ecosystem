@@ -63,8 +63,8 @@ module.exports.mongoEmit = function () {
 
     return MongoClient.connect(`mongodb://localhost:27017`, {useNewUrlParser:true}, (err, client) => {
 
-      db    || client.db(dbname);
-      coll  || db.collection(collname);
+      db    = client.db(dbname);
+      coll  = db.collection(collname);
 
       return callback(err, client, db, coll);
     });
