@@ -1,18 +1,17 @@
 {
   "name": "lambda-net",
   "private": true,
-  "version": "1.0.11",
+  "version": "1.0.12",
   "description": "lambda-net",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "deploy:lambda:dev"   : "cross-env-shell STAGE=dev \"npm run deploy:lambda\"",
-    "deploy:lambda:prod"  : "cross-env-shell STAGE=prod \"npm run deploy:lambda\"",
-    "deploy:lambda"       : "cross-env-shell quick-net buildLayer --lambda-name= $npm_package_name --stage= $STAGE && cross-env-shell quick-net deployLambda --lambda-name= $npm_package_name --class-b=21 --sgs=wide --stage= $STAGE",
-    "deploy:lambdalayer"  : "cross-env-shell STAGE=dev quick-net buildLayer --debug --lambda-name= $npm_package_name --stage= $STAGE",
-    "deploy:lambdafn"     : "cross-env-shell STAGE=dev quick-net deployLambda --debug --lambda-name= $npm_package_name --class-b=21 --sgs=wide --stage= $STAGE",
-
-    "pushLayer"           : "cross-env-shell quick-net buildLayer --lambda-name= $npm_package_name"
+    "deploy:lambda:dev": "cross-env-shell STAGE=dev \"npm run deploy:lambda\"",
+    "deploy:lambda:prod": "cross-env-shell STAGE=prod \"npm run deploy:lambda\"",
+    "deploy:lambda": "cross-env-shell quick-net buildLayer --lambda-name= $npm_package_name --stage= $STAGE && cross-env-shell quick-net deployLambda --lambda-name= $npm_package_name --class-b=21 --sgs=wide --stage= $STAGE",
+    "deploy:lambdalayer": "cross-env-shell STAGE=dev quick-net buildLayer --debug --lambda-name= $npm_package_name --stage= $STAGE",
+    "deploy:lambdafn": "cross-env-shell STAGE=dev quick-net deployLambda --debug --lambda-name= $npm_package_name --class-b=21 --sgs=wide --stage= $STAGE",
+    "pushLayer": "cross-env-shell quick-net buildLayer --lambda-name= $npm_package_name"
   },
   "author": "Brian C Sparks <briancsparks@gmail.com>",
   "license": "MIT",
@@ -20,11 +19,11 @@
     "cross-env": "^5.2.0"
   },
   "dependencies": {
-    "quick-net": "^1.0.104",
-    "run-anywhere": "^1.0.84",
-    "sg-argv": "^1.0.42",
-    "sg-config": "^1.0.53",
+    "quick-net": "^1.0.105",
+    "run-anywhere": "^1.0.85",
+    "sg-argv": "^1.0.43",
+    "sg-config": "^1.0.54",
     "sg-http": "^1.0.3",
-    "sg0": "^1.0.26"
+    "sg0": "^1.0.27"
   }
 }
