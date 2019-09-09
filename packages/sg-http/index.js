@@ -1,6 +1,9 @@
 if (process.env.SG_VVVERBOSE) console[process.env.SG_LOAD_STREAM || 'log'](`Loading ${__filename}`);
 
 const sg                      = require('sg0');
+const { _ }                   = sg;
+
+_.each(require('./lib/_2XX'), (x,k) => { sg[k] = x; });
 
 var getRawBody = sg.getRawBody = function(req, callback) {
   // req.end might have already been called

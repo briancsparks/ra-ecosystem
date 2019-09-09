@@ -15,7 +15,7 @@ console.log(`Loading ${__filename} 2`);
 
 const quickNet                = require('quick-net');
 const sg0                     = ra.get3rdPartyLib('sg-flow');
-const sg                      = sg0.merge(sg0, quickNet.get3rdPartyLib('sg-argv'), require('sg-config'));
+const sg                      = sg0.merge(sg0, quickNet.get3rdPartyLib('sg-argv'), require('sg-config'), require('sg-http'));
 const util                    = require('util');
 const { _ }                   = sg;
 console.log(`Loading ${__filename} 3`);
@@ -61,7 +61,7 @@ hosts.aws_lambda.setDispatcher(function(event, context, callback) {
   // [[Fake it for now]]
   sg.elog(`Dispatching into app`, {event, context});
 
-  return callback(null, {ok:true});
+  return callback(...sg._200());
 });
 
 // This is a function to enable smoke testing.

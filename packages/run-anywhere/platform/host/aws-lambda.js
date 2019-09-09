@@ -5,11 +5,19 @@ const _                         = require('lodash');
 var   handlerFns    = [];
 var   dispatcher    = dispatch;
 
+// -----------------------------------------------------------------
+
+// Lambda handler for the function of being the host
 exports.platform_host_lambda_handler = function(event, context, callback) {
 
   // return dispatch(event, context, callback);
-  return dispatcher(event, context, callback);
+  return dispatcher(event, context, function(err, response) {
+    callback(err, response);
+  });
 };
+
+
+// -----------------------------------------------------------------
 
 exports.setDispatcher = function(d) {
   dispatcher = d;
