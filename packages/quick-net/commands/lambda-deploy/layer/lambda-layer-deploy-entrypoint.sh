@@ -14,7 +14,8 @@ cd /work/opt
 rm -rf                    /work/opt/nodejs   && mkdir -p $_
 cp    /src/package.json   /work/opt/nodejs
 
-(cd nodejs && yarn --production --silent)
+#(cd nodejs && yarn --production --silent)
+(cd nodejs && yarn --production)
 
 # ---------------------------------
 # ----- Pack it into zip file -----

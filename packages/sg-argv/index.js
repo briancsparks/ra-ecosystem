@@ -290,7 +290,7 @@ function snake_case(key) {
 
 function toCamelCase(key) {
   var parts = key.split(/[^a-zA-Z0-9]/);
-  var first = parts.unshift();
+  var first = parts.shift();
   return sg.reduce(parts, first, (s, part) => {
     return s + sg.toUpperWord(part);
   });

@@ -1,6 +1,6 @@
 {
   "validations": {
-    "deployLayer": {
+    "buildLayer": {
 
       "args": {
         "$schema": "http://json-schema.org/schema#",

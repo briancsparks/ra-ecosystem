@@ -10,7 +10,7 @@ const qm                      = require('quick-merge');
 const {getVpcSubnetsSgs}      = require('../vpcs').async;
 const execa                   = sg.execa;
 const AWS                     = require('aws-sdk');
-const mod                     = ra.modSquad(module, 'lambdaDeploy');
+const mod                     = ra.modSquad(module, 'deployLambda');
 
 const DIAG                    = sg.DIAG(module);
 const ARGV                    = sg.ARGV();
@@ -22,7 +22,7 @@ const s3                      = new AWS.S3(config);
 const lambda                  = new AWS.Lambda(config);
 
 DIAG.usage({
-  lambdaDeploy:{
+  deployLambda:{
     args: {
       lambdaName:       {aliases: 'name,lambda_name'},
       class_b:          {aliases: 'classB,b'},
@@ -32,21 +32,20 @@ DIAG.usage({
 });
 
 
-// lambdaDeploy --stage=dev --name=lambda-net --class-b=21 --sgs=wide --debug
-mod.async(DIAG.async({lambdaDeploy: async function(argv, context) {
-  // sg.elog(`lambdaDeploy`, {argv, context});
-  const diag                  = DIAG.diagnostic({argv, context});
+DIAG.activeDevelopment(`--stage=dev --lambda-name=lambda-net --class-b=21 --sgs=wide --AWS_PROFILE=bcs`);
+DIAG.activeDevelopment(`--debug`);
 
-  const {
-    stage,lambdaName,class_b
-  }                           = diag.args();
-  var {
-    Bucket,AWS_PROFILE
-  }                           = diag.args();
+// deployLambda --stage=dev --lambda-name=lambda-net --class-b=21 --sgs=wide --debug
 
+module.exports.main =
+mod.async(DIAG.async({deployLambda: async function(argv, context) {
+  const diag    = DIAG.diagnostic({argv, context});
+
+  const {stage,lambdaName,class_b}    = diag.args();
+  var   {Bucket,AWS_PROFILE}          = diag.args();
 
   var   packageDir    = sg.path.join(process.cwd(), '.');
-  Bucket              = Bucket        ||  argv.Bucket   || sg.from([packageDir, '_config', stage, 'env.json'], 'DeployBucket');
+  Bucket              = argv.Bucket   || sg.from([packageDir, '_config', stage, 'env.json'], 'DeployBucket');
   AWS_PROFILE         = AWS_PROFILE   || ENV.at('AWS_PROFILE');
 
   if (!(diag.haveArgs({stage,lambdaName,class_b,Bucket}, {packageDir,AWS_PROFILE})))                { return diag.exit(); }
@@ -58,7 +57,7 @@ mod.async(DIAG.async({lambdaDeploy: async function(argv, context) {
   const dockerfile      = sg.path.join(dockerfileDir, 'Dockerfile');
 
   sg.bigBanner('green', `Building deployer Docker image ###`);
-  runDocker(qm.stitch([`build`, [`-t`, 'quick-net-lambda-layer-deploy'], ['--progress', 'tty'], ['-f', dockerfile], '.']), {cwd: dockerfileDir});
+  runDocker(qm.stitch([`build`, [`-t`, 'quick-net-lambda-deploy'], ['--progress', 'tty'], ['-f', dockerfile], '.']), {cwd: dockerfileDir});
 
   vpcSubnetSgs  = await vpcSubnetSgs;
 
@@ -74,7 +73,7 @@ mod.async(DIAG.async({lambdaDeploy: async function(argv, context) {
     [`-e`, [`ENVIRONMENT_FILE=`,  ['_config', stage, 'env.json'].join('/')]],
     ['-e', ['subnet_ids=',        subnet_ids]],
     ['-e', ['sg_ids=',            sg_ids]],
-    'quick-net-lambda-layer-deploy'
+    'quick-net-lambda-deploy'
   ];
 
   sg.bigBanner('green', `Running ${lambdaName} deployer in Docker ###`);
@@ -88,7 +87,7 @@ mod.async(DIAG.async({lambdaDeploy: async function(argv, context) {
 
   async function runDocker(params, options) {
     var   docker;
-    diag.d(`lambdaDeploy`, {args: params, dockerfileDir});
+    diag.d(`deployLambda`, {args: params, dockerfileDir});
 
     if (argv.dry_run || process.env.QUICKNET_DRY_RUN) {
       diag.d(`:::DRYRUN:::`);

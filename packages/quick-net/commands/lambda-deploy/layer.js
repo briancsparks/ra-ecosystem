@@ -11,7 +11,7 @@ const execz                   = sg.execz;
 const execa                   = sg.execa;
 const deepEqual               = require('deep-equal');
 const AWS                     = require('aws-sdk');
-const mod                     = ra.modSquad(module, 'lambdaLayer');
+const mod                     = ra.modSquad(module, 'buildLayer');
 
 const DIAG                    = sg.DIAG(module);
 const ARGV                    = sg.ARGV();
@@ -22,7 +22,7 @@ const config                  = new AWS.Config({paramValidation:false, region});
 const s3                      = new AWS.S3(config);
 
 DIAG.usage({
-  deployLayer:{
+  buildLayer:{
     args: {
       lambdaName:       {aliases: 'name,lambda_name'},
       AWS_PROFILE:      {aliases: 'aws_profile,profile'},
@@ -30,18 +30,15 @@ DIAG.usage({
   }
 });
 
-mod.async(DIAG.async({deployLayer: async function(argv, context) {
-  // sg.elog(`deployLayer`, {argv, context});
-  const diag          = DIAG.diagnostic({argv, context});
+DIAG.activeDevelopment(`--lambda-name=lambda-net --stage=dev --Bucket=quick-net --AWS_PROFILE=bcs`);
+DIAG.activeDevelopment(`--debug`);
 
-  diag.v(`deployLayer`, {argv, context});
+module.exports.main =
+mod.async(DIAG.async({buildLayer: async function(argv, context) {
+  const diag    = DIAG.diagnostic({argv, context});
 
-  const {
-    stage,lambdaName,force,
-  }                           = diag.args();
-  var {
-    Bucket,AWS_PROFILE
-  }                           = diag.args();
+  const {stage,lambdaName,force}    = diag.args();
+  var   {Bucket,AWS_PROFILE}        = diag.args();
 
   var   packageDir    = sg.path.join(process.cwd(), '.');
   Bucket              = argv.Bucket   || sg.from([packageDir, '_config', stage, 'env.json'], 'DeployBucket');
@@ -57,6 +54,8 @@ mod.async(DIAG.async({deployLayer: async function(argv, context) {
     if (deepEqual(packageDeps, prevPackageJson.dependencies)) {
       diag.i(`package.json deps have not changed (use --force if needed)` /*, {previous: prevPackageJson.dependencies, current: packageDeps} */);
       return {ok:true};
+    } else {
+      diag.i(`package.json deps have changed -- rebuilding the layer`, {previous: prevPackageJson.dependencies, current: packageDeps});
     }
   }
 
@@ -65,7 +64,7 @@ mod.async(DIAG.async({deployLayer: async function(argv, context) {
 
   sg.bigBanner('green', `Building Docker image ###`);
 
-  runDocker(qm.stitch([`build`, [`-t`, 'quick-net-lambda-layer-deploy'], ['--progress', 'tty'], ['-f', dockerfile], '.']), {cwd: dockerfileDir});
+  runDocker(qm.stitch([`build`, [`-t`, 'quick-net-lambda-layer'], ['--progress', 'tty'], ['-f', dockerfile], '.']), {cwd: dockerfileDir});
 
   const runArgs = [
     [`-v`, `${sg.os.homedir()}/.aws:/aws`],
@@ -73,13 +72,13 @@ mod.async(DIAG.async({deployLayer: async function(argv, context) {
     [`-e`, [`AWS_PROFILE=`,     AWS_PROFILE]],
     [`-e`, [`LAMBDA_NAME=`,     lambdaName]],
     [`-e`, [`BUCKET_NAME=`,     Bucket]],
-    'quick-net-lambda-layer-deploy'
+    'quick-net-lambda-layer'
   ];
 
-  sg.bigBanner('green', `Running layer-builder-deployer in Docker ###`);
+  sg.bigBanner('green', `Running layer-builder in Docker ###`);
   runDocker(qm.stitch(['run', '--rm', ...runArgs]), {cwd: dockerfileDir});
 
-  sg.bigBanner('green', `Done running layer-builder-deployer in Docker`);
+  sg.bigBanner('green', `Done running layer-builder in Docker`);
   return {ok:true};
 
 
@@ -87,8 +86,7 @@ mod.async(DIAG.async({deployLayer: async function(argv, context) {
 
   async function runDocker(params, options) {
     var   docker;
-    diag.d(`deployLayer`, {args: params, dockerfileDir});
-
+    diag.d(`buildLayer`, {args: params, dockerfileDir});
     if (argv.dry_run || process.env.QUICKNET_DRY_RUN) {
       diag.d(`:::DRYRUN:::`);
       return;

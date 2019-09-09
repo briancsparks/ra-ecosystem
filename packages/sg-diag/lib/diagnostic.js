@@ -21,11 +21,15 @@ function Diagnostic(...args) {
   self.errors   = [];
 
   self.logger   = null;
-  self.logger   = new JsonSocketIoLogger();
+  self.close    = function(){};
 
-  self.close = function() {
-    self.logger.close();
-  };
+  if (process.env.USE_SOCKETIO_DIAG) {
+    self.logger   = new JsonSocketIoLogger();
+
+    self.close = function() {
+      self.logger.close();
+    };
+  }
 
 
   self.args = function(fnName) {
@@ -50,7 +54,7 @@ function Diagnostic(...args) {
       _.each(aliases, alias => {
 
         if (alias in argv) {
-          self.w_if(name in m, `Already have ${name}; adding alias ${alias}`);
+          // self.w_if(name in m, `Already have ${name}; adding alias ${alias}`);
           m[name] = argv[alias];
         }
       });
@@ -135,6 +139,10 @@ function Diagnostic(...args) {
 
 
   var msgArgv;
+
+  self.loud = function(msg, ...rest) {
+    return self.infoOut(2, msg, ...rest);
+  };
 
   self.i = function(msg, ...rest) {
     msgArgv = msgArgv || self.getArgv(...args);

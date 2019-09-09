@@ -24,13 +24,13 @@ const modFnMap = {
     filename: path.join(__dirname, 'k8s', 'lib', 'config-map.js'),
     fnNames:  ['createConfigMap', '_createConfigMap_'],
   },
-  lambdaLayers : {
+  buildLayer : {
     filename: path.join(__dirname, '..', 'commands', 'lambda-deploy', 'layer.js'),
-    fnNames:  ['deployLayer'],
+    fnNames:  ['buildLayer'],
   },
   deployLambda : {
     filename: path.join(__dirname, '..', 'commands', 'lambda-deploy', 'deploy.js'),
-    fnNames:  ['lambdaDeploy'],
+    fnNames:  ['deployLambda'],
   },
   vpcs: {
     filename: path.join(__dirname, '..', 'commands', 'vpcs.js'),

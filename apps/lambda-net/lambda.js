@@ -61,7 +61,9 @@ hosts.aws_lambda.setDispatcher(function(event, context, callback) {
   // [[Fake it for now]]
   sg.elog(`Dispatching into app`, {event, context});
 
-  return callback(...sg._200());
+  const _200 = sg._200();
+  sg.log(`dispatched into app`, {_200});
+  return callback(..._200);
 });
 
 // This is a function to enable smoke testing.

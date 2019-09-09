@@ -1,10 +1,17 @@
 
+const sg                        = require('sg0');
 const _                         = require('lodash');
 
 var   handlerFns    = [];
 
+// -----------------------------------------------------------------
+
+// Lambda handler for the function of being the entrypoint
 exports.platform_entrypoint_lambda_handler = function(event, context, callback) {
-  return dispatch(event, context, callback);
+  return dispatch(event, context, function(err, response) {
+    sg.log(`RA_Platform.lambda_handler`, {err, response});
+    return callback(err, response);
+  });
 };
 
 exports.registerHandler = function(selector, handler) {

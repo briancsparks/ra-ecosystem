@@ -21,6 +21,7 @@ const sgParams                = require('./lib/params');
 const { bigBanner }           = banner;
 
 
+
 // -------------------------------------------------------------------------------------
 //  Data
 //
@@ -30,7 +31,7 @@ const { bigBanner }           = banner;
 //
 // {
 //   fns: {
-//     lambdaDeploy: {
+//     deployLambda: {
 //       args: {
 //         lambdaName:       {aliases: 'name,lambda_name'},
 //         class_b:          {aliases: 'classB,b'},
@@ -57,6 +58,8 @@ module.exports.DIAG_ = function(mod) {
   self.bits       = sg.bits(mod);
   self.diag       = null;
 
+  self.devCliArgs = null;
+
   self.close = function() {
     if (self.diag) {
       self.diag.close();
@@ -65,6 +68,10 @@ module.exports.DIAG_ = function(mod) {
 
   self.usage = function(data ={}) {
     self.bits.setJson({fns: data});
+  };
+
+  self.activeDevelopment = function(cliArgs) {
+    self.devCliArgs = (self.devCliArgs || '') + ' ' + cliArgs;
   };
 
   self.loadData = async function(fnName) {
@@ -108,6 +115,12 @@ module.exports.DIAG_ = function(mod) {
     // Build an impostor to hand out -- this fn will be called, and needs to call the real fn
     const interceptorFn = async function(argv, context) {
       const logApi    = argv.log_api || process.env.SG_LOG_API;
+
+      // If we are active development, use those args
+      if (process.env.ACTIVE_DEVELOPMENT && self.devCliArgs) {
+        argv = sg.merge(argv ||{}, mkArgv(self.devCliArgs));
+        console.log(`invoking async ${fnName}`, argv);
+      }
 
       // Info about the current invocation
       var   info = {argv, context, fnName};
@@ -195,4 +208,44 @@ function firstFnName(xfn) {
     }
     return m;
   });
+}
+
+
+function to_snake_case(key) {
+  return key.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+}
+
+function toCamelCase(key) {
+  var parts = key.split(/[^a-zA-Z0-9]/);
+  var first = parts.shift();
+  return sg.reduce(parts, first, (s, part) => {
+    return s + sg.toUpperWord(part);
+  });
+}
+
+function mkArgv(cliString) {
+  const cliArgs   = cliString.split(/\s+/gi);
+  var   argv      = require('minimist')(cliArgs);
+
+  var key;
+  return sg.reduce(Object.keys(argv), argv, (m,k) => {
+    if (k === '_') {
+      return m;
+    }
+
+    key = to_snake_case(k);
+    if (!(key in m)) {
+      m[key] = argv[k];
+    }
+
+    key = toCamelCase(k);
+    if (!(key in m)) {
+      m[key] = argv[k];
+    }
+
+    return m;
+  });
+
+  // argv = sg.merge(argv ||{}, minimist(self.devCliArgs.split(/\s+/gi)));
+
 }

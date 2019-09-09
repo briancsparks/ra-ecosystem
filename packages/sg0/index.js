@@ -706,7 +706,7 @@ sg.toLowerWord = function(str) {
  * @param {*} str
  */
 sg.toUpperWord = function(str) {
-  return str[0].toUpperCase() + sg.rest(str);
+  return str[0].toUpperCase() + sg.rest(str).join('');
 };
 
 /**

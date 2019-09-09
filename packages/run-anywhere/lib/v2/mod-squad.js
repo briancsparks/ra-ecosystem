@@ -195,6 +195,38 @@ const ModSquad = function(otherModule, otherModuleName = 'mod') {
     return module.exports.exportSubModules(otherModule, subModules);
   };
 
+  self.invokeMaybe = function(__filename) {
+console.log(`invo`, {__filename, otherModule: Object.keys(otherModule)});
+    if (process.argv[2] === __filename) {
+      // OK, we are the right file, but which fn?
+      var fnName;
+      if (sg.numKeys(otherModule.exports.async) === 1) {
+        fnName = sg.firstKey(otherModule.exports.async);
+      }
+
+      if (!fnName) {
+        if (process.argv[3] && otherModule.exports.asymc[process.argv[3]]) {
+          fnName = process.argv[3];
+        }
+      }
+
+      if (!fnName) {
+        if (otherModule.exports.async.main) {
+          fnName = 'main';
+        }
+      }
+
+      if (!fnName) {
+        console.error(`no function name.`);
+        return;
+      }
+
+      return otherModule.exports[fnName]({}, {}, function(err, ...rest) {
+        console.log(`Ran ${fnName}:`, err, ...rest);
+      });
+    }
+  };
+
 };
 
 function decodeErrForHttp(err, msg) {

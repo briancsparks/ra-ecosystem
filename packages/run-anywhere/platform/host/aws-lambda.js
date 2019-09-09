@@ -1,4 +1,5 @@
 
+const sg                        = require('sg0');
 const _                         = require('lodash');
 
 
@@ -9,10 +10,27 @@ var   dispatcher    = dispatch;
 
 // Lambda handler for the function of being the host
 exports.platform_host_lambda_handler = function(event, context, callback) {
+  const startTime = new Date().getTime();
+  const onEntry = {
+    event     : JSON.parse(JSON.stringify(event)),
+    context   : JSON.parse(JSON.stringify(context)),
+  };
 
   // return dispatch(event, context, callback);
   return dispatcher(event, context, function(err, response) {
-    callback(err, response);
+    const endTime = new Date().getTime();
+    sg.log(`RA_Host.lambda_handler: (${(endTime - startTime) * 1000})`, {event, err, response});
+
+    // OK?
+    if (err || !response.ok) {
+      callback(err, response);
+    }
+
+    // Now we have to translate it into a valid lambda response
+    const statusCode  = response.httpCode || 200;
+    const body        = JSON.stringify(response);
+
+    callback(err, {statusCode, body});    /* can also have 'headers' */
   });
 };
 

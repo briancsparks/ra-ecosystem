@@ -1,6 +1,6 @@
 {
   "validations": {
-    "lambdaDeploy": {
+    "deployLambda": {
 
       "args": {
         "$schema": "http://json-schema.org/schema#",
