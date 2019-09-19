@@ -16,6 +16,11 @@ function SgError(message, err) {
   this.name  = 'SgError';
   this.stack = (new Error()).stack;
 
+  // Try to split the error stack
+  if (typeof this.stack === 'string') {
+    this.stack = this.stack.split(/\r?\n/g);
+  }
+
   if (err) {
     this.error = err;
   }

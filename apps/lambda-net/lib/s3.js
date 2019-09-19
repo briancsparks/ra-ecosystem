@@ -2,6 +2,7 @@
 const sg0                     = require('sg-diag');
 const sg                      = sg0.merge(sg0, require('sg-env'));
 const quickNet                = require('quick-net');
+const crypto                  = require('crypto');
 const { awsService }          = quickNet.libAws;
 const S3                      = awsService('S3');
 
@@ -52,6 +53,70 @@ function _streamToS3_({Body, Bucket, Key, diag}, callback) {
 
 
 
+
+
+DIAG.usage({aliases:{putToS3:{}}});
+
+DIAG.activeDevelopment(`--Bucket=quick-net-ingest-dump --AWS_PROFILE=bcs`);
+DIAG.activeDevelopment(`--debug`);
+
+const putToS3Obj = DIAG.xport({putToS3: function(argv, context, callback) {
+  const diag    = DIAG.diagnostic({argv, context});
+
+  var  {Bucket,Body,Key,AWS_PROFILE}   = diag.args();
+
+  AWS_PROFILE                         = AWS_PROFILE   || ENV.at('AWS_PROFILE');
+
+  // If the caller did not provide an AWS Key, we will need the clientId/sessionId
+  // to generate it.
+  let clientId, sessionId;
+  if (!Key) {
+    ({clientId,sessionId}             = mkClientAndSessionIds(argv));
+  }
+
+  // We need an AWS Key to store the blob. If we do not have one, try to compute it
+  if (!Key) {
+    if (!(diag.haveArgs({Body,clientId,sessionId}, {AWS_PROFILE}))) {
+      return diag.exit();
+    }
+
+    Key = mkKey(Body, clientId, sessionId);
+  }
+
+  // Check that we have the params
+  if (!(diag.haveArgs({Bucket,Key,Body}, {AWS_PROFILE}))) {
+    // We have done all we can
+    return diag.exit();
+  }
+
+  // Call the real worker
+  return _putToS3_({Body, Bucket, Key, diag}, callback);
+}});
+
+module.exports.putToS3 = putToS3Obj.putToS3;
+
+function _putToS3_({Body, Bucket, Key, diag}, callback) {
+  var upload = S3.upload({Bucket, Key, Body}, {partSize: 6 * 1024 * 1024});
+
+  upload.on('httpUploadProgress', (progress) => {
+    diag.i(`uploading file`, {progress, Key});
+  });
+
+  upload.send(function(err, data) {
+    if (!sg.ok(err, data))  { diag.e(err, `sending upload`, {Bucket, Key}); }
+
+    // pushStatus({name:filename, data:{event: '/upload', filename, Bucket, Key, msg:`upload ${filename}`}}, function(){});
+
+    return callback(err, data);
+  });
+}
+
+
+
+
+
+
+
 function mkKey(Body, clientId, sessionId, dataType) {
   var key = [];
 
@@ -81,7 +146,7 @@ function mkClientAndSessionIds(argv) {
     if (!sessionId) {
       // Make both
       sessionId = `${mkClientId()}-Xx-${mkSessionTime()}`;
-      return exports.mkClientAndSessionIds({sessionId});
+      return mkClientAndSessionIds({sessionId});
     }
 
     // sessionId, but not clientId

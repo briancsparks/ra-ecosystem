@@ -61,7 +61,7 @@ hosts.aws_lambda.setDispatcher(function(event, context, callback) {
   // [[Fake it for now]]
   sg.log(`Dispatching into app`, {event, context});
 
-  return S3.streamToS3(event, context, function(err, data) {
+  return S3.putToS3(event, context, function(err, data) {
     if (err)      { sg.elog(`handler`, err); return callback(err); }
 
     sg.log(`handler`, {data});

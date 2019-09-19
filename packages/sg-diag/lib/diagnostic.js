@@ -15,6 +15,7 @@ module.exports.getContextItem = getContextItem;
 function Diagnostic(...ctorArgs) {
   var   self    = this;
 
+  self.fnName   = ctorArgs.fnName;
   self.DIAG     = {};
   self.bits     = {};
   self.options  = rootOptions(...ctorArgs);
@@ -80,23 +81,27 @@ function Diagnostic(...ctorArgs) {
     return argvOut;
   };
 
+
+
+
+
   self.haveArgs = function(inputArgs, computedArgs) {
 
     // See what's missing out of the caller-supplied args
     _.each(inputArgs, (arg, name) => {
       if (sg.isnt(arg)) {
-        const msg = `Need arg "${name}"`;
+        const msg = `ENOARG: '${name}'`;
         self.e(msg);
-        self.errors.push(toError(msg));
+        self.errors.push(toError(msg, {cause: `A required argument was not supplied.`, name, fnName: self.fnName, fatal: true}));
       }
     });
 
     // See whats missing from the computed args
     _.each(computedArgs, (arg, name) => {
       if (sg.isnt(arg)) {
-        const msg = `Could not determine "${name}"`;
+        const msg = `WNOARG: '${name}'`;
         self.e(msg);
-        self.errors.push(toError(msg));
+        self.errors.push(toError(msg, {cause: `An important, but not required argument was not supplied.`, name, fnName: self.fnName, fatal: false}));
       }
     });
 
@@ -120,14 +125,31 @@ function Diagnostic(...ctorArgs) {
     return self.errors.length === 0;
   };
 
+
+
+
+  /**
+   * This is the function that gets called when the app is giving up and exiting.
+   *
+   * The main weirdness of this function is because we have to determine what model
+   * the app is currently running under. Should we throw? Should we callback(err)? Etc.
+   *
+   * There is also the issue that the immediate caller can pass in (err, ...data), but
+   * we might also be storing errors that weve seen.
+   *
+   * @param {*}         err       - The typical Node.js first-parameter err object
+   * @param {[Object]}  results   - The typical Node.js not-first-parameter data result object
+   * @returns {*}       nothing
+   */
   self.exit = function(err, ...results) {
+
+    // See if there was a callback function to use.
     const callback    = getCallback(...ctorArgs);
 
     // TODO: Check self.errors, callback, etc.
     if (sg.isnt(callback)) {
       if (self.errors.length > 0) {
-        // TODO: Make mechanism so we can throw, or return 'success' with error in the data
-
+        // An ERROR, and no callback function... Must throw
         throw toError('ENOTVALID', self.errors);
       }
 
@@ -137,6 +159,7 @@ function Diagnostic(...ctorArgs) {
 
     if (_.isFunction(callback)) {
       if (self.errors.length > 0) {
+        // An ERROR, but we have a callback function.
         return callback(self.errors);
       }
 

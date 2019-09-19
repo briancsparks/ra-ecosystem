@@ -119,7 +119,7 @@ module.exports.DIAG_ = function(mod) {
       const logApi    = argv.log_api || process.env.SG_LOG_API;
 
       // ---------- Create a diag object for this invocation ----------
-      var diag = sgDiagnostic.fromContext({argv, context});
+      var diag = sgDiagnostic.fromContext({argv, context, fnName});
       self.initDiagnostic(diag);
 
       diag.i_if(logApi, `--> ${fnName}:`, {argv});
@@ -218,11 +218,17 @@ module.exports.DIAG_ = function(mod) {
     return self.async(xfn, true);
   };
 
+  /**
+   * This is the function that other functions call when they start.
+   *
+   * @param {Array} args - The typical {argv, context}
+   * @returns {Object} The new Diagnostic object.
+   */
   self.diagnostic = function(...args) {
-    var diagFunctions     = sgDiagnostic.getContextItem(args.context || self.context, 'diagFunctions') || [];
-    var {argv,context}    = sg.merge(diagFunctions[0] || {}, args[0]);
+    var diagFunctions           = sgDiagnostic.getContextItem(args.context || self.context, 'diagFunctions') || [];
+    var {argv,context,fnName}   = sg.merge(diagFunctions[0] || {}, args[0]);
 
-    var diag = sgDiagnostic.diagnostic({argv,context});
+    var diag = sgDiagnostic.diagnostic({argv,context,fnName});
     return self.initDiagnostic(diag);
   };
 
