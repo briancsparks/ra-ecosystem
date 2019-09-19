@@ -14,19 +14,15 @@ const { _ }                   = sg;
  */
 function SgError(message, err) {
   this.name  = 'SgError';
-  this.stack = (new Error()).stack;
-
-  // Try to split the error stack
-  if (typeof this.stack === 'string') {
-    this.stack = this.stack.split(/\r?\n/g);
-  }
+  Error.stackTraceLimit = 25;
+  Error.captureStackTrace(this, SgError);
 
   if (err) {
     this.error = err;
   }
 
-  if (_.isString(message) && message.startsWith('ENO')) {
-    this.name     = _.first(message.split(/[^a-z0-9]/i));
+  if (_.isString(message) && message.match(/^[A-Z][A-Z][A-Z]/)) {
+    this.code     = _.first(message.split(/[^a-z0-9]/i));
     this.message  = message || 'Default Message';
   } else {
     this.message  = message || 'Default Message';
