@@ -100,6 +100,9 @@ mod.async(DIAG.async({deployLambda: async function(argv, context) {
   }
 }}));
 
+
+
+
 function dockerStdoutNoStupidMessage(docker) {
 
   var remainder = '';

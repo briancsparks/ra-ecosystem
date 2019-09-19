@@ -93,7 +93,7 @@ mod.async(DIAG.async({buildLayer: async function(argv, context) {
     }
 
     docker = execa('docker', params, {cwd: dockerfileDir});
-    docker.stdout.pipe(process.stdout);
+    dockerStdoutNoStupidMessage(docker);
     await docker;
   }
 }}));
@@ -105,6 +105,30 @@ async function getPrevPackageJsonAsync(Bucket, lambdaName, callback) {
   var data = await s3.getObject({Bucket, Key}).promise();
 
   return sg.safeJSONParse(''+data.Body);
+}
+
+
+
+
+function dockerStdoutNoStupidMessage(docker) {
+
+  var remainder = '';
+  docker.stdout.on('data', function(chunk) {
+    var lines = (remainder + chunk).split(/\r?\n/);
+    remainder = lines.pop();
+
+    for (let i = 0; i < lines.length; ++i) {
+      if (!lines[i].match(/You are building a Docker image from Windows against a non-Windows Docker host/i)) {
+        process.stdout.write(lines[i] + sg.os.EOL);
+      }
+    }
+
+  });
+
+  docker.stdout.on('end', function() {
+    process.stdout.write(remainder + sg.os.EOL);
+  });
+
 }
 
 

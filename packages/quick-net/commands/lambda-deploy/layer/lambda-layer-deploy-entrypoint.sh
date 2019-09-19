@@ -14,8 +14,8 @@ cd /work/opt
 rm -rf                    /work/opt/nodejs   && mkdir -p $_
 cp    /src/package.json   /work/opt/nodejs
 
-#(cd nodejs && yarn --production --silent)
-(cd nodejs && yarn --production)
+# Install deps, skip aws-sdk, it is already present
+(cd nodejs && yarn --production && rm -rf node_modules/aws-sdk)
 
 # ---------------------------------
 # ----- Pack it into zip file -----
