@@ -1,4 +1,7 @@
 
+const sg                      = require('sg0');
+const { _ }                   = sg;
+
 // DIAG.usage({aliases:{streamToS3:{}}});
 module.exports.getFnNameFromFnConfig = function(config) {
   var   fnConfigs = {};

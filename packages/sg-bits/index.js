@@ -62,10 +62,23 @@ function Bits(mod) {
 function splitFilepath(f) {
   const parts       = f.split(sg.path.sep);
   const filename    = parts.pop();
-  const dirname     = sg.path.sep + sg.path.join(...parts);
+  const dirname     = joinFilepath(...parts);
+
   const fileparts   = filename.split('.');
   const ext         = fileparts.pop();
   const basename    = fileparts.join('.');
 
   return [dirname, basename, ext];
 }
+
+function joinFilepath(...parts) {
+  var path = '';
+  if (!parts[0]) {
+    path += sg.path.sep;
+  }
+
+  path += sg.path.join(...parts);
+
+  return path;
+}
+

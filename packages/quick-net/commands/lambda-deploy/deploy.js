@@ -21,16 +21,6 @@ const config                  = new AWS.Config({paramValidation:false, region});
 const s3                      = new AWS.S3(config);
 const lambda                  = new AWS.Lambda(config);
 
-// DIAG.usage({
-//   deployLambda:{
-//     args: {
-//       lambdaName:       {aliases: 'name,lambda_name'},
-//       class_b:          {aliases: 'classB,b'},
-//       AWS_PROFILE:      {aliases: 'aws_profile,profile'},
-//     }
-//   }
-// });
-
 DIAG.usage({
   aliases: {
     deployLambda: {
@@ -46,8 +36,6 @@ DIAG.usage({
 
 DIAG.activeDevelopment(`--stage=dev --lambda-name=lambda-net --class-b=21 --sgs=wide --AWS_PROFILE=bcs`);
 DIAG.activeDevelopment(`--debug`);
-
-// deployLambda --stage=dev --lambda-name=lambda-net --class-b=21 --sgs=wide --debug
 
 module.exports.main =
 mod.async(DIAG.async({deployLambda: async function(argv, context) {

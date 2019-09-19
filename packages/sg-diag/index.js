@@ -128,6 +128,13 @@ module.exports.DIAG_ = function(mod) {
     // Build an impostor to hand out -- this fn will be called, and needs to call the real fn
     // This is for when !isActuallyContinuationStyle
     const interceptorFnA = /*async*/ function(argv, context) {
+
+      // If we are active development, use those args
+      if (process.env.ACTIVE_DEVELOPMENT && self.devCliArgs) {
+        argv = sg.merge(argv ||{}, mkArgv(self.devCliArgs));
+        console.log(`invoking ${fnName}`, util.inspect({argv, async: !isActuallyContinuationStyle}, {depth:null, color:true}));
+      }
+
       setupDiag(argv, context);
 
       return new Promise(async (resolve, reject) => {
@@ -135,7 +142,7 @@ module.exports.DIAG_ = function(mod) {
         return interceptCaller(argv, context, async function(callbackCCC) {
 
           // ---------- Load all data ----------
-          await self.loadData(fnName);
+          const mainJson = await self.loadData(fnName);
 
           // ========== Call the intercepted function ==========
           const result = await intercepted(argv, context);
@@ -150,6 +157,13 @@ module.exports.DIAG_ = function(mod) {
 
     // This is for when isActuallyContinuationStyle
     const interceptorFnB = function(argv, context, callback) {
+
+      // If we are active development, use those args
+      if (process.env.ACTIVE_DEVELOPMENT && self.devCliArgs) {
+        argv = sg.merge(argv ||{}, mkArgv(self.devCliArgs));
+        console.log(`invoking ${fnName}`, util.inspect({argv, async: !isActuallyContinuationStyle}, {depth:null, color:true}));
+      }
+
       setupDiag(argv, context);
 
       return interceptCaller(argv, context, async function(callbackCCC) {
@@ -175,12 +189,6 @@ module.exports.DIAG_ = function(mod) {
 
     // ====================================================================================
     function interceptCaller(argv, context, continuation) {
-
-      // If we are active development, use those args
-      if (process.env.ACTIVE_DEVELOPMENT && self.devCliArgs) {
-        argv = sg.merge(argv ||{}, mkArgv(self.devCliArgs));
-        console.log(`invoking ${fnName}`, util.inspect({argv, async: !isActuallyContinuationStyle}, {depth:null, color:true}));
-      }
 
       // Info about the current invocation
       var   info = {argv, context, fnName};
@@ -295,7 +303,5 @@ function mkArgv(cliString) {
 
     return m;
   });
-
-  // argv = sg.merge(argv ||{}, minimist(self.devCliArgs.split(/\s+/gi)));
 
 }

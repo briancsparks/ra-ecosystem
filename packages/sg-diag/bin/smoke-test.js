@@ -12,9 +12,11 @@ const ARGV                    = sg.ARGV();
 // const ENV                     = sg.ENV();
 
 DIAG.usage({
-  smokeTest:{
-    args: {
-      smokeName:       {aliases: 'name,smoke_name'},
+  aliases: {
+    smokeTest: {
+      args: {
+        smokeName: 'name,smoke_name',
+      }
     }
   }
 });
