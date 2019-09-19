@@ -13,6 +13,7 @@ const sg0                     = require('sg0');
 const { _ }                   = sg0;
 const sg                      = sg0.merge(sg0, require('sg-bits'));
 const { qm }                  = require('quick-merge');
+const util                    = require('util');
 const banner                  = require('./lib/banner');
 
 const sgDiagnostic            = require('./lib/diagnostic');
@@ -104,7 +105,7 @@ module.exports.DIAG_ = function(mod) {
   // Hijack the mods function, returning our own
 
   // `xfn` is the object that gets passed to mod.xport({name: function(argv, context, callback) { ... }}) -- xfn is the object: {name: ...}
-  self.async = function(xfn) {
+  self.async = function(xfn, isActuallyContinuationStyle) {
 
     // Remember the passed-in fn
     const fnName        = firstFnName(xfn);
@@ -112,14 +113,71 @@ module.exports.DIAG_ = function(mod) {
 
     bigBanner('green', `Hijacking the overall function: ${fnName}`);
 
-    // Build an impostor to hand out -- this fn will be called, and needs to call the real fn
-    const interceptorFn = async function(argv, context) {
+    const setupDiag = function(argv, context) {
       const logApi    = argv.log_api || process.env.SG_LOG_API;
+
+      // ---------- Create a diag object for this invocation ----------
+      var diag = sgDiagnostic.fromContext({argv, context});
+      self.initDiagnostic(diag);
+
+      diag.i_if(logApi, `--> ${fnName}:`, {argv});
+    };
+
+    // Build an impostor to hand out -- this fn will be called, and needs to call the real fn
+    // This is for when !isActuallyContinuationStyle
+    const interceptorFnA = /*async*/ function(argv, context) {
+      setupDiag(argv, context);
+
+      return new Promise(async (resolve, reject) => {
+
+        return interceptCaller(argv, context, async function(callbackCCC) {
+
+          // ---------- Load all data ----------
+          await self.loadData(fnName);
+
+          // ========== Call the intercepted function ==========
+          const result = await intercepted(argv, context);
+
+          return callbackCCC(function callbackDDD() {
+            return resolve(result);
+          });
+        });
+      });
+    };
+
+
+    // This is for when isActuallyContinuationStyle
+    const interceptorFnB = function(argv, context, callback) {
+      setupDiag(argv, context);
+
+      return interceptCaller(argv, context, async function(callbackCCC) {
+
+        // ---------- Load all data ----------
+        await self.loadData(fnName);
+
+        // ========== Call the intercepted function ==========
+        const result = await intercepted(argv, context);
+
+        return callbackCCC(function callbackDDD() {
+          return callback(null, result);
+        });
+      });
+    };
+
+
+    const interceptorFn = isActuallyContinuationStyle ? interceptorFnB : interceptorFnA;
+
+    return {...xfn, [fnName]: interceptorFn};
+
+
+
+    // ====================================================================================
+    function interceptCaller(argv, context, continuation) {
 
       // If we are active development, use those args
       if (process.env.ACTIVE_DEVELOPMENT && self.devCliArgs) {
         argv = sg.merge(argv ||{}, mkArgv(self.devCliArgs));
-        console.log(`invoking async ${fnName}`, argv);
+        console.log(`invoking ${fnName}`, util.inspect({argv, async: !isActuallyContinuationStyle}, {depth:null, color:true}));
       }
 
       // Info about the current invocation
@@ -130,34 +188,24 @@ module.exports.DIAG_ = function(mod) {
 
       self.context = context;
 
-      // ---------- Load all data ----------
-      await self.loadData(fnName);
+      return continuation(function callbackCCC(callbackDDD) {
 
+        // ---------- Clean up ----------
+        sgDiagnostic.setContextItem(context, 'diagFunctions', diagFunctions);
 
-      // ---------- Create a diag object for this invocation ----------
-      var diag = sgDiagnostic.fromContext({argv, context});
-      self.initDiagnostic(diag);
+        // Close things if this is just a one-time run
+        if (fnName === (context.runAnywhere ||{}).invokedFnName || '') {
+          self.close();
+        }
 
-      diag.i_if(logApi, `--> ${fnName}:`, {argv});
+        return callbackDDD();
+      });
 
+    }
+  };
 
-      // ========== Call the intercepted function ==========
-      const result = await intercepted(argv, context);
-
-      // ---------- Clean up ----------
-
-      sgDiagnostic.setContextItem(context, 'diagFunctions', diagFunctions);
-
-      // Close things if this is just a one-time run
-      if (fnName === (context.runAnywhere ||{}).invokedFnName || '') {
-        self.close();
-      }
-
-      return result;
-    };
-
-    const result = {...xfn, [fnName]: interceptorFn};
-    return result;
+  self.xport = function(xfn) {
+    return self.async(xfn, true);
   };
 
   self.diagnostic = function(...args) {

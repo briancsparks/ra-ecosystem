@@ -196,7 +196,7 @@ const ModSquad = function(otherModule, otherModuleName = 'mod') {
   };
 
   self.invokeMaybe = function(__filename) {
-console.log(`invo`, {__filename, otherModule: Object.keys(otherModule)});
+    // console.log(`invo`, {__filename, otherModule: Object.keys(otherModule)});
     if (process.argv[2] === __filename) {
       // OK, we are the right file, but which fn?
       var fnName;

@@ -45,6 +45,8 @@ mod.async(DIAG.async({deployLambda: async function(argv, context) {
   var   {Bucket,AWS_PROFILE}          = diag.args();
 
   var   packageDir    = sg.path.join(process.cwd(), '.');
+
+  // TODO: should be ... = Bucket || ...
   Bucket              = argv.Bucket   || sg.from([packageDir, '_config', stage, 'env.json'], 'DeployBucket');
   AWS_PROFILE         = AWS_PROFILE   || ENV.at('AWS_PROFILE');
 

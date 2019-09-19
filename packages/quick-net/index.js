@@ -21,6 +21,8 @@ exports.libHttp               = require('./lib/http');
 
 var   mods = {};
 
+// ADDING: Add the new mod to the end of this list and name it like libXyz.
+//         Then it will be available as quickNet.libXyz
 mods.commandVpcs             = require('./commands/vpcs');
 mods.commandInstances        = require('./commands/instances');
 mods.setupWebtier            = require('./commands/setup-webtier');
@@ -35,6 +37,7 @@ mods.fanout                  = require('./lib/data-tap/fanout');
 mods.read                    = require('./lib/data-tap/read');
 mods.status                  = require('./lib/data-tap/status');
 mods.libAws                  = require('./lib/aws');
+mods.libStorage              = require('./lib/storage');
 
 
 // Export all my dependencies, so lambdas do not have to include them
