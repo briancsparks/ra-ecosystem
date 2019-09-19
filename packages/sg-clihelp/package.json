@@ -1,6 +1,6 @@
 {
   "name": "sg-clihelp",
-  "version": "1.0.43",
+  "version": "1.0.44",
   "description": "Utilities for writing cli apps",
   "main": "index.js",
   "bin": {
@@ -12,8 +12,8 @@
   "author": "Brian C Sparks <briancsparks@gmail.com>",
   "license": "MIT",
   "dependencies": {
-    "sg-argv": "^1.0.44",
-    "sg-exec": "^1.0.39",
+    "sg-argv": "^1.0.45",
+    "sg-exec": "^1.0.40",
     "shelljs": "^0.8.3"
   }
 }

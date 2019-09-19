@@ -1,7 +1,7 @@
 {
   "name": "max-aws",
   "private": true,
-  "version": "1.0.51",
+  "version": "1.0.52",
   "description": "> TODO: description",
   "author": "Brian C Sparks <briancsparks@gmail.com>",
   "homepage": "https://github.com/briancsparks/ra-ecosystem#readme",
@@ -24,7 +24,7 @@
   "dependencies": {
     "express": "^4.16.4",
     "run-anywhere": "^0.7.12",
-    "sg-argv": "^1.0.44",
+    "sg-argv": "^1.0.45",
     "sg-echo": "^1.0.33",
     "sg0": "^1.0.27"
   }
