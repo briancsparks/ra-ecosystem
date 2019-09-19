@@ -10,8 +10,8 @@ const server                  = `http://localhost:${port}`;
 module.exports.JsonSocketIoLogger = JsonSocketIoLogger;
 module.exports.jsonSocketIoLogger = JsonSocketIoLogger;
 
-function JsonSocketIoLogger(...args) {
-  if (!(this instanceof JsonSocketIoLogger))    { return new JsonSocketIoLogger(...args); }
+function JsonSocketIoLogger(...ctorArgs) {
+  if (!(this instanceof JsonSocketIoLogger))    { return new JsonSocketIoLogger(...ctorArgs); }
 
   const self    = this;
   const options = {};
@@ -24,8 +24,8 @@ function JsonSocketIoLogger(...args) {
     log(`connected`);
   });
 
-  socket.on('data', function(...args) {
-    // log(...args);
+  socket.on('data', function(...ctorArgs) {
+    // log(...ctorArgs);
   });
 
   socket.on('disconnect', function() {
@@ -57,9 +57,9 @@ function JsonSocketIoLogger(...args) {
     socket.emit(msgName, {level: 'w', msg, rest});
   };
 
-  self.e = function(msg, ...rest) {
+  self.e = function(err, msg, ...rest) {
     // log(`JsonSocketIoLogger.e`, msg, ...rest);
-    socket.emit(msgName, {level: 'e', msg, rest});
+    socket.emit(msgName, {level: 'e', err, msg, rest});
   };
 
   // const logged = self.logged = function(msg, ...rest) {

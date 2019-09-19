@@ -69,7 +69,8 @@ module.exports.DIAG_ = function(mod) {
   };
 
   self.usage = function(data ={}) {
-    self.bits.setJson({fns: data});   // TODO: 'fns' is one of the mis-matches with the quasi-multi-level JSON built from sg-bits
+    // self.bits.setJson({fns: data});   // TODO: 'fns' is one of the mis-matches with the quasi-multi-level JSON built from sg-bits
+    self.bits.setJson(data);
   };
 
   self.activeDevelopment = function(cliArgs) {
@@ -90,8 +91,9 @@ module.exports.DIAG_ = function(mod) {
     const currFnName  = self.getCurrFnName()    || '';
     const mainjson    = self.bits.getJson()     || {};
 
-    const fnSpec      = {...(mainjson.fns || {})[currFnName]};   // TODO: 'fns' is one of the mis-matches with the quasi-multi-level JSON built from sg-bits
-    return fnSpec;
+    // const argSpec      = ((mainjson.aliases || mainjson.fns || {})[currFnName] ||{}).args || {};   // TODO: 'fns' is one of the mis-matches with the quasi-multi-level JSON built from sg-bits
+    const argSpec      = ((mainjson.aliases || {})[currFnName] ||{}).args || {};   // TODO: 'fns' is one of the mis-matches with the quasi-multi-level JSON built from sg-bits
+    return argSpec;
   };
 
   self.getSchema = function() {

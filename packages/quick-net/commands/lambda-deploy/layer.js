@@ -21,12 +21,23 @@ const region                  = ARGV.region || 'us-east-1';
 const config                  = new AWS.Config({paramValidation:false, region});
 const s3                      = new AWS.S3(config);
 
+// DIAG.usage({
+//   buildLayer:{
+//     args: {
+//       lambdaName:       {aliases: 'name,lambda_name'},
+//       AWS_PROFILE:      {aliases: 'aws_profile,profile'},
+//     },
+//   }
+// });
+
 DIAG.usage({
-  buildLayer:{
-    args: {
-      lambdaName:       {aliases: 'name,lambda_name'},
-      AWS_PROFILE:      {aliases: 'aws_profile,profile'},
-    },
+  aliases: {
+    buildLayer: {
+      args: {
+        lambdaName:       'name,lambda_name',
+        AWS_PROFILE:      'aws_profile,profile',
+      },
+    }
   }
 });
 

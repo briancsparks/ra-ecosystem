@@ -12,12 +12,12 @@ module.exports.fromContext    = fromContext;
 module.exports.setContextItem = setContextItem;
 module.exports.getContextItem = getContextItem;
 
-function Diagnostic(...args) {
+function Diagnostic(...ctorArgs) {
   var   self    = this;
 
   self.DIAG     = {};
   self.bits     = {};
-  self.options  = rootOptions(...args);
+  self.options  = rootOptions(...ctorArgs);
   self.errors   = [];
 
   self.logger   = null;
@@ -32,13 +32,13 @@ function Diagnostic(...args) {
   }
 
 
-  self.args = function(fnName) {
-    const argv        = self.getArgv(...args);
-    const currFnName  = self.DIAG.getCurrFnName()         || fnName   || '';
+  self.args = function() {
+    const argv        = self.getArgv(...ctorArgs);
+    const currFnName  = self.DIAG.getCurrFnName()   || '';
 
     // -------------------- Get argv elements --------------------
 
-    // Get all the data from the `argv` that was passed in at the beginning of the fn
+    // Get all the data from the `argv` that was passed in at the beginning of the fn (the ctorArgs)
     var   argvOut = sg.reduce(argv, {}, (m, v, k) => {
       if (!_.isFunction(v)) {
         return sg.kv(m, k, sg.smartValue(v));
@@ -48,11 +48,26 @@ function Diagnostic(...args) {
     });
 
     // Handle aliases
-    const fnSpec = self.DIAG.getAliases() || {};
-    argvOut = sg.reduce(fnSpec.args, argvOut, (m, arg, name) => {
-      const aliases = (arg.aliases || '').split(',');
+    //
+    //  like this {
+    //    lambdaName: 'name,lambda_name',
+    //    class_b:    'classB,b'
+    //  }
+    //
+    //  where the user can use 'name' as an alias for the 'lambdaName' arg.)
+
+    // `argSpec` would be the above object (with lambdaName and class_b keys)
+    const argSpec = self.DIAG.getAliases() || {};
+
+    // aliasesStr === 'name,lambda_name';  name === 'lambdaName'; so, we might have argv.name = 'myFn',
+    //   which should be argv.lambdaName = 'myFn'
+    argvOut = sg.reduce(argSpec, argvOut, (m, aliasesStr, name) => {
+
+      // Make an Array from the string list
+      const aliases = (aliasesStr || '').split(',');
       _.each(aliases, alias => {
 
+        // Is the alias in argv? (Is 'name' in argv?)
         if (alias in argv) {
           // self.w_if(name in m, `Already have ${name}; adding alias ${alias}`);
           m[name] = argv[alias];
@@ -94,7 +109,7 @@ function Diagnostic(...args) {
 
     if (!valid) {
       self.e(validator.errorsText());
-      if (self.getArgv(...args).verbose) {
+      if (self.getArgv(...ctorArgs).verbose) {
         self.e(`Diagnostic.haveArgs`, ...validator.errors);
       }
 
@@ -106,7 +121,7 @@ function Diagnostic(...args) {
   };
 
   self.exit = function(err, ...results) {
-    const callback    = getCallback(...args);
+    const callback    = getCallback(...ctorArgs);
 
     // TODO: Check self.errors, callback, etc.
     if (sg.isnt(callback)) {
@@ -138,6 +153,7 @@ function Diagnostic(...args) {
 
 
 
+  // The argv for these messaging functions
   var msgArgv;
 
   self.loud = function(msg, ...rest) {
@@ -145,7 +161,7 @@ function Diagnostic(...args) {
   };
 
   self.i = function(msg, ...rest) {
-    msgArgv = msgArgv || self.getArgv(...args);
+    msgArgv = msgArgv || self.getArgv(...ctorArgs);
     if (msgArgv.quiet) { return; }
 
     var standard = true;
@@ -167,7 +183,7 @@ function Diagnostic(...args) {
   };
 
   self.d = function(msg, ...rest) {
-    msgArgv = msgArgv || self.getArgv(...args);
+    msgArgv = msgArgv || self.getArgv(...ctorArgs);
     if (msgArgv.quiet)  { return; }
     if (!msgArgv.debug) { return; }
 
@@ -190,7 +206,7 @@ function Diagnostic(...args) {
   };
 
   self.v = function(msg, ...rest) {
-    msgArgv = msgArgv || self.getArgv(...args);
+    msgArgv = msgArgv || self.getArgv(...ctorArgs);
     if (msgArgv.quiet)    { return; }
     if (!msgArgv.verbose) { return; }
 
@@ -212,15 +228,15 @@ function Diagnostic(...args) {
     return self.v(msg, ...rest);
   };
 
-  function showBigAnnoyingMessage(msg, options, ...rest) {
+  function showBigAnnoyingMessage(err, msg, options, ...rest) {
     const {banner='-----', stream='error'} = options || {};
 
     var msg_ = `\n\n     ${banner}     ${banner}     ${msg}     ${banner}     ${banner}\n\n`;
-    console[stream](...logged(msg_, ...rest));
+    console[stream](...logged(err, msg_, ...rest));
   }
 
   self.w = function(msg, ...rest) {
-    msgArgv = msgArgv || self.getArgv(...args);
+    msgArgv = msgArgv || self.getArgv(...ctorArgs);
     if (msgArgv.quiet)    { return; }
 
     var standard = true;
@@ -229,7 +245,7 @@ function Diagnostic(...args) {
     }
 
     if (standard) {
-      showBigAnnoyingMessage(msg, {banner: '#####', stream: 'log'}, ...rest);
+      showBigAnnoyingMessage(null, msg, {banner: '#####', stream: 'log'}, ...rest);
       // var msg_ = `\n\n     #####     #####     ${msg}     #####     #####\n\n`;
       // console.log(...logged(msg_, ...rest));
 
@@ -247,19 +263,19 @@ function Diagnostic(...args) {
   };
 
   // TODO: This needs a lot of work.
-  self.e = function(msg, ...rest) {
-    msgArgv = msgArgv || self.getArgv(...args);
+  self.e = function(err, msg, ...rest) {
+    msgArgv = msgArgv || self.getArgv(...ctorArgs);
 
     // TODO: `quiet` in this context should mean that the active developer doesnt want to be bugged
     if (msgArgv.quiet && activeDevelopment)    { return; }
 
     var standard = true;
     if (self.logger) {
-      standard = !self.logger.e(msg, ...rest);
+      standard = !self.logger.e(err, msg, ...rest);
     }
 
     if (standard) {
-      showBigAnnoyingMessage(msg, {banner: '!!!!!!!!!!'}, ...rest);
+      showBigAnnoyingMessage(err, msg, {banner: '!!!!!!!!!!'}, ...rest);
 
       if (fastFail()) {
         throw(new Error(`FastFail warning ${msg}`));
@@ -269,13 +285,13 @@ function Diagnostic(...args) {
     }
   };
 
-  self.assert = self.e_if = function(test, msg, ...rest) {
+  self.assert = self.e_if = function(test, err, msg, ...rest) {
     if (!test) { return; }
-    return self.e(msg, ...rest);
+    return self.e(err, msg, ...rest);
   };
 
   self.iv = function(msg, i_params, v_params) {
-    msgArgv = msgArgv || self.getArgv(...args);
+    msgArgv = msgArgv || self.getArgv(...ctorArgs);
     if (msgArgv.verbose) {
       return self.v(msg, {...i_params, ...v_params});
     }
@@ -341,7 +357,7 @@ function Diagnostic(...args) {
   }
 
   function inspect(x, colors =true) {
-    msgArgv = msgArgv || self.getArgv(...args);
+    msgArgv = msgArgv || self.getArgv(...ctorArgs);
 
     if (fancy()) {
       return util.inspect(x, {depth:null, colors});
@@ -353,7 +369,7 @@ function Diagnostic(...args) {
   }
 
   function fancy() {
-    msgArgv = msgArgv || self.getArgv(...args);
+    msgArgv = msgArgv || self.getArgv(...ctorArgs);
     if (msgArgv.fancy)          { return true; }
 
     if (production())           { return false; }
@@ -365,7 +381,7 @@ function Diagnostic(...args) {
 
   // Multi-line but not colored (human-readable, but not fancy, but `jq` parsable)
   function readable() {
-    msgArgv = msgArgv || self.getArgv(...args);
+    msgArgv = msgArgv || self.getArgv(...ctorArgs);
     if (msgArgv.readable)       { return true; }
 
     if (production())           { return false; }
@@ -380,7 +396,7 @@ function Diagnostic(...args) {
       return process.env.SG_FAST_FAIL;
     }
 
-    msgArgv = msgArgv || self.getArgv(...args);
+    msgArgv = msgArgv || self.getArgv(...ctorArgs);
     return msgArgv.fastfail;
   }
 
@@ -389,7 +405,7 @@ function Diagnostic(...args) {
       return process.env.SG_WARN_STACK;
     }
 
-    msgArgv = msgArgv || self.getArgv(...args);
+    msgArgv = msgArgv || self.getArgv(...ctorArgs);
     return msgArgv.warnstack;
   }
 

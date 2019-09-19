@@ -21,12 +21,24 @@ const config                  = new AWS.Config({paramValidation:false, region});
 const s3                      = new AWS.S3(config);
 const lambda                  = new AWS.Lambda(config);
 
+// DIAG.usage({
+//   deployLambda:{
+//     args: {
+//       lambdaName:       {aliases: 'name,lambda_name'},
+//       class_b:          {aliases: 'classB,b'},
+//       AWS_PROFILE:      {aliases: 'aws_profile,profile'},
+//     }
+//   }
+// });
+
 DIAG.usage({
-  deployLambda:{
-    args: {
-      lambdaName:       {aliases: 'name,lambda_name'},
-      class_b:          {aliases: 'classB,b'},
-      AWS_PROFILE:      {aliases: 'aws_profile,profile'},
+  aliases: {
+    deployLambda: {
+      args: {
+        lambdaName:       'name,lambda_name',
+        class_b:          'classB,b',
+        AWS_PROFILE:      'aws_profile,profile',
+      }
     }
   }
 });

@@ -4,6 +4,7 @@ var   sg                      = require('sg0');
 const { _ }                   = sg;
 const { qm }                  = require('quick-merge');
 const fs                      = require('fs');
+const utils                   = require('./lib/utils');
 
 sg.path                       = require('path');
 sg.os                         = require('os');
@@ -30,8 +31,10 @@ function Bits(mod) {
   const [dirname, basename, ext]    = splitFilepath(mod.filename);
   const bitsdir                     = sg.path.join(dirname, '_sg-bits');
   const mainBitsFile                = sg.path.join(bitsdir, `${basename}.json`);
+  var   currSetupFnName             = null;
 
   self.setJson = function(data) {
+    currSetupFnName = utils.getFnNameFromFnConfig(data) || currSetupFnName;
     self.pieces = qm(self.pieces, data);
   };
 
@@ -59,7 +62,7 @@ function Bits(mod) {
 function splitFilepath(f) {
   const parts       = f.split(sg.path.sep);
   const filename    = parts.pop();
-  const dirname     = sg.path.join(...parts);
+  const dirname     = sg.path.sep + sg.path.join(...parts);
   const fileparts   = filename.split('.');
   const ext         = fileparts.pop();
   const basename    = fileparts.join('.');

@@ -81,3 +81,4 @@ function hashBody(Body) {
 
   return shasum.digest('hex');
 }
+

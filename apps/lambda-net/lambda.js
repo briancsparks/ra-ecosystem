@@ -17,6 +17,9 @@ const sg                      = sg0.merge(sg0, quickNet.get3rdPartyLib('sg-argv'
 const util                    = require('util');
 const { _ }                   = sg;
 
+const S3                      = require('./lib/s3');
+// const { awsService }          = quickNet.libAws;
+
 const {
   entrypoints,
   hosts
@@ -58,9 +61,16 @@ hosts.aws_lambda.setDispatcher(function(event, context, callback) {
   // [[Fake it for now]]
   sg.log(`Dispatching into app`, {event, context});
 
-  const _200 = sg._200();
-  sg.log(`dispatched into app`, {_200});
-  return callback(..._200);
+  return S3.streamToS3(event, context, function(err, data) {
+    if (err)      { sg.elog(`handler`, err); return callback(err); }
+
+    sg.log(`handler`, {data});
+
+    const _200 = sg._200({ok:true}, data);
+    // const _200 = sg._200();
+    sg.log(`dispatched into app`, {_200});
+    return callback(..._200);
+  });
 });
 
 // -------------------------------------------------------------------------------------
