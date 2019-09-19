@@ -52,13 +52,14 @@ const { bigBanner }           = banner;
 //
 
 module.exports.DIAG_ = function(mod) {
-  var   self = this;
+  var   self        = this;
 
-  self.context    = null;
-  self.bits       = sg.bits(mod);
-  self.diag       = null;
+  self.context      = null;
+  self.bits         = sg.bits(mod);
+  self.diag         = null;
 
-  self.devCliArgs = null;
+  self.devCliArgs   = null;
+
 
   self.close = function() {
     if (self.diag) {
@@ -67,7 +68,7 @@ module.exports.DIAG_ = function(mod) {
   };
 
   self.usage = function(data ={}) {
-    self.bits.setJson({fns: data});
+    self.bits.setJson({fns: data});   // TODO: 'fns' is one of the mis-matches with the quasi-multi-level JSON built from sg-bits
   };
 
   self.activeDevelopment = function(cliArgs) {
@@ -88,7 +89,7 @@ module.exports.DIAG_ = function(mod) {
     const currFnName  = self.getCurrFnName()    || '';
     const mainjson    = self.bits.getJson()     || {};
 
-    const fnSpec      = {...(mainjson.fns || {})[currFnName]};
+    const fnSpec      = {...(mainjson.fns || {})[currFnName]};   // TODO: 'fns' is one of the mis-matches with the quasi-multi-level JSON built from sg-bits
     return fnSpec;
   };
 
@@ -96,21 +97,20 @@ module.exports.DIAG_ = function(mod) {
     const currFnName  = self.getCurrFnName()    || '';
     const mainjson    = self.bits.getJson()     || {};
 
-    const schema      = ((mainjson.validations || {})[currFnName] ||{}).args || {};
+    const schema      = ((mainjson.validations || {})[currFnName] ||{}).args || {};   // TODO: maybe 'validations' is one of the mis-matches with the quasi-multi-level JSON built from sg-bits
     return schema;
-
-    // const fnSpec      = {...(mainjson.fns || {})[currFnName]};
-    // return fnSpec;
   };
 
   // Hijack the mods function, returning our own
+
+  // `xfn` is the object that gets passed to mod.xport({name: function(argv, context, callback) { ... }}) -- xfn is the object: {name: ...}
   self.async = function(xfn) {
 
     // Remember the passed-in fn
     const fnName        = firstFnName(xfn);
     const intercepted   = xfn[fnName];
 
-    bigBanner('green', `Launching the overall function: ${fnName}`);
+    bigBanner('green', `Hijacking the overall function: ${fnName}`);
 
     // Build an impostor to hand out -- this fn will be called, and needs to call the real fn
     const interceptorFn = async function(argv, context) {

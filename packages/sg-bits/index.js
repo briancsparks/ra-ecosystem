@@ -29,7 +29,7 @@ function Bits(mod) {
 
   const [dirname, basename, ext]    = splitFilepath(mod.filename);
   const bitsdir                     = sg.path.join(dirname, '_sg-bits');
-  const mainfile                    = sg.path.join(bitsdir, `${basename}.json`);
+  const mainBitsFile                = sg.path.join(bitsdir, `${basename}.json`);
 
   self.setJson = function(data) {
     self.pieces = qm(self.pieces, data);
@@ -37,11 +37,9 @@ function Bits(mod) {
 
   self.loadJson = async function() {
 
-    var   result = self.pieces || {};
-
     var   subPieces = {};
     try {
-      subPieces     = await fs_readFile(mainfile);
+      subPieces     = await fs_readFile(mainBitsFile);
       self.pieces   = sg.extend(self.pieces, sg.safeJSONParse(subPieces) || {});
 
     } catch(err) {

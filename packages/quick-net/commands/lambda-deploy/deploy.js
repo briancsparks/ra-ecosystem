@@ -76,7 +76,7 @@ mod.async(DIAG.async({deployLambda: async function(argv, context) {
     'quick-net-lambda-deploy'
   ];
 
-  sg.bigBanner('green', `Running ${lambdaName} deployer in Docker ###`);
+  sg.bigBanner('green', `Running ${lambdaName} deployer (in Docker) ###`);
   runDocker(qm.stitch(['run', '--rm', ...runArgs]), {cwd: dockerfileDir});
 
   sg.bigBanner('green', `Done running ${lambdaName} deployer in Docker`);
@@ -95,9 +95,29 @@ mod.async(DIAG.async({deployLambda: async function(argv, context) {
     }
 
     docker = execa('docker', params, {cwd: dockerfileDir});
-    docker.stdout.pipe(process.stdout);
+    dockerStdoutNoStupidMessage(docker);
     await docker;
   }
 }}));
 
+function dockerStdoutNoStupidMessage(docker) {
+
+  var remainder = '';
+  docker.stdout.on('data', function(chunk) {
+    var lines = (remainder + chunk).split(/\r?\n/);
+    remainder = lines.pop();
+
+    for (let i = 0; i < lines.length; ++i) {
+      if (!lines[i].match(/You are building a Docker image from Windows against a non-Windows Docker host/i)) {
+        process.stdout.write(lines[i] + sg.os.EOL);
+      }
+    }
+
+  });
+
+  docker.stdout.on('end', function() {
+    process.stdout.write(remainder + sg.os.EOL);
+  });
+
+}
 
