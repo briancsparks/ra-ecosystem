@@ -12,14 +12,13 @@ module.exports.fromContext    = fromContext;
 module.exports.setContextItem = setContextItem;
 module.exports.getContextItem = getContextItem;
 
-function Diagnostic(...ctorArgs) {
+function Diagnostic(ctorArgs) {
 sg.log(`Dctor`, {ctorArgs});
   var   self    = this;
 
   self.fnName   = ctorArgs.fnName;
   self.DIAG     = {};
   self.bits     = {};
-  self.options  = rootOptions(...ctorArgs);
   self.errors   = [];
 
   self.logger   = null;
@@ -38,7 +37,7 @@ sg.log(`Dctor`, {ctorArgs});
   };
 
   self.args = function() {
-    const argv        = self.getArgv(...ctorArgs);
+    const argv        = self.getArgv(ctorArgs);
     const currFnName  = self.DIAG.getCurrFnName()   || '';
 
     // -------------------- Get argv elements --------------------
@@ -118,7 +117,7 @@ sg.log(`Dctor`, {ctorArgs});
 
     if (!valid) {
       self.e(validator.errorsText());
-      if (self.getArgv(...ctorArgs).verbose) {
+      if (self.getArgv(ctorArgs).verbose) {
         self.e(`Diagnostic.haveArgs`, ...validator.errors);
       }
 
@@ -148,7 +147,7 @@ sg.log(`Dctor`, {ctorArgs});
   self.exit = function(err, ...results) {
 
     // See if there was a callback function to use.
-    const callback    = getCallback(...ctorArgs);
+    const callback    = getCallback(ctorArgs);
 
     // TODO: Check self.errors, callback, etc.
     if (sg.isnt(callback)) {
@@ -188,7 +187,7 @@ sg.log(`Dctor`, {ctorArgs});
   };
 
   self.i = function(msg, ...rest) {
-    msgArgv = msgArgv || self.getArgv(...ctorArgs);
+    msgArgv = msgArgv || self.getArgv(ctorArgs);
     if (msgArgv.quiet) { return; }
 
     var standard = true;
@@ -210,7 +209,7 @@ sg.log(`Dctor`, {ctorArgs});
   };
 
   self.d = function(msg, ...rest) {
-    msgArgv = msgArgv || self.getArgv(...ctorArgs);
+    msgArgv = msgArgv || self.getArgv(ctorArgs);
     if (msgArgv.quiet)  { return; }
     if (!msgArgv.debug) { return; }
 
@@ -233,7 +232,7 @@ sg.log(`Dctor`, {ctorArgs});
   };
 
   self.v = function(msg, ...rest) {
-    msgArgv = msgArgv || self.getArgv(...ctorArgs);
+    msgArgv = msgArgv || self.getArgv(ctorArgs);
     if (msgArgv.quiet)    { return; }
     if (!msgArgv.verbose) { return; }
 
@@ -263,7 +262,7 @@ sg.log(`Dctor`, {ctorArgs});
   }
 
   self.w = function(msg, ...rest) {
-    msgArgv = msgArgv || self.getArgv(...ctorArgs);
+    msgArgv = msgArgv || self.getArgv(ctorArgs);
     if (msgArgv.quiet)    { return; }
 
     var standard = true;
@@ -291,7 +290,7 @@ sg.log(`Dctor`, {ctorArgs});
 
   // TODO: This needs a lot of work.
   self.e = function(err, msg, ...rest) {
-    msgArgv = msgArgv || self.getArgv(...ctorArgs);
+    msgArgv = msgArgv || self.getArgv(ctorArgs);
 
     // TODO: `quiet` in this context should mean that the active developer doesnt want to be bugged
     if (msgArgv.quiet && activeDevelopment)    { return; }
@@ -318,7 +317,7 @@ sg.log(`Dctor`, {ctorArgs});
   };
 
   self.iv = function(msg, i_params, v_params) {
-    msgArgv = msgArgv || self.getArgv(...ctorArgs);
+    msgArgv = msgArgv || self.getArgv(ctorArgs);
     if (msgArgv.verbose) {
       return self.v(msg, {...i_params, ...v_params});
     }
@@ -362,8 +361,8 @@ sg.log(`Dctor`, {ctorArgs});
     return process.env.SG_STDOUT_IS_DATA_ONLY || false;
   };
 
-  self.getArgv = function(...args) {
-    return args[0] && args[0].argv;
+  self.getArgv = function(args) {
+    return args.argv;
   };
 
   // ---------- Helpers ----------
@@ -384,7 +383,7 @@ sg.log(`Dctor`, {ctorArgs});
   }
 
   function inspect(x, colors =true) {
-    msgArgv = msgArgv || self.getArgv(...ctorArgs);
+    msgArgv = msgArgv || self.getArgv(ctorArgs);
 
     if (fancy()) {
       return util.inspect(x, {depth:null, colors});
@@ -396,7 +395,7 @@ sg.log(`Dctor`, {ctorArgs});
   }
 
   function fancy() {
-    msgArgv = msgArgv || self.getArgv(...ctorArgs);
+    msgArgv = msgArgv || self.getArgv(ctorArgs);
     if (msgArgv.fancy)          { return true; }
 
     if (production())           { return false; }
@@ -408,7 +407,7 @@ sg.log(`Dctor`, {ctorArgs});
 
   // Multi-line but not colored (human-readable, but not fancy, but `jq` parsable)
   function readable() {
-    msgArgv = msgArgv || self.getArgv(...ctorArgs);
+    msgArgv = msgArgv || self.getArgv(ctorArgs);
     if (msgArgv.readable)       { return true; }
 
     if (production())           { return false; }
@@ -423,7 +422,7 @@ sg.log(`Dctor`, {ctorArgs});
       return process.env.SG_FAST_FAIL;
     }
 
-    msgArgv = msgArgv || self.getArgv(...ctorArgs);
+    msgArgv = msgArgv || self.getArgv(ctorArgs);
     return msgArgv.fastfail;
   }
 
@@ -432,7 +431,7 @@ sg.log(`Dctor`, {ctorArgs});
       return process.env.SG_WARN_STACK;
     }
 
-    msgArgv = msgArgv || self.getArgv(...ctorArgs);
+    msgArgv = msgArgv || self.getArgv(ctorArgs);
     return msgArgv.warnstack;
   }
 
@@ -441,24 +440,27 @@ sg.log(`Dctor`, {ctorArgs});
 
 
 
-function diagnostic(...args) {
-  if (args.length === 1 && sg.objekt(args[0], {}).context) {
-    return fromContext(...args);
+function diagnostic(args) {
+  if (args.context) {
+    return fromContext(args);
   }
+
 sg.log(`fileddiag calling new`, {args});
-  return new Diagnostic(...args);
+  return new Diagnostic(args);
 }
 
-function fromContext(...args) {
+function fromContext(args) {
 
-  var   sgDiagnostic  = sg.objekt(args[0].context, {}).sgDiagnostic || {};
-  var   diag          = sgDiagnostic.diag;
+  // var   sgDiagnostic  = (args.context ||{}).sgDiagnostic || {};
+  // var   diag          = sgDiagnostic.diag;
+
+  var   diag = getContextItem(args.context, 'diag');
 
   if (!diag) {
 sg.log(`fileddiag fromContext`, {args});
-    diag = new Diagnostic(...args);
+    diag = new Diagnostic(args);
 
-    setContextItem(args[0].context, 'diag', diag);
+    setContextItem(args.context, 'diag', diag);
   }
 
   return diag;
@@ -480,20 +482,20 @@ function setContextItem(context, name, item) {
 
 
 
-function getCallback(...args) {
-  return args[0] && args[0].callback;
+function getCallback(args) {
+  return args.callback;
 }
 
-function rootOptions(...args) {
-  var   parent  = null;
-  var   options = null;
+// function rootOptions(...args) {
+//   var   parent  = null;
+//   var   options = null;
 
-  if (args[0] instanceof Diagnostic) {
-    parent  = args[0];
-    options = _.extend({}, parent.options);
-  } else {
-    options  = args[0] || {};
-  }
+//   if (args[0] instanceof Diagnostic) {
+//     parent  = args[0];
+//     options = _.extend({}, parent.options);
+//   } else {
+//     options  = args[0] || {};
+//   }
 
-  return options;
-}
+//   return options;
+// }
