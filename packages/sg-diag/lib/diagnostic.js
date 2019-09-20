@@ -13,6 +13,7 @@ module.exports.setContextItem = setContextItem;
 module.exports.getContextItem = getContextItem;
 
 function Diagnostic(...ctorArgs) {
+sg.log(`Dctor`, {ctorArgs});
   var   self    = this;
 
   self.fnName   = ctorArgs.fnName;
@@ -32,6 +33,9 @@ function Diagnostic(...ctorArgs) {
     };
   }
 
+  self.getCurrFnName = function() {
+    return self.fnName || self.DIAG.getCurrFnName();
+  };
 
   self.args = function() {
     const argv        = self.getArgv(...ctorArgs);
@@ -92,7 +96,7 @@ function Diagnostic(...ctorArgs) {
       if (sg.isnt(arg)) {
         const msg = `ENOARG: '${name}'`;
         self.e(msg);
-        self.errors.push(toError(msg, {cause: `A required argument was not supplied.`, name, fnName: self.fnName, fatal: true}));
+        self.errors.push(toError(msg, {cause: `A required argument was not supplied.`, name, fnName:  self.getCurrFnName(), fatal: true}));
       }
     });
 
@@ -101,7 +105,7 @@ function Diagnostic(...ctorArgs) {
       if (sg.isnt(arg)) {
         const msg = `WNOARG: '${name}'`;
         self.e(msg);
-        self.errors.push(toError(msg, {cause: `An important, but not required argument was not supplied.`, name, fnName: self.fnName, fatal: false}));
+        self.errors.push(toError(msg, {cause: `An important, but not required argument was not supplied.`, name, fnName: self.getCurrFnName(), fatal: false}));
       }
     });
 
@@ -254,7 +258,7 @@ function Diagnostic(...ctorArgs) {
   function showBigAnnoyingMessage(err, msg, options, ...rest) {
     const {banner='-----', stream='error'} = options || {};
 
-    var msg_ = `\n\n     ${banner}     ${banner}     ${msg}     ${banner}     ${banner}\n\n`;
+    var msg_ = `\n\n     ${banner}     ${banner}     ${msg}     ${banner}     ${banner}\n\n`.split('\n');
     console[stream](...logged(err, msg_, ...rest));
   }
 
@@ -441,7 +445,7 @@ function diagnostic(...args) {
   if (args.length === 1 && sg.objekt(args[0], {}).context) {
     return fromContext(...args);
   }
-
+sg.log(`fileddiag calling new`, {args});
   return new Diagnostic(...args);
 }
 
@@ -451,6 +455,7 @@ function fromContext(...args) {
   var   diag          = sgDiagnostic.diag;
 
   if (!diag) {
+sg.log(`fileddiag fromContext`, {args});
     diag = new Diagnostic(...args);
 
     setContextItem(args[0].context, 'diag', diag);

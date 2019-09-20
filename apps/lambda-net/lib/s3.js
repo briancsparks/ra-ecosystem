@@ -15,7 +15,7 @@ DIAG.activeDevelopment(`--Bucket=quick-net-ingest-dump --AWS_PROFILE=bcs`);
 DIAG.activeDevelopment(`--debug`);
 
 const streamToS3Obj = DIAG.xport({streamToS3: function(argv, context, callback) {
-  const diag    = DIAG.diagnostic({argv, context});
+  const diag    = DIAG.diagnostic({argv, context, callback});
 
   var   {Body}                        = argv;
   var   {Bucket,Key,AWS_PROFILE}      = diag.args();
@@ -61,7 +61,7 @@ DIAG.activeDevelopment(`--Bucket=quick-net-ingest-dump --AWS_PROFILE=bcs`);
 DIAG.activeDevelopment(`--debug`);
 
 const putToS3Obj = DIAG.xport({putToS3: function(argv, context, callback) {
-  const diag    = DIAG.diagnostic({argv, context});
+  const diag    = DIAG.diagnostic({argv, context, callback});
 
   var  {Bucket,Body,Key,AWS_PROFILE}   = diag.args();
 
@@ -106,6 +106,7 @@ function _putToS3_({Body, Bucket, Key, diag}, callback) {
     if (!sg.ok(err, data))  { diag.e(err, `sending upload`, {Bucket, Key}); }
 
     // pushStatus({name:filename, data:{event: '/upload', filename, Bucket, Key, msg:`upload ${filename}`}}, function(){});
+    diag.i(`upload-send-done`, {Bucket, Key, err, data});
 
     return callback(err, data);
   });

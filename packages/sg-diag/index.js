@@ -224,9 +224,9 @@ module.exports.DIAG_ = function(mod) {
    * @param {Array} args - The typical {argv, context}
    * @returns {Object} The new Diagnostic object.
    */
-  self.diagnostic = function(...args) {
+  self.diagnostic = function(args) {
     var diagFunctions           = sgDiagnostic.getContextItem(args.context || self.context, 'diagFunctions') || [];
-    var {argv,context,fnName}   = sg.merge(diagFunctions[0] || {}, args[0]);
+    var {argv,context,fnName}   = sg.merge(diagFunctions[0] || {}, args);
 
     var diag = sgDiagnostic.diagnostic({argv,context,fnName});
     return self.initDiagnostic(diag);
