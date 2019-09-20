@@ -1,6 +1,6 @@
 {
   "name": "sg-build",
-  "version": "1.0.69",
+  "version": "1.0.70",
   "description": "Buildout scripts (runnable with npx)",
   "author": "Brian C Sparks <brian.c.sparks@hp.com>",
   "homepage": "https://github.com/briancsparks/ra-ecosystem#readme",
@@ -28,9 +28,9 @@
     "glob": "^7.1.3",
     "lodash": "^4.17.13",
     "loud-rejection": "^1.6.0",
-    "sg-clihelp": "^1.0.53",
-    "sg-exec": "^1.0.49",
-    "sg-template": "^1.0.61",
+    "sg-clihelp": "^1.0.54",
+    "sg-exec": "^1.0.50",
+    "sg-template": "^1.0.62",
     "sg0": "^1.0.27"
   }
 }
