@@ -62,13 +62,21 @@ hosts.aws_lambda.setDispatcher(function(event, context, callback) {
   sg.log(`Dispatching into app`, {event, context});
 
   return S3.putToS3(event, context, function(err, data) {
-    if (err)      { sg.elog(`handler`, err); return callback(err); }
+    if (err) {
+
+      if (err.httpCode && err.httpCode === 400) {
+        let _400 = sg._400({ok: false}, err);
+        sg.log(`Response from app`, {_400});
+        return callback(..._400);
+      }
+
+      return callback(err);
+    }
 
     sg.log(`handler`, {data});
 
     const _200 = sg._200({ok:true}, data);
-    // const _200 = sg._200();
-    sg.log(`dispatched into app`, {_200});
+    sg.log(`Response from app`, {_200});
     return callback(..._200);
   });
 });

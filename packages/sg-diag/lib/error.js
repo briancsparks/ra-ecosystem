@@ -11,9 +11,15 @@ const { _ }                   = sg;
  *
  * @param {string} message -- The message to send.
  * @param {Object} err     -- An object describing the error.
+ * @param {number} httpCode -- The HTTP response code.
  */
-function SgError(message, err) {
-  this.name  = 'SgError';
+function SgError(message, err, httpCode) {
+  this.name       = 'SgError';
+
+  if (httpCode) {
+    this.httpCode   = httpCode;
+  }
+
   Error.stackTraceLimit = 25;
   Error.captureStackTrace(this, SgError);
 
@@ -43,7 +49,7 @@ SgError.prototype.constructor = SgError;
  */
 var toError = function(e, e2, httpCode) {
   if (e instanceof Error)         { return e; }
-  if (_.isString(e))              { return new SgError(e, e2); }
+  if (_.isString(e))              { return new SgError(e, e2, httpCode); }
   if (_.isArray(e))               { return new Error(JSON.stringify(e), e); }
 
   if (_.isObject(e)) {

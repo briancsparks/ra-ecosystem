@@ -154,7 +154,7 @@ sg.log(`exit1`, {callback: typeof callback});
     if (sg.isnt(callback)) {
       if (self.errors.length > 0) {
         // An ERROR, and no callback function... Must throw
-        throw toError('ENOTVALID', self.errors);
+        throw toError('ENOTVALID', self.errors, 400);
       }
 
       /* otherwise -- success */
@@ -165,7 +165,7 @@ sg.log(`exit1`, {callback: typeof callback});
       if (self.errors.length > 0) {
         // An ERROR, but we have a callback function.
 sg.log(`exit2`, {callback: typeof callback});
-        return callback(self.errors);
+        return callback(toError('ENOTVALID', self.errors, 400));
       }
 
       /* otherwise -- success */

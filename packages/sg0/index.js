@@ -270,6 +270,11 @@ sg.inspect.ndebug = function(x, colors) {
 };
 
 sg.inspect.prod = function(x, colors) {
+  try {
+    return JSON.stringify(x);
+  } catch (err) {
+  }
+
   return util.inspect(x);
 };
 
