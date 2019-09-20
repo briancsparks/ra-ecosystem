@@ -1,7 +1,7 @@
 {
   "name": "lambda-net",
   "private": true,
-  "version": "1.0.23",
+  "version": "1.0.24",
   "description": "lambda-net",
   "main": "index.js",
   "scripts": {
@@ -19,11 +19,11 @@
     "cross-env": "^5.2.0"
   },
   "dependencies": {
-    "quick-net": "^1.0.116",
-    "run-anywhere": "^1.0.96",
-    "sg-argv": "^1.0.53",
-    "sg-config": "^1.0.64",
-    "sg-diag": "^1.0.37",
+    "quick-net": "^1.0.117",
+    "run-anywhere": "^1.0.97",
+    "sg-argv": "^1.0.54",
+    "sg-config": "^1.0.65",
+    "sg-diag": "^1.0.38",
     "sg-env": "^1.0.3",
     "sg-http": "^1.0.4",
     "sg0": "^1.0.27"
