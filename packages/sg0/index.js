@@ -268,9 +268,11 @@ sg.inspect.debug = function(x, colors) {
 sg.inspect.ndebug = function(x, colors) {
   return util.inspect(x, {depth:null, colors: false});
 };
+
 sg.inspect.prod = function(x, colors) {
-  return JSON.stringify(x);
+  return util.inspect(x);
 };
+
 sg.inspect.dev = function(x, colors) {
   return util.inspect(x, {depth:null, colors: colors || sg.modes().debug});
 };

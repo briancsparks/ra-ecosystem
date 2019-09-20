@@ -124,8 +124,10 @@ sg.log(`setupDiag`, {argv, context: !!context, callback: typeof callback});
       var diag = sgDiagnostic.fromContext({argv, context, fnName, callback});
 sg.log(`setupDiag2-back`, {argv, context: !!context, callback: typeof callback});
       self.initDiagnostic(diag);
+sg.log(`setupDiag3-back`, {argv, context: !!context, callback: typeof callback});
 
       diag.i_if(logApi, `--> ${fnName}:`, {argv});
+sg.log(`setupDiag4-back`, {argv, context: !!context, callback: typeof callback});
     };
 
     // Build an impostor to hand out -- this fn will be called, and needs to call the real fn
@@ -171,28 +173,24 @@ sg.log(`interceptorB`, {devCliArgs: self.devCliArgs, argv, context: !!context, c
 
 sg.log(`interceptorB2`, {devCliArgs: self.devCliArgs, argv, context: !!context, callback: typeof callback});
       setupDiag(argv, context, callback);
+sg.log(`interceptorB7`, {devCliArgs: self.devCliArgs, argv});
 
       return interceptCaller(argv, context, async function(callbackCCC) {
+sg.log(`interceptorB3`, {devCliArgs: self.devCliArgs, argv});
 
         // ---------- Load all data ----------
         await self.loadData(fnName);
+sg.log(`interceptorB4`, {devCliArgs: self.devCliArgs, argv, fnName});
 
         // ========== Call the intercepted function ==========
         return intercepted(argv, context, function(err, result) {
+sg.log(`interceptorB5-back from intercepted`, {argv, err, result});
+
           return callbackCCC(function callbackDDD() {
+sg.log(`interceptorB6 final`, {argv, err, result});
             return callback(err, result);
           });
         });
-
-
-
-
-//        const result = await intercepted(argv, context, callback);
-//
-//        return callbackCCC(function callbackDDD() {
-//          return callback(null, result);
-//        });
-
       });
     };
 

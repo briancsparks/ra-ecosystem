@@ -451,6 +451,11 @@ sg.log(`fileddiag calling new`, {args});
   return new Diagnostic(args);
 }
 
+
+
+
+
+
 function fromContext(args) {
 sg.log(`fileddiag fromContext0`, {args, callback: typeof args.callback});
 

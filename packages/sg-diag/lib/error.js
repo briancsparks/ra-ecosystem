@@ -36,11 +36,12 @@ SgError.prototype.constructor = SgError;
  *
  * Will create an SgError from a string, so you can pass in 'ENOENT. Not found', for example
  *
- * @param {*} e -- The error object.
+ * @param {*} e -- The error code like ENOENT.
  * @param {*} e2 -- The error object.
+ * @param {number} httpCode -- The HTTP response code.
  * @returns {*} An Error-derived object.
  */
-var toError = function(e, e2) {
+var toError = function(e, e2, httpCode) {
   if (e instanceof Error)         { return e; }
   if (_.isString(e))              { return new SgError(e, e2); }
   if (_.isArray(e))               { return new Error(JSON.stringify(e), e); }
