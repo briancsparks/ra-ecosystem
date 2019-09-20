@@ -122,6 +122,7 @@ sg.log(`setupDiag`, {argv, context: !!context, callback: typeof callback});
 
       // ---------- Create a diag object for this invocation ----------
       var diag = sgDiagnostic.fromContext({argv, context, fnName, callback});
+sg.log(`setupDiag2-back`, {argv, context: !!context, callback: typeof callback});
       self.initDiagnostic(diag);
 
       diag.i_if(logApi, `--> ${fnName}:`, {argv});

@@ -450,19 +450,24 @@ sg.log(`fileddiag calling new`, {args});
 }
 
 function fromContext(args) {
+sg.log(`fileddiag fromContext0`, {args});
 
   // var   sgDiagnostic  = (args.context ||{}).sgDiagnostic || {};
   // var   diag          = sgDiagnostic.diag;
 
   var   diag = getContextItem(args.context, 'diag');
+sg.log(`fileddiag fromContext1`, {args});
 
   if (!diag) {
-sg.log(`fileddiag fromContext`, {args});
+sg.log(`fileddiag fromContext2`, {args});
     diag = new Diagnostic(args);
+sg.log(`fileddiag fromContext3`, {args});
 
     setContextItem(args.context, 'diag', diag);
+sg.log(`fileddiag fromContext4`, {args});
   }
 
+sg.log(`fileddiag fromContext5`, {args});
   return diag;
 }
 
