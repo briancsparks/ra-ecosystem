@@ -115,11 +115,11 @@ module.exports.DIAG_ = function(mod) {
 
     bigBanner('green', `Hijacking the overall function: ${fnName}`);
 
-    const setupDiag = function(argv, context) {
+    const setupDiag = function(argv, context, callback) {
       const logApi    = argv.log_api || process.env.SG_LOG_API;
 
       // ---------- Create a diag object for this invocation ----------
-      var diag = sgDiagnostic.fromContext({argv, context, fnName});
+      var diag = sgDiagnostic.fromContext({argv, context, fnName, callback});
       self.initDiagnostic(diag);
 
       diag.i_if(logApi, `--> ${fnName}:`, {argv});
@@ -128,14 +128,15 @@ module.exports.DIAG_ = function(mod) {
     // Build an impostor to hand out -- this fn will be called, and needs to call the real fn
     // This is for when !isActuallyContinuationStyle
     const interceptorFnA = /*async*/ function(argv, context) {
+sg.log(`interceptorA`, {devCliArgs: self.devCliArgs});
 
       // If we are active development, use those args
       if (process.env.ACTIVE_DEVELOPMENT && self.devCliArgs) {
         argv = sg.merge(argv ||{}, mkArgv(self.devCliArgs));
-        console.log(`invoking ${fnName}`, util.inspect({argv, async: !isActuallyContinuationStyle}, {depth:null, color:true}));
+        console.log(`invokingFnA ${fnName}`, util.inspect({argv, async: !isActuallyContinuationStyle}, {depth:null, color:true}));
       }
 
-      setupDiag(argv, context);
+      setupDiag(argv, context, null);
 
       return new Promise(async (resolve, reject) => {
 
@@ -157,14 +158,15 @@ module.exports.DIAG_ = function(mod) {
 
     // This is for when isActuallyContinuationStyle
     const interceptorFnB = function(argv, context, callback) {
+sg.log(`interceptorB`, {devCliArgs: self.devCliArgs});
 
       // If we are active development, use those args
       if (process.env.ACTIVE_DEVELOPMENT && self.devCliArgs) {
         argv = sg.merge(argv ||{}, mkArgv(self.devCliArgs));
-        console.log(`invoking ${fnName}`, util.inspect({argv, async: !isActuallyContinuationStyle}, {depth:null, color:true}));
+        console.log(`invokingFnB ${fnName}`, util.inspect({argv, async: !isActuallyContinuationStyle}, {depth:null, color:true}));
       }
 
-      setupDiag(argv, context);
+      setupDiag(argv, context, callback);
 
       return interceptCaller(argv, context, async function(callbackCCC) {
 
@@ -238,7 +240,7 @@ module.exports.DIAG_ = function(mod) {
     var diagFunctions           = sgDiagnostic.getContextItem(args.context || self.context, 'diagFunctions') || [];
     var {argv,context,fnName}   = sg.merge(diagFunctions[0] || {}, args);
 
-    var diag = sgDiagnostic.diagnostic({argv,context,fnName});
+    var diag = sgDiagnostic.diagnostic(args);
     return self.initDiagnostic(diag);
   };
 
