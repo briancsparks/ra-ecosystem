@@ -13,7 +13,7 @@ module.exports.setContextItem = setContextItem;
 module.exports.getContextItem = getContextItem;
 
 function Diagnostic(ctorArgs) {
-sg.log(`Dctor`, {ctorArgs});
+sg.log(`Dctor`, {ctorArgs, callback: typeof ctorArgs.callback});
   var   self    = this;
 
   self.fnName   = ctorArgs.fnName;
@@ -148,6 +148,7 @@ sg.log(`Dctor`, {ctorArgs});
 
     // See if there was a callback function to use.
     const callback    = getCallback(ctorArgs);
+sg.log(`exit1`, {callback: typeof callback});
 
     // TODO: Check self.errors, callback, etc.
     if (sg.isnt(callback)) {
@@ -163,6 +164,7 @@ sg.log(`Dctor`, {ctorArgs});
     if (_.isFunction(callback)) {
       if (self.errors.length > 0) {
         // An ERROR, but we have a callback function.
+sg.log(`exit2`, {callback: typeof callback});
         return callback(self.errors);
       }
 
@@ -450,24 +452,24 @@ sg.log(`fileddiag calling new`, {args});
 }
 
 function fromContext(args) {
-sg.log(`fileddiag fromContext0`, {args});
+sg.log(`fileddiag fromContext0`, {args, callback: typeof args.callback});
 
   // var   sgDiagnostic  = (args.context ||{}).sgDiagnostic || {};
   // var   diag          = sgDiagnostic.diag;
 
   var   diag = getContextItem(args.context, 'diag');
-sg.log(`fileddiag fromContext1`, {args});
+sg.log(`fileddiag fromContext1`, {args, callback: typeof args.callback});
 
   if (!diag) {
-sg.log(`fileddiag fromContext2`, {args});
+sg.log(`fileddiag fromContext2`, {args, callback: typeof args.callback});
     diag = new Diagnostic(args);
-sg.log(`fileddiag fromContext3`, {args});
+sg.log(`fileddiag fromContext3`, {args, callback: typeof args.callback});
 
     setContextItem(args.context, 'diag', diag);
-sg.log(`fileddiag fromContext4`, {args});
+sg.log(`fileddiag fromContext4`, {args, callback: typeof args.callback});
   }
 
-sg.log(`fileddiag fromContext5`, {args});
+sg.log(`fileddiag fromContext5`, {args, callback: typeof args.callback});
   return diag;
 }
 
