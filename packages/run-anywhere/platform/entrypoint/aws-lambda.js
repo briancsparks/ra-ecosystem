@@ -9,7 +9,7 @@ var   handlerFns    = [];
 // Lambda handler for the function of being the entrypoint
 exports.platform_entrypoint_lambda_handler = function(event, context, callback) {
   return dispatch(event, context, function(err, response) {
-    sg.log(`RA_Platform.lambda_handler`, {err, response});
+    sg.log(`RA_Entrypoint.lambda_handler`, {err, response});
     return callback(err, response);
   });
 };
@@ -31,6 +31,8 @@ function dispatch(event, context, callback) {
 
   if (!handled) {
     console.log(`lambda_handler not found while dispatching from the platform entrypoint.`);
+
+    return callback(null, {statusCode: 404, body: JSON.stringify({ok: false})});
   }
 }
 

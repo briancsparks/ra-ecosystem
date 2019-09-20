@@ -16,14 +16,13 @@ exports.platform_host_lambda_handler = function(event, context, callback) {
     context   : JSON.parse(JSON.stringify(context)),
   };
 
-  // return dispatch(event, context, callback);
   return dispatcher(event, context, function(err, response) {
     const endTime = new Date().getTime();
     sg.log(`RA_Host.lambda_handler: (${(endTime - startTime) * 1000})`, {event, err, response});
 
     // OK?
-    if (err || !response.ok) {
-      callback(err, response);
+    if (err || !response || !response.ok) {
+      return callback(err, response);
     }
 
     // Now we have to translate it into a valid lambda response
@@ -61,6 +60,8 @@ function dispatch(event, context, callback) {
 
   if (!handled) {
     console.log(`lambda_handler not found`);
+
+    return callback(null, {statusCode: 404, body: JSON.stringify({ok: false})});
   }
 }
 
