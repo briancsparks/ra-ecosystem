@@ -118,6 +118,8 @@ module.exports.DIAG_ = function(mod) {
     const setupDiag = function(argv, context, callback) {
       const logApi    = argv.log_api || process.env.SG_LOG_API;
 
+sg.log(`setupDiag`, {argv, context: !!context, callback: typeof callback});
+
       // ---------- Create a diag object for this invocation ----------
       var diag = sgDiagnostic.fromContext({argv, context, fnName, callback});
       self.initDiagnostic(diag);
@@ -158,7 +160,7 @@ sg.log(`interceptorA`, {devCliArgs: self.devCliArgs});
 
     // This is for when isActuallyContinuationStyle
     const interceptorFnB = function(argv, context, callback) {
-sg.log(`interceptorB`, {devCliArgs: self.devCliArgs});
+sg.log(`interceptorB`, {devCliArgs: self.devCliArgs, argv, context: !!context, callback: typeof callback});
 
       // If we are active development, use those args
       if (process.env.ACTIVE_DEVELOPMENT && self.devCliArgs) {
@@ -166,6 +168,7 @@ sg.log(`interceptorB`, {devCliArgs: self.devCliArgs});
         console.log(`invokingFnB ${fnName}`, util.inspect({argv, async: !isActuallyContinuationStyle}, {depth:null, color:true}));
       }
 
+sg.log(`interceptorB2`, {devCliArgs: self.devCliArgs, argv, context: !!context, callback: typeof callback});
       setupDiag(argv, context, callback);
 
       return interceptCaller(argv, context, async function(callbackCCC) {
