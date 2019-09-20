@@ -172,11 +172,21 @@ module.exports.DIAG_ = function(mod) {
         await self.loadData(fnName);
 
         // ========== Call the intercepted function ==========
-        const result = await intercepted(argv, context);
-
-        return callbackCCC(function callbackDDD() {
-          return callback(null, result);
+        return intercepted(argv, context, function(err, result) {
+          return callbackCCC(function callbackDDD() {
+            return callback(err, result);
+          });
         });
+
+
+
+
+//        const result = await intercepted(argv, context, callback);
+//
+//        return callbackCCC(function callbackDDD() {
+//          return callback(null, result);
+//        });
+
       });
     };
 
