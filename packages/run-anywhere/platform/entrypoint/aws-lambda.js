@@ -23,7 +23,7 @@ exports.platform_entrypoint_lambda_handler = function(event_, context, callback)
   logApi(`RA_Entrypoint.lambda_handler.params`, {event:event_, context});
 
   const body      = decodeBody(event_);
-  const smEvent   = {...event_, payload: [event_.payload[0] || {}, `...and ${event_.payload.length} more.`]};
+  const smEvent   = {...event_, body: {payload: [body.payload[0] ||{}, `...and ${body.payload.length} more.`]}};
   const event     = useSmEvents ? smEvent : event;
 
   logApi(`RA_Entrypoint.lambda_handler.params`, {event, context});
@@ -130,16 +130,17 @@ function decodeBody(event) {
     body_       = buf.toString('ascii');
   }
 
-  body_ = sg.safeJSONParse(body_);
+  body_ = sg.safeJSONParse(body_)   || {payload:[]};
 
   // Make much smaller sometimes
   if (sg.modes().debug) {
-    if (Array.isArray(body_.payload)) {
+    if (Array.isArray(body_.payload) && body_.payload.length > 1) {
       body_ = {...body_, payload: [body_.payload[0], `${body_.payload.length} more items.`]};
     }
   }
 
-  event.body = body_;
+  event.body              = body_;
+  event.isBase64Encoded   = false;
 
   return body_;
 }
