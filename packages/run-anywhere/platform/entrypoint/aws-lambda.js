@@ -6,7 +6,8 @@ const sg                        = require('sg0');
 const _                         = require('lodash');
 const utils                     = require('./utils');
 
-const logApiCalls   = !!process.env.SG_LOG_RA_API || true;      // TODO: remove
+const logApiCalls   = !!process.env.SG_LOG_RA_API       || true;      // TODO: remove
+const useSmEvents   = !!process.env.SG_LOG_SMALL_EVENTS || true;      // TODO: remove
 var   handlerFns    = [];
 
 function logApi(msg, obj, ...rest) {
@@ -19,20 +20,25 @@ function logApi(msg, obj, ...rest) {
 
 // Lambda handler for the function of being the entrypoint
 exports.platform_entrypoint_lambda_handler = function(event, context, callback) {
-  logApi(`RA_Entrypoint.lambda_handler.params`, {event, context, callbackType: typeof callback});
+  const smEvent = {...event, payload: [event.payload[0] || {}, `...and ${event.payload.length} more.`]};
 
-  return dispatch(event, context, function(err, response) {
+  return dispatch(useSmEvents ? smEvent : event, context, function(err, response) {
     logApi(`RA_Entrypoint.lambda_handler.response`, {err, response});
     return callback(err, response);
   });
 };
 
 function dispatch(event, context_, callback) {
+  logApi(`LAMBDA_Net.Dispatcher.start`, {event, context:context_});
+
+  // So, this is it! We are now handling the event/request. We have to dispatch it, and
+  // then handle the final callback to the AWS service.
 
   // Turn it into argv,context,callback
   var   {argv,context}      = argvify(event, context_);
-  // var   context   = {...context_};
 
+  // TODO: Dispatch it somewhere
+  // [[Fake it for now]]
   logApi(`Dispatching into app`, {argv, context});
 
   // Loop over the registered handlers, and see which one to give it to
@@ -91,7 +97,6 @@ function argvify(event_, context_) {
       event   : event_
     }
   };
-
 
   return {argv,context};
 }

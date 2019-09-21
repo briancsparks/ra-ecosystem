@@ -52,13 +52,14 @@ entrypoints.aws_lambda.registerHandler(() => true, hosts.aws_lambda.platform_hos
 
 // -------------------------------------------------------------------------------------
 // Now we also have to register with RAs `host` module.
-hosts.aws_lambda.setDispatcher(function(event, context, callback) {
+hosts.aws_lambda.setDispatcher(function(event, context_, callback) {
+  sg.log(`LAMBDA_Net.Dispatcher.start`, {event, context:context_});
 
   // So, this is it! We are now handling the event/request. We have to dispatch it, and
   // then handle the final callback to the AWS service.
 
   // Convert to argv -- TODO: remove once it is in ra
-  const argv = argvify(event, context);
+  const {argv,context}      = argvify(event, context_);
 
   // TODO: Dispatch it somewhere
   // [[Fake it for now]]
