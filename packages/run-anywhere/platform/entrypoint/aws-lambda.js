@@ -19,10 +19,16 @@ function logApi(msg, obj, ...rest) {
 // -----------------------------------------------------------------
 
 // Lambda handler for the function of being the entrypoint
-exports.platform_entrypoint_lambda_handler = function(event, context, callback) {
-  const smEvent = {...event, payload: [event.payload[0] || {}, `...and ${event.payload.length} more.`]};
+exports.platform_entrypoint_lambda_handler = function(event_, context, callback) {
+  logApi(`RA_Entrypoint.lambda_handler.params`, {event:event_, context});
 
-  return dispatch(useSmEvents ? smEvent : event, context, function(err, response) {
+  const body      = decodeBody(event_);
+  const smEvent   = {...event_, payload: [event_.payload[0] || {}, `...and ${event_.payload.length} more.`]};
+  const event     = useSmEvents ? smEvent : event;
+
+  logApi(`RA_Entrypoint.lambda_handler.params`, {event, context});
+
+  return dispatch(event, context, function(err, response) {
     logApi(`RA_Entrypoint.lambda_handler.response`, {err, response});
     return callback(err, response);
   });
@@ -111,8 +117,11 @@ function multiItemItems(obj) {
   });
 }
 
-function decodeBody({body, isBase64Encoded}) {
-  if (sg.isnt(body))  { return body; }
+function decodeBody(event) {
+  const {body, isBase64Encoded} = event;
+
+  if (sg.isnt(body))        { return body; }
+  if (!_.isString(body))    { return body; }    /* already parsed */
 
   var body_ = body;
 
@@ -129,6 +138,8 @@ function decodeBody({body, isBase64Encoded}) {
       body_ = {...body_, payload: [body_.payload[0], `${body_.payload.length} more items.`]};
     }
   }
+
+  event.body = body_;
 
   return body_;
 }

@@ -65,7 +65,7 @@ hosts.aws_lambda.setDispatcher(function(event, context_, callback) {
   // [[Fake it for now]]
   sg.log(`Dispatching into app`, {argv, context});
 
-  if (event.path === '/test') {
+  if (context.event.path === '/test') {
     // TODO: add body
 
 //    var   query = sg.extend(event.queryStringParameters, multiItemItems(event.multiValueQueryStringParameters));
@@ -74,7 +74,7 @@ hosts.aws_lambda.setDispatcher(function(event, context_, callback) {
 
     var   query = argv.__meta__.query;
     var   body  = argv.__meta__.body;
-    var   data  = {argv, query, body, event};
+    var   data  = {argv, query, body, event: context.event};
 
     const _200 = sg._200({ok:true, ...data});
     sg.log(`Responding to /test request`, {_200});
