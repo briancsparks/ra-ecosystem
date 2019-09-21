@@ -59,18 +59,14 @@ hosts.aws_lambda.setDispatcher(function(event, context_, callback) {
   // then handle the final callback to the AWS service.
 
   // Convert to argv -- TODO: remove once it is in ra
-  const {argv,context}      = argvify(event, context_);
+  // const [argv, context]      = argvify(event, context_);
+  const [argv, context]      = [event, context_];
 
   // TODO: Dispatch it somewhere
   // [[Fake it for now]]
-  sg.log(`Dispatching into app`, {argv, context});
+  sg.log(`LAMBDA_Net::params`, {argv, context});
 
   if (context.event.path === '/test') {
-    // TODO: add body
-
-//    var   query = sg.extend(event.queryStringParameters, multiItemItems(event.multiValueQueryStringParameters));
-//    var   body  = decodeBody(event);
-//    var   argv  = {...body, ...query};
 
     var   query = argv.__meta__.query;
     var   body  = argv.__meta__.body;
@@ -113,9 +109,10 @@ function fixResponseForApiGatewayLambdaProxy(err, resp) {
 }
 
 function argvify(event_, context_) {
+
   // Already been done?
   if (event_.__meta__) {
-    return event_;
+    return [event_, context_];
   }
 
   const event = {...event_};
@@ -142,7 +139,7 @@ function argvify(event_, context_) {
   };
 
 
-  return {argv,context};
+  return [argv,context];
 }
 
 function multiItemItems(obj) {
@@ -155,8 +152,11 @@ function multiItemItems(obj) {
   });
 }
 
-function decodeBody({body, isBase64Encoded}) {
-  if (sg.isnt(body))  { return body; }
+function decodeBody(event) {
+  const {body, isBase64Encoded} = event;
+
+  if (sg.isnt(body))        { return body; }
+  if (!_.isString(body))    { return body; }    /* already parsed */
 
   var body_ = body;
 
@@ -165,14 +165,17 @@ function decodeBody({body, isBase64Encoded}) {
     body_       = buf.toString('ascii');
   }
 
-  body_ = sg.safeJSONParse(body_);
+  body_ = sg.safeJSONParse(body_)   || {payload:[]};
 
   // Make much smaller sometimes
   if (sg.modes().debug) {
-    if (Array.isArray(body_.payload)) {
+    if (Array.isArray(body_.payload) && body_.payload.length > 1) {
       body_ = {...body_, payload: [body_.payload[0], `${body_.payload.length} more items.`]};
     }
   }
+
+  event.body              = body_;
+  event.isBase64Encoded   = false;
 
   return body_;
 }

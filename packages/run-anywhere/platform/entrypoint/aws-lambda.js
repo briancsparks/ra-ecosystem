@@ -6,9 +6,8 @@ const sg                        = require('sg0');
 const _                         = require('lodash');
 const utils                     = require('./utils');
 
-const logApiCalls   = !!process.env.SG_LOG_RA_API       || true;      // TODO: remove
-const useSmEvents   = !!process.env.SG_LOG_SMALL_EVENTS || true;      // TODO: remove
 var   handlerFns    = [];
+const logApiCalls   = !!process.env.SG_LOG_RA_ENTRYPOINT_API       || true;      // TODO: remove
 
 function logApi(msg, obj, ...rest) {
   if (!logApiCalls) { return; }
@@ -20,28 +19,29 @@ function logApi(msg, obj, ...rest) {
 
 // Lambda handler for the function of being the entrypoint
 exports.platform_entrypoint_lambda_handler = function(event_, context, callback) {
-  logApi(`RA_Entrypoint.lambda_handler.params`, {event:event_, context});
+  logApi(`lambda_handler.params`, {event:event_, context});
 
-  const body      = decodeBody(event_);
-  const smEvent   = {...event_, body: {payload: [body.payload[0] ||{}, `...and ${body.payload.length} more.`]}};
-  const event     = useSmEvents ? smEvent : event;
+//  const body      = decodeBody(event_);
+//  const smEvent   = {...event_, body: {...body, payload: [body.payload[0] ||{}, `...and ${body.payload.length} more.`]}};
+//  const event     = useSmEvents ? smEvent : event;
 
-  logApi(`RA_Entrypoint.lambda_handler.params`, {event, context});
+//  logApi(`lambda_handler.params`, {event, context});
 
   return dispatch(event, context, function(err, response) {
-    logApi(`RA_Entrypoint.lambda_handler.response`, {err, response});
+    logApi(`lambda_handler.response`, {err, response});
     return callback(err, response);
   });
 };
 
 function dispatch(event, context_, callback) {
-  logApi(`LAMBDA_Net.Dispatcher.start`, {event, context:context_});
+  logApi(`dispatch.start`, {event, context:context_});
 
   // So, this is it! We are now handling the event/request. We have to dispatch it, and
   // then handle the final callback to the AWS service.
 
   // Turn it into argv,context,callback
-  var   {argv,context}      = argvify(event, context_);
+//  var   [argv,context]      = argvify(event, context_);
+  var   [argv,context]      = [event, context_];
 
   // TODO: Dispatch it somewhere
   // [[Fake it for now]]
@@ -80,70 +80,70 @@ function mkHandlerWrapper(select, handleIt) {
   return {select, handleIt};
 }
 
-function argvify(event_, context_) {
-  const event = {...event_};
+// function argvify(event_, context_) {
+//   const event = {...event_};
 
-  const query     = sg.extend(event.queryStringParameters, multiItemItems(event.multiValueQueryStringParameters));
-  const body      = decodeBody(event);
+//   const query     = sg.extend(event.queryStringParameters, multiItemItems(event.multiValueQueryStringParameters));
+//   const body      = decodeBody(event);
 
-  const headers   = sg.extend(event.headers, multiItemItems(event.multiValueHeaders));
+//   const headers   = sg.extend(event.headers, multiItemItems(event.multiValueHeaders));
 
-  const argvs     = {...headers, ...(event.pathParameters ||{}), ...(event.stageVariables ||{}), ...body, ...query};
+//   const argvs     = {...headers, ...(event.pathParameters ||{}), ...(event.stageVariables ||{}), ...body, ...query};
 
-  const context   = {...context_, event: event_};
+//   const context   = {...context_, event: event_};
 
-  const argv = {
-    ...argvs,
-    __meta__: {
-      query,
-      body,
-      path    : event.path,
-      method  : event.method,
+//   const argv = {
+//     ...argvs,
+//     __meta__: {
+//       query,
+//       body,
+//       path    : event.path,
+//       method  : event.method,
 
-      event   : event_
-    }
-  };
+//       event   : event_
+//     }
+//   };
 
-  return {argv,context};
-}
+//   return [argv,context];
+// }
 
-function multiItemItems(obj) {
-  return sg.reduce(obj, {}, (m,v,k) => {
-    if (v.length > 1) {
-      return sg.kv(m,k,v);
-    }
+// function multiItemItems(obj) {
+//   return sg.reduce(obj, {}, (m,v,k) => {
+//     if (v.length > 1) {
+//       return sg.kv(m,k,v);
+//     }
 
-    return m;
-  });
-}
+//     return m;
+//   });
+// }
 
-function decodeBody(event) {
-  const {body, isBase64Encoded} = event;
+// function decodeBody(event) {
+//   const {body, isBase64Encoded} = event;
 
-  if (sg.isnt(body))        { return body; }
-  if (!_.isString(body))    { return body; }    /* already parsed */
+//   if (sg.isnt(body))        { return body; }
+//   if (!_.isString(body))    { return body; }    /* already parsed */
 
-  var body_ = body;
+//   var body_ = body;
 
-  if (isBase64Encoded) {
-    const buf   = new Buffer(body, 'base64');
-    body_       = buf.toString('ascii');
-  }
+//   if (isBase64Encoded) {
+//     const buf   = new Buffer(body, 'base64');
+//     body_       = buf.toString('ascii');
+//   }
 
-  body_ = sg.safeJSONParse(body_)   || {payload:[]};
+//   body_ = sg.safeJSONParse(body_)   || {payload:[]};
 
-  // Make much smaller sometimes
-  if (sg.modes().debug) {
-    if (Array.isArray(body_.payload) && body_.payload.length > 1) {
-      body_ = {...body_, payload: [body_.payload[0], `${body_.payload.length} more items.`]};
-    }
-  }
+//   // Make much smaller sometimes
+//   if (sg.modes().debug) {
+//     if (Array.isArray(body_.payload) && body_.payload.length > 1) {
+//       body_ = {...body_, payload: [body_.payload[0], `${body_.payload.length} more items.`]};
+//     }
+//   }
 
-  event.body              = body_;
-  event.isBase64Encoded   = false;
+//   event.body              = body_;
+//   event.isBase64Encoded   = false;
 
-  return body_;
-}
+//   return body_;
+// }
 
 function fixResponseForApiGatewayLambdaProxy(resp) {
 
