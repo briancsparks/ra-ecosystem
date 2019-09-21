@@ -57,12 +57,12 @@ hosts.aws_lambda.setDispatcher(function(event, context, callback) {
   // So, this is it! We are now handling the event/request. We have to dispatch it, and
   // then handle the final callback to the AWS service.
 
-  // TODO: Dispatch it somewhere
-  // [[Fake it for now]]
-  sg.log(`Dispatching into app`, {event, context});
-
   // Convert to argv -- TODO: remove once it is in ra
   const argv = argvify(event, context);
+
+  // TODO: Dispatch it somewhere
+  // [[Fake it for now]]
+  sg.log(`Dispatching into app`, {argv, context});
 
   if (event.path === '/test') {
     // TODO: add body
@@ -111,20 +111,37 @@ function fixResponseForApiGatewayLambdaProxy(err, resp) {
   }];
 }
 
-function argvify(event_, context) {
+function argvify(event_, context_) {
+  // Already been done?
+  if (event_.__meta__) {
+    return event_;
+  }
+
   const event = {...event_};
 
-  var   query = sg.extend(event.queryStringParameters, multiItemItems(event.multiValueQueryStringParameters));
-  var   body  = decodeBody(event);
-  var   argv  = {...body, ...query};
+  const query     = sg.extend(event.queryStringParameters, multiItemItems(event.multiValueQueryStringParameters));
+  const body      = decodeBody(event);
 
-  return {
-    ...argv,
+  const headers   = sg.extend(event.headers, multiItemItems(event.multiValueHeaders));
+
+  const argvs     = {...headers, ...(event.pathParameters ||{}), ...(event.stageVariables ||{}), ...body, ...query};
+
+  const context   = {...context_, event: event_};
+
+  const argv = {
+    ...argvs,
     __meta__: {
       query,
-      body
+      body,
+      path    : event.path,
+      method  : event.method,
+
+      event   : event_
     }
   };
+
+
+  return {argv,context};
 }
 
 function multiItemItems(obj) {
@@ -147,7 +164,16 @@ function decodeBody({body, isBase64Encoded}) {
     body_       = buf.toString('ascii');
   }
 
-  return sg.safeJSONParse(body_);
+  body_ = sg.safeJSONParse(body_);
+
+  // Make much smaller sometimes
+  if (sg.modes().debug) {
+    if (Array.isArray(body_.payload)) {
+      body_ = {...body_, payload: [body_.payload[0], `${body_.payload.length} more items.`]};
+    }
+  }
+
+  return body_;
 }
 
 // -------------------------------------------------------------------------------------

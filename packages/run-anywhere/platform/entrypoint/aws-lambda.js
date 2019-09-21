@@ -1,4 +1,4 @@
-
+if (process.env.SG_VVVERBOSE) console[process.env.SG_LOAD_STREAM || 'log'](`Loading ${__filename}`);
 
 // TODO: This should be called api-gateway.js -- thats the entrypoint
 
@@ -6,27 +6,34 @@ const sg                        = require('sg0');
 const _                         = require('lodash');
 const utils                     = require('./utils');
 
+const logApiCalls   = !!process.env.SG_LOG_RA_API || true;      // TODO: remove
 var   handlerFns    = [];
+
+function logApi(msg, obj, ...rest) {
+  if (!logApiCalls) { return; }
+
+  sg.log(`LOGAPI (RA_Entrypoint): ${msg}`, obj, ...rest);
+}
 
 // -----------------------------------------------------------------
 
 // Lambda handler for the function of being the entrypoint
 exports.platform_entrypoint_lambda_handler = function(event, context, callback) {
+  logApi(`RA_Entrypoint.lambda_handler.params`, {event, context, callbackType: typeof callback});
+
   return dispatch(event, context, function(err, response) {
-    sg.log(`RA_Entrypoint.lambda_handler`, {err, response});
+    logApi(`RA_Entrypoint.lambda_handler.response`, {err, response});
     return callback(err, response);
   });
-};
-
-exports.registerHandler = function(selector, handler) {
-  handlerFns.push(mkHandlerWrapper(selector, handler));
 };
 
 function dispatch(event, context_, callback) {
 
   // Turn it into argv,context,callback
-  var   argv      = argvify(event);
-  var   context   = {...context_};
+  var   {argv,context}      = argvify(event, context_);
+  // var   context   = {...context_};
+
+  logApi(`Dispatching into app`, {argv, context});
 
   // Loop over the registered handlers, and see which one to give it to
   var   handled       = false;
@@ -53,24 +60,40 @@ function dispatch(event, context_, callback) {
   }
 }
 
+exports.registerHandler = function(selector, handler) {
+  handlerFns.push(mkHandlerWrapper(selector, handler));
+};
+
 function mkHandlerWrapper(select, handleIt) {
   return {select, handleIt};
 }
 
-function argvify(event_, context) {
+function argvify(event_, context_) {
   const event = {...event_};
 
-  var   query = sg.extend(event.queryStringParameters, multiItemItems(event.multiValueQueryStringParameters));
-  var   body  = decodeBody(event);
-  var   argv  = {...body, ...query};
+  const query     = sg.extend(event.queryStringParameters, multiItemItems(event.multiValueQueryStringParameters));
+  const body      = decodeBody(event);
 
-  return {
-    ...argv,
+  const headers   = sg.extend(event.headers, multiItemItems(event.multiValueHeaders));
+
+  const argvs     = {...headers, ...(event.pathParameters ||{}), ...(event.stageVariables ||{}), ...body, ...query};
+
+  const context   = {...context_, event: event_};
+
+  const argv = {
+    ...argvs,
     __meta__: {
       query,
-      body
+      body,
+      path    : event.path,
+      method  : event.method,
+
+      event   : event_
     }
   };
+
+
+  return {argv,context};
 }
 
 function multiItemItems(obj) {
@@ -93,7 +116,16 @@ function decodeBody({body, isBase64Encoded}) {
     body_       = buf.toString('ascii');
   }
 
-  return sg.safeJSONParse(body_);
+  body_ = sg.safeJSONParse(body_);
+
+  // Make much smaller sometimes
+  if (sg.modes().debug) {
+    if (Array.isArray(body_.payload)) {
+      body_ = {...body_, payload: [body_.payload[0], `${body_.payload.length} more items.`]};
+    }
+  }
+
+  return body_;
 }
 
 function fixResponseForApiGatewayLambdaProxy(resp) {
