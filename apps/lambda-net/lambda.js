@@ -61,13 +61,32 @@ hosts.aws_lambda.setDispatcher(function(event, context, callback) {
   // [[Fake it for now]]
   sg.log(`Dispatching into app`, {event, context});
 
-  return S3.putToS3(event, context, function(err, data) {
+  // Convert to argv -- TODO: remove once it is in ra
+  const argv = argvify(event, context);
+
+  if (event.path === '/test') {
+    // TODO: add body
+
+//    var   query = sg.extend(event.queryStringParameters, multiItemItems(event.multiValueQueryStringParameters));
+//    var   body  = decodeBody(event);
+//    var   argv  = {...body, ...query};
+
+    var   query = argv.__meta__.query;
+    var   body  = argv.__meta__.body;
+    var   data  = {argv, query, body, event};
+
+    const _200 = sg._200({ok:true, ...data});
+    sg.log(`Responding to /test request`, {_200});
+    return callback(...fixResponseForApiGatewayLambdaProxy(..._200));
+  }
+
+  return S3.putToS3(argv, context, function(err, data) {
     if (err) {
 
       if (err.httpCode && err.httpCode === 400) {
         let _400 = sg._400({ok: false}, err);
         sg.log(`Response from app`, {_400});
-        return callback(..._400);
+        return callback(...fixResponseForApiGatewayLambdaProxy(..._400));
       }
 
       return callback(err);
@@ -77,9 +96,59 @@ hosts.aws_lambda.setDispatcher(function(event, context, callback) {
 
     const _200 = sg._200({ok:true}, data);
     sg.log(`Response from app`, {_200});
-    return callback(..._200);
+    return callback(...fixResponseForApiGatewayLambdaProxy(..._200));
   });
 });
+
+function fixResponseForApiGatewayLambdaProxy(err, resp) {
+
+  // NOTE: You can also have "headers" : {}
+
+  return [ err, {
+    statusCode        : resp.statusCode ||  resp.httpCode || (resp.ok === true ? 200 : 404),
+    body              : JSON.stringify(resp),
+    isBase64Encoded   : false
+  }];
+}
+
+function argvify(event_, context) {
+  const event = {...event_};
+
+  var   query = sg.extend(event.queryStringParameters, multiItemItems(event.multiValueQueryStringParameters));
+  var   body  = decodeBody(event);
+  var   argv  = {...body, ...query};
+
+  return {
+    ...argv,
+    __meta__: {
+      query,
+      body
+    }
+  };
+}
+
+function multiItemItems(obj) {
+  return sg.reduce(obj, {}, (m,v,k) => {
+    if (v.length > 1) {
+      return sg.kv(m,k,v);
+    }
+
+    return m;
+  });
+}
+
+function decodeBody({body, isBase64Encoded}) {
+  if (sg.isnt(body))  { return body; }
+
+  var body_ = body;
+
+  if (isBase64Encoded) {
+    const buf   = new Buffer(body, 'base64');
+    body_       = buf.toString('ascii');
+  }
+
+  return sg.safeJSONParse(body_);
+}
 
 // -------------------------------------------------------------------------------------
 // This is a function to enable smoke testing.

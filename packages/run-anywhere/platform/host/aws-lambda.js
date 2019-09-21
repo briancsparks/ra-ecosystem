@@ -1,6 +1,7 @@
 
 const sg                        = require('sg0');
 const _                         = require('lodash');
+const utils                     = require('./utils');
 
 
 var   handlerFns    = [];
@@ -18,18 +19,17 @@ exports.platform_host_lambda_handler = function(event, context, callback) {
 
   return dispatcher(event, context, function(err, response) {
     const endTime = new Date().getTime();
-    sg.log(`RA_Host.lambda_handler: (${(endTime - startTime) * 1000})`, {event, err, response});
+
+    const fixedResponse = utils.fixResponse(response);
+
+    sg.log(`RA_Host.lambda_handler: (${(endTime - startTime) * 1000})`, {event, err, response, fixedResponse});
 
     // OK?
     if (err || !response || !response.ok) {
-      return callback(err, response);
+      return callback(err, fixedResponse);
     }
 
-    // Now we have to translate it into a valid lambda response
-    const statusCode  = response.httpCode || 200;
-    const body        = JSON.stringify(response);
-
-    callback(err, {statusCode, body});    /* can also have 'headers' */
+    callback(err, fixedResponse);
   });
 };
 
@@ -61,7 +61,7 @@ function dispatch(event, context, callback) {
   if (!handled) {
     console.log(`lambda_handler not found`);
 
-    return callback(null, {statusCode: 404, body: JSON.stringify({ok: false})});
+    return callback(null, utils.fixResponse({statusCode: 404, body: {ok: false}}));
   }
 }
 

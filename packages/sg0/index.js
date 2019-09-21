@@ -79,6 +79,9 @@ sg.setModes = function(modesStr) {
 
   forcedModes_ = ','+modesList.join(',')+',';
 };
+if (process.env.SG_FORCED_MODES) {
+  sg.setModes(process.env.SG_FORCED_MODES);
+}
 
 var getForcedMode = function(name) {
   if (name === 'test' && forcedTestName)    { return forcedTestName; }
