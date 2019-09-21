@@ -1,6 +1,6 @@
 {
   "name": "sg-flow",
-  "version": "1.0.50",
+  "version": "1.0.51",
   "description": "Provides several functions for handling the top-level control flow in continuation-style functions.",
   "main": "index.js",
   "scripts": {
@@ -19,6 +19,6 @@
   "homepage": "https://github.com/briancsparks/ra-ecosystem/tree/master/packages/sg-flow#readme",
   "dependencies": {
     "lodash": "^4.17.13",
-    "sg-diag": "^1.0.41"
+    "sg-diag": "^1.0.42"
   }
 }
