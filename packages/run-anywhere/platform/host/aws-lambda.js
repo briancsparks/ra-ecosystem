@@ -8,13 +8,7 @@ const platform                  = require('../platform-utils');
 var   handlerFns    = [];
 var   dispatcher    = dispatch;
 
-const logApiCalls   = !!process.env.SG_LOG_RA_HOST_API       || true;      // TODO: remove
-
-function logApi(msg, obj, ...rest) {
-  if (!logApiCalls) { return; }
-
-  sg.log(`LOGAPI (RA_Host): ${msg}`, obj, ...rest);
-}
+const logApiCalls   = !!process.env.SG_LOG_RA_HOST_API;
 
 
 // -----------------------------------------------------------------
@@ -24,12 +18,7 @@ exports.platform_host_lambda_handler = function(event_, context_, callback) {
   const startTime = new Date().getTime();
 
   const event     = platform.normalizeEvent(event_);
-  logApi(`lambda_handler.params`, {event:event_, context_});
-
-//  const onEntry = {
-//    event     : JSON.parse(JSON.stringify(event)),
-//    context   : JSON.parse(JSON.stringify(context)),
-//  };
+  logApi(`lambda_handler.params`, {event:event_, context:context_});
 
   // Turn it into argv,context,callback
   var   [argv,context]      = argvify(event, context_);
@@ -92,7 +81,7 @@ function argvify(event_, context_) {
   const event = {...event_};
 
   const query     = sg.extend(event.queryStringParameters, multiItemItems(event.multiValueQueryStringParameters));
-  const body      = decodeBody(event);
+  const body      = platform.decodeBody(event);
 
   const headers   = sg.extend(event.headers, multiItemItems(event.multiValueHeaders));
 
@@ -125,31 +114,9 @@ function multiItemItems(obj) {
   });
 }
 
-function decodeBody(event) {
-  const {body, isBase64Encoded} = event;
+function logApi(msg, obj, ...rest) {
+  if (!logApiCalls) { return; }
 
-  if (sg.isnt(body))        { return body; }
-  if (!_.isString(body))    { return body; }    /* already parsed */
-
-  var body_ = body;
-
-  if (isBase64Encoded) {
-    const buf   = new Buffer(body, 'base64');
-    body_       = buf.toString('ascii');
-  }
-
-  body_ = sg.safeJSONParse(body_)   || {payload:[]};
-
-  // Make much smaller sometimes
-  if (sg.modes().debug) {
-    if (Array.isArray(body_.payload) && body_.payload.length > 1) {
-      body_ = {...body_, payload: [body_.payload[0], `${body_.payload.length} more items.`]};
-    }
-  }
-
-  event.body              = body_;
-  event.isBase64Encoded   = false;
-
-  return body_;
+  sg.log(`LOGAPI (RA_Host): ${msg}`, obj, ...rest);
 }
 

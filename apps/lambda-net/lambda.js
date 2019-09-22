@@ -91,7 +91,7 @@ hosts.aws_lambda.setDispatcher(function(event, context_, callback) {
 
     sg.log(`handler`, {data});
 
-    const _200 = sg._200({ok:true}, data);
+    const _200 = sg._200({ok:true, ...data});
     sg.log(`Response from app`, {_200});
     return callback(...fixResponseForApiGatewayLambdaProxy(..._200));
   });
