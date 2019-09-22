@@ -42,6 +42,8 @@ function dispatch(event, context_, callback) {
 
   // Turn it into argv,context,callback
 //  var   [argv,context]      = argvify(event, context_);
+
+  // TODO: There should not be any argv here
   var   [argv,context]      = [event, context_];
 
   // TODO: Dispatch it somewhere

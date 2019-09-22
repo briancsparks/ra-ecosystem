@@ -34,12 +34,12 @@ exports.platform_host_lambda_handler = function(event_, context_, callback) {
   // Turn it into argv,context,callback
   var   [argv,context]      = argvify(event, context_);
 
-  return dispatcher(event, context, function(err, response) {
+  return dispatcher(argv, context, function(err, response) {
     const endTime = new Date().getTime();
 
     const fixedResponse = utils.fixResponse(response);
 
-    logApi(`lambda_handler: (${(endTime - startTime) * 1000})`, {event, err, response, fixedResponse});
+    logApi(`lambda_handler: (${(endTime - startTime) * 1000})`, {argv, err, response, fixedResponse});
 
     // OK?
     if (err || !response || !response.ok) {
