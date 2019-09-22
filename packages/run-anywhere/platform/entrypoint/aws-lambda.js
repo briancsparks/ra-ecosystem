@@ -24,6 +24,7 @@ exports.platform_entrypoint_lambda_handler = function(event_, context, callback)
 //  const body      = decodeBody(event_);
 //  const smEvent   = {...event_, body: {...body, payload: [body.payload[0] ||{}, `...and ${body.payload.length} more.`]}};
 //  const event     = useSmEvents ? smEvent : event;
+  const event     = event_;
 
 //  logApi(`lambda_handler.params`, {event, context});
 
