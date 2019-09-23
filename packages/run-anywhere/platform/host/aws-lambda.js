@@ -4,6 +4,7 @@ const _                         = require('lodash');
 const utils                     = require('./utils');
 const platform                  = require('../platform-utils');
 
+console.log(`host`, Object.keys(platform));
 
 var   handlerFns    = [];
 var   dispatcher    = dispatch;
@@ -76,12 +77,40 @@ function mkHandlerWrapper(select, handleIt) {
   return {select, handleIt};
 }
 
+function decodeBody(event) {
+  const {body, isBase64Encoded} = event;
+
+  if (sg.isnt(body))        { return body; }
+  if (!_.isString(body))    { return body; }    /* already parsed */
+
+  var body_ = body;
+
+  if (isBase64Encoded) {
+    const buf   = new Buffer(body, 'base64');
+    body_       = buf.toString('ascii');
+  }
+
+  body_ = sg.safeJSONParse(body_)   || {payload:[]};
+
+  // Make much smaller sometimes
+  if (sg.modes().debug) {
+    if (Array.isArray(body_.payload) && body_.payload.length > 1) {
+      body_ = {...body_, payload: [body_.payload[0], `${body_.payload.length} more items.`]};
+    }
+  }
+
+  event.body              = body_;
+  event.isBase64Encoded   = false;
+
+  return body_;
+}
+
 
 function argvify(event_, context_) {
   const event = {...event_};
 
   const query     = sg.extend(event.queryStringParameters, multiItemItems(event.multiValueQueryStringParameters));
-  const body      = platform.decodeBody(event);
+  const body      = decodeBody(event);
 
   const headers   = sg.extend(event.headers, multiItemItems(event.multiValueHeaders));
 
