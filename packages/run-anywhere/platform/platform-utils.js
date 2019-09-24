@@ -2,9 +2,10 @@
 const sg                        = require('sg0');
 const _                         = require('lodash');
 
-const useSmEvents   = !!process.env.SG_LOG_SMALL_EVENTS || true;      // TODO: remove
+const useSmEvents   = !!process.env.SG_LOG_SMALL_EVENTS;
 
 module.exports.normalizeEvent = normalizeEvent;
+module.exports.decodeBody     = decodeBody;
 
 function normalizeEvent(event_) {
   const body      = decodeBody(event_);
