@@ -99,24 +99,26 @@ hosts.aws_lambda.setDispatcher(function(event, context_, callback) {
     });
   }
 
-  return S3.putToS3(argv, context, function(err, data) {
-    if (err) {
+  return callback(...sg._404());
 
-      if (err.httpCode && err.httpCode === 400) {
-        let _400 = sg._400({ok: false}, err);
-        sg.log(`Response from app`, {_400});
-        return callback(...fixResponseForApiGatewayLambdaProxy(..._400));
-      }
+  // return S3.putToS3(argv, context, function(err, data) {
+  //   if (err) {
 
-      return callback(err);
-    }
+  //     if (err.httpCode && err.httpCode === 400) {
+  //       let _400 = sg._400({ok: false}, err);
+  //       sg.log(`Response from app`, {_400});
+  //       return callback(...fixResponseForApiGatewayLambdaProxy(..._400));
+  //     }
 
-    sg.log(`handler`, {data});
+  //     return callback(err);
+  //   }
 
-    const _200 = sg._200({ok:true, ...data});
-    sg.log(`Response from app`, {_200});
-    return callback(...fixResponseForApiGatewayLambdaProxy(..._200));
-  });
+  //   sg.log(`handler`, {data});
+
+  //   const _200 = sg._200({ok:true, ...data});
+  //   sg.log(`Response from app`, {_200});
+  //   return callback(...fixResponseForApiGatewayLambdaProxy(..._200));
+  // });
 });
 
 function fixResponseForApiGatewayLambdaProxy(err, resp) {
@@ -130,77 +132,77 @@ function fixResponseForApiGatewayLambdaProxy(err, resp) {
   }];
 }
 
-function argvify(event_, context_) {
+// function argvify(event_, context_) {
 
-  // Already been done?
-  if (event_.__meta__) {
-    return [event_, context_];
-  }
+//   // Already been done?
+//   if (event_.__meta__) {
+//     return [event_, context_];
+//   }
 
-  const event = {...event_};
+//   const event = {...event_};
 
-  const query     = sg.extend(event.queryStringParameters, multiItemItems(event.multiValueQueryStringParameters));
-  const body      = decodeBody(event);
+//   const query     = sg.extend(event.queryStringParameters, multiItemItems(event.multiValueQueryStringParameters));
+//   const body      = decodeBody(event);
 
-  const headers   = sg.extend(event.headers, multiItemItems(event.multiValueHeaders));
+//   const headers   = sg.extend(event.headers, multiItemItems(event.multiValueHeaders));
 
-  const argvs     = {...headers, ...(event.pathParameters ||{}), ...(event.stageVariables ||{}), ...body, ...query};
+//   const argvs     = {...headers, ...(event.pathParameters ||{}), ...(event.stageVariables ||{}), ...body, ...query};
 
-  const context   = {...context_, event: event_};
+//   const context   = {...context_, event: event_};
 
-  const argv = {
-    ...argvs,
-    __meta__: {
-      query,
-      body,
-      path    : event.path,
-      method  : event.method,
+//   const argv = {
+//     ...argvs,
+//     __meta__: {
+//       query,
+//       body,
+//       path    : event.path,
+//       method  : event.method,
 
-      event   : event_
-    }
-  };
+//       event   : event_
+//     }
+//   };
 
 
-  return [argv,context];
-}
+//   return [argv,context];
+// }
 
-function multiItemItems(obj) {
-  return sg.reduce(obj, {}, (m,v,k) => {
-    if (v.length > 1) {
-      return sg.kv(m,k,v);
-    }
+// function multiItemItems(obj) {
+//   return sg.reduce(obj, {}, (m,v,k) => {
+//     if (v.length > 1) {
+//       return sg.kv(m,k,v);
+//     }
 
-    return m;
-  });
-}
+//     return m;
+//   });
+// }
 
-function decodeBody(event) {
-  const {body, isBase64Encoded} = event;
+// function decodeBody(event) {
+//   const {body, isBase64Encoded} = event;
 
-  if (sg.isnt(body))        { return body; }
-  if (!_.isString(body))    { return body; }    /* already parsed */
+//   if (sg.isnt(body))        { return body; }
+//   if (!_.isString(body))    { return body; }    /* already parsed */
 
-  var body_ = body;
+//   var body_ = body;
 
-  if (isBase64Encoded) {
-    const buf   = new Buffer(body, 'base64');
-    body_       = buf.toString('ascii');
-  }
+//   if (isBase64Encoded) {
+//     const buf   = new Buffer(body, 'base64');
+//     body_       = buf.toString('ascii');
+//   }
 
-  body_ = sg.safeJSONParse(body_)   || {payload:[]};
+//   body_ = sg.safeJSONParse(body_)   || {payload:[]};
 
-  // Make much smaller sometimes
-  if (sg.modes().debug) {
-    if (Array.isArray(body_.payload) && body_.payload.length > 1) {
-      body_ = {...body_, payload: [body_.payload[0], `${body_.payload.length} more items.`]};
-    }
-  }
+//   // Make much smaller sometimes
+//   if (sg.modes().debug) {
+//     if (Array.isArray(body_.payload) && body_.payload.length > 1) {
+//       body_ = {...body_, payload: [body_.payload[0], `${body_.payload.length} more items.`]};
+//     }
+//   }
 
-  event.body              = body_;
-  event.isBase64Encoded   = false;
+//   event.body              = body_;
+//   event.isBase64Encoded   = false;
 
-  return body_;
-}
+//   return body_;
+// }
 
 // -------------------------------------------------------------------------------------
 // This is a function to enable smoke testing.

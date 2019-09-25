@@ -13,16 +13,19 @@ var lib = {};
 
 lib.sg                        = sg;
 
+// ADDING1: Add the new mod to the end of this list and name it like libXyz.
+//          Then it will be available as quickNet.libXyz
 exports.libAws                = require('./lib/aws');
 exports.libHttp               = require('./lib/http');
+exports.libStorage            = require('./lib/storage');
 
 // expo(require('./commands/vpcs'));
 // expo(require('./lib/ec2/vpc'));
 
 var   mods = {};
 
-// ADDING: Add the new mod to the end of this list and name it like libXyz.
-//         Then it will be available as quickNet.libXyz
+// ADDING2: Add the new mod to the end of this list and name it like libXyz.
+//          Then it will be available as quickNet.mod.libXyz
 mods.commandVpcs             = require('./commands/vpcs');
 mods.commandInstances        = require('./commands/instances');
 mods.setupWebtier            = require('./commands/setup-webtier');
@@ -58,9 +61,12 @@ lib.getMod = function(name) {
 
 lib.mods = mods;
 
+// ADDING3: Add the new mod to the end of this list.
+//          Then all items of the module quickNet.itemX
 ra.exportSubModules(module, [
   require('./lib/data-tap'),
   require('./lib/data-transfer'),
+  require('./lib/storage'),
 ]);
 
 expo(lib);
