@@ -131,7 +131,7 @@ module.exports.DIAG_ = function(mod) {
       // If we are active development, use those args
       if (process.env.ACTIVE_DEVELOPMENT && self.devCliArgs) {
         argv = sg.merge(argv ||{}, mkArgv(self.devCliArgs));
-        console.log(`invokingFnA ${fnName}`, util.inspect({argv, async: !isActuallyContinuationStyle}, {depth:null, color:true}));
+        // console.log(`invokingFnA ${fnName}`, util.inspect({argv, async: !isActuallyContinuationStyle}, {depth:null, color:true}));
       }
 
       setupDiag(argv, context, null);
@@ -160,7 +160,7 @@ module.exports.DIAG_ = function(mod) {
       // If we are active development, use those args
       if (process.env.ACTIVE_DEVELOPMENT && self.devCliArgs) {
         argv = sg.merge(argv ||{}, mkArgv(self.devCliArgs));
-        console.log(`invokingFnB ${fnName}`, util.inspect({argv, async: !isActuallyContinuationStyle}, {depth:null, color:true}));
+        // console.log(`invokingFnB ${fnName}`, util.inspect({argv, async: !isActuallyContinuationStyle}, {depth:null, color:true}));
       }
 
       setupDiag(argv, context, callback);

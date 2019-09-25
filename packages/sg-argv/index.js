@@ -109,6 +109,9 @@ function ARGV(input = process.argv) {
         let filename  =  figureOutFile(m[1]);
         if (filename) {
           value = fs.readFileSync(filename, 'utf8');
+          if (filename.match(/[.]json$/i)) {
+            value = sg.safeJSONParse(value) || value;
+          }
         }
       }
     }
@@ -263,9 +266,11 @@ function preProcess(args, argv) {
 function arrayParam(i, _, args, argv) {
 
   var   m;
+  var   origCaseKey;
 
   // Do we have `--a-list=`?
   if ((m = args[i].match(/--([^=]+)=$/))) {
+    origCaseKey = m[1];
 
     // Yes.  Get the snake-case key
     let key = snake_case(m[1]);
@@ -279,6 +284,8 @@ function arrayParam(i, _, args, argv) {
 
       argv[key].push(sg.smartValue(args[i]));
     }
+
+    argv[origCaseKey] = argv[key];
   }
 
   return i;

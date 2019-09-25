@@ -75,6 +75,28 @@ hosts.aws_lambda.setDispatcher(function(event, context_, callback) {
     const _200 = sg._200({ok:true, ...data});
     sg.log(`Responding to /test request`, {_200});
     return callback(...fixResponseForApiGatewayLambdaProxy(..._200));
+
+  } else if (context.event.path === '/upload') {
+    sg.log(`lam`, {qn: Object.keys(quickNet)});
+
+    return quickNet.putToS3(argv, context, function(err, data) {
+      if (err) {
+
+        if (err.httpCode && err.httpCode === 400) {
+          let _400 = sg._400({ok: false}, err);
+          sg.log(`Response from app`, {_400});
+          return callback(...fixResponseForApiGatewayLambdaProxy(..._400));
+        }
+
+        return callback(err);
+      }
+
+      sg.log(`handler`, {data});
+
+      const _200 = sg._200({ok:true, ...data});
+      sg.log(`Response from app`, {_200});
+      return callback(...fixResponseForApiGatewayLambdaProxy(..._200));
+    });
   }
 
   return S3.putToS3(argv, context, function(err, data) {
