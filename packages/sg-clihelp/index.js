@@ -155,6 +155,10 @@ function startupDone(ARGV, modfilename, failed, msg) {
 
   var   filename,key;
   if (args.length === 2 && Array.isArray(args[0])) {
+    if (sg.anyIsnt(args[0])) {
+      return;
+    }
+
     filename  = path.join(...args[0]);
     key       = args[1];
   }
@@ -187,7 +191,9 @@ function include(dirname, filename) {
 function _include_(filename) {
   try {
     return require(filename);
-  } catch(error) {}
+  } catch(error) {
+    // console.error(`_include_`, filename, error);
+  }
 }
 
 // ------------------------------------------------------------------------------------------------------------------

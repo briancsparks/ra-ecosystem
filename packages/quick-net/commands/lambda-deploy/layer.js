@@ -32,7 +32,7 @@ DIAG.usage({
   }
 });
 
-DIAG.activeDevelopment(`--lambda-name=lambda-net --stage=dev --Bucket=quick-net --AWS_PROFILE=bcs`);
+DIAG.activeDevelopment(`--lambda-name=lambda-net --stage=dev --Bucket=quick-net`);
 DIAG.activeDevelopment(`--debug`);
 
 module.exports.main =

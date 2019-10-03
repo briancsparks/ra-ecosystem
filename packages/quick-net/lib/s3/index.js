@@ -21,7 +21,7 @@ const ARGV = sg.ARGV();
 // DIAG.usage({aliases:{streamToS3:{}}});
 
 // // TODO: activeDevelopment needs to be associated with thie fn
-// DIAG.activeDevelopment(`--Bucket=quick-net-ingest-dump --AWS_PROFILE=bcs`);
+// DIAG.activeDevelopment(`--Bucket=quick-net-ingest-dump`);
 // DIAG.activeDevelopment(`--debug`);
 
 // mod.xport(DIAG.xport({streamToS3: function(argv, context, callback) {
@@ -67,7 +67,7 @@ const ARGV = sg.ARGV();
 
 DIAG.usage({aliases:{putToS3:{}}});
 
-DIAG.activeDevelopment(`--Bucket=quick-net-ingest-dump --AWS_PROFILE=bcs`);
+DIAG.activeDevelopment(`--Bucket=quick-net-ingest-dump`);
 DIAG.activeDevelopment(`--debug`);
 
 mod.xport(DIAG.xport({putToS3: function(argv, context, callback) {

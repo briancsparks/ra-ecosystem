@@ -112,7 +112,7 @@ module.exports.DIAG_ = function(mod) {
     const fnName        = firstFnName(xfn);
     const intercepted   = xfn[fnName];
 
-    bigBanner('green', `Hijacking the overall function: ${fnName}`);
+    // bigBanner('green', `Hijacking the overall function: ${fnName}`);
 
     // ---------- Create a diag object for this invocation ----------
     const setupDiag = function(argv, context, callback) {

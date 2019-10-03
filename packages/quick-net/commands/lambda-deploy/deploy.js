@@ -34,7 +34,7 @@ DIAG.usage({
 });
 
 
-DIAG.activeDevelopment(`--stage=dev --lambda-name=lambda-net --class-b=21 --sgs=wide --AWS_PROFILE=bcs`);
+DIAG.activeDevelopment(`--stage=dev --lambda-name=lambda-net --class-b=21 --sgs=wide`);
 DIAG.activeDevelopment(`--debug`);
 
 module.exports.main =

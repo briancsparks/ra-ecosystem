@@ -47,7 +47,7 @@ function Bits(mod) {
 
     } catch(err) {
       // If theres an error, just let it fall thru (we already have self.pieces)
-      console.error(`getjson error`, err);
+      // console.error(`getjson error`, err);
     }
 
     return self.pieces;
