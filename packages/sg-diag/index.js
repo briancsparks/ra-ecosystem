@@ -59,8 +59,6 @@ module.exports.DIAG_ = function(mod) {
   self.bits         = sg.bits(mod);
   self.diag         = null;
 
-  self.devCliArgs   = null;
-
 
   self.close = function() {
     if (self.diag) {
@@ -73,8 +71,19 @@ module.exports.DIAG_ = function(mod) {
     self.bits.setJson(data);
   };
 
-  self.activeDevelopment = function(cliArgs) {
-    self.devCliArgs = (self.devCliArgs || '') + ' ' + cliArgs;
+  self.activeDevelopment = function(devCliArgs) {
+    if (sg.smartValue(process.env.ACTIVE_DEVELOPMENT)) {
+      self.bits.setData(null, {devCliArgs});
+    }
+  };
+
+  self.getSetupFnName = function() {
+    return self.bits.currSetupName;
+  };
+
+  self.getCurrFnName = function() {
+    var diagFunctions = sgDiagnostic.getContextItem(self.context, 'diagFunctions') || [];
+    return diagFunctions[0].fnName;
   };
 
   self.loadData = async function(fnName) {
@@ -82,9 +91,10 @@ module.exports.DIAG_ = function(mod) {
     return mainjson;
   };
 
-  self.getCurrFnName = function() {
-    var diagFunctions = sgDiagnostic.getContextItem(self.context, 'diagFunctions') || [];
-    return diagFunctions[0].fnName;
+
+
+  self.devCliArgs = function(fnName) {
+    return self.bits.getData(fnName || self.getCurrFnName(), 'devCliArgs') || '';
   };
 
   self.getAliases = function() {
@@ -129,8 +139,8 @@ module.exports.DIAG_ = function(mod) {
     const interceptorFnA = /*async*/ function(argv, context) {
 
       // If we are active development, use those args
-      if (process.env.ACTIVE_DEVELOPMENT && self.devCliArgs) {
-        argv = sg.merge(argv ||{}, mkArgv(self.devCliArgs));
+      if (sg.smartValue(process.env.ACTIVE_DEVELOPMENT) && self.devCliArgs(fnName)) {
+        argv = sg.merge(argv ||{}, mkArgv(self.devCliArgs(fnName)));
         // console.log(`invokingFnA ${fnName}`, util.inspect({argv, async: !isActuallyContinuationStyle}, {depth:null, color:true}));
       }
 
@@ -158,8 +168,8 @@ module.exports.DIAG_ = function(mod) {
     const interceptorFnB = function(argv, context, callback) {
 
       // If we are active development, use those args
-      if (process.env.ACTIVE_DEVELOPMENT && self.devCliArgs) {
-        argv = sg.merge(argv ||{}, mkArgv(self.devCliArgs));
+      if (sg.smartValue(process.env.ACTIVE_DEVELOPMENT) && self.devCliArgs(fnName)) {
+        argv = sg.merge(argv ||{}, mkArgv(self.devCliArgs(fnName)));
         // console.log(`invokingFnB ${fnName}`, util.inspect({argv, async: !isActuallyContinuationStyle}, {depth:null, color:true}));
       }
 

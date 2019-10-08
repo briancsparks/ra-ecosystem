@@ -21,8 +21,9 @@ const ARGV = sg.ARGV();
 // DIAG.usage({aliases:{streamToS3:{}}});
 
 // // TODO: activeDevelopment needs to be associated with thie fn
+// // The last one wins. Comment out what you dont want.
 // DIAG.activeDevelopment(`--Bucket=quick-net-ingest-dump`);
-// DIAG.activeDevelopment(`--debug`);
+// DIAG.activeDevelopment(`--Bucket=quick-net-ingest-dump --debug`);
 
 // mod.xport(DIAG.xport({streamToS3: function(argv, context, callback) {
 //   const diag    = DIAG.diagnostic({argv, context, callback});
@@ -67,8 +68,9 @@ const ARGV = sg.ARGV();
 
 DIAG.usage({aliases:{putToS3:{}}});
 
+// The last one wins. Comment out what you dont want.
 DIAG.activeDevelopment(`--Bucket=quick-net-ingest-dump`);
-DIAG.activeDevelopment(`--debug`);
+DIAG.activeDevelopment(`--Bucket=quick-net-ingest-dump --debug`);
 
 mod.xport(DIAG.xport({putToS3: function(argv, context, callback) {
   const diag    = DIAG.diagnostic({argv, context, callback});
@@ -88,8 +90,7 @@ mod.xport(DIAG.xport({putToS3: function(argv, context, callback) {
 
   // We need an AWS Key to store the blob. If we do not have one, try to compute it
   if (!Key) {
-    // TODO: constructed should be defaultable
-    if (!(diag.haveArgs({Body,clientId,sessionId}, {}))) {
+    if (!(diag.haveArgs({Body,clientId,sessionId}))) {
       return diag.exit();
     }
 
@@ -97,8 +98,7 @@ mod.xport(DIAG.xport({putToS3: function(argv, context, callback) {
   }
 
   // Check that we have the params
-  // TODO: constructed should be defaultable
-  if (!(diag.haveArgs({Bucket,Key,Body}, {}))) {
+  if (!(diag.haveArgs({Bucket,Key,Body}))) {
     // We have done all we can
     return diag.exit();
   }

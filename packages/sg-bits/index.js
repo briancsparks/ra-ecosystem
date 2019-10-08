@@ -1,5 +1,7 @@
+/* eslint-disable valid-jsdoc */
 if (process.env.SG_VVVERBOSE) console[process.env.SG_LOAD_STREAM || 'log'](`Loading ${__filename}`);
 
+const assert                  = require('assert').strict;
 var   sg                      = require('sg0');
 const { _ }                   = sg;
 const { qm }                  = require('quick-merge');
@@ -26,24 +28,82 @@ function bits(...args) {
 function Bits(mod) {
   var   self = this;
 
-  self.pieces = {};
+  self.pieces         = {};
+  self.currSetupName  = null;
 
   const [dirname, basename, ext]    = splitFilepath(mod.filename);
   const bitsdir                     = sg.path.join(dirname, '_sg-bits');
   const mainBitsFile                = sg.path.join(bitsdir, `${basename}.json`);
-  var   currSetupFnName             = null;
 
   self.setJson = function(data) {
-    currSetupFnName = utils.getFnNameFromFnConfig(data) || currSetupFnName;
-    self.pieces = qm(self.pieces, data);
+    self.currSetupName  = utils.getNameFromConfig(data) || self.currSetupName;
+
+    // self.pieces         = qm(self.pieces, data);
+    self.mergeJson(data);
+  };
+
+  /**
+   * Sets data.
+   *
+   * setData('fnName', 'devargs', '--foo --bar');
+   * setData('fnName', 'aliases', {args: {lambdaName: 'name,lambda_name'}});
+   *
+   * name can be null to use `self.currSetupName`
+   *
+   * @param {*} name
+   * @param {*} type
+   * @param {*} data
+   *//**
+   *
+   * Sets data.
+   *
+   * setData('fnName', {devargs: '--foo --bar'});
+   * setData('fnName', {aliases: {args: {lambdaName: 'name,lambda_name'}}});
+   *
+   * name can be null to use `self.currSetupName`
+   *
+   * @param {*} name
+   * @param {*} data
+   */
+  self.setData = function(a,b,c) {
+
+    if (arguments.length === 3) {
+      return self._setData_(a,b,c);
+    }
+
+    if (arguments.length === 2) {
+      var [name, data] = arguments;
+      name = name || self.currSetupName;
+
+      assert.ok(name); assert.ok(data);
+
+      _.each(data, (datum, type) => {
+        assert.ok(datum); assert.ok(type);
+        return self._setData_(name, type, datum);
+      });
+      return;
+    }
+
+    assert.fail();
+  };
+
+  self._setData_ = function(name, type, data) {
+    self.mergeJson({[type]: {[name]: data}});
+  };
+
+  self.mergeJson = function(data) {
+    self.pieces         = qm(self.pieces, data);
   };
 
   self.loadJson = async function() {
 
+    // We are no longer setting up
+    self.currSetupName = null;
+
     var   subPieces = {};
     try {
       subPieces     = await fs_readFile(mainBitsFile);
-      self.pieces   = sg.extend(self.pieces, sg.safeJSONParse(subPieces) || {});
+      self.pieces   = sg.extend(self.pieces, sg.safeJSONParse(subPieces) || {});    // TODO: should be qm(), right?
 
     } catch(err) {
       // If theres an error, just let it fall thru (we already have self.pieces)
@@ -55,6 +115,13 @@ function Bits(mod) {
 
   self.getJson = function() {
     return self.pieces;
+  };
+
+  self.getData = function(name, type) {
+    const type_ = self.pieces[type];
+    const name_ = name || self.currSetupName;
+
+    return name_ && type_ && type_[name_];
   };
 }
 
@@ -81,4 +148,3 @@ function joinFilepath(...parts) {
 
   return path;
 }
-

@@ -108,6 +108,8 @@ function Diagnostic(ctorArgs) {
       }
     });
 
+    // ---------- Validate with JSON Schema ----------
+
     // Now we have the users proposed argv -- validate it
     const schema      = self.DIAG.getSchema()       || {};
 
@@ -293,7 +295,7 @@ function Diagnostic(ctorArgs) {
     msgArgv = msgArgv || self.getArgv(ctorArgs);
 
     // TODO: `quiet` in this context should mean that the active developer doesnt want to be bugged
-    if (msgArgv.quiet && activeDevelopment)    { return; }
+    if (msgArgv.quiet && activeDevelopment())    { return; }
 
     var standard = true;
     if (self.logger) {

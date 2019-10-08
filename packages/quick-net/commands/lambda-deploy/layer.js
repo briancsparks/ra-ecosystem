@@ -32,8 +32,9 @@ DIAG.usage({
   }
 });
 
+// The last one wins. Comment out what you dont want.
 DIAG.activeDevelopment(`--lambda-name=lambda-net --stage=dev --Bucket=quick-net`);
-DIAG.activeDevelopment(`--debug`);
+DIAG.activeDevelopment(`--lambda-name=lambda-net --stage=dev --Bucket=quick-net --debug`);
 
 module.exports.main =
 mod.async(DIAG.async({buildLayer: async function(argv, context) {
