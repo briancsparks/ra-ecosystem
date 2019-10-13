@@ -5,7 +5,8 @@ NODE_UTILS=""
 # What to install?
 INSTALL_DOCKER="1"
 INSTALL_OPS="1"
-INSTALL_AGENTS="1"
+# INSTALL_AGENTS="0"
+# INSTALL_NAT="1"
 
 ## This next line will get replaced with vars that might override the above, and ENV vars that go into /etc/environment
 # quicknetuserdataenvcursor
@@ -130,5 +131,18 @@ EOF
   chown -R "${the_user_name}":"${the_user_name}" "${the_home_dir}/mk-compliant"
 fi
 #ZZZZ INSTALL_AGENTS
+
+
+#AAAA INSTALL_NAT
+## ----------------------------------------------------------------------------------------------
+# Install NAT
+##  https://www.theguild.nl/cost-saving-with-nat-instances/
+if [[ -n $INSTALL_NAT ]]; then
+  sysctl -w net.ipv4.ip_forward=1
+  /sbin/iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+fi
+#ZZZZ INSTALL_NAT
+
+
 
 

@@ -780,6 +780,7 @@ const FuncRa = function(argv, context, callback, origCallback, ractx, options_ =
     const names     = names_.split(',');
     const required  = options.required || false;
     const def       = options.def;
+console.log(`arg1`, {argv, names_, options, names, required, def});
 
     // The first name in the list is the parameters 'real' name, the others are aliases.
     var   defName;

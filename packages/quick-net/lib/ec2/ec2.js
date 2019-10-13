@@ -136,6 +136,7 @@ mod.xport({upsertInstance: function(argv, context, callback) {
 
   return rax.iwrap(function(abort, calling) {
     const { runInstances,describeInstances }  = libAws.awsFns(ec2, 'runInstances,describeInstances', rax.opts({}), abort);
+    const { modifyInstanceAttribute }         = libAws.awsFns(ec2, 'modifyInstanceAttribute', rax.opts({}), abort);
     const { getSubnets }                      = rax.loads(libVpc, 'getSubnets', rax.opts({}), abort);
     const { getUbuntuLtsAmis }                = rax.loads('getUbuntuLtsAmis', rax.opts({}), abort);
 
@@ -159,10 +160,11 @@ mod.xport({upsertInstance: function(argv, context, callback) {
     var   MinCount              = rax.arg(argv, 'MinCount,min') || count;
     const DryRun                = rax.arg(argv, 'DryRun,dry-run');
     const envJsonFile           = rax.arg(argv, 'envjson');
-    var   userdataOpts          = rax.arg(argv, 'userdata_opts');   // An object
+    var   userdataOpts          = rax.arg(argv, 'userdata_opts,userdataOpts');   // An object
     const moreShellScript       = rax.arg(argv, 'moreshellscript')    || '';
     const cloudInitData         = rax.arg(argv, 'cloudInit,ci')       || {};
     const roleKeys              = rax.arg(argv, 'roleKeys');
+    const SourceDestCheck       = !!rax.arg(argv, 'SourceDestCheck');
 
     if (rax.argErrors())    { return rax.abort(); }
 
@@ -291,7 +293,7 @@ mod.xport({upsertInstance: function(argv, context, callback) {
 
         // Process the user-data script
         userDataScript  = fixUserDataScript(userDataScript_, {uniqueName, userdataOpts, userdataEnv, moreShellScript});
-
+sg.elog(`ri`, {userDataScript, userdataOpts, len: userDataScript.length});
         return next();
       });
 
@@ -309,10 +311,10 @@ mod.xport({upsertInstance: function(argv, context, callback) {
               key: nodesource_com_key(),
               source: `deb https://deb.nodesource.com/node_12.x ${osVersion} main`
             },
-            "yarn.list": {
-              key: yarnpkg_com_key(),
-              source: `deb https://dl.yarnpkg.com/debian/ stable main`
-            }
+            // "yarn.list": {
+            //   key: yarnpkg_com_key(),
+            //   source: `deb https://dl.yarnpkg.com/debian/ stable main`
+            // }
           }
         }
       });
@@ -488,6 +490,7 @@ mod.xport({upsertInstance: function(argv, context, callback) {
 
       // Build up the cloud-init userdata
       const userdata = mimeArchive.build();
+sg.elog(`buildmime`, {userdata, len: userdata.length});
       if (userdata) {
         UserData   = Buffer.from(userdata).toString('base64');
       }
@@ -517,15 +520,29 @@ mod.xport({upsertInstance: function(argv, context, callback) {
             return abort(err);
           }
 
-          my.result = {Instance: data.Reservations[0].Instances[0]};
+          // Wait for launch
+          const Instance = data.Reservations[0].Instances[0];
+          if (Instance.State.Name !== 'running') {
+            return again(1000);
+          }
+
+          my.result = {Instance};
           return last();
         });
       }, next);
 
     }, function(my, next) {
+      if (SourceDestCheck)    { return next(); }
+
+      // Change SourceDestCheck for NAT instances
+      return modifyInstanceAttribute({InstanceId, SourceDestCheck: {Value: SourceDestCheck}}, rax.opts({}), (err, data) => {
+        return next();
+      });
+
+    }, function(my, next) {
       // Put stuff on S3 for the instance
       const namespace = process.env.NAMESPACE;
-      const s3path = `s3://serverassist-net-state-store/quick-net/${namespace.toLowerCase()}`;
+      const s3path = `s3://quick-net/deploy/${namespace.toLowerCase()}`;
       return copyFileToS3(path.join(__dirname, 'instance-help', 'install-dev-tools'), s3path, function(err, data) {
         sg.debugLog(`Upload instance-help`, {err, data});
         return next();
@@ -583,7 +600,7 @@ function fixUserDataScript(shellscript_, options_) {
   const options = options_ || {};
 
   const uniqueName        = options.uniqueName;
-  const userdataOpts      = options.userdataOpts;
+  const userdataOpts      = options.userdataOpts        || {};
   const userdataEnv       = options.userdataEnv;
   const moreShellScript   = options.moreShellScript;
 
