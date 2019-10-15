@@ -354,6 +354,7 @@ libRa.loadScripts = function(dirname) {
   var result = {mods:{}};
 
   const scriptDirname = path.join(dirname, 'ra-scripts');
+  // eslint-disable-next-line semi-spacing
   if (!fs.test('-d', scriptDirname))  { return /* undefined */; }
 
   // ----- Load scripts in the base ra-scripts dir -----
@@ -559,7 +560,7 @@ const cannonical = {
 };
 
 libRa.canonical = {};
-libRa.v2.canonical = {}
+libRa.v2.canonical = {};
 _.each(cannonical, function(fn, fnName) {
   libRa.canonical[fnName] = libRa.v2.canonical[fnName] = fn;
 });

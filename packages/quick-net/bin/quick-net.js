@@ -79,7 +79,7 @@ function quickNet() {
     //   return quickNetX();
     // }
 
-    console.log({err}, JSON.stringify(data));
+    console.log(JSON.stringify([err, data]));
   });
 }
 

@@ -700,6 +700,39 @@ mod.xport({associateRouteTable: function(argv, context, callback) {
   });
 }});
 
+
+mod.xport({deleteRoute: function(argv, context, callback) {
+
+  // ra invoke packages\quick-net\lib\ec2\vpc.js deleteRoute --cidr=0.0.0.0/0 --table=
+
+  const ractx     = context.runAnywhere || {};
+  const { rax }   = (ractx.quickNetVpc__createRoute || ractx);
+
+  return rax.iwrap(function(abort) {
+    const { deleteRoute }             = libAws.awsFns(ec2, 'deleteRoute', rax.opts({}), abort);
+
+    const RouteTableId                = rax.arg(argv, 'RouteTableId,route-table,table', {required:true});
+    const DestinationCidrBlock        = rax.arg(argv, 'DestinationCidrBlock,cidr');
+    const DestinationIpv6CidrBlock    = rax.arg(argv, 'DestinationIpv6CidrBlock,cidr6');
+
+    const params = sg.extend({RouteTableId, DestinationCidrBlock, DestinationIpv6CidrBlock});
+
+    return deleteRoute(params, {abort:false}, function(err, data) {
+sg.elog(`deleteRoute`, {params, err, data});
+      if (err) {
+        if (err.code === 'RouteAlreadyExists') {
+          return callback(null, data);
+
+        } else {
+          return abort(err);
+        }
+      }
+
+      return callback(err, data);
+    });
+  });
+}});
+
 mod.xport({createRoute: function(argv, context, callback) {
 
   // ra invoke packages\quick-net\lib\ec2\vpc.js createRoute --cidr=0.0.0.0/0 --gw= --table=
@@ -748,6 +781,7 @@ mod.xport({createRoute: function(argv, context, callback) {
     }
 
     return createRoute(params, {abort:false}, function(err, data) {
+sg.elog(`createRoute`, {params, err, data});
       if (err) {
         if (err.code === 'RouteAlreadyExists') {
           return callback(null, data);

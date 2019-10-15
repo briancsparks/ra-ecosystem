@@ -4,8 +4,6 @@ const _                         = require('lodash');
 const utils                     = require('./utils');
 const platform                  = require('../platform-utils');
 
-console.log(`host`, Object.keys(platform));
-
 var   handlerFns    = [];
 var   dispatcher    = dispatch;
 

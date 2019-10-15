@@ -4,12 +4,20 @@ if (process.env.SG_VVVERBOSE) console[process.env.SG_LOAD_STREAM || 'log'](`Load
  * @file
  */
 
+
+// For NAT Gateway vs. NAT Instance
+// See:
+// * https://www.theguild.nl/cost-saving-with-nat-instances/
+// * https://docs.aws.amazon.com/vpc/latest/userguide/VPC_NAT_Instance.html
+// * https://docs.aws.amazon.com/vpc/latest/userguide/vpc-nat-comparison.html
+
 const ra                      = require('run-anywhere').v2;
 const sg                      = ra.get3rdPartyLib('sg-flow');
 const { _ }                   = sg;
 const utils                   = require('../lib/utils');
 const libTag                  = require('../lib/ec2/tags');
 const libVpc                  = require('../lib/ec2/vpc');
+const libEc2                  = require('../lib/ec2/ec2');
 const libCidr                 = require('../lib/ec2/cidr');
 const libDescribe             = require('../lib/ec2/vpc/describe');
 const awsDefs                 = require('../lib/aws-defs');
@@ -44,9 +52,10 @@ const getSecurityGroupId = function(name) {
 
 mod.xport({manageVpc: function(argv, context, callback) {
 
-  // ra invoke commands\vpcs.js manageVpc --program=ratest   --az=a,b,c --classB=111
-  // ra invoke commands\vpcs.js manageVpc --program=ratest   --az=a     --classB=113
-  // ra invoke commands\vpcs.js manageVpc --program=qnettest --az=c     --classB=21   --skip-nat --skip-endpoint-services
+  // ra invoke2 commands\vpcs.js manageVpc --program=ratest   --az=a,b,c --classB=111
+  // ra invoke2 commands\vpcs.js manageVpc --program=ratest   --az=a     --classB=113
+  // ra invoke2 commands\vpcs.js manageVpc --program=qnettest --az=c     --classB=21   --skip-nat --skip-endpoint-services
+  // ra invoke2 commands\vpcs.js manageVpc --adj=wicked --program=bcsnet --namespace=bcs --az= c d  --nat-instance --skip-endpoint-services --classB=11
 
   const ractx     = context.runAnywhere || {};
   const { fra }   = (ractx.quickNet__manageVpc || ractx);
@@ -67,7 +76,19 @@ mod.xport({manageVpc: function(argv, context, callback) {
       FromPort:     22,
       ToPort:       22,
       Description:  'SSH from admin instances'
-    }]
+    },{
+      ingressGroupId: getSecurityGroupId('access'),
+      IpProtocol:   'tcp',
+      FromPort:     22,
+      ToPort:       22,
+      Description:  'SSH from bastion instances'
+    },{
+      ingressGroupId: getSecurityGroupId('devOps'),
+      IpProtocol:   'tcp',
+      FromPort:     22,
+      ToPort:       22,
+      Description:  'SSH from devOps instances'
+      }]
   })];
 
   sgs = [...sgs, () => ({
@@ -85,17 +106,19 @@ mod.xport({manageVpc: function(argv, context, callback) {
 
   return fra.iwrap(function(abort, calling) {
 
+    const { upsertInstance } = fra.loads(libEc2, 'upsertInstance', fra.opts({}), abort);
     const { describeVpcs } = fra.loads(libDescribe, 'describeVpcs', fra.opts({}), abort);
     const { upsertVpc,upsertSubnet } = fra.loads(libVpc, 'upsertVpc,upsertSubnet', fra.opts({}), abort);
     const { upsertSecurityGroup,upsertSecurityGroupIngress } = fra.loads(libVpc, 'upsertSecurityGroup,upsertSecurityGroupIngress', fra.opts({}), abort);
     const { allocateAddress } = fra.loads(libVpc, 'allocateAddress', fra.opts({}), abort);
     const { createInternetGateway,createNatGateway } = fra.loads(libVpc, 'createInternetGateway,createNatGateway', fra.opts({}), abort);
     const { createRouteTable,associateRouteTable } = fra.loads(libVpc, 'createRouteTable,associateRouteTable', fra.opts({}), abort);
-    const { createRoute } = fra.loads(libVpc, 'createRoute', fra.opts({abort:false}), abort);
+    const { createRoute,deleteRoute } = fra.loads(libVpc, 'createRoute,deleteRoute', fra.opts({abort:false}), abort);
     const { createVpcEndpoint } = fra.loads(libVpc, 'createVpcEndpoint', fra.opts({}), abort);
 
     const region                  = fra.arg(argv, 'region', {def: 'us-east-1'});
     const skipNat                 = fra.arg(argv, 'skip_nat,skipNat,skipNats');
+    const natInstance             = fra.arg(argv, 'nat_instance,natInstance');
     const skipEndpoints           = fra.arg(argv, 'skip_endpoints,skipEndpoint,skipEndpoints');
     const skipEndpointServices    = fra.arg(argv, 'skip_endpoint_services,skipEndpointServices');
 
@@ -120,6 +143,7 @@ mod.xport({manageVpc: function(argv, context, callback) {
     var   allSubnets          = [];
     var   subnetByType        = {};
 
+    var   primaryaz           = (azLetters || ['a'])[0];
     var   ids                 = {};
     var   azItems             = {};
 
@@ -218,7 +242,7 @@ mod.xport({manageVpc: function(argv, context, callback) {
         return ec2.createTags({
           Resources : [VpcId],
           Tags      : [
-            {Key:'quicknet:primaryaz', Value: (azLetters || ['a'])[0]}
+            {Key:'quicknet:primaryaz', Value: primaryaz}
           ]
         }, next);
 
@@ -360,8 +384,9 @@ mod.xport({manageVpc: function(argv, context, callback) {
       // if (skipNat)  { return next(); }
 
       // ---------------------------------------- Gateway / NAT ----------
-      my.result.natGateways = {};
-      my.result.addresses = {};
+      my.result.natGateways   = {};
+      my.result.natInstances  = {};
+      my.result.addresses     = {};
 
       sg.elog(`upserting internetGateway: ${adjective}-IG`);
       return createInternetGateway({VpcId, adjective}, {}, function(err, data) {
@@ -381,6 +406,30 @@ mod.xport({manageVpc: function(argv, context, callback) {
           // if (skipNat) { return next(); }
           if (!subnet.kind.nat) { return next(); }
 
+          // TODO: for natInstance, launch instance
+          if (natInstance) {
+            const instParams = {distro: 'ubuntu', uniqueName: `NATInst-${suffix}-${classB}`, instanceType: 't3.nano', classB, AvailabilityZone,
+              key: `${program}-access`, SecurityGroupIds: getSecurityGroupId('access'), SubnetId, iamName: `${program}-access-instance-role`,
+              userdataOpts: {INSTALL_DOCKER:false, INSTALL_AGENTS:false, INSTALL_NAT:'1'},
+              SourceDestCheck: false,
+            };
+            return upsertInstance(instParams, {}, function(err, data) {
+              var instance = data.result.Instance;
+
+              instance.NatInstanceId = instance.InstanceId;
+
+              // TODO: Get IP of instance
+              // TODO: Put instance Id into azItems
+
+              my.result.natInstances[AvailabilityZone] = instance;
+              my.resources.push(instance.InstanceId);
+
+              sg.setOn(azItems, [AvailabilityZone,  'NatInstance'], instance);
+              return next();
+            });
+          }
+
+          /* otherwise -- nat gateway */
           return allocateAddress({VpcId, SubnetId, adjective, suffix}, {}, function(err, data) {
             const { AllocationId } = data.result.Address;
             my.result.addresses[AvailabilityZone] = data.result;
@@ -433,25 +482,52 @@ mod.xport({manageVpc: function(argv, context, callback) {
       // ---------------------------------------- Private Route Tables ----------
 
       return sg.__eachll(privateSubnets, function(subnet, next) {
-        const { SubnetId, AvailabilityZone }  = subnet;
-        const   suffix                        = zoneSuffix(AvailabilityZone);
+        const { SubnetId, AvailabilityZone, kind={} } = subnet;
+        const   suffix                                = `${kind.name}-${zoneSuffix(AvailabilityZone)}`;
 
         return createRouteTable({VpcId, SubnetId, adjective, suffix}, {}, function(err, data) {
 
-          const { RouteTableId } = data.result.RouteTable;
+          const { RouteTable }    = data.result;
+          const { RouteTableId }  = RouteTable;
           my.resources.push(RouteTableId);
           RouteTableIds.push(RouteTableId);
 
-          if (!skipNat) {
+          if (skipNat) { return next(); }
+
+          // Might need to delete already-existing route to NAT (if a NAT instance was terminated)
+          return deleteOldNatRoute(function(err) {
+
+            // Route private route tables to natInstance
+            if (natInstance) {
+              const { InstanceId } = sg.deref(azItems, [AvailabilityZone,  'NatInstance']);
+              return createRoute({RouteTableId, InstanceId, DestinationCidrBlock:'0.0.0.0/0', adjective, suffix}, {}, function(err, data) {
+                return associateRouteTable({SubnetId, RouteTableId, adjective, suffix}, {}, function(err, data) {
+                  return next();
+                });
+              });
+            }
+
+            /* otherwise */
             const { NatGatewayId } = sg.deref(azItems, [AvailabilityZone,  'NatGateway']);
-            return createRoute({RouteTableId, NatGatewayId, DestinationCidrBlock:'0.0.0.0/0', adjective}, {}, function(err, data) {
-              return associateRouteTable({SubnetId, RouteTableId, adjective}, {}, function(err, data) {
+            return createRoute({RouteTableId, NatGatewayId, DestinationCidrBlock:'0.0.0.0/0', adjective, suffix}, {}, function(err, data) {
+              return associateRouteTable({SubnetId, RouteTableId, adjective, suffix}, {}, function(err, data) {
                 return next();
               });
             });
-          }
+          });
 
-          return next();
+          function deleteOldNatRoute(callback) {
+            return sg.__each(RouteTable.Routes || [], function(route, next) {
+              if (route.DestinationCidrBlock !== '0.0.0.0/0') { return next(); }
+
+              const params = sg.extend({RouteTableId, DestinationCidrBlock:'0.0.0.0/0'});
+              return deleteRoute(params, {}, function(err, data) {
+                return next();
+              });
+            }, function() {
+              return callback();
+            });
+          }
         });
 
       }, function() {
@@ -784,11 +860,11 @@ function getClassB(ip) {
 
 
 sgsPlus = [() => ({
-  GroupName:    'lambda',     // <-------------------------------------------------------
+  GroupName:    'lambda',     // <------------------------------------------------------- lambda
   Description:  'An sg to identify lambda fns',
   ingress: []
 }), () => ({
-  GroupName:    'admin',      // <-------------------------------------------------------
+  GroupName:    'admin',      // <------------------------------------------------------- admin
   Description:  'Open for SSH',
   ingress: [{
     /*GroupId*/
@@ -813,7 +889,32 @@ sgsPlus = [() => ({
     Description:  'HTTP for webtier to expose'
   }]
 }), () => ({
-  GroupName:    'devOps',      // <-------------------------------------------------------
+  GroupName:    'access',      // <------------------------------------------------------- access
+  Description:  'Rules for Nat Instances and Bastions',
+  ingress: [{
+    /*GroupId*/
+    IpProtocol:   'tcp',
+    CidrIp:       '0.0.0.0/0',
+    FromPort:     22,
+    ToPort:       22,
+    Description:  'SSH'
+  },{
+    /*GroupId*/
+    IpProtocol:   'tcp',
+    CidrIp:       '0.0.0.0/0',
+    FromPort:     443,
+    ToPort:       443,
+    Description:  'SSH over HTTPS'
+  },{
+    /*GroupId*/
+    IpProtocol:   'tcp',
+    CidrIp:       '10.0.0.0/8',
+    FromPort:     0,
+    ToPort:       65535,
+    Description:  'All TCP from the data center so we can NAT them'
+  }]
+}), () => ({
+  GroupName:    'devOps',      // <------------------------------------------------------- devOps
   Description:  'Open for SSH, temp IPs',
   ingress: [{
     /*GroupId*/
@@ -831,7 +932,7 @@ sgsPlus = [() => ({
     Description:  'SSH over HTTPS from my house'
   }]
 }), () => ({
-  GroupName:    'db',      // <-------------------------------------------------------
+  GroupName:    'db',      // <------------------------------------------------------- db
   Description:  'Open for MongoDB ports',
   ingress: [{
     /*GroupId*/
@@ -853,9 +954,21 @@ sgsPlus = [() => ({
     FromPort:     22,
     ToPort:       22,
     Description:  'SSH from admin instances'
+  },{
+    ingressGroupId: getSecurityGroupId('access'),           /* TODO: Remove for prod */
+    IpProtocol:   'tcp',
+    FromPort:     22,
+    ToPort:       22,
+    Description:  'SSH from bastion instances'
+  },{
+    ingressGroupId: getSecurityGroupId('devOps'),           /* TODO: Remove for prod */
+    IpProtocol:   'tcp',
+    FromPort:     22,
+    ToPort:       22,
+    Description:  'SSH from devOps instances'
   }]
 }), () => ({
-  GroupName:    'util',      // <-------------------------------------------------------
+  GroupName:    'util',      // <------------------------------------------------------- util
   Description:  'Open for things like Redis and/or memcachced',
   ingress: [{
     /*GroupId*/
@@ -877,9 +990,21 @@ sgsPlus = [() => ({
     FromPort:     22,
     ToPort:       22,
     Description:  'SSH from admin instances'
+  },{
+    ingressGroupId: getSecurityGroupId('access'),           /* TODO: Remove for prod */
+    IpProtocol:   'tcp',
+    FromPort:     22,
+    ToPort:       22,
+    Description:  'SSH from bastion instances'
+  },{
+    ingressGroupId: getSecurityGroupId('devOps'),           /* TODO: Remove for prod */
+    IpProtocol:   'tcp',
+    FromPort:     22,
+    ToPort:       22,
+    Description:  'SSH from devOps instances'
   }]
 }), () => ({
-  GroupName:    'web',      // <-------------------------------------------------------
+  GroupName:    'web',      // <------------------------------------------------------- web
   Description:  'Open for HTTP(S)',
   ingress: [{
     /*GroupId*/
@@ -901,9 +1026,21 @@ sgsPlus = [() => ({
     FromPort:     22,
     ToPort:       22,
     Description:  'SSH from admin instances'
+  },{
+    ingressGroupId: getSecurityGroupId('access'),           /* TODO: Remove for prod */
+    IpProtocol:   'tcp',
+    FromPort:     22,
+    ToPort:       22,
+    Description:  'SSH from bastion instances'
+  },{
+    ingressGroupId: getSecurityGroupId('devOps'),           /* TODO: Remove for prod */
+    IpProtocol:   'tcp',
+    FromPort:     22,
+    ToPort:       22,
+    Description:  'SSH from devOps instances'
   }]
 }), () => ({
-  GroupName:    'worker',      // <-------------------------------------------------------
+  GroupName:    'worker',      // <------------------------------------------------------- worker
   Description:  'Open at many high ports',
   ingress: [{
     /*GroupId*/
@@ -918,9 +1055,21 @@ sgsPlus = [() => ({
     FromPort:     22,
     ToPort:       22,
     Description:  'SSH from admin instances'
+  },{
+    ingressGroupId: getSecurityGroupId('access'),
+    IpProtocol:   'tcp',
+    FromPort:     22,
+    ToPort:       22,
+    Description:  'SSH from bastion instances'
+  },{
+    ingressGroupId: getSecurityGroupId('devOps'),
+    IpProtocol:   'tcp',
+    FromPort:     22,
+    ToPort:       22,
+    Description:  'SSH from devOps instances'
   }]
 }), () => ({
-  GroupName:    'container_hosts',      // <-------------------------------------------------------
+  GroupName:    'container_hosts',      // <------------------------------------------------------- container_hosts
   Description:  'Open at many high ports',
   ingress: [{
     /*GroupId*/
@@ -935,6 +1084,18 @@ sgsPlus = [() => ({
     FromPort:     22,
     ToPort:       22,
     Description:  'SSH from admin instances'
+  },{
+    ingressGroupId: getSecurityGroupId('access'),
+    IpProtocol:   'tcp',
+    FromPort:     22,
+    ToPort:       22,
+    Description:  'SSH from bastion instances'
+  },{
+    ingressGroupId: getSecurityGroupId('devOps'),
+    IpProtocol:   'tcp',
+    FromPort:     22,
+    ToPort:       22,
+    Description:  'SSH from devOps instances'
   }]
 })];
 

@@ -3,9 +3,10 @@
 NODE_UTILS=""
 
 # What to install?
-INSTALL_DOCKER="1"
+# INSTALL_DOCKER="1"
 INSTALL_OPS="1"
-INSTALL_AGENTS="1"
+# INSTALL_AGENTS="0"
+# INSTALL_NAT="1"
 
 ## This next line will get replaced with vars that might override the above, and ENV vars that go into /etc/environment
 # quicknetuserdataenvcursor
@@ -130,5 +131,30 @@ EOF
   chown -R "${the_user_name}":"${the_user_name}" "${the_home_dir}/mk-compliant"
 fi
 #ZZZZ INSTALL_AGENTS
+
+
+#AAAA INSTALL_NAT
+## ----------------------------------------------------------------------------------------------
+# Install NAT
+##  https://www.theguild.nl/cost-saving-with-nat-instances/
+##  https://www.nairabytes.net/81-linux/418-how-to-set-up-a-nat-router-on-ubuntu-server-16-04
+##  https://askubuntu.com/questions/898473/nat-using-iptables-on-ubuntu-16-04-doesnt-work
+if [[ -n $INSTALL_NAT ]]; then
+  sysctl -w net.ipv4.ip_forward=1
+  sysctl net.ipv4.conf.ens5.forwarding=1
+
+  echo 'net.ipv4.ip_forward=1' >> /etc/sysctl.conf
+  echo 'net.ipv6.conf.ens5.forwarding=1' >> /etc/sysctl.conf
+  echo 'net.ipv6.conf.all.forwarding=1' >> /etc/sysctl.conf
+
+  /sbin/iptables -A FORWARD -o ens5 -j ACCEPT
+  /sbin/iptables -A FORWARD -m state --state ESTABLISHED,RELATED -i ens5 -j ACCEPT
+  /sbin/iptables -t nat -A POSTROUTING -o ens5 -j MASQUERADE
+
+  iptables-save > /etc/iptables/rules.v4
+fi
+#ZZZZ INSTALL_NAT
+
+
 
 

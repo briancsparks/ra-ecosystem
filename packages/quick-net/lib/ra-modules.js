@@ -34,12 +34,12 @@ const modFnMap = {
   },
   vpcs: {
     filename: path.join(__dirname, '..', 'commands', 'vpcs.js'),
-    fnNames:  ['getVpcSubnetsSgs'],
+    fnNames:  ['getVpcSubnetsSgs', 'manageVpc', 'launchInfo'],
   },
-  // ec2: {
-  //   filename: path.join(__dirname, 'ec2', 'ec2.js'),
-  //   fnNames:  ['upsertInstance'],
-  // },
+  ec2: {
+    filename: path.join(__dirname, 'ec2', 'ec2.js'),
+    fnNames:  ['upsertInstance', 'getAmis'],
+  },
 };
 
 module.exports = {

@@ -136,6 +136,7 @@ mod.xport({upsertInstance: function(argv, context, callback) {
 
   return rax.iwrap(function(abort, calling) {
     const { runInstances,describeInstances }  = libAws.awsFns(ec2, 'runInstances,describeInstances', rax.opts({}), abort);
+    const { modifyInstanceAttribute }         = libAws.awsFns(ec2, 'modifyInstanceAttribute', rax.opts({}), abort);
     const { getSubnets }                      = rax.loads(libVpc, 'getSubnets', rax.opts({}), abort);
     const { getUbuntuLtsAmis }                = rax.loads('getUbuntuLtsAmis', rax.opts({}), abort);
 
@@ -145,7 +146,7 @@ mod.xport({upsertInstance: function(argv, context, callback) {
     const uniqueName            = rax.arg(argv, 'uniqueName,unique', {required: sg.modes().production});
     var   ImageId               = rax.arg(argv, 'ImageId,image');
     var   osVersion             = rax.arg(argv, 'osVersion,os-version');
-    const InstanceType          = rax.arg(argv, 'InstanceType,instanceType,instance', {required:true});
+    const InstanceType          = rax.arg(argv, 'InstanceType,instanceType,instance,type', {required:true});
     const classB                = rax.arg(argv, 'class_b,classB,b');
     var   az                    = rax.arg(argv, 'AvailabilityZone,az');
     const KeyName               = rax.arg(argv, 'KeyName,key', {required:true});
@@ -159,10 +160,19 @@ mod.xport({upsertInstance: function(argv, context, callback) {
     var   MinCount              = rax.arg(argv, 'MinCount,min') || count;
     const DryRun                = rax.arg(argv, 'DryRun,dry-run');
     const envJsonFile           = rax.arg(argv, 'envjson');
-    var   userdataOpts          = rax.arg(argv, 'userdata_opts');   // An object
-    const moreShellScript       = rax.arg(argv, 'moreshellscript')    || '';
-    const cloudInitData         = rax.arg(argv, 'cloudInit,ci')       || {};
+    var   userdataOpts          = rax.arg(argv, 'userdata_opts,userdataOpts')     || {};   // An object
+    const moreShellScript       = rax.arg(argv, 'moreshellscript')                || '';
+    const cloudInitData         = rax.arg(argv, 'cloudInit,ci')                   || {};
     const roleKeys              = rax.arg(argv, 'roleKeys');
+    const SourceDestCheck       = !!rax.arg(argv, 'SourceDestCheck');
+
+    // What opts?
+    userdataOpts = sg.reduce(Object.keys(argv), userdataOpts, (m,key) => {
+      if (key.startsWith('INSTALL_') && typeof argv[key] === 'boolean') {
+        m[key] = argv[key];
+      }
+      return m;
+    });
 
     if (rax.argErrors())    { return rax.abort(); }
 
@@ -291,7 +301,6 @@ mod.xport({upsertInstance: function(argv, context, callback) {
 
         // Process the user-data script
         userDataScript  = fixUserDataScript(userDataScript_, {uniqueName, userdataOpts, userdataEnv, moreShellScript});
-
         return next();
       });
 
@@ -301,7 +310,8 @@ mod.xport({upsertInstance: function(argv, context, callback) {
       cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
         package_update: true,
         package_upgrade: true,
-        packages: ['ntp', 'tree', 'htop', 'zip', 'unzip', 'nodejs', 'yarn', 'jq'],
+        // packages: ['ntp', 'tree', 'htop', 'zip', 'unzip', 'nodejs', 'yarn', 'jq'],
+        packages: ['ntp', 'tree', 'htop', 'zip', 'unzip', 'nodejs', 'jq'],
         apt:      {
           preserve_sources_list: true,
           sources: {
@@ -309,10 +319,10 @@ mod.xport({upsertInstance: function(argv, context, callback) {
               key: nodesource_com_key(),
               source: `deb https://deb.nodesource.com/node_12.x ${osVersion} main`
             },
-            "yarn.list": {
-              key: yarnpkg_com_key(),
-              source: `deb https://dl.yarnpkg.com/debian/ stable main`
-            }
+            // "yarn.list": {
+            //   key: yarnpkg_com_key(),
+            //   source: `deb https://dl.yarnpkg.com/debian/ stable main`
+            // }
           }
         }
       });
@@ -377,7 +387,7 @@ mod.xport({upsertInstance: function(argv, context, callback) {
         });
       }
 
-      if (userdataOpts.MONGO_CLIENTS) {
+      if (userdataOpts.INSTALL_MONGO_CLIENTS) {
         cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
           packages: ['mongodb-clients'],
         });
@@ -408,6 +418,13 @@ mod.xport({upsertInstance: function(argv, context, callback) {
               }
             }
           }
+        });
+      }
+
+      // Install stuff for NAT instances?
+      if (userdataOpts.INSTALL_NAT) {
+        cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
+          packages: ['iptables-persistent'],
         });
       }
 
@@ -488,6 +505,8 @@ mod.xport({upsertInstance: function(argv, context, callback) {
 
       // Build up the cloud-init userdata
       const userdata = mimeArchive.build();
+      // sg.elog(`buildmime`, {userdataOpts, userdata, len: userdata.length});
+
       if (userdata) {
         UserData   = Buffer.from(userdata).toString('base64');
       }
@@ -517,15 +536,29 @@ mod.xport({upsertInstance: function(argv, context, callback) {
             return abort(err);
           }
 
-          my.result = {Instance: data.Reservations[0].Instances[0]};
+          // Wait for launch
+          const Instance = data.Reservations[0].Instances[0];
+          if (Instance.State.Name !== 'running') {
+            return again(1000);
+          }
+
+          my.result = {Instance};
           return last();
         });
       }, next);
 
     }, function(my, next) {
+      if (SourceDestCheck)    { return next(); }
+
+      // Change SourceDestCheck for NAT instances
+      return modifyInstanceAttribute({InstanceId, SourceDestCheck: {Value: SourceDestCheck}}, rax.opts({}), (err, data) => {
+        return next();
+      });
+
+    }, function(my, next) {
       // Put stuff on S3 for the instance
-      const namespace = process.env.NAMESPACE;
-      const s3path = `s3://serverassist-net-state-store/quick-net/${namespace.toLowerCase()}`;
+      const namespace = process.env.NAMESPACE || process.env.NS || 'quicknet';
+      const s3path = `s3://quick-net/deploy/${namespace.toLowerCase()}`;
       return copyFileToS3(path.join(__dirname, 'instance-help', 'install-dev-tools'), s3path, function(err, data) {
         sg.debugLog(`Upload instance-help`, {err, data});
         return next();
@@ -583,8 +616,8 @@ function fixUserDataScript(shellscript_, options_) {
   const options = options_ || {};
 
   const uniqueName        = options.uniqueName;
-  const userdataOpts      = options.userdataOpts;
-  const userdataEnv       = options.userdataEnv;
+  const userdataOpts      = options.userdataOpts        || {};
+  const userdataEnv       = options.userdataEnv         || {};
   const moreShellScript   = options.moreShellScript;
 
   // The script starts as the read-in script, plus whatever the caller added
