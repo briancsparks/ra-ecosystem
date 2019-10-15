@@ -166,6 +166,14 @@ mod.xport({upsertInstance: function(argv, context, callback) {
     const roleKeys              = rax.arg(argv, 'roleKeys');
     const SourceDestCheck       = !!rax.arg(argv, 'SourceDestCheck');
 
+    // What opts?
+    userdataOpts = sg.reduce(Object.keys(argv), userdataOpts, (m,key) => {
+      if (key.startsWith('INSTALL_') && typeof argv[key] === 'boolean') {
+        m[key] = argv[key];
+      }
+      return m;
+    });
+
     if (rax.argErrors())    { return rax.abort(); }
 
     if (!BlockDeviceMappings) {
@@ -379,7 +387,7 @@ mod.xport({upsertInstance: function(argv, context, callback) {
         });
       }
 
-      if (userdataOpts.MONGO_CLIENTS) {
+      if (userdataOpts.INSTALL_MONGO_CLIENTS) {
         cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
           packages: ['mongodb-clients'],
         });
@@ -497,7 +505,8 @@ mod.xport({upsertInstance: function(argv, context, callback) {
 
       // Build up the cloud-init userdata
       const userdata = mimeArchive.build();
-sg.elog(`buildmime`, {userdata, len: userdata.length});
+      // sg.elog(`buildmime`, {userdataOpts, userdata, len: userdata.length});
+
       if (userdata) {
         UserData   = Buffer.from(userdata).toString('base64');
       }
@@ -548,7 +557,7 @@ sg.elog(`buildmime`, {userdata, len: userdata.length});
 
     }, function(my, next) {
       // Put stuff on S3 for the instance
-      const namespace = process.env.NAMESPACE;
+      const namespace = process.env.NAMESPACE || process.env.NS || 'quicknet';
       const s3path = `s3://quick-net/deploy/${namespace.toLowerCase()}`;
       return copyFileToS3(path.join(__dirname, 'instance-help', 'install-dev-tools'), s3path, function(err, data) {
         sg.debugLog(`Upload instance-help`, {err, data});

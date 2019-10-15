@@ -24,7 +24,7 @@ var   params = {
   az
 };
 
-params.userdata_opts = {INSTALL_DOCKER:false, INSTALL_OPS:false, INSTALL_MONGODB:true, INSTALL_AGENTS:false, INSTALL_KUBERNETES:false};
+params.userdata_opts = {INSTALL_MONGODB:true};
 
 params = moreShellScript(params);
 sg.elog(`params`, {params});

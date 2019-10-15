@@ -158,6 +158,9 @@ const isAwsProp = function(key, obj) {
 
   // Can look at other things.
 
+  // Not all uppper-case
+  if (key === key.toUpperCase())    { return false; }
+
   return key[0].match(/[A-Z]/);
 };
 

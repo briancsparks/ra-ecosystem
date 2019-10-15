@@ -33,7 +33,7 @@ mod.xport({tag: function(argv, context, callback) {
 }});
 
 const gTags = {
-  namespace:  process.env.NAMESPACE || process.env.NS,
+  namespace:  process.env.NAMESPACE || process.env.NS || 'quicknet',
   owner:      process.env.OWNER
 };
 

@@ -76,7 +76,19 @@ mod.xport({manageVpc: function(argv, context, callback) {
       FromPort:     22,
       ToPort:       22,
       Description:  'SSH from admin instances'
-    }]
+    },{
+      ingressGroupId: getSecurityGroupId('access'),
+      IpProtocol:   'tcp',
+      FromPort:     22,
+      ToPort:       22,
+      Description:  'SSH from bastion instances'
+    },{
+      ingressGroupId: getSecurityGroupId('devOps'),
+      IpProtocol:   'tcp',
+      FromPort:     22,
+      ToPort:       22,
+      Description:  'SSH from devOps instances'
+      }]
   })];
 
   sgs = [...sgs, () => ({
@@ -942,6 +954,18 @@ sgsPlus = [() => ({
     FromPort:     22,
     ToPort:       22,
     Description:  'SSH from admin instances'
+  },{
+    ingressGroupId: getSecurityGroupId('access'),           /* TODO: Remove for prod */
+    IpProtocol:   'tcp',
+    FromPort:     22,
+    ToPort:       22,
+    Description:  'SSH from bastion instances'
+  },{
+    ingressGroupId: getSecurityGroupId('devOps'),           /* TODO: Remove for prod */
+    IpProtocol:   'tcp',
+    FromPort:     22,
+    ToPort:       22,
+    Description:  'SSH from devOps instances'
   }]
 }), () => ({
   GroupName:    'util',      // <------------------------------------------------------- util
@@ -966,6 +990,18 @@ sgsPlus = [() => ({
     FromPort:     22,
     ToPort:       22,
     Description:  'SSH from admin instances'
+  },{
+    ingressGroupId: getSecurityGroupId('access'),           /* TODO: Remove for prod */
+    IpProtocol:   'tcp',
+    FromPort:     22,
+    ToPort:       22,
+    Description:  'SSH from bastion instances'
+  },{
+    ingressGroupId: getSecurityGroupId('devOps'),           /* TODO: Remove for prod */
+    IpProtocol:   'tcp',
+    FromPort:     22,
+    ToPort:       22,
+    Description:  'SSH from devOps instances'
   }]
 }), () => ({
   GroupName:    'web',      // <------------------------------------------------------- web
@@ -990,6 +1026,18 @@ sgsPlus = [() => ({
     FromPort:     22,
     ToPort:       22,
     Description:  'SSH from admin instances'
+  },{
+    ingressGroupId: getSecurityGroupId('access'),           /* TODO: Remove for prod */
+    IpProtocol:   'tcp',
+    FromPort:     22,
+    ToPort:       22,
+    Description:  'SSH from bastion instances'
+  },{
+    ingressGroupId: getSecurityGroupId('devOps'),           /* TODO: Remove for prod */
+    IpProtocol:   'tcp',
+    FromPort:     22,
+    ToPort:       22,
+    Description:  'SSH from devOps instances'
   }]
 }), () => ({
   GroupName:    'worker',      // <------------------------------------------------------- worker
@@ -1007,6 +1055,18 @@ sgsPlus = [() => ({
     FromPort:     22,
     ToPort:       22,
     Description:  'SSH from admin instances'
+  },{
+    ingressGroupId: getSecurityGroupId('access'),
+    IpProtocol:   'tcp',
+    FromPort:     22,
+    ToPort:       22,
+    Description:  'SSH from bastion instances'
+  },{
+    ingressGroupId: getSecurityGroupId('devOps'),
+    IpProtocol:   'tcp',
+    FromPort:     22,
+    ToPort:       22,
+    Description:  'SSH from devOps instances'
   }]
 }), () => ({
   GroupName:    'container_hosts',      // <------------------------------------------------------- container_hosts
@@ -1024,6 +1084,18 @@ sgsPlus = [() => ({
     FromPort:     22,
     ToPort:       22,
     Description:  'SSH from admin instances'
+  },{
+    ingressGroupId: getSecurityGroupId('access'),
+    IpProtocol:   'tcp',
+    FromPort:     22,
+    ToPort:       22,
+    Description:  'SSH from bastion instances'
+  },{
+    ingressGroupId: getSecurityGroupId('devOps'),
+    IpProtocol:   'tcp',
+    FromPort:     22,
+    ToPort:       22,
+    Description:  'SSH from devOps instances'
   }]
 })];
 

@@ -35,7 +35,7 @@ var   redis;
 //  Data
 //
 
-const namespace               = process.env.NAMESPACE   || 'quicknet';
+const namespace               = process.env.NAMESPACE || process.env.NS || 'quicknet';
 const NAMESPACE               = namespace.toUpperCase();
 const redisPort               = 6379;
 const redisHost               = 'redis';
