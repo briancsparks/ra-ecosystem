@@ -13,7 +13,6 @@ module.exports.setContextItem = setContextItem;
 module.exports.getContextItem = getContextItem;
 
 function Diagnostic(ctorArgs) {
-sg.log(`Dctor`, {ctorArgs, callback: typeof ctorArgs.callback});
   var   self    = this;
 
   self.fnName   = ctorArgs.fnName;
@@ -35,6 +34,7 @@ sg.log(`Dctor`, {ctorArgs, callback: typeof ctorArgs.callback});
   self.getCurrFnName = function() {
     return self.fnName || self.DIAG.getCurrFnName();
   };
+
 
   self.args = function() {
     const argv        = self.getArgv(ctorArgs);
@@ -88,7 +88,7 @@ sg.log(`Dctor`, {ctorArgs, callback: typeof ctorArgs.callback});
 
 
 
-  self.haveArgs = function(inputArgs, computedArgs) {
+  self.haveArgs = function(inputArgs, computedArgs ={}) {
 
     // See what's missing out of the caller-supplied args
     _.each(inputArgs, (arg, name) => {
@@ -107,6 +107,8 @@ sg.log(`Dctor`, {ctorArgs, callback: typeof ctorArgs.callback});
         self.errors.push(toError(msg, {cause: `An important, but not required argument was not supplied.`, name, fnName: self.getCurrFnName(), fatal: false}));
       }
     });
+
+    // ---------- Validate with JSON Schema ----------
 
     // Now we have the users proposed argv -- validate it
     const schema      = self.DIAG.getSchema()       || {};
@@ -148,7 +150,6 @@ sg.log(`Dctor`, {ctorArgs, callback: typeof ctorArgs.callback});
 
     // See if there was a callback function to use.
     const callback    = getCallback(ctorArgs);
-sg.log(`exit1`, {callback: typeof callback});
 
     // TODO: Check self.errors, callback, etc.
     if (sg.isnt(callback)) {
@@ -164,7 +165,6 @@ sg.log(`exit1`, {callback: typeof callback});
     if (_.isFunction(callback)) {
       if (self.errors.length > 0) {
         // An ERROR, but we have a callback function.
-sg.log(`exit2`, {callback: typeof callback});
         return callback(toError('ENOTVALID', self.errors, 400));
       }
 
@@ -295,7 +295,7 @@ sg.log(`exit2`, {callback: typeof callback});
     msgArgv = msgArgv || self.getArgv(ctorArgs);
 
     // TODO: `quiet` in this context should mean that the active developer doesnt want to be bugged
-    if (msgArgv.quiet && activeDevelopment)    { return; }
+    if (msgArgv.quiet && activeDevelopment())    { return; }
 
     var standard = true;
     if (self.logger) {
@@ -457,24 +457,15 @@ sg.log(`fileddiag calling new`, {args});
 
 
 function fromContext(args) {
-sg.log(`fileddiag fromContext0`, {args, callback: typeof args.callback});
-
-  // var   sgDiagnostic  = (args.context ||{}).sgDiagnostic || {};
-  // var   diag          = sgDiagnostic.diag;
 
   var   diag = getContextItem(args.context, 'diag');
-sg.log(`fileddiag fromContext1`, {args, callback: typeof args.callback});
 
   if (!diag) {
-sg.log(`fileddiag fromContext2`, {args, callback: typeof args.callback});
     diag = new Diagnostic(args);
-sg.log(`fileddiag fromContext3`, {args, callback: typeof args.callback});
 
     setContextItem(args.context, 'diag', diag);
-sg.log(`fileddiag fromContext4`, {args, callback: typeof args.callback});
   }
 
-sg.log(`fileddiag fromContext5`, {args, callback: typeof args.callback});
   return diag;
 }
 
@@ -498,16 +489,3 @@ function getCallback(args) {
   return args.callback;
 }
 
-// function rootOptions(...args) {
-//   var   parent  = null;
-//   var   options = null;
-
-//   if (args[0] instanceof Diagnostic) {
-//     parent  = args[0];
-//     options = _.extend({}, parent.options);
-//   } else {
-//     options  = args[0] || {};
-//   }
-
-//   return options;
-// }

@@ -32,8 +32,9 @@ DIAG.usage({
   }
 });
 
-DIAG.activeDevelopment(`--lambda-name=lambda-net --stage=dev --Bucket=quick-net --AWS_PROFILE=bcs`);
-DIAG.activeDevelopment(`--debug`);
+// The last one wins. Comment out what you dont want.
+DIAG.activeDevelopment(`--lambda-name=lambda-net --stage=dev --Bucket=quick-net`);
+DIAG.activeDevelopment(`--lambda-name=lambda-net --stage=dev --Bucket=quick-net --debug`);
 
 module.exports.main =
 mod.async(DIAG.async({buildLayer: async function(argv, context) {
@@ -66,7 +67,7 @@ mod.async(DIAG.async({buildLayer: async function(argv, context) {
 
   sg.bigBanner('green', `Building Docker image ###`);
 
-  runDocker(qm.stitch([`build`, [`-t`, 'quick-net-lambda-layer'], ['--progress', 'tty'], ['-f', dockerfile], '.']), {cwd: dockerfileDir});
+  await runDocker(qm.stitch([`build`, [`-t`, 'quick-net-lambda-layer'], ['--progress', 'tty'], ['-f', dockerfile], '.']), {cwd: dockerfileDir});
 
   const runArgs = [
     [`-v`, `${sg.os.homedir()}/.aws:/aws`],
@@ -78,7 +79,7 @@ mod.async(DIAG.async({buildLayer: async function(argv, context) {
   ];
 
   sg.bigBanner('green', `Running layer-builder in Docker ###`);
-  runDocker(qm.stitch(['run', '--rm', ...runArgs]), {cwd: dockerfileDir});
+  await runDocker(qm.stitch(['run', '--rm', ...runArgs]), {cwd: dockerfileDir});
 
   sg.bigBanner('green', `Done running layer-builder in Docker`);
   return {ok:true};

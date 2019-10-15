@@ -59,8 +59,6 @@ module.exports.DIAG_ = function(mod) {
   self.bits         = sg.bits(mod);
   self.diag         = null;
 
-  self.devCliArgs   = null;
-
 
   self.close = function() {
     if (self.diag) {
@@ -73,13 +71,14 @@ module.exports.DIAG_ = function(mod) {
     self.bits.setJson(data);
   };
 
-  self.activeDevelopment = function(cliArgs) {
-    self.devCliArgs = (self.devCliArgs || '') + ' ' + cliArgs;
+  self.activeDevelopment = function(devCliArgs) {
+    if (sg.smartValue(process.env.ACTIVE_DEVELOPMENT)) {
+      self.bits.setData(null, {devCliArgs});
+    }
   };
 
-  self.loadData = async function(fnName) {
-    const mainjson    = await self.bits.loadJson()     || {};
-    return mainjson;
+  self.getSetupFnName = function() {
+    return self.bits.currSetupName;
   };
 
   self.getCurrFnName = function() {
@@ -87,12 +86,22 @@ module.exports.DIAG_ = function(mod) {
     return diagFunctions[0].fnName;
   };
 
+  self.loadData = async function(fnName) {
+    const mainjson    = await self.bits.loadJson()     || {};
+    return mainjson;
+  };
+
+
+
+  self.devCliArgs = function(fnName) {
+    return self.bits.getData(fnName || self.getCurrFnName(), 'devCliArgs') || '';
+  };
+
   self.getAliases = function() {
     const currFnName  = self.getCurrFnName()    || '';
     const mainjson    = self.bits.getJson()     || {};
 
-    // const argSpec      = ((mainjson.aliases || mainjson.fns || {})[currFnName] ||{}).args || {};   // TODO: 'fns' is one of the mis-matches with the quasi-multi-level JSON built from sg-bits
-    const argSpec      = ((mainjson.aliases || {})[currFnName] ||{}).args || {};   // TODO: 'fns' is one of the mis-matches with the quasi-multi-level JSON built from sg-bits
+    const argSpec     = ((mainjson.aliases || {})[currFnName] ||{}).args || {};   // TODO: 'fns' is one of the mis-matches with the quasi-multi-level JSON built from sg-bits
     return argSpec;
   };
 
@@ -113,32 +122,26 @@ module.exports.DIAG_ = function(mod) {
     const fnName        = firstFnName(xfn);
     const intercepted   = xfn[fnName];
 
-    bigBanner('green', `Hijacking the overall function: ${fnName}`);
+    // bigBanner('green', `Hijacking the overall function: ${fnName}`);
 
+    // ---------- Create a diag object for this invocation ----------
     const setupDiag = function(argv, context, callback) {
       const logApi    = argv.log_api || process.env.SG_LOG_API;
 
-sg.log(`setupDiag`, {argv, context: !!context, callback: typeof callback});
-
-      // ---------- Create a diag object for this invocation ----------
       var diag = sgDiagnostic.fromContext({argv, context, fnName, callback});
-sg.log(`setupDiag2-back`, {argv, context: !!context, callback: typeof callback});
       self.initDiagnostic(diag);
-sg.log(`setupDiag3-back`, {argv, context: !!context, callback: typeof callback});
 
       diag.i_if(logApi, `--> ${fnName}:`, {argv});
-sg.log(`setupDiag4-back`, {argv, context: !!context, callback: typeof callback});
     };
 
     // Build an impostor to hand out -- this fn will be called, and needs to call the real fn
     // This is for when !isActuallyContinuationStyle
     const interceptorFnA = /*async*/ function(argv, context) {
-sg.log(`interceptorA`, {devCliArgs: self.devCliArgs});
 
       // If we are active development, use those args
-      if (process.env.ACTIVE_DEVELOPMENT && self.devCliArgs) {
-        argv = sg.merge(argv ||{}, mkArgv(self.devCliArgs));
-        console.log(`invokingFnA ${fnName}`, util.inspect({argv, async: !isActuallyContinuationStyle}, {depth:null, color:true}));
+      if (sg.smartValue(process.env.ACTIVE_DEVELOPMENT) && self.devCliArgs(fnName)) {
+        argv = sg.merge(argv ||{}, mkArgv(self.devCliArgs(fnName)));
+        // console.log(`invokingFnA ${fnName}`, util.inspect({argv, async: !isActuallyContinuationStyle}, {depth:null, color:true}));
       }
 
       setupDiag(argv, context, null);
@@ -163,31 +166,24 @@ sg.log(`interceptorA`, {devCliArgs: self.devCliArgs});
 
     // This is for when isActuallyContinuationStyle
     const interceptorFnB = function(argv, context, callback) {
-sg.log(`interceptorB`, {devCliArgs: self.devCliArgs, argv, context: !!context, callback: typeof callback});
 
       // If we are active development, use those args
-      if (process.env.ACTIVE_DEVELOPMENT && self.devCliArgs) {
-        argv = sg.merge(argv ||{}, mkArgv(self.devCliArgs));
-        console.log(`invokingFnB ${fnName}`, util.inspect({argv, async: !isActuallyContinuationStyle}, {depth:null, color:true}));
+      if (sg.smartValue(process.env.ACTIVE_DEVELOPMENT) && self.devCliArgs(fnName)) {
+        argv = sg.merge(argv ||{}, mkArgv(self.devCliArgs(fnName)));
+        // console.log(`invokingFnB ${fnName}`, util.inspect({argv, async: !isActuallyContinuationStyle}, {depth:null, color:true}));
       }
 
-sg.log(`interceptorB2`, {devCliArgs: self.devCliArgs, argv, context: !!context, callback: typeof callback});
       setupDiag(argv, context, callback);
-sg.log(`interceptorB7`, {devCliArgs: self.devCliArgs, argv});
 
       return interceptCaller(argv, context, async function(callbackCCC) {
-sg.log(`interceptorB3`, {devCliArgs: self.devCliArgs, argv});
 
         // ---------- Load all data ----------
         await self.loadData(fnName);
-sg.log(`interceptorB4`, {devCliArgs: self.devCliArgs, argv, fnName});
 
         // ========== Call the intercepted function ==========
         return intercepted(argv, context, function(err, result) {
-sg.log(`interceptorB5-back from intercepted`, {argv, err, result});
 
           return callbackCCC(function callbackDDD() {
-sg.log(`interceptorB6 final`, {argv, err, result});
             return callback(err, result);
           });
         });
@@ -224,8 +220,8 @@ sg.log(`interceptorB6 final`, {argv, err, result});
 
         return callbackDDD();
       });
-
     }
+
   };
 
   self.xport = function(xfn) {

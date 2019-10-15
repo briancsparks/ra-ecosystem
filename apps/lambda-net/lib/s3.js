@@ -11,7 +11,8 @@ const ENV                     = sg.ENV();
 
 DIAG.usage({aliases:{streamToS3:{}}});
 
-DIAG.activeDevelopment(`--Bucket=quick-net-ingest-dump --AWS_PROFILE=bcs`);
+// TODO: activeDevelopment needs to be associated with thie fn
+DIAG.activeDevelopment(`--Bucket=quick-net-ingest-dump`);
 DIAG.activeDevelopment(`--debug`);
 
 const streamToS3Obj = DIAG.xport({streamToS3: function(argv, context, callback) {
@@ -53,19 +54,32 @@ function _streamToS3_({Body, Bucket, Key, diag}, callback) {
 
 
 
+function getBody(argv, context) {
+  if (argv.__meta__ && argv.__meta__.body) {
+    return argv.__meta__.body;
+  }
+  return argv;
+}
 
+function stringify(x) {
+  if (typeof x === 'string')  { return x; }
+
+  return JSON.stringify(x);
+}
 
 DIAG.usage({aliases:{putToS3:{}}});
 
-DIAG.activeDevelopment(`--Bucket=quick-net-ingest-dump --AWS_PROFILE=bcs`);
+DIAG.activeDevelopment(`--Bucket=quick-net-ingest-dump`);
 DIAG.activeDevelopment(`--debug`);
 
 const putToS3Obj = DIAG.xport({putToS3: function(argv, context, callback) {
   const diag    = DIAG.diagnostic({argv, context, callback});
 
-  var  {Bucket,Body,Key,AWS_PROFILE}   = diag.args();
+  var  {Bucket,Key,AWS_PROFILE}       = diag.args();
+  var  Body                           = getBody(argv, context) || diag.args().Body;
 
   AWS_PROFILE                         = AWS_PROFILE   || ENV.at('AWS_PROFILE');
+  Bucket                              = Bucket        || ENV.at('IngestBucket');
 
   // If the caller did not provide an AWS Key, we will need the clientId/sessionId
   // to generate it.
@@ -76,7 +90,8 @@ const putToS3Obj = DIAG.xport({putToS3: function(argv, context, callback) {
 
   // We need an AWS Key to store the blob. If we do not have one, try to compute it
   if (!Key) {
-    if (!(diag.haveArgs({Body,clientId,sessionId}, {AWS_PROFILE}))) {
+    // TODO: constructed should be defaultable
+    if (!(diag.haveArgs({Body,clientId,sessionId}, {}))) {
       return diag.exit();
     }
 
@@ -84,13 +99,14 @@ const putToS3Obj = DIAG.xport({putToS3: function(argv, context, callback) {
   }
 
   // Check that we have the params
-  if (!(diag.haveArgs({Bucket,Key,Body}, {AWS_PROFILE}))) {
+  // TODO: constructed should be defaultable
+  if (!(diag.haveArgs({Bucket,Key,Body}, {}))) {
     // We have done all we can
     return diag.exit();
   }
 
   // Call the real worker
-  return _putToS3_({Body, Bucket, Key, diag}, callback);
+  return _putToS3_({Body: stringify(Body), Bucket, Key, diag}, callback);
 }});
 
 module.exports.putToS3 = putToS3Obj.putToS3;
@@ -129,8 +145,13 @@ function mkKey(Body, clientId, sessionId, dataType) {
   return key.join('/') + '.json';
 }
 
-function hashBody(Body) {
+function hashBody(Body_) {
   var   shasum    = crypto.createHash('sha1');
+
+  var Body = Body_;
+  if (!(typeof Body === 'string')) {
+    Body = JSON.stringify(Body);
+  }
 
   shasum.update(Body);
 

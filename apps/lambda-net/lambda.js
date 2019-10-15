@@ -14,10 +14,10 @@ const ra                      = require('run-anywhere').v2;
 const quickNet                = require('quick-net');
 const sg0                     = ra.get3rdPartyLib('sg-flow');
 const sg                      = sg0.merge(sg0, quickNet.get3rdPartyLib('sg-argv'), require('sg-config'), require('sg-http'));
-const util                    = require('util');
-const { _ }                   = sg;
+// const util                    = require('util');
+// const { _ }                   = sg;
 
-const S3                      = require('./lib/s3');
+// const S3                      = require('./lib/s3');
 // const { awsService }          = quickNet.libAws;
 
 const {
@@ -75,26 +75,31 @@ hosts.aws_lambda.setDispatcher(function(event, context_, callback) {
     const _200 = sg._200({ok:true, ...data});
     sg.log(`Responding to /test request`, {_200});
     return callback(...fixResponseForApiGatewayLambdaProxy(..._200));
-  }
 
-  return S3.putToS3(argv, context, function(err, data) {
-    if (err) {
+  } else if (context.event.path === '/upload') {
+    sg.log(`lam`, {qn: Object.keys(quickNet)});
 
-      if (err.httpCode && err.httpCode === 400) {
-        let _400 = sg._400({ok: false}, err);
-        sg.log(`Response from app`, {_400});
-        return callback(...fixResponseForApiGatewayLambdaProxy(..._400));
+    return quickNet.putToS3(argv, context, function(err, data) {
+      if (err) {
+
+        if (err.httpCode && err.httpCode === 400) {
+          let _400 = sg._400({ok: false}, err);
+          sg.log(`Response from app`, {_400});
+          return callback(...fixResponseForApiGatewayLambdaProxy(..._400));
+        }
+
+        return callback(err);
       }
 
-      return callback(err);
-    }
+      sg.log(`handler`, {data});
 
-    sg.log(`handler`, {data});
+      const _200 = sg._200({ok:true, ...data});
+      sg.log(`Response from app`, {_200});
+      return callback(...fixResponseForApiGatewayLambdaProxy(..._200));
+    });
+  }
 
-    const _200 = sg._200({ok:true}, data);
-    sg.log(`Response from app`, {_200});
-    return callback(...fixResponseForApiGatewayLambdaProxy(..._200));
-  });
+  return callback(...sg._404());
 });
 
 function fixResponseForApiGatewayLambdaProxy(err, resp) {
@@ -108,77 +113,7 @@ function fixResponseForApiGatewayLambdaProxy(err, resp) {
   }];
 }
 
-function argvify(event_, context_) {
 
-  // Already been done?
-  if (event_.__meta__) {
-    return [event_, context_];
-  }
-
-  const event = {...event_};
-
-  const query     = sg.extend(event.queryStringParameters, multiItemItems(event.multiValueQueryStringParameters));
-  const body      = decodeBody(event);
-
-  const headers   = sg.extend(event.headers, multiItemItems(event.multiValueHeaders));
-
-  const argvs     = {...headers, ...(event.pathParameters ||{}), ...(event.stageVariables ||{}), ...body, ...query};
-
-  const context   = {...context_, event: event_};
-
-  const argv = {
-    ...argvs,
-    __meta__: {
-      query,
-      body,
-      path    : event.path,
-      method  : event.method,
-
-      event   : event_
-    }
-  };
-
-
-  return [argv,context];
-}
-
-function multiItemItems(obj) {
-  return sg.reduce(obj, {}, (m,v,k) => {
-    if (v.length > 1) {
-      return sg.kv(m,k,v);
-    }
-
-    return m;
-  });
-}
-
-function decodeBody(event) {
-  const {body, isBase64Encoded} = event;
-
-  if (sg.isnt(body))        { return body; }
-  if (!_.isString(body))    { return body; }    /* already parsed */
-
-  var body_ = body;
-
-  if (isBase64Encoded) {
-    const buf   = new Buffer(body, 'base64');
-    body_       = buf.toString('ascii');
-  }
-
-  body_ = sg.safeJSONParse(body_)   || {payload:[]};
-
-  // Make much smaller sometimes
-  if (sg.modes().debug) {
-    if (Array.isArray(body_.payload) && body_.payload.length > 1) {
-      body_ = {...body_, payload: [body_.payload[0], `${body_.payload.length} more items.`]};
-    }
-  }
-
-  event.body              = body_;
-  event.isBase64Encoded   = false;
-
-  return body_;
-}
 
 // -------------------------------------------------------------------------------------
 // This is a function to enable smoke testing.

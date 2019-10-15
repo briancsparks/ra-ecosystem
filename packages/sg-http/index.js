@@ -5,6 +5,7 @@ const { _ }                   = sg;
 
 _.each(require('./lib/_2XX'), (x,k) => { sg[k] = x; });
 _.each(require('./lib/_4XX'), (x,k) => { sg[k] = x; });
+_.each(require('./lib/_5XX'), (x,k) => { sg[k] = x; });
 
 var getRawBody = sg.getRawBody = function(req, callback) {
   // req.end might have already been called

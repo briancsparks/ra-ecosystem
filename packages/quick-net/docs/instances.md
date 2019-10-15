@@ -2,7 +2,7 @@
 
 ## Launching
 
-Web servers
+### Web servers
 
 ```sh
 quick-net upsertInstance \
@@ -16,7 +16,18 @@ quick-net upsertInstance \
     --subnet=webtier
 ```
 
-Admin machines
+### NAT Instance and Bastion
+
+NAT Gateways are expensive, and NAT Instances are cheap and can be started and stopped
+quickly. What's more, NAT Instances can also be used as bastion servers. The following
+command will build the VPC with NAT Instances, and also use them as bastion servers. When
+they are not needed simply terminate, and re-run this command to re-enable NAT.
+
+```sh
+quick-net.ps1 manageVpc --adj=wicked --program=bcsnet --namespace=bcs --az= c d  --nat-instance --skip-endpoint-services --classB=11
+```
+
+### Admin machines
 
 ```sh
 quick-net upsertInstance \
@@ -29,6 +40,12 @@ quick-net upsertInstance \
     --iam=supercow \
     --sgs=admin,wide \
     --subnet=webtier
+```
+
+### DB
+
+```sh
+quick-net.ps1 upsertInstance --distro=ubuntu --type=t3.medium --key=mario_demo --classB=11 --sgs=db --subnet=db --az=c --iam=bcsnet-db-instance-role --INSTALL_MONGODB --size=250
 ```
 
 Where env.json is something like this, and will get added to /etc/environment, for example.

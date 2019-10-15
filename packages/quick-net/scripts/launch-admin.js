@@ -24,7 +24,7 @@ var   params = {
   az
 };
 
-params.userdata_opts = {INSTALL_DOCKER:true, INSTALL_OPS:true, INSTALL_AGENTS:true, INSTALL_KUBERNETES:true, MONGO_CLIENTS:true};
+params.userdata_opts = {INSTALL_DOCKER:true, INSTALL_OPS:true, INSTALL_AGENTS:true, INSTALL_KUBERNETES:true, INSTALL_MONGO_CLIENTS:true};
 
 params = moreShellScript(params);
 sg.elog(`params`, {params});

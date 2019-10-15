@@ -33,9 +33,9 @@ DIAG.usage({
   }
 });
 
-
-DIAG.activeDevelopment(`--stage=dev --lambda-name=lambda-net --class-b=21 --sgs=wide --AWS_PROFILE=bcs`);
-DIAG.activeDevelopment(`--debug`);
+// The last one wins. Comment out what you dont want.
+DIAG.activeDevelopment(`--stage=dev --lambda-name=lambda-net --class-b=21 --sgs=wide`);
+DIAG.activeDevelopment(`--stage=dev --lambda-name=lambda-net --class-b=21 --sgs=wide --debug`);
 
 module.exports.main =
 mod.async(DIAG.async({deployLambda: async function(argv, context) {
@@ -59,7 +59,7 @@ mod.async(DIAG.async({deployLambda: async function(argv, context) {
   const dockerfile      = sg.path.join(dockerfileDir, 'Dockerfile');
 
   sg.bigBanner('green', `Building deployer Docker image ###`);
-  runDocker(qm.stitch([`build`, [`-t`, 'quick-net-lambda-deploy'], ['--progress', 'tty'], ['-f', dockerfile], '.']), {cwd: dockerfileDir});
+  await runDocker(qm.stitch([`build`, [`-t`, 'quick-net-lambda-deploy'], ['--progress', 'tty'], ['-f', dockerfile], '.']), {cwd: dockerfileDir});
 
   vpcSubnetSgs  = await vpcSubnetSgs;
 
@@ -79,7 +79,7 @@ mod.async(DIAG.async({deployLambda: async function(argv, context) {
   ];
 
   sg.bigBanner('green', `Running ${lambdaName} deployer (in Docker) ###`);
-  runDocker(qm.stitch(['run', '--rm', ...runArgs]), {cwd: dockerfileDir});
+  await runDocker(qm.stitch(['run', '--rm', ...runArgs]), {cwd: dockerfileDir});
 
   sg.bigBanner('green', `Done running ${lambdaName} deployer in Docker`);
   return {ok:true};
