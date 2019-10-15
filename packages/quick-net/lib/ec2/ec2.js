@@ -146,7 +146,7 @@ mod.xport({upsertInstance: function(argv, context, callback) {
     const uniqueName            = rax.arg(argv, 'uniqueName,unique', {required: sg.modes().production});
     var   ImageId               = rax.arg(argv, 'ImageId,image');
     var   osVersion             = rax.arg(argv, 'osVersion,os-version');
-    const InstanceType          = rax.arg(argv, 'InstanceType,instanceType,instance', {required:true});
+    const InstanceType          = rax.arg(argv, 'InstanceType,instanceType,instance,type', {required:true});
     const classB                = rax.arg(argv, 'class_b,classB,b');
     var   az                    = rax.arg(argv, 'AvailabilityZone,az');
     const KeyName               = rax.arg(argv, 'KeyName,key', {required:true});
@@ -160,9 +160,9 @@ mod.xport({upsertInstance: function(argv, context, callback) {
     var   MinCount              = rax.arg(argv, 'MinCount,min') || count;
     const DryRun                = rax.arg(argv, 'DryRun,dry-run');
     const envJsonFile           = rax.arg(argv, 'envjson');
-    var   userdataOpts          = rax.arg(argv, 'userdata_opts,userdataOpts');   // An object
-    const moreShellScript       = rax.arg(argv, 'moreshellscript')    || '';
-    const cloudInitData         = rax.arg(argv, 'cloudInit,ci')       || {};
+    var   userdataOpts          = rax.arg(argv, 'userdata_opts,userdataOpts')     || {};   // An object
+    const moreShellScript       = rax.arg(argv, 'moreshellscript')                || '';
+    const cloudInitData         = rax.arg(argv, 'cloudInit,ci')                   || {};
     const roleKeys              = rax.arg(argv, 'roleKeys');
     const SourceDestCheck       = !!rax.arg(argv, 'SourceDestCheck');
 
@@ -293,7 +293,6 @@ mod.xport({upsertInstance: function(argv, context, callback) {
 
         // Process the user-data script
         userDataScript  = fixUserDataScript(userDataScript_, {uniqueName, userdataOpts, userdataEnv, moreShellScript});
-sg.elog(`ri`, {userDataScript, userdataOpts, len: userDataScript.length});
         return next();
       });
 
@@ -303,7 +302,8 @@ sg.elog(`ri`, {userDataScript, userdataOpts, len: userDataScript.length});
       cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
         package_update: true,
         package_upgrade: true,
-        packages: ['ntp', 'tree', 'htop', 'zip', 'unzip', 'nodejs', 'yarn', 'jq'],
+        // packages: ['ntp', 'tree', 'htop', 'zip', 'unzip', 'nodejs', 'yarn', 'jq'],
+        packages: ['ntp', 'tree', 'htop', 'zip', 'unzip', 'nodejs', 'jq'],
         apt:      {
           preserve_sources_list: true,
           sources: {
@@ -410,6 +410,13 @@ sg.elog(`ri`, {userDataScript, userdataOpts, len: userDataScript.length});
               }
             }
           }
+        });
+      }
+
+      // Install stuff for NAT instances?
+      if (userdataOpts.INSTALL_NAT) {
+        cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
+          packages: ['iptables-persistent'],
         });
       }
 
@@ -601,7 +608,7 @@ function fixUserDataScript(shellscript_, options_) {
 
   const uniqueName        = options.uniqueName;
   const userdataOpts      = options.userdataOpts        || {};
-  const userdataEnv       = options.userdataEnv;
+  const userdataEnv       = options.userdataEnv         || {};
   const moreShellScript   = options.moreShellScript;
 
   // The script starts as the read-in script, plus whatever the caller added
