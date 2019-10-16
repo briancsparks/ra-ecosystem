@@ -3,19 +3,21 @@ const sg                      = require('sg0');
 const { _ }                   = sg;
 
 /**
- * cleanString(`        style (1)
+ * cleanString('#', `        style (1)
  *   foo
  *   bar
  * `);
  *
- * cleanString(`        style (2)
+ * cleanString('#', `        style (2)
  *   foo
  *   bar`);
  *
- * cleanString(`        style (3)
+ * cleanString('#', `        style (3)
  *          foo
  *          bar
  * `);
+ *
+ * cleanString('#', s);
  *
  */
 

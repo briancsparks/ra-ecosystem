@@ -82,7 +82,7 @@ const nginx_conf = function(self, types, ...args) {
 
   const getOption = self.utils.getOption = function(options, name) {
     return (sg.merge(goptions, options) || {})[name];
-  }
+  };
 
   self.utils.root = function(fqdn, options = {}) {
     if (sg.isnt(fqdn))  { return; }

@@ -1,3 +1,4 @@
+/* eslint-disable valid-jsdoc */
 
 const path                    = require('path');
 const os                      = require('os');
@@ -118,8 +119,8 @@ exports.load = function(argv, context = {}) {
 exports.generate = function(...args) {
   var   [ argv, context = {} ] = args;
 
-  // For generate(filename, {options}) [[Below, generate({filename, ...options}) is expected]]
-  if (_.isString(args[0]))   { return exports.generate(sg.merge(args[1] || {}, {filename: args[0]})); }
+  // // For generate(filename, {options}) [[Below, generate({filename, ...options}) is expected]]
+  // if (_.isString(args[0]))   { return exports.generate(sg.merge(args[1] || {}, {filename: args[0]})); }
 
   const { filename, output } = argv;
 
@@ -138,41 +139,50 @@ exports.generate = function(...args) {
   return result;
 };
 
+/**
+ * Figure out all the file parts.
+ *
+ * @param {*} self
+ * @param {*} filename
+ * @param {*} options
+ */
 function figureOutType(self, filename, options) {
+
+  // Assume filename = /path/to/test.nginx.conf.js
 
   if (filename) {
     self.filename = filename;
 
-    var   parts   = filename.split(path.sep);
+    var   parts   = filename.split(path.sep);                                                     /* ['', 'path', 'to', 'test.nginx.conf.js'] */
 
-    self.file     = parts.pop();
-    self.dirname  = path.join(...parts);
+    self.file     = parts.pop();                                                                  /* 'test.nginx.conf.js' */
+    self.dirname  = path.join(...parts);                                                          /* '/path/to' */
 
-    parts           = self.file.split('.');
+    parts           = self.file.split('.');                                                       /* ['test', 'nginx', 'conf', 'js'] */
 
-    const ext       = parts.pop();
+    const ext       = parts.pop();                                                                /* 'js' */
     if (ext === 'js' && parts.length >= 2) {
       self.type     = [
-        self.type_filename  = parts.pop().toLowerCase(),
-        self.type_ext       = (parts.pop() || null).toLowerCase()
+        self.type_filename  = parts.pop().toLowerCase(),                                          /* 'conf' */
+        self.type_ext       = (parts.pop() || null).toLowerCase()                                 /* 'nginx' */
 
-      ].reverse().join('.').toLowerCase();
+      ].reverse().join('.').toLowerCase();                                                        /* 'nginx.conf' */
 
       if (parts.length > 0) {
-        self.name = parts.join('.');
+        self.name = parts.join('.');                                                              /* 'test' */
       }
     }
 
     self.getUniqueFilename = function(smart) {
       if (smart) {
         if (self.singularFileType) {
-          return _.compact([self.name, self.type_filename, self.type_ext]).join('.');
+          return _.compact([self.name, self.type_filename, self.type_ext]).join('.');             /* 'test.conf.nginx' */
         } else {
-          return _.compact([`${self.name}-${self.type_filename}`, self.type_ext]).join('.');
+          return _.compact([`${self.name}-${self.type_filename}`, self.type_ext]).join('.');      /* 'test-conf.nginx' */
         }
       }
 
-      return [self.name, self.type_ext].join('.');
+      return [self.name, self.type_ext].join('.');                                                /* 'test.nginx' */
     };
 
     self.getFilename = self.getUniqueFilename;

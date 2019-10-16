@@ -18,17 +18,17 @@ const dockerfile = function(self, types, ...args) {
     t.append(`FROM ${image}`);
   };
 
-  var apt_get_updateed = false;
+  var apt_get_updated = false;
 
   self.packages = function(...args) {
-    const packages = sg.reduce(args, [], (m, package) => {
-      return [ ...m, ...package.split(',') ];
+    const packages = sg.reduce(args, [], (m, pakage) => {
+      return [ ...m, ...pakage.split(',') ];
     });
 
-    if (!apt_get_updateed) {
+    if (!apt_get_updated) {
       t.append(
         `RUN apt-get update`);
-      apt_get_updateed = true;
+        apt_get_updated = true;
     }
 
     t.append_stitched(`

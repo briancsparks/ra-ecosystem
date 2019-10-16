@@ -262,7 +262,7 @@ function stringify(x) {
  * @param {string} name      -- The name of the configmap.
  */
 async function getHasConfigmap(namespace, name) {
-  const configmaps  = await client.api.v1.namespace(namespace).configmaps.get();
+  const configmaps  = await getKClient().api.v1.namespace(namespace).configmaps.get();
 
   if (!configmaps || configmaps.statusCode >= 400)  { return false; }
 
