@@ -1,0 +1,33 @@
+{
+  "name": "@sg0/quick-aws",
+  "version": "1.0.0",
+  "description": "> TODO: description",
+  "author": "Brian C Sparks <brian.c.sparks@hp.com>",
+  "homepage": "https://github.com/briancsparks/ra-ecosystem#readme",
+  "license": "MIT",
+  "main": "index.js",
+  "bin": {
+    "qaws": "bin/qaws.js"
+  },
+  "directories": {
+    "lib": "lib",
+    "test": "__tests__"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/briancsparks/ra-ecosystem.git"
+  },
+  "scripts": {
+    "test": "echo \"Error: run tests from root\" && exit 1"
+  },
+  "bugs": {
+    "url": "https://github.com/briancsparks/ra-ecosystem/issues"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.555.0",
+    "sg-clihelp": "^1.0.60"
+  }
+}

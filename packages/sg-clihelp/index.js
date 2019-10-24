@@ -33,6 +33,7 @@ var   ARGV  = sg.ARGV();
 //
 
 sg.die          = die;
+sg.dieAsync     = dieAsync;
 sg.grepLines    = grepLines;
 sg.include      = include;
 sg.from         = from;
@@ -72,6 +73,25 @@ function die(msg, code = 113) {
   }, 0);
 
   return code;
+}
+
+// ------------------------------------------------------------------------------------------------------------------
+/**
+ * Called when you are going to give up processing.
+ *
+ * @param {string} [msg]        - An optional message to display.
+ * @param {number} [code=113]   - The exit code.
+ *
+ * @returns {number} Passes back `code`.
+ */
+function dieAsync(msg, code = 113) {
+  console.error(msg);
+
+  setTimeout(function() {
+    process.exit(code);
+  }, 0);
+
+  return [{code}];
 }
 
 // ------------------------------------------------------------------------------------------------------------------
@@ -210,7 +230,7 @@ function runTopAsync(main, name='main') {
       return announceError(err);
     }
 
-    const message = sg.extract(result, 'finalMessage');
+    const message = sg.extract(result ||{}, 'finalMessage');
     ARGV.i(`function ${name} finished:`, {result}, message);
   })().catch(err => {
     // Deal with the fact the chain failed
