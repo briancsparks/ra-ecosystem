@@ -1,0 +1,7 @@
+#!/bin/bash -e
+
+echo "Installing developers tools"
+
+pwd
+
+aws s3 cp "s3://quick-net/deploy/${NAMESPACE_LC}/${INSTANCE_ID}/bootstrap" /tmp

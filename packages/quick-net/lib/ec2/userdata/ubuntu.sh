@@ -1,12 +1,16 @@
 #!/bin/bash -ex
 
+## Get instanceId
+export INSTANCE_ID="$(curl -sSL 'http://169.254.169.254/latest/dynamic/instance-identity/document' | jq -r '.instanceId')"
+echo "INSTANCE_ID=\"${INSTANCE_ID}\"" >> /etc/environment
+
 NODE_UTILS=""
 
 # What to install?
-# INSTALL_DOCKER="1"
+## INSTALL_DOCKER="1"
 INSTALL_OPS="1"
-# INSTALL_AGENTS="0"
-# INSTALL_NAT="1"
+## INSTALL_AGENTS="0"
+## INSTALL_NAT="1"
 
 ## This next line will get replaced with vars that might override the above, and ENV vars that go into /etc/environment
 # quicknetuserdataenvcursor
@@ -155,6 +159,12 @@ if [[ -n $INSTALL_NAT ]]; then
 fi
 #ZZZZ INSTALL_NAT
 
+aws s3 cp "s3://quick-net/deploy/quicknet/${INSTANCE_ID}/bootstrap" /tmp
 
+## pwd
+## ls -l /
+## ls -l /tmp
+## ls -l /tmp/
+## ls -l /home
 
-
+bash -ex /tmp/bootstrap

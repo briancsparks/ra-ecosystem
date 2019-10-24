@@ -166,6 +166,8 @@ mod.xport({upsertInstance: function(argv, context, callback) {
     const roleKeys              = rax.arg(argv, 'roleKeys');
     const SourceDestCheck       = !!rax.arg(argv, 'SourceDestCheck');
 
+    const namespace = process.env.NAMESPACE || process.env.NS || 'quicknet';
+
     // What opts?
     userdataOpts = sg.reduce(Object.keys(argv), userdataOpts, (m,key) => {
       if (key.startsWith('INSTALL_') && typeof argv[key] === 'boolean') {
@@ -291,8 +293,13 @@ mod.xport({upsertInstance: function(argv, context, callback) {
       // Build up the user-data script
 
       // The env file, and the user-data script file
-      const userdataEnv           = readJsonFile(envJsonFile) || {};
+      var   userdataEnv           = readJsonFile(envJsonFile) || {};
       const shellscriptFilename   = path.join(__dirname, 'userdata', `${distro}.sh`);
+
+      userdataEnv = { ...userdataEnv,
+        NAMESPACE     : namespace,
+        NAMESPACE_LC  : namespace.toLowerCase()
+      };
 
       // Read the user-data script file
       calling(`fs.readFile ${shellscriptFilename}`);
@@ -324,8 +331,12 @@ mod.xport({upsertInstance: function(argv, context, callback) {
             //   source: `deb https://dl.yarnpkg.com/debian/ stable main`
             // }
           }
-        }
-      });
+        },
+        runcmd: [
+          `echo NAMESPACE="${namespace}" >> /etc/environment`,
+          `echo NAMESPACE_LC="${namespace.toLowerCase()}" >> /etc/environment`
+        ],
+    });
 
       // Install docker?
       if (userdataOpts.INSTALL_DOCKER) {
@@ -429,7 +440,7 @@ mod.xport({upsertInstance: function(argv, context, callback) {
       }
 
       // Install tools for dev-ops?
-      if (userdataOpts.INSTALL_OPS) {
+      if (!userdataOpts.INSTALL_AWSCLI_NO) {
         cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
           packages: ['python-pip'],
           runcmd: [
@@ -557,9 +568,8 @@ mod.xport({upsertInstance: function(argv, context, callback) {
 
     }, function(my, next) {
       // Put stuff on S3 for the instance
-      const namespace = process.env.NAMESPACE || process.env.NS || 'quicknet';
-      const s3path = `s3://quick-net/deploy/${namespace.toLowerCase()}`;
-      return copyFileToS3(path.join(__dirname, 'instance-help', 'install-dev-tools'), s3path, function(err, data) {
+      const s3path = `s3://quick-net/deploy/${namespace.toLowerCase()}/${InstanceId}`;
+      return copyFileToS3(path.join(__dirname, 'instance-help', 'bootstrap'), s3path, function(err, data) {
         sg.debugLog(`Upload instance-help`, {err, data});
         return next();
       });
@@ -677,9 +687,10 @@ function fixUserDataScript(shellscript_, options_) {
 
       // env vars
       newlines = sg.reduce(userdataEnv, newlines, (m, v, k) => {
-        const newline = `echo '${k}="${v === true ? '1' : v === false ? '0' : v}"' >> /etc/environment`;
+        const newline  = `echo '${k}="${v === true ? '1' : v === false ? '0' : v}"' >> /etc/environment`;
+        const newline2 = `export ${k}="${v}"`;
 
-        return [...m, newline];
+        return [...m, newline, newline2];
       });
       newlines.push(line);
 
