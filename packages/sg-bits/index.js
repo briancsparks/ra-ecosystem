@@ -117,11 +117,11 @@ function Bits(mod) {
     return self.pieces;
   };
 
-  self.getData = function(name, type) {
-    const type_ = self.pieces[type];
-    const name_ = name || self.currSetupName;
+  self.getData = function(name, aspectKey) {
+    const aspect  = self.pieces[aspectKey];
+    const name_   = name || self.currSetupName;
 
-    return name_ && type_ && type_[name_];
+    return name_ && aspect && aspect[name_];
   };
 }
 

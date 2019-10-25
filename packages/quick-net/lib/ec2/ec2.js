@@ -6,6 +6,7 @@ const sg                      = ra.get3rdPartyLib('sg-flow');
 const { _ }                   = sg;
 const { qm }                  = ra.get3rdPartyLib('quick-merge');
 const fs                      = require('fs');
+const os                      = require('os');
 const path                    = require('path');
 const MimeNode                = require('emailjs-mime-builder').default;
 const jsyaml                  = require('js-yaml');
@@ -13,6 +14,7 @@ const awsDefs                 = require('../aws-defs');
 const libAws                  = require('../aws');
 const libVpc                  = require('./vpc');
 const cloudInit               = require('../sh/cloud-init');
+const libNginxConfig          = require('../nginx/config');
 
 const mod                     = ra.modSquad(module, 'quickNetEc2');
 
@@ -138,7 +140,9 @@ mod.xport({upsertInstance: function(argv, context, callback) {
     const { runInstances,describeInstances }  = libAws.awsFns(ec2, 'runInstances,describeInstances', rax.opts({}), abort);
     const { modifyInstanceAttribute }         = libAws.awsFns(ec2, 'modifyInstanceAttribute', rax.opts({}), abort);
     const { getSubnets }                      = rax.loads(libVpc, 'getSubnets', rax.opts({}), abort);
+    const { getNginxConfigTarball }           = rax.loads(libNginxConfig, 'getNginxConfigTarball', rax.opts({}), abort);
     const { getUbuntuLtsAmis }                = rax.loads('getUbuntuLtsAmis', rax.opts({}), abort);
+
 
     var   AllAwsParams          = sg.reduce(argv, {}, (m,v,k) => ( sg.kv(m, awsKey(k), v) || m ));
 
@@ -567,40 +571,87 @@ mod.xport({upsertInstance: function(argv, context, callback) {
       });
 
     }, function(my, next) {
+
       // Put stuff on S3 for the instance
       const s3path = `s3://quick-net/deploy/${namespace.toLowerCase()}/${InstanceId}`;
-      return copyFileToS3(path.join(__dirname, 'instance-help', 'bootstrap'), s3path, function(err, data) {
-        sg.debugLog(`Upload instance-help`, {err, data});
-        return next();
-      });
+      return sg.__run2(next, [function(next) {
+        return copyFileToS3(path.join(__dirname, 'instance-help', 'bootstrap'), s3path, function(err, data) {
+          sg.debugLog(`Upload instance-help`, {err, data});
+          return next();
+        });
+
+      }, function(next) {
+        if (!userdataOpts.INSTALL_WEBTIER)    { return next(); }
+
+        return getNginxConfigTarball({}, {}, function(err0, data) {
+          const {pack, cwd}   = data;
+          const s3packPath    = _.compact([s3path, 'files', ...(cwd.split('/'))]).join('/');
+          const {Bucket,Key}  = parseS3Path(`${s3packPath}/nginx.conf.tar`);
+
+          return streamThroughFileToS3(pack, {Bucket, Key, ContentType: 'application/x-tar'}, function(err, data) {
+            sg.debugLog(`Upload nginx config tarball`, {err0, cwd, s3packPath, err, data});
+            return next();
+          });
+        });
+      }]);
+
     }, function(my, next) {
       return next();
     }]);
   });
 }});
 
+// ----------------------------------------------------------------------------------------------------
+var uniq = 0;
+function streamThroughFileToS3(readStream, argv, callback) {
+  const pathname = path.join(os.tmpdir(), `stream-through-file-to-s3-${uniq++}`);
+
+  readStream.pipe(fs.createWriteStream(pathname));
+
+  return _copyFileToS3_(pathname, argv, callback);
+}
+
+// ----------------------------------------------------------------------------------------------------
 function copyFileToS3(pathname, s3path, callback) {
   const filename = _.last(pathname.split(/[\\/]/));
   const {Bucket,Key} = parseS3Path(`${s3path}/${filename}`);
-  const Body = fs.createReadStream(pathname);
 
   if (!Bucket)    { sg.logError(`NoBucket`, `sending uplaod`, {Bucket,Key,pathname,s3path}); return callback(`NoBucket`); }
   if (!Key)       { sg.logError(`NoKey`,    `sending uplaod`, {Bucket,Key,pathname,s3path}); return callback(`NoKey`); }
-  if (!Body)      { sg.logError(`NoBody`,   `sending uplaod`, {Bucket,Key,pathname,s3path}); return callback(`NoBody`); }
 
-  var upload = s3.upload({Bucket, Key, Body, ContentType:'text/plain'}, {partSize: 6 * 1024 * 1024});
+  return _copyFileToS3_(pathname, {Bucket, Key}, function(err, data) {
+    return callback(err, data);
+  });
+}
+
+// ----------------------------------------------------------------------------------------------------
+function _copyFileToS3_(pathname, argv, callback) {
+  const Body = fs.createReadStream(pathname);
+
+  return streamFileToS3(Body, argv, callback);
+}
+
+// ----------------------------------------------------------------------------------------------------
+function streamFileToS3(Body, {Bucket, Key, ContentType ='text/plain'}, callback) {
+
+  if (!Bucket)    { sg.logError(`NoBucket`, `sending uplaod`, {Bucket,Key}); return callback(`NoBucket`); }
+  if (!Key)       { sg.logError(`NoKey`,    `sending uplaod`, {Bucket,Key}); return callback(`NoKey`); }
+  if (!Body)      { sg.logError(`NoBody`,   `sending uplaod`, {Bucket,Key}); return callback(`NoBody`); }
+
+  var upload = s3.upload({Bucket, Key, Body, ContentType}, {partSize: 6 * 1024 * 1024});
 
   upload.on('httpUploadProgress', (progress) => {
     sg.debugLog(`uploading file`, {progress});
   });
 
   upload.send(function(err, data) {
-    if (!sg.ok(err, data))  { sg.logError(err, `sending upload`, {Bucket, Key}); }
+    if (!sg.ok(err, data))  { sg.logError(err, `sending upload`, {Bucket, Key}); return callback(err, data); }
 
     return callback(err, data);
   });
 }
 
+// ----------------------------------------------------------------------------------------------------
 function parseS3Path(s3path) {
   const m = s3path.match(/s3:[/][/]([^/]+)[/](.*)/);
   if (!m) { return; }
@@ -611,6 +662,7 @@ function parseS3Path(s3path) {
   return {Bucket,Key};
 }
 
+// ----------------------------------------------------------------------------------------------------
 function readJsonFile(filename_) {
   if (!filename_) {
     return; /* undefined */
@@ -622,6 +674,7 @@ function readJsonFile(filename_) {
   return require(filename);
 }
 
+// ----------------------------------------------------------------------------------------------------
 function fixUserDataScript(shellscript_, options_) {
   const options = options_ || {};
 

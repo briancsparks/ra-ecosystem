@@ -19,6 +19,7 @@
     "minimist": "^1.2.0",
     "quick-merge": "^1.0.17",
     "sg-bits": "^1.0.14",
+    "sg-env": "^1.0.4",
     "sg0": "^1.0.31",
     "socket.io-client": "^2.2.0"
   }

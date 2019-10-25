@@ -4,23 +4,25 @@ const { _ }                   = sg;
 
 // DIAG.usage({aliases:{streamToS3:{}}});
 module.exports.getNameFromConfig = function(config) {
-  var   fnConfigs = {};
+  var   aspects = {};
 
-  _.each(config, (fnConfig, key) => {
-    // I.e. key === 'aliases'
-    _.each(fnConfig, (x, fnName) => {
-      fnConfigs[fnName] = fnName;
+  _.each(config, (aspect /*, aspectKey */) => {
+    // I.e. aspectKey === 'aliases'
+    _.each(aspect, (x, name) => {
+      aspects[name] = name;
     });
   });
 
-  const names = Object.keys(fnConfigs);
+  const names = Object.keys(aspects);
   if (names.length === 1) {
     return names[0];
   } else if (names.length === 0) {
     return;
   }
 
-  /* otherwise, config is not properly constructed */
-  console.error(`Error: config is not properly constructed in call to getNameFromConfig. It should have only one name, but has ${names.join()}`);
+  // NOTE: I think its OK to pass in a config with multiple names, it is just not a config that targets one name.
+  // /* otherwise, config is not properly constructed */
+  // console.error(`Error: config is not properly constructed in call to getNameFromConfig. It should have only one name, but has ${names.join()}`);
+
   return;
 };

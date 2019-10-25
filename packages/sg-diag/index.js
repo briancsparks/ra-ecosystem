@@ -21,6 +21,8 @@ const sgCheck                 = require('./lib/check');
 const sgParams                = require('./lib/params');
 const { bigBanner }           = banner;
 
+const ENV                     = require('sg-env').ENV();
+
 
 
 // -------------------------------------------------------------------------------------
@@ -52,12 +54,17 @@ const { bigBanner }           = banner;
 //  Functions
 //
 
-module.exports.DIAG_ = function(mod) {
+module.exports.DIAG = function(mod) {
+  if (!(this instanceof module.exports.DIAG))     { return new module.exports.DIAG(mod); }
+
   var   self        = this;
 
   self.context      = null;
   self.bits         = sg.bits(mod);
   self.diag         = null;
+  self.activeName   = null;
+
+  self.activeName   = ENV.at('SG_DIAG_ACTIVE_FN') || self.activeName;
 
 
   self.close = function() {
@@ -72,9 +79,20 @@ module.exports.DIAG_ = function(mod) {
   };
 
   self.activeDevelopment = function(devCliArgs) {
+    // TODO: these args should not be applied unless this specific function is the one
+    //       being actively developed.
     if (sg.smartValue(process.env.ACTIVE_DEVELOPMENT)) {
       self.bits.setData(null, {devCliArgs});
     }
+  };
+
+  self.isActiveName = function(name) {
+    // // HACK: to maintain current behavior FIXME
+    // if (self.activeName === null) {
+    //   return true;
+    // }
+
+    return name === self.activeName;
   };
 
   self.getSetupFnName = function() {
@@ -94,6 +112,10 @@ module.exports.DIAG_ = function(mod) {
 
 
   self.devCliArgs = function(fnName) {
+    if (!self.isActiveName(fnName)) {
+      return '';
+    }
+
     return self.bits.getData(fnName || self.getCurrFnName(), 'devCliArgs') || '';
   };
 
@@ -111,6 +133,15 @@ module.exports.DIAG_ = function(mod) {
 
     const schema      = ((mainjson.validations || {})[currFnName] ||{}).args || {};   // TODO: maybe 'validations' is one of the mis-matches with the quasi-multi-level JSON built from sg-bits
     return schema;
+  };
+
+  self.sanityCheck = function() {
+    if (sg.smartValue(process.env.ACTIVE_DEVELOPMENT)) {
+      if (!self.activeName) {
+        // TODO: use diagnostic.w()
+        console.warn(`ACTIVE_DEVELOPMENT mode, but no DIAG.activeName.\n   Use SG_DIAG_ACTIVE_FN or set DIAG.activeName`);
+      }
+    }
   };
 
   // Hijack the mods function, returning our own
@@ -139,7 +170,8 @@ module.exports.DIAG_ = function(mod) {
     const interceptorFnA = /*async*/ function(argv, context) {
 
       // If we are active development, use those args
-      if (sg.smartValue(process.env.ACTIVE_DEVELOPMENT) && self.devCliArgs(fnName)) {
+      if (sg.smartValue(process.env.ACTIVE_DEVELOPMENT)) {
+        self.sanityCheck();
         argv = sg.merge(argv ||{}, mkArgv(self.devCliArgs(fnName)));
         // console.log(`invokingFnA ${fnName}`, util.inspect({argv, async: !isActuallyContinuationStyle}, {depth:null, color:true}));
       }
@@ -168,7 +200,8 @@ module.exports.DIAG_ = function(mod) {
     const interceptorFnB = function(argv, context, callback) {
 
       // If we are active development, use those args
-      if (sg.smartValue(process.env.ACTIVE_DEVELOPMENT) && self.devCliArgs(fnName)) {
+      if (sg.smartValue(process.env.ACTIVE_DEVELOPMENT)) {
+        self.sanityCheck();
         argv = sg.merge(argv ||{}, mkArgv(self.devCliArgs(fnName)));
         // console.log(`invokingFnB ${fnName}`, util.inspect({argv, async: !isActuallyContinuationStyle}, {depth:null, color:true}));
       }
@@ -251,9 +284,9 @@ module.exports.DIAG_ = function(mod) {
 
 };
 
-module.exports.DIAG = function(...args) {
-  return new module.exports.DIAG_(...args);
-};
+// module.exports.DIAG = function(...args) {
+//   return new module.exports.DIAG_(...args);
+// };
 
 
 // -------------------------------------------------------------------------------------

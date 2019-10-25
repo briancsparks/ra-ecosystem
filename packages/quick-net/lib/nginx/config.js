@@ -12,11 +12,15 @@ const path                    = require('path');
 const mod                     = ra.modSquad(module, 'nginx-config');
 const DIAG                    = sg.DIAG(module);
 
+
 const entryDefs = {
   mode:   parseInt('644', 8),
   uname:  'nginx',
   gname:  'www',
 };
+
+// =======================================================================================================
+// saveNginxConfigTarball
 
 DIAG.usage({
   aliases: {
@@ -28,13 +32,62 @@ DIAG.usage({
 });
 
 // The last one wins. Comment out what you dont want.
-DIAG.activeDevelopment(`--filename=/tmp/asdf-nginx.conf`);
-DIAG.activeDevelopment(`--filename=${path.join('..', '..', '..', '..', 'asdf-nginx.conf')} --debug`);
 DIAG.activeDevelopment(`--filename=${path.join(os.tmpdir(), 'asdf-nginx.conf')} --debug`);
+DIAG.activeDevelopment(`--filename=${path.join(os.homedir(), 'asdf-nginx.conf')}`);
+DIAG.activeDevelopment(`--filename=${path.join(os.homedir(), 'asdf-nginx.conf')} --debug`);
+
+// DIAG.activeName = 'saveNginxConfigTarball';
 
 mod.xport(DIAG.xport({saveNginxConfigTarball: function(argv, context, callback) {
 
-  const {filename}  = argv;
+  // const manifest = {
+  //   cwd: '/etc/nginx'
+  // };
+
+  // var pack = tar.pack();
+
+  // pack.entry({ ...entryDefs, name: 'manifest.json' }, JSON.stringify(manifest));
+
+  // pack.entry({ ...entryDefs, name: 'nginx.conf' }, getNginxConf(argv));
+  // pack.entry({ ...entryDefs, name: 'conf.d/default.conf' }, getSimpleRevProxy(argv));
+
+  return module.exports.getNginxConfigTarball(argv, context, function(err, data) {
+    if (err) { return callback(err); }
+
+    const {pack, cwd} = data;
+    var   {filename}  = argv;
+
+    if (!filename.endsWith('.tar')) {
+      filename += '.tar';
+    }
+
+    var   tarball = fs.createWriteStream(filename);
+    pack.pipe(tarball);
+
+    // console.log(`ret1 ${filename}`);
+    return callback(null, {ok:true, filename});
+  });
+}}));
+
+
+// =======================================================================================================
+// getNginxConfigTarball
+
+DIAG.usage({
+  aliases: {
+    getNginxConfigTarball: {
+      args: {
+      }
+    }
+  }
+});
+
+// The last one wins. Comment out what you dont want.
+DIAG.activeDevelopment(`--debug`);
+
+// DIAG.activeName = 'getNginxConfigTarball';
+
+mod.xport(DIAG.xport({getNginxConfigTarball: function(argv, context, callback) {
 
   const manifest = {
     cwd: '/etc/nginx'
@@ -47,14 +100,11 @@ mod.xport(DIAG.xport({saveNginxConfigTarball: function(argv, context, callback) 
   pack.entry({ ...entryDefs, name: 'nginx.conf' }, getNginxConf(argv));
   pack.entry({ ...entryDefs, name: 'conf.d/default.conf' }, getSimpleRevProxy(argv));
 
-  var tarball = fs.createWriteStream(filename);
-  pack.pipe(tarball);
-
-  // console.log(`ret1 ${filename}`);
-  return callback(null, {ok:true});
+  return callback(null, {pack, cwd: manifest.cwd});
 }}));
 
 
+// =======================================================================================================
 
 function getNginxConf(argv) {
   return `
