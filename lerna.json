@@ -5,7 +5,7 @@
   "command": {
     "publish": {
       "ignoreChanges": ["*.md", "*.test.js"],
-      "allowBranch": ["master", "fakeredismongo", "feature/s3-put"]
+      "allowBranch": ["master", "fakeredismongo", "feature/stack"]
     }
   }
 }
