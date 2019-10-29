@@ -1,0 +1,42 @@
+#!/bin/bash -ex
+
+tdir="/tmp/untarfiles-$$"
+
+die() {
+  echo "$@"
+  test -d "$tdir" && rm -rf "$tdir"
+  exit 11
+}
+
+
+[ $(id -u) = 0 ] && SUDO="sudo"
+
+
+mkdir -p "${tdir}"
+test -d "${tdir}" || die "untar-from-s3 cannot create temp dir at $tdir"
+
+aws s3 cp $1 "$tdir/it.tar"
+tar -xO -f "$tdir/it.tar" manifest.json > "$tdir/manifest.json"
+test -f "$tdir/manifest.json" || die "untar-from-s3 did not find  $tdir/manifest.json"
+
+workdir="$(cat "$tdir/manifest.json" | jq -r '.cwd')"
+test -d $workdir || die "untar-from-s3 cannot find workdir $workdir"
+
+(cd $workdir && $SUDO tar --same-owner -xv -f "$tdir/it.tar" --exclude='manifest.json')
+
+# Run a custom command?
+command="$(cat "$tdir/manifest.json" | jq -r '.command.line')"
+if [[ "$command" != "null" ]]; then
+  as_sudo="$(cat "$tdir/manifest.json" | jq -r '.command.sudo')"
+
+  if [[ "$as_sudo" == "true" ]]; then
+    echo $SUDO eval "$command"
+    $SUDO eval "$command"
+  else
+    echo "$command"
+    eval "$command"
+  fi
+fi
+
+# Clean up
+test -d "$tdir" && rm -rf "$tdir"

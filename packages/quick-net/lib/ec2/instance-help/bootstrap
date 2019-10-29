@@ -1,7 +1,18 @@
 #!/bin/bash -ex
 
-echo "Installing developers tools"
+echo "Bootstrap script"
 
-pwd
+aws s3 cp "s3://quick-net/deploy/quicknet/${INSTANCE_ID}/untar-from-s3" /usr/sbin
+chmod 0755 /usr/sbin/untar-from-s3
 
-aws s3 cp "s3://quick-net/deploy/${NAMESPACE_LC}/${INSTANCE_ID}/bootstrap" /tmp
+
+# pwd
+# aws s3 cp "s3://quick-net/deploy/${NAMESPACE_LC}/${INSTANCE_ID}/bootstrap" /tmp
+
+FILES="$(aws s3api list-objects --bucket quick-net --prefix deploy/${NAMESPACE_LC}/${INSTANCE_ID}/files | jq -r '.Contents[].Key')"
+
+for f in $FILES; do
+
+  untar-from-s3 "s3://quick-net/$f"
+
+done

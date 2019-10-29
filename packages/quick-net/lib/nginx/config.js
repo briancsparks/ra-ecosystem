@@ -13,12 +13,6 @@ const mod                     = ra.modSquad(module, 'nginx-config');
 const DIAG                    = sg.DIAG(module);
 
 
-const entryDefs = {
-  mode:   parseInt('644', 8),
-  uname:  'nginx',
-  gname:  'www',
-};
-
 // =======================================================================================================
 // saveNginxConfigTarball
 
@@ -32,24 +26,14 @@ DIAG.usage({
 });
 
 // The last one wins. Comment out what you dont want.
-DIAG.activeDevelopment(`--filename=${path.join(os.tmpdir(), 'asdf-nginx.conf')} --debug`);
-DIAG.activeDevelopment(`--filename=${path.join(os.homedir(), 'asdf-nginx.conf')}`);
-DIAG.activeDevelopment(`--filename=${path.join(os.homedir(), 'asdf-nginx.conf')} --debug`);
+DIAG.activeDevelopment(`--filename=${path.join(os.tmpdir(),  'nginx.conf')} --debug`);
+DIAG.activeDevelopment(`--filename=${path.join(os.homedir(), 'nginx.conf')}`);
+DIAG.activeDevelopment(`--filename=${path.join(os.homedir(), 'nginx.conf')} --skip-reload --debug`);
+DIAG.activeDevelopment(`--filename=${path.join(os.homedir(), 'nginx.conf')} --debug`);
 
 // DIAG.activeName = 'saveNginxConfigTarball';
 
 mod.xport(DIAG.xport({saveNginxConfigTarball: function(argv, context, callback) {
-
-  // const manifest = {
-  //   cwd: '/etc/nginx'
-  // };
-
-  // var pack = tar.pack();
-
-  // pack.entry({ ...entryDefs, name: 'manifest.json' }, JSON.stringify(manifest));
-
-  // pack.entry({ ...entryDefs, name: 'nginx.conf' }, getNginxConf(argv));
-  // pack.entry({ ...entryDefs, name: 'conf.d/default.conf' }, getSimpleRevProxy(argv));
 
   return module.exports.getNginxConfigTarball(argv, context, function(err, data) {
     if (err) { return callback(err); }
@@ -89,19 +73,55 @@ DIAG.activeDevelopment(`--debug`);
 
 mod.xport(DIAG.xport({getNginxConfigTarball: function(argv, context, callback) {
 
-  const manifest = {
-    cwd: '/etc/nginx'
+  const {distro ='ubuntu'}      = argv;
+  const {skip_reload =true}     = argv;
+
+  var   manifest = {
+    cwd       : '/etc/nginx'
   };
+
+  if (!skip_reload) {
+    manifest = { ...manifest,
+      command   : {
+        sudo      : true,
+        line      : `nginx -t && nginx -s reload`
+      }
+    };
+  }
 
   var pack = tar.pack();
 
-  pack.entry({ ...entryDefs, name: 'manifest.json' }, JSON.stringify(manifest));
+  pack.entry({ ...entryDefs(argv), name: 'manifest.json' }, JSON.stringify(manifest) +'\n');
 
-  pack.entry({ ...entryDefs, name: 'nginx.conf' }, getNginxConf(argv));
-  pack.entry({ ...entryDefs, name: 'conf.d/default.conf' }, getSimpleRevProxy(argv));
+  pack.entry({ ...entryDefs(argv), name: 'nginx.conf' }, getNginxConf(argv));
+  pack.entry({ ...entryDefs(argv), name: 'conf.d/default.conf' }, getSimpleRevProxy(argv));
+
+  pack.finalize();
 
   return callback(null, {pack, cwd: manifest.cwd});
 }}));
+
+
+
+// =======================================================================================================
+
+const entryDefs_ = {
+  ubuntu: {
+    uname:  'root',
+    gname:  'root',
+  },
+  def: {
+    mode:   parseInt('644', 8),
+    uname:  'nginx',
+    gname:  'root',
+  },
+};
+
+function entryDefs(argv) {
+  const {distro ='ubuntu'}  = argv;
+  const {name,size,mode,mtime,type,linkname,uid,gid,uname,gname,devmajor,devminor} = argv;
+  return { ...entryDefs_.def, ...(entryDefs_[distro] ||{}), name,size,mode,mtime,type,linkname,uid,gid,uname,gname,devmajor,devminor};
+}
 
 
 // =======================================================================================================
@@ -139,7 +159,7 @@ http {
     #gzip  on;
 
     include /etc/nginx/conf.d/*.conf;
-}`;
+}` +'\n';
 }
 
 function getSimpleRevProxy(argv) {
@@ -165,6 +185,6 @@ server {
   location / {
     proxy_pass      http://127.0.0.1:8080;
   }
-}`;
+}` +'\n';
 }
 

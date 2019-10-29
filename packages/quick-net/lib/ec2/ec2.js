@@ -10,6 +10,7 @@ const os                      = require('os');
 const path                    = require('path');
 const MimeNode                = require('emailjs-mime-builder').default;
 const jsyaml                  = require('js-yaml');
+const clipboardy              = require('clipboardy');
 const awsDefs                 = require('../aws-defs');
 const libAws                  = require('../aws');
 const libVpc                  = require('./vpc');
@@ -146,9 +147,10 @@ mod.xport({upsertInstance: function(argv, context, callback) {
 
     var   AllAwsParams          = sg.reduce(argv, {}, (m,v,k) => ( sg.kv(m, awsKey(k), v) || m ));
 
-    const distro                = rax.arg(argv, 'distro', {required:true});
     const uniqueName            = rax.arg(argv, 'uniqueName,unique', {required: sg.modes().production});
     var   ImageId               = rax.arg(argv, 'ImageId,image');
+    var   roles                 = rax.arg(argv, 'roles,role', {required: sg.modes().production, array:true}) ||[];
+    const distro                = rax.arg(argv, 'distro', {required:true});
     var   osVersion             = rax.arg(argv, 'osVersion,os-version');
     const InstanceType          = rax.arg(argv, 'InstanceType,instanceType,instance,type', {required:true});
     const classB                = rax.arg(argv, 'class_b,classB,b');
@@ -199,7 +201,7 @@ mod.xport({upsertInstance: function(argv, context, callback) {
       if (!uniqueName)  { return next(); }
 
       // They sent in a uniqueName. See if it already exists
-      return describeInstances(awsFilters({"tag:uniqueName":[uniqueName]}), rax.opts({}), function(err, data) {
+      return describeInstances(awsFilters({"tag:qn:uniqueName":[uniqueName]}), rax.opts({}), function(err, data) {
 
         var   theInstance;
         const count = sg.reduce(data.Reservations || [], 0, function(m0, reservations) {
@@ -356,6 +358,8 @@ mod.xport({upsertInstance: function(argv, context, callback) {
             }
           }
         });
+
+        roles.push('docker');
       }
 
       // Install the web-tier? (nginx and certbot)
@@ -376,6 +380,8 @@ mod.xport({upsertInstance: function(argv, context, callback) {
             }
           }
         });
+
+        roles.push('webtier');
       }
 
       // Add mongodb to apt for everyone -- only install (below) if install is requested, but we want to be able to install clients
@@ -400,6 +406,8 @@ mod.xport({upsertInstance: function(argv, context, callback) {
             "systemctl enable mongod",
           ],
         });
+
+        roles = [ ...roles, 'db', 'mongo', 'nosql'];
       }
 
       if (userdataOpts.INSTALL_MONGO_CLIENTS) {
@@ -434,6 +442,8 @@ mod.xport({upsertInstance: function(argv, context, callback) {
             }
           }
         });
+
+        roles.push('k8s');
       }
 
       // Install stuff for NAT instances?
@@ -441,6 +451,8 @@ mod.xport({upsertInstance: function(argv, context, callback) {
         cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
           packages: ['iptables-persistent'],
         });
+
+        roles = [ ...roles, 'bastion' , 'nat'];
       }
 
       // Install tools for dev-ops?
@@ -508,14 +520,32 @@ mod.xport({upsertInstance: function(argv, context, callback) {
 
     }, function(my, next) {
 
-      // Pack up the params for runInstances
+      // -------------------- runInstances
 
       var UserData;
       var params = {};
 
+      var instanceName;
+
+      var Tags  = [];
+
       // Tag with `uniqueName`
       if (uniqueName) {
-        params.TagSpecifications = [{ResourceType:'instance', Tags:[{Key:'uniqueName', Value:uniqueName},{Key:'Name', Value:uniqueName}]}];
+        instanceName              = uniqueName;
+        Tags  = [ ...Tags, {Key:'qn:uniqueName', Value:uniqueName}];
+      }
+
+      if (roles.length > 0) {
+        instanceName              = instanceName || roles[0];
+        Tags  = [ ...Tags, {Key:'qn:role', Value: `:${roles.join(':')}:`}];
+      }
+
+      if (instanceName) {
+        Tags  = [ ...Tags, {Key:'Name', Value:instanceName}];
+      }
+
+      if (Tags.length > 0) {
+        params.TagSpecifications  = [{ResourceType:'instance', Tags}];
       }
 
       // Build up the cloud-init userdata
@@ -576,14 +606,20 @@ mod.xport({upsertInstance: function(argv, context, callback) {
       const s3path = `s3://quick-net/deploy/${namespace.toLowerCase()}/${InstanceId}`;
       return sg.__run2(next, [function(next) {
         return copyFileToS3(path.join(__dirname, 'instance-help', 'bootstrap'), s3path, function(err, data) {
-          sg.debugLog(`Upload instance-help`, {err, data});
+          sg.debugLog(`Uploaded bootstrap script`, {err, data});
+          return next();
+        });
+
+      }, function(next) {
+        return copyFileToS3(path.join(__dirname, 'instance-help', 'untar-from-s3'), s3path, function(err, data) {
+          sg.debugLog(`Uploaded untar-from-s3`, {err, data});
           return next();
         });
 
       }, function(next) {
         if (!userdataOpts.INSTALL_WEBTIER)    { return next(); }
 
-        return getNginxConfigTarball({}, {}, function(err0, data) {
+        return getNginxConfigTarball({distro, skip_reload:true}, {}, function(err0, data) {
           const {pack, cwd}   = data;
           const s3packPath    = _.compact([s3path, 'files', ...(cwd.split('/'))]).join('/');
           const {Bucket,Key}  = parseS3Path(`${s3packPath}/nginx.conf.tar`);
@@ -596,6 +632,11 @@ mod.xport({upsertInstance: function(argv, context, callback) {
       }]);
 
     }, function(my, next) {
+
+      const {PrivateIpAddress} = my.result.Instance;
+      const clip = `for ((;;)); do ssh -A -o "StrictHostKeyChecking no" -o UserKnownHostsFile=/dev/null -o ConnectTimeout=1 ${PrivateIpAddress} 'tail -F /var/log/cloud-init-output.log'; sleep 0.4; done`;
+      clipboardy.writeSync(clip);
+
       return next();
     }]);
   });
@@ -606,9 +647,19 @@ var uniq = 0;
 function streamThroughFileToS3(readStream, argv, callback) {
   const pathname = path.join(os.tmpdir(), `stream-through-file-to-s3-${uniq++}`);
 
-  readStream.pipe(fs.createWriteStream(pathname));
+  const out = fs.createWriteStream(pathname);
+  readStream.pipe(out);
+  out.on('close', function() {
+    return _copyFileToS3_(pathname, argv, callback);
+  });
 
-  return _copyFileToS3_(pathname, argv, callback);
+  // readStream.on('finish', function() {
+  //   return _copyFileToS3_(pathname, argv, callback);
+  // });
+
+  // readStream.pipe(fs.createWriteStream(pathname).on('finish', function() {
+  //   return _copyFileToS3_(pathname, argv, callback);
+  // }));
 }
 
 // ----------------------------------------------------------------------------------------------------
