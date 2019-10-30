@@ -1,3 +1,4 @@
+/* eslint-disable valid-jsdoc */
 
 const sg                      = require('sg0');
 const { _ }                   = sg;
@@ -13,11 +14,12 @@ module.exports.setContextItem = setContextItem;
 module.exports.getContextItem = getContextItem;
 
 function Diagnostic(ctorArgs) {
+  if (!(this instanceof Diagnostic))     { return new Diagnostic(ctorArgs); }
+
   var   self    = this;
 
   self.fnName   = ctorArgs.fnName;
   self.DIAG     = {};
-  self.bits     = {};
   self.errors   = [];
 
   self.logger   = null;
@@ -177,6 +179,28 @@ function Diagnostic(ctorArgs) {
   };
 
 
+  /**
+   * A lot like exit(), but for normal fns.
+   *
+   * Knows about self.errors.
+   *
+   * @param {*} err       -- The caller can specify an error
+   * @param {*} result    -- The thing to return
+   * @param {*} errmsg    -- A message if there is an error
+   * @returns
+   */
+  self.earlyreturn = function(err, result, errmsg) {
+    if (err) {
+      self.e(toError('ENOTVALID', err, 400), errmsg);
+    }
+
+    if (self.errors.length > 0) {
+      self.e(toError('ENOTVALID', self.errors, 400), errmsg);
+    }
+
+    /* otherwise -- success */
+    return result;
+  };
 
 
 
@@ -447,14 +471,8 @@ function diagnostic(args) {
     return fromContext(args);
   }
 
-sg.log(`fileddiag calling new`, {args});
   return new Diagnostic(args);
 }
-
-
-
-
-
 
 function fromContext(args) {
 
@@ -468,6 +486,10 @@ function fromContext(args) {
 
   return diag;
 }
+
+
+
+
 
 function getContextItem(context, name) {
   if (!context || !name)      { return; }

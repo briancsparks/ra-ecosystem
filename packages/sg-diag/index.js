@@ -267,11 +267,19 @@ module.exports.DIAG = function(mod) {
    * @param {Array} args - The typical {argv, context}
    * @returns {Object} The new Diagnostic object.
    */
-  self.diagnostic = function(args) {
-    var diagFunctions           = sgDiagnostic.getContextItem(args.context || self.context, 'diagFunctions') || [];
-    var {argv,context,fnName}   = sg.merge(diagFunctions[0] || {}, args);
+  self.diagnostic = function(...args) {
+    var argv,context,callback;
 
-    var diag = sgDiagnostic.diagnostic(args);
+    if (args.length === 1) {
+      ({argv,context,callback} = args[0]);
+    } else {
+      [argv,context,callback] = args;
+    }
+
+    var diagFunctions           = sgDiagnostic.getContextItem(context || self.context, 'diagFunctions') || [];
+    // var {fnName}                = sg.merge(diagFunctions[0] || {}, {argv,context});
+
+    var diag = sgDiagnostic.diagnostic({argv,context,callback});
     return self.initDiagnostic(diag);
   };
 

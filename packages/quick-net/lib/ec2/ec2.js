@@ -619,12 +619,21 @@ mod.xport({upsertInstance: function(argv, context, callback) {
       }, function(next) {
         if (!userdataOpts.INSTALL_WEBTIER)    { return next(); }
 
-        return getNginxConfigTarball({distro, skip_reload:true}, {}, function(err0, data) {
+        // --location=/clientstart --upstream=clients --upstream-service=10.1.2.3:3001
+        const ngArgs = {
+          skip_reload         : true,
+          fqdns               : 'www.example.com'.split(','),
+          upstream            : 'clients',
+          upstream_service    : '10.1.2.3:3001',
+          location            : '/clientstart',
+        };
+
+        return getNginxConfigTarball({distro, ...ngArgs}, {}, function(err0, data) {
           const {pack, cwd}   = data;
           const s3packPath    = _.compact([s3path, 'files', ...(cwd.split('/'))]).join('/');
-          const {Bucket,Key}  = parseS3Path(`${s3packPath}/nginx.conf.tar`);
+          const {Bucket,Key}  = parseS3Path(`${s3packPath}/nginx-conf.tar`);
 
-          return streamThroughFileToS3(pack, {Bucket, Key, ContentType: 'application/x-tar'}, function(err, data) {
+          return streamToS3(pack, {Bucket, Key, ContentType: 'application/x-tar'}, function(err, data) {
             sg.debugLog(`Upload nginx config tarball`, {err0, cwd, s3packPath, err, data});
             return next();
           });
@@ -652,14 +661,6 @@ function streamThroughFileToS3(readStream, argv, callback) {
   out.on('close', function() {
     return _copyFileToS3_(pathname, argv, callback);
   });
-
-  // readStream.on('finish', function() {
-  //   return _copyFileToS3_(pathname, argv, callback);
-  // });
-
-  // readStream.pipe(fs.createWriteStream(pathname).on('finish', function() {
-  //   return _copyFileToS3_(pathname, argv, callback);
-  // }));
 }
 
 // ----------------------------------------------------------------------------------------------------
@@ -679,11 +680,11 @@ function copyFileToS3(pathname, s3path, callback) {
 function _copyFileToS3_(pathname, argv, callback) {
   const Body = fs.createReadStream(pathname);
 
-  return streamFileToS3(Body, argv, callback);
+  return streamToS3(Body, argv, callback);
 }
 
 // ----------------------------------------------------------------------------------------------------
-function streamFileToS3(Body, {Bucket, Key, ContentType ='text/plain'}, callback) {
+function streamToS3(Body, {Bucket, Key, ContentType ='text/plain'}, callback) {
 
   if (!Bucket)    { sg.logError(`NoBucket`, `sending uplaod`, {Bucket,Key}); return callback(`NoBucket`); }
   if (!Key)       { sg.logError(`NoKey`,    `sending uplaod`, {Bucket,Key}); return callback(`NoKey`); }

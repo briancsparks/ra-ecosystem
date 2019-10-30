@@ -1,4 +1,4 @@
-#!/bin/bash -ex
+#!/bin/bash -e
 
 tdir="/tmp/untarfiles-$$"
 
@@ -8,21 +8,33 @@ die() {
   exit 11
 }
 
+[[ $# < 1 ]]                                                        && die 'Usage: untar-from-s3 <s3-path>'
 
-[ $(id -u) = 0 ] && SUDO="sudo"
+# If we are running as root, we do not need sudo, otherwise use it
+[[ $(id -u) != 0 ]] && SUDO="sudo"
 
+# -----------------------------
 
+# Make the temp dir
 mkdir -p "${tdir}"
-test -d "${tdir}" || die "untar-from-s3 cannot create temp dir at $tdir"
+test -d "${tdir}"                                                   || die "untar-from-s3 cannot create temp dir at $tdir"
 
+# Copy it down from S3, get the `manifest.json` file
 aws s3 cp $1 "$tdir/it.tar"
 tar -xO -f "$tdir/it.tar" manifest.json > "$tdir/manifest.json"
-test -f "$tdir/manifest.json" || die "untar-from-s3 did not find  $tdir/manifest.json"
+test -f "$tdir/manifest.json"                                       || die "untar-from-s3 did not find  $tdir/manifest.json"
 
+# Get the workdir (the root to which the tar is to be extracted)
 workdir="$(cat "$tdir/manifest.json" | jq -r '.cwd')"
-test -d $workdir || die "untar-from-s3 cannot find workdir $workdir"
+test -d $workdir                                                    || die "untar-from-s3 cannot find workdir $workdir"
 
-(cd $workdir && $SUDO tar --same-owner -xv -f "$tdir/it.tar" --exclude='manifest.json')
+# Untar it, skip the `manifest.json` file
+(cd $workdir && \
+  $SUDO tar --same-owner -xv -f "$tdir/it.tar" \
+            --exclude='manifest.json' \
+)
+
+# -----------------------------
 
 # Run a custom command?
 command="$(cat "$tdir/manifest.json" | jq -r '.command.line')"
@@ -37,6 +49,8 @@ if [[ "$command" != "null" ]]; then
     eval "$command"
   fi
 fi
+
+# -----------------------------
 
 # Clean up
 test -d "$tdir" && rm -rf "$tdir"
