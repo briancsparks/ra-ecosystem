@@ -50,19 +50,94 @@ function smartObject(o) {
  *
  * @param {*} arr - The parameters
  */
-function parseParams(arr) {
+function parseParams(arr, options) {
+  var i, argv ={}, arr2 =[], m;
+
+  // Handle and remove any multi-item params (like --afew= 1 2 3), and any that mimimist does not handle
+  for (i = 0; i < arr.length; ++i) {
+    const j = arrayParam(i, arr, argv, options);
+
+    if (j !== i) {
+      i = j;
+      continue;
+    }
+
+    // handle --no-foo- as false
+    if ((m = /^--no-([^=]+)$/.exec(arr[i]))) {
+      addKV(argv, m[1], false, options);
+      continue;
+    }
+
+    // handle --foo- as false
+    if ((m = /^--([^=]+)-$/.exec(arr[i]))) {
+      addKV(argv, m[1], false, options);
+      continue;
+    }
+
+    // It was not an array param, add it to the array that will be processed.
+    arr2.push(arr[i]);
+  }
+
+  const minArgv = require('minimist')(arr2);
+
+  // Update argv with what minimist found
+  argv = Object.keys(minArgv).reduce((m, k) => {
+    const value = smartValue(minArgv[k]);
+
+    return addKV(m, k, value, options);
+  }, argv ||{});
+
+  return argv;
 }
 
 /**
  * Parse multi-item params
  *
  * @param {*} i
- * @param {*} args
+ * @param {*} arr
  * @param {*} argv
  * @returns
  */
-function arrayParam(i, args, argv) {
-  if (!Array.isArray(args))  { return; }   /* undefined */
+function arrayParam(i, arr, argv, options) {
+  if (!Array.isArray(arr))  { return i; }
+
+  // If not the right type, return `i`, meaning we consumed zero params
+  var m;
+  if (!(m = /^--([^=]+)=$/.exec(arr[i])))    { return i; }
+
+  const k     = m[1];
+  const key   = smartKey(k);
+
+  var j, values =[];
+  for (j = i+1; j < arr.length; ++j) {
+    if (/^--/.exec(arr[j])) { j -= 1; break; }
+
+    values = [ ...values, smartValue(arr[j])];
+  }
+
+  addKV(argv, k, values, options);
+
+  return j;
+}
+
+/**
+ * Add [smartKey(k)]: value.
+ *
+ * @param {*} argv
+ * @param {*} k
+ * @param {*} value
+ * @param {*} options
+ * @returns
+ */
+function addKV(argv, k, value, options) {
+  const key = smartKey(k);
+
+  if (!options.skip_orig && k !== key) {
+    argv[k] = value;
+  }
+
+  argv[key] = value;
+  return argv;
 }
 
 /**

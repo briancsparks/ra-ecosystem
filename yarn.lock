@@ -1272,11 +1272,6 @@
     universal-user-agent "^3.0.0"
     url-template "^2.0.8"
 
-"@sg0/sg-smart-value@^1.0.1":
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/@sg0/sg-smart-value/-/sg-smart-value-1.0.1.tgz#f47b2070ac06730def0069d77d76ccec3136f033"
-  integrity sha512-M2DqzJ5YIk+A2T71M7OuJtzSnXQcVRyVAJfHF4MJZDWw3rUVCmnnMEdx4+Cao4za3f+MeQBXYbaXiWYQgKUI3Q==
-
 "@sindresorhus/is@^0.14.0":
   version "0.14.0"
   resolved "https://registry.yarnpkg.com/@sindresorhus/is/-/is-0.14.0.tgz#9fb3a3cf3132328151f353de4632e01e52102bea"
@@ -8501,11 +8496,6 @@ sg-echo@^1.0.33:
   integrity sha512-SPhYaN8dIra8jGM6skcXNj7DP5C15RPnUWFkJZoVRvuLjbuGlfY7kUarutsYG9arxtAqTSWuL1El0yeglSkjdQ==
   dependencies:
     sg0 "^1.0.24"
-
-sg-env@^1.0.5:
-  version "1.0.5"
-  resolved "https://registry.yarnpkg.com/sg-env/-/sg-env-1.0.5.tgz#ade99b9910631c63e07431abf961846d5a15dbc6"
-  integrity sha512-NTFpCp/F+r9lhWl4ttLVkTOuFp21EZij2bvLwieHlB07QooddsvTHjoh5v5jq+Ij29QTlth2XRn2SY0DXgO1Kw==
 
 sg-flow@^0.9.11:
   version "0.9.15"

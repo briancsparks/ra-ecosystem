@@ -22,5 +22,8 @@
   },
   "bugs": {
     "url": "https://github.com/briancsparks/ra-ecosystem/issues"
+  },
+  "dependencies": {
+    "minimist": "^1.2.0"
   }
 }
