@@ -37,6 +37,11 @@ function JsonSocketIoLogger(...ctorArgs) {
   };
 
 
+  self.tbd = function(feature, id, msg, ...rest) {
+    // log(`JsonSocketIoLogger.tbd`, msg, ...rest);
+    socket.emit(msgName, {level: 't', msg, rest});
+  };
+
   self.i = function(msg, ...rest) {
     // log(`JsonSocketIoLogger.i`, msg, ...rest);
     socket.emit(msgName, {level: 'i', msg, rest});

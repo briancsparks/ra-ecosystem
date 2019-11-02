@@ -104,7 +104,7 @@ mod.xport(DIAG.xport({saveNginxConfigTarballToS3: function(argv, context, callba
     const s3path            = s3ExpiringTransferPath(`s3://quick-net/deploy/${namespace.toLowerCase()}`, name, 3600);
 
     return streamToS3({Body: pack, s3path, ContentType: 'application/x-tar'}, context, function(err, data) {
-      diag.i(`Upload nginx config tarball`, {cwd, s3path, err, data});
+      diag.v(`Upload nginx config tarball`, {cwd, s3path, err, data});
 
       // const clip = sshcmd('ubuntu@bastionIp', sshcmd('webtierIp', `untar-from-s3 ${s3path}`));
       const bastionIp   = '`instance-by-role qn:roles bastion PublicIpAddress`';

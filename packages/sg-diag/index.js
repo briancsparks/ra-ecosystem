@@ -88,7 +88,8 @@ module.exports.DIAG = function(mod) {
   };
 
   self.isActiveName = function(name) {
-  console.log(`isactivename`, {name, activeName: self.activeName});
+    self.dg.tbd(`diagctx`, `isactivename`, '', {name, activeName: self.activeName});
+
     // // HACK: to maintain current behavior FIXME
     // if (self.activeName === null) {
     //   return true;
@@ -144,7 +145,7 @@ module.exports.DIAG = function(mod) {
         console.warn(`ACTIVE_DEVELOPMENT mode, but no DIAG.activeName.
         Use SG_DIAG_ACTIVE_FN or set DIAG.activeName
           activeName: ${self.activeName}
-          ${msg}`, util.inspect(obj, {depth: null, color:true}));
+          ${msg}` /*, util.inspect(obj, {depth: null, color:true})*/ );
       }
     }
   };

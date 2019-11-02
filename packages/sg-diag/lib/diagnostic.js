@@ -143,7 +143,9 @@ function Diagnostic(ctorArgs ={}) {
   self.args = function() {
     const argv        = self.getArgv(ctorArgs);
     const currFnName  = self.DIAG.getCurrFnName()   || '';
-console.log(`ags`, {argv,ctorArgs});
+
+    // self.tbd(`diagctx`, `selfargs`, '', {argv,ctorArgs});
+
     // -------------------- Get argv elements --------------------
 
     // Get all the data from the `argv` that was passed in at the beginning of the fn (the ctorArgs)
@@ -313,6 +315,35 @@ console.log(`ags`, {argv,ctorArgs});
   self.loud = function(msg, ...rest) {
     return self.infoOut(2, msg, ...rest);
   };
+
+  self.tbd = function(feature, id, msg_, ...rest) {
+    msgArgv = msgArgv || self.getArgv(ctorArgs);
+    if (msgArgv.quiet) { return; }
+
+    // TODO: Fix diagctx and remove this comment
+    if (feature === 'diagctx')  { return; }
+
+    const msg = _.compact([`${feature}-${id}`, msg_]).join('-');
+
+    var stillNeedStandardLogging = true;
+    if (self.logger && self.logger.tbd) {
+      stillNeedStandardLogging = !self.logger.tbd(msg, ...rest);
+    }
+
+    if (stillNeedStandardLogging) {
+      if (self.stdoutIsDataOnly()) {
+        return self.infoOut(2, msg, ...rest);
+      }
+      return self.out(msg, ...rest);
+    }
+  };
+
+  self.tbd_if = function(test, feature, id, msg, ...rest) {
+    if (!test) { return; }
+    return self.tbd(feature, id, msg, ...rest);
+  };
+
+
 
   self.i = function(msg, ...rest) {
     msgArgv = msgArgv || self.getArgv(ctorArgs);

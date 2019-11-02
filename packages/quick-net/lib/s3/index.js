@@ -46,7 +46,9 @@ DIAG.activeDevelopment(`--Bucket=quick-net-ingest-dump --debug`);
 
 mod.xport(DIAG.xport({streamToS3: function(argv, context, callback) {
   const diag    = DIAG.diagnostic({argv, context, callback});
-diag.i('st3', {argv, ...cleanContext(context)});
+
+  diag.tbd(`diagctx`, `streamToS3`, '', {argv, ...cleanContext(context)});
+
   var   {Body}            = argv;
   var   {Bucket,Key}      = getBucketAndKey(diag.args());
 
@@ -193,13 +195,13 @@ function _streamToS3_(Body, {Bucket, Key, ContentType ='application/json'}, call
   var upload = s3.upload({Bucket, Key, Body, ContentType}, {partSize: 6 * 1024 * 1024});
 
   upload.on('httpUploadProgress', (progress) => {
-    dg.i(`uploading file`, {progress});
+    dg.v(`uploading file`, {progress});
   });
 
   upload.send(function(err, data) {
     if (!sg.ok(err, data))                  { dg.e(err, `sending upload`, {Bucket, Key}); }
 
-    dg.i(`upload-send-done`, {Bucket, Key, err, data});
+    dg.v(`upload-send-done`, {Bucket, Key, err, data});
 
     return callback(err, data);
   });
@@ -218,14 +220,15 @@ function parseS3Path(s3path) {
 
 // ----------------------------------------------------------------------------------------------------
 function getBucketAndKey(argv) {
-dg.i(`gpak`, {argv});
+  dg.tbd(`diagctx`, `getBucketAndKey`, '', {argv});
+
   var   s3path              = argv.s3path;
   var   {Bucket,Key}        = parseS3Path(s3path);
 
   Bucket  = argv.Bucket     || Bucket;
   Key     = argv.Key        || Key;
 
-dg.i(`gpak2`, {argv, Bucket,Key});
+  dg.tbd(`diagctx`, `getBucketAndKey2`, '', {argv, Bucket,Key});
   return {Bucket,Key};
 }
 
