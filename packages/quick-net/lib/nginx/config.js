@@ -7,10 +7,12 @@ const sg0                     = ra.get3rdPartyLib('sg-flow');
 const sg                      = sg0.merge(sg0, require('sg-env'));
 const { _ }                   = sg;
 const tar                     = require('tar-stream');
+const clipboardy              = require('clipboardy');
 const fs                      = require('fs');
 const os                      = require('os');
 const path                    = require('path');
-const {streamToS3}            = require('../s3');
+const {streamToS3,
+      s3ExpiringTransferPath} = require('../s3');
 var   {globalBlacklistIps}    = require('./snippets/ip-blacklist');
 
 const mod                     = ra.modSquad(module, 'nginx-config');
@@ -99,15 +101,26 @@ mod.xport(DIAG.xport({saveNginxConfigTarballToS3: function(argv, context, callba
     if (err) { return callback(err); }
 
     const {pack,cwd,name}   = data;
-    const s3path            = `s3://quick-net/deploy/${namespace.toLowerCase()}/files/tmp/${name}`;
+    const s3path            = s3ExpiringTransferPath(`s3://quick-net/deploy/${namespace.toLowerCase()}`, name, 3600);
 
     return streamToS3({Body: pack, s3path, ContentType: 'application/x-tar'}, context, function(err, data) {
       diag.i(`Upload nginx config tarball`, {cwd, s3path, err, data});
+
+      // const clip = sshcmd('ubuntu@bastionIp', sshcmd('webtierIp', `untar-from-s3 ${s3path}`));
+      const bastionIp   = '`instance-by-role qn:roles bastion PublicIpAddress`';
+      const webtierIp   = '`instance-by-role qn:roles webtier PrivateIpAddress`';
+      const clip        = sshcmd(`ubuntu@${bastionIp}`, '"'+sshcmd(`${webtierIp}`, `'untar-from-s3 ${s3path}'`)+'"');
+      clipboardy.writeSync(clip);
+
       return callback(err, data);
     });
   });
 }}));
 
+function sshcmd(login, command) {
+  // return `ssh -A -o "StrictHostKeyChecking no" -o UserKnownHostsFile=/dev/null -o ConnectTimeout=1 -o LogLevel=quiet ${login} '${command}'`;
+  return `sshixx ${login} ${command}`;
+}
 
 // =======================================================================================================
 // getNginxConfigTarball
@@ -164,20 +177,21 @@ DIAG.activeDevelopment(`--debug`);
  * @returns
  */
 const getNginxLocalAppServerConfig = mod.xport(DIAG.xport({getNginxLocalAppServerConfig: function(argv, context, callback) {
+  const diag                    = DIAG.diagnostic({argv,context});
 
   const {distro ='ubuntu'}      = argv;
-  const {skip_reload =true}     = argv;
+  const {reloadServer =false}   = diag.args();
 
   var   manifest = {
     cwd       : '/etc/nginx',
     name      : 'nginx-conf.tar'
   };
 
-  if (!skip_reload) {
+  if (reloadServer) {
     manifest = { ...manifest,
       command   : {
         sudo      : true,
-        line      : `nginx -t && nginx -s reload`
+        line      : `$SUDO nginx -t && $SUDO nginx -s reload`
       }
     };
   }
@@ -198,7 +212,9 @@ const getNginxLocalAppServerConfig = mod.xport(DIAG.xport({getNginxLocalAppServe
 // =======================================================================================================
 // getNginxUpstreamConfig
 
-DIAG.usage({ aliases: { getNginxUpstreamConfig: { args: {}}}});
+DIAG.usage({ aliases: { getNginxUpstreamConfig: { args: {
+  reloadServer:   'reload_server',
+}}}});
 
 // The last one wins. Comment out what you dont want.
 DIAG.activeDevelopment(`--debug`);
@@ -216,7 +232,7 @@ const getNginxUpstreamConfig = mod.xport(DIAG.xport({getNginxUpstreamConfig: fun
   const diag                          = DIAG.diagnostic({argv,context});
 
   const {distro ='ubuntu'}      = argv;
-  const {skip_reload =true}     = argv;
+  const {reloadServer =false}   = diag.args();
   var   {fqdns}                 = argv;
   var   {upstream}              = argv;
 
@@ -230,11 +246,11 @@ const getNginxUpstreamConfig = mod.xport(DIAG.xport({getNginxUpstreamConfig: fun
     name      : 'nginx-conf.tar'
   };
 
-  if (!skip_reload) {
+  if (reloadServer) {
     manifest = { ...manifest,
       command   : {
         sudo      : true,
-        line      : `nginx -t && nginx -s reload`
+        line      : `$SUDO nginx -t && $SUDO nginx -s reload`
       }
     };
   }

@@ -617,11 +617,17 @@ mod.xport({upsertInstance: function(argv, context, callback) {
         });
 
       }, function(next) {
+        return copyFileToS3(path.join(__dirname, 'instance-help', 'sshix'), s3path, function(err, data) {
+          sg.debugLog(`Uploaded sshix`, {err, data});
+          return next();
+        });
+
+      }, function(next) {
         if (!userdataOpts.INSTALL_WEBTIER)    { return next(); }
 
         // --location=/clientstart --upstream=clients --upstream-service=10.1.2.3:3001
         const ngArgs = {
-          skip_reload         : true,
+          reloadServer        : true,
           fqdns               : 'www.example.com'.split(','),
           upstream            : 'clients',
           upstream_service    : '10.1.2.3:3001',

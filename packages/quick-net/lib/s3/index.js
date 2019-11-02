@@ -30,6 +30,7 @@ module.exports.copyFileToS3           = copyFileToS3;
 module.exports._copyFileToS3_         = _copyFileToS3_;
 module.exports._streamToS3_           = _streamToS3_;
 module.exports.parseS3Path            = parseS3Path;
+module.exports.s3ExpiringTransferPath = s3ExpiringTransferPath;
 
 
 // =======================================================================================================
@@ -126,6 +127,8 @@ mod.xport(DIAG.xport({putClientJsonToS3: function(argv, context, callback) {
   // Call the real worker
   return _putClientJsonToS3_(stringify(Body), {Bucket, Key}, callback);
 }}));
+
+
 
 
 // ----------------------------------------------------------------------------------------------------
@@ -227,8 +230,19 @@ dg.i(`gpak2`, {argv, Bucket,Key});
 }
 
 
+// ----------------------------------------------------------------------------------------------------
+function s3ExpiringTransferPath(pre, fname, secs) {
+  const expiry = ''+ (new Date().getTime() + (secs * 1000));
+  return s3ify(`${pre.toLowerCase()}/xfer/until/${expiry}/${fname}`);
+}
 
+function s3ify(path) {
+  if (path.toLowerCase().startsWith('s3://'))     { return path; }
 
+  return `s3://${path}`;
+}
+
+// ----------------------------------------------------------------------------------------------------
 function getBody(argv, context) {
   if (argv.__meta__ && argv.__meta__.body) {
     return argv.__meta__.body;
