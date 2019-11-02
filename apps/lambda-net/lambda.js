@@ -79,7 +79,7 @@ hosts.aws_lambda.setDispatcher(function(event, context_, callback) {
   } else if (context.event.path === '/upload') {
     sg.log(`lam`, {qn: Object.keys(quickNet)});
 
-    return quickNet.putToS3(argv, context, function(err, data) {
+    return quickNet.putClientJsonToS3(argv, context, function(err, data) {
       if (err) {
 
         if (err.httpCode && err.httpCode === 400) {

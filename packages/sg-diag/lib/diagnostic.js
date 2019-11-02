@@ -1,11 +1,14 @@
 /* eslint-disable valid-jsdoc */
 
-const sg                      = require('sg0');
+const sg0                     = require('sg0');
+const sg                      = sg0.merge(sg0, require('sg-env'));
 const { _ }                   = sg;
 const { JsonSocketIoLogger }  = require('./logging-json-to-socket-io');
 const Ajv                     = require('ajv');
 const { util }                = sg.libs;
 const { toError }             = require('./error');
+
+const ENV                     = sg.ENV();
 
 module.exports.Diagnostic     = Diagnostic;
 module.exports.diagnostic     = diagnostic;
@@ -13,7 +16,106 @@ module.exports.fromContext    = fromContext;
 module.exports.setContextItem = setContextItem;
 module.exports.getContextItem = getContextItem;
 
-function Diagnostic(ctorArgs) {
+
+
+
+
+
+module.exports.cleanBits      = cleanBits;
+module.exports.cleanDiag      = cleanDiag;
+module.exports.cleanDIAG      = cleanDIAG;
+
+module.exports.cleanContext = function(context_) {
+
+  var   context = {};
+  var   {runAnywhere, sgDiagnostic, ...rest} = context_;
+
+  context = {...context,
+    ...rest,
+    sgDiagnostic: {     ...sgDiagnostic,
+      diag:               cleanDiag(sgDiagnostic.diag),
+
+      diagFunctions: sgDiagnostic.diagFunctions.map(df => {
+        const {argv,context,...rest} = df;
+
+        return {
+          ...rest,
+          argv,
+          context:        '--removed--',
+        };
+      }),
+    },
+  };
+
+  return {context};
+};
+const cleanContext = module.exports.cleanContext;
+
+function cleanDiag(diag__) {
+  const diag_ = nofun(diag__);
+
+  var diag = {
+    ___a:           '+++diag+++',
+    ...diag_,
+    DIAG:           cleanDIAG(diag_.DIAG),
+    bits:           cleanBits(diag_.bits),
+    ___z:           '---diag---',
+  };
+
+  return diag;
+}
+
+function cleanDIAG(DIAG__) {
+  const DIAG_ = nofun(DIAG__);
+
+  var DIAG = {
+    ___a:           '+++DIAG+++',
+    ...DIAG_,
+    context:        '--removed--',
+    bits:             cleanBits(DIAG_.bits),
+    diag:             cleanDiag2(DIAG_.diag),
+    dg:               cleanDiag2(DIAG_.dg),
+    ___z:           '---DIAG---',
+  };
+
+  return DIAG;
+}
+
+function cleanBits(bits__) {
+  const bits_ = nofun(bits__);
+
+  var bits = {
+    ___a:                 '+++bits+++',
+    ...bits_,
+    pieces:                 bits_.pieces,
+    ___z:                 '---bits---',
+  };
+
+  return bits;
+}
+
+function cleanDiag2(diag_) {
+
+  return '__RemovedCircular__';
+}
+
+function nofun(x) {
+  const keys = Object.keys(x ||{});
+
+  return keys.reduce((m,key) => {
+    const fn = x[key];
+    if (typeof fn === 'function') {
+      return m;
+    }
+
+    return {...m, [key]: fn};
+  }, {});
+}
+
+
+
+
+function Diagnostic(ctorArgs ={}) {
   if (!(this instanceof Diagnostic))     { return new Diagnostic(ctorArgs); }
 
   var   self    = this;
@@ -25,7 +127,7 @@ function Diagnostic(ctorArgs) {
   self.logger   = null;
   self.close    = function(){};
 
-  if (process.env.USE_SOCKETIO_DIAG) {
+  if (ENV.at('USE_SOCKETIO_DIAG')) {
     self.logger   = new JsonSocketIoLogger();
 
     self.close = function() {
@@ -41,7 +143,7 @@ function Diagnostic(ctorArgs) {
   self.args = function() {
     const argv        = self.getArgv(ctorArgs);
     const currFnName  = self.DIAG.getCurrFnName()   || '';
-
+console.log(`ags`, {argv,ctorArgs});
     // -------------------- Get argv elements --------------------
 
     // Get all the data from the `argv` that was passed in at the beginning of the fn (the ctorArgs)
@@ -70,7 +172,7 @@ function Diagnostic(ctorArgs) {
     argvOut = sg.reduce(argSpec, argvOut, (m, aliasesStr, name) => {
 
       // Make an Array from the string list
-      const aliases = (aliasesStr || '').split(',');
+      const aliases = sg.arrayify(aliasesStr);
       _.each(aliases, alias => {
 
         // Is the alias in argv? (Is 'name' in argv?)
@@ -174,7 +276,7 @@ function Diagnostic(ctorArgs) {
       return callback(err, ...results);
     }
 
-    // TODO: Not sure what here
+    // Not sure what here -- we have `callback`, but it is not a function
     return results[0];
   };
 
@@ -182,7 +284,7 @@ function Diagnostic(ctorArgs) {
   /**
    * A lot like exit(), but for normal fns.
    *
-   * Knows about self.errors.
+   * Knows about self.errors, but can pass an error in.
    *
    * @param {*} err       -- The caller can specify an error
    * @param {*} result    -- The thing to return
@@ -216,12 +318,12 @@ function Diagnostic(ctorArgs) {
     msgArgv = msgArgv || self.getArgv(ctorArgs);
     if (msgArgv.quiet) { return; }
 
-    var standard = true;
+    var stillNeedStandardLogging = true;
     if (self.logger) {
-      standard = !self.logger.i(msg, ...rest);
+      stillNeedStandardLogging = !self.logger.i(msg, ...rest);
     }
 
-    if (standard) {
+    if (stillNeedStandardLogging) {
       if (self.stdoutIsDataOnly()) {
         return self.infoOut(2, msg, ...rest);
       }
@@ -239,12 +341,12 @@ function Diagnostic(ctorArgs) {
     if (msgArgv.quiet)  { return; }
     if (!msgArgv.debug) { return; }
 
-    var standard = true;
+    var stillNeedStandardLogging = true;
     if (self.logger) {
-      standard = !self.logger.d(msg, ...rest);
+      stillNeedStandardLogging = !self.logger.d(msg, ...rest);
     }
 
-    if (standard) {
+    if (stillNeedStandardLogging) {
       if (self.stdoutIsDataOnly()) {
         return self.infoOut(2, msg, ...rest);
       }
@@ -262,12 +364,12 @@ function Diagnostic(ctorArgs) {
     if (msgArgv.quiet)    { return; }
     if (!msgArgv.verbose) { return; }
 
-    var standard = true;
+    var stillNeedStandardLogging = true;
     if (self.logger) {
-      standard = !self.logger.v(msg, ...rest);
+      stillNeedStandardLogging = !self.logger.v(msg, ...rest);
     }
 
-    if (standard) {
+    if (stillNeedStandardLogging) {
       if (self.stdoutIsDataOnly()) {
         return self.infoOut(2, msg, ...rest);
       }
@@ -291,12 +393,12 @@ function Diagnostic(ctorArgs) {
     msgArgv = msgArgv || self.getArgv(ctorArgs);
     if (msgArgv.quiet)    { return; }
 
-    var standard = true;
+    var stillNeedStandardLogging = true;
     if (self.logger) {
-      standard = !self.logger.w(msg, ...rest);
+      stillNeedStandardLogging = !self.logger.w(msg, ...rest);
     }
 
-    if (standard) {
+    if (stillNeedStandardLogging) {
       showBigAnnoyingMessage(null, msg, {banner: '#####', stream: 'log'}, ...rest);
       // var msg_ = `\n\n     #####     #####     ${msg}     #####     #####\n\n`;
       // console.log(...logged(msg_, ...rest));
@@ -321,12 +423,12 @@ function Diagnostic(ctorArgs) {
     // TODO: `quiet` in this context should mean that the active developer doesnt want to be bugged
     if (msgArgv.quiet && activeDevelopment())    { return; }
 
-    var standard = true;
+    var stillNeedStandardLogging = true;
     if (self.logger) {
-      standard = !self.logger.e(err, msg, ...rest);
+      stillNeedStandardLogging = !self.logger.e(err, msg, ...rest);
     }
 
-    if (standard) {
+    if (stillNeedStandardLogging) {
       showBigAnnoyingMessage(err, msg, {banner: '!!!!!!!!!!'}, ...rest);
 
       if (fastFail()) {
@@ -362,6 +464,14 @@ function Diagnostic(ctorArgs) {
     });
   };
 
+  /**
+   * The worker function that sends the log message to the right output.
+   *
+   * @param {*} channel - 1 === stdout; otherwise, stderr
+   * @param {*} msg
+   * @param {*} rest
+   * @returns
+   */
   self._out_ = function(channel, msg, ...rest) {
     if (channel === 1) {
       console.log(...logged(msg, ...rest));
@@ -372,23 +482,50 @@ function Diagnostic(ctorArgs) {
     console.error(...logged(msg, ...rest));
   };
 
+  /**
+   * Sends to stdout (an alias for self._out_(1, ...)
+   *
+   * @param {*} msg
+   * @param {*} rest
+   * @returns
+   */
   self.out = function(msg, ...rest) {
     return self._out_(1, msg, ...rest);
   };
 
+  /**
+   *
+   *
+   * @param {*} channel
+   * @param {*} msg
+   * @param {*} rest
+   * @returns
+   */
   self.infoOut = function(channel, msg, ...rest) {
     if (!_.isNumber(channel))                   { return self.infoOut(2, ..._.compact([arguments[0], arguments[1], ...rest])); }
     return self._out_(channel, msg, ...rest);
   };
 
+  /**
+   * When using a CLI app, and piping from one utility to another, only meaningful data can
+   * be sent to stdout. You cannot send messages or warnings, etc. Just data.
+   *
+   * @returns
+   */
   self.stdoutIsDataOnly = function() {
-    // TODO: Fix
+    // TODO: Fix -- this is a property of the utility
 
-    return process.env.SG_STDOUT_IS_DATA_ONLY || false;
+    return ENV.at('SG_STDOUT_IS_DATA_ONLY');
   };
 
-  self.getArgv = function(args) {
-    return args.argv;
+  /**
+   * Get the argv param.
+   *
+   * @param {*} [args={}]
+   * @returns
+   */
+  self.getArgv = function(args ={}) {
+    return args.argv ||{};
   };
 
   // ---------- Helpers ----------
@@ -405,7 +542,7 @@ function Diagnostic(ctorArgs) {
   function activeDevelopment() {
     if (production())   { return false; }
 
-    return process.env.ACTIVE_DEVELOPMENT;
+    return ENV.at('ACTIVE_DEVELOPMENT');
   }
 
   function inspect(x, colors =true) {
@@ -414,10 +551,10 @@ function Diagnostic(ctorArgs) {
     if (fancy()) {
       return util.inspect(x, {depth:null, colors});
     } else if (readable()) {
-      return JSON.stringify(x, null, 2);
+      return sg.safeJSONStringify(x, null, 2);
     }
 
-    return JSON.stringify(x);
+    return sg.safeJSONStringify(x);
   }
 
   function fancy() {
@@ -444,21 +581,13 @@ function Diagnostic(ctorArgs) {
   }
 
   function fastFail() {
-    if ('SG_FAST_FAIL' in process.env) {
-      return process.env.SG_FAST_FAIL;
-    }
-
     msgArgv = msgArgv || self.getArgv(ctorArgs);
-    return msgArgv.fastfail;
+    return ENV.at('SG_FAST_FAIL') ||  msgArgv.fastfail;
   }
 
   function warnStack() {
-    if ('SG_WARN_STACK' in process.env) {
-      return process.env.SG_WARN_STACK;
-    }
-
     msgArgv = msgArgv || self.getArgv(ctorArgs);
-    return msgArgv.warnstack;
+    return ENV.at('SG_WARN_STACK') || msgArgv.warnstack;
   }
 
 }
@@ -476,17 +605,17 @@ function diagnostic(args) {
 
 function fromContext(args) {
 
-  var   diag = getContextItem(args.context, 'diag');
+  var   diag;
+  // diag = getContextItem(args.context, 'diag');
 
-  if (!diag) {
+  // if (!diag) {
     diag = new Diagnostic(args);
 
-    setContextItem(args.context, 'diag', diag);
-  }
+  //   setContextItem(args.context, 'diag', diag);
+  // }
 
   return diag;
 }
-
 
 
 
@@ -507,7 +636,7 @@ function setContextItem(context, name, item) {
 
 
 
-function getCallback(args) {
+function getCallback(args ={}) {
   return args.callback;
 }
 

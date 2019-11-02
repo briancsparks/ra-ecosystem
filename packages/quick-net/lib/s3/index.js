@@ -9,64 +9,61 @@ const ra                      = require('run-anywhere').v2;
 const sg0                     = ra.get3rdPartyLib('sg-diag');
 const sg                      = sg0.merge(sg0, require('sg-env'), require('sg-argv'));
 const crypto                  = require('crypto');
+const fs                      = require('fs');
+const os                      = require('os');
+const path                    = require('path');
 const { awsService }          = require('../aws');
-const S3                      = awsService('S3');
+const s3                      = awsService('S3');
+const _last                   = sg._.last;
 
 const mod                     = ra.modSquad(module, 'quickNetS3');
 const DIAG                    = sg.DIAG(module);
 const ENV                     = sg.ENV();
+// const ARGV                    = sg.ARGV();
 
-const ARGV = sg.ARGV();
-
-// DIAG.usage({aliases:{streamToS3:{}}});
-
-// // TODO: activeDevelopment needs to be associated with thie fn
-// // The last one wins. Comment out what you dont want.
-// DIAG.activeDevelopment(`--Bucket=quick-net-ingest-dump`);
-// DIAG.activeDevelopment(`--Bucket=quick-net-ingest-dump --debug`);
-
-// mod.xport(DIAG.xport({streamToS3: function(argv, context, callback) {
-//   const diag    = DIAG.diagnostic({argv, context, callback});
-
-//   var   {Body}                        = argv;
-//   var   {Bucket,Key,AWS_PROFILE}      = diag.args();
-
-//   AWS_PROFILE                         = AWS_PROFILE   || ENV.at('AWS_PROFILE');
-
-//   // Make the Key
-//   if (!Key) {
-//     let {clientId,sessionId}          = mkClientAndSessionIds(argv);
-//     Key                               = mkKey(Body, clientId, sessionId);
-//   }
-
-//   if (!(diag.haveArgs({Bucket,Key,Body}, {AWS_PROFILE})))                { return diag.exit(); }
-
-//   return _streamToS3_({Body, Bucket, Key, diag}, callback);
-// }}));
+const dg                      = DIAG.dg;
+const {cleanContext}          = sg;
 
 
-// function _streamToS3_({Body, Bucket, Key, diag}, callback) {
-//   var upload = S3.upload({Bucket, Key, Body}, {partSize: 6 * 1024 * 1024});
+module.exports.streamThroughFileToS3  = streamThroughFileToS3;
+module.exports.copyFileToS3           = copyFileToS3;
+module.exports._copyFileToS3_         = _copyFileToS3_;
+module.exports._streamToS3_           = _streamToS3_;
+module.exports.parseS3Path            = parseS3Path;
 
-//   upload.on('httpUploadProgress', (progress) => {
-//     diag.i(`uploading file`, {progress, Key});
-//   });
 
-//   upload.send(function(err, data) {
-//     if (!sg.ok(err, data))  { diag.e(err, `sending upload`, {Bucket, Key}); }
+// =======================================================================================================
+// streamToS3
 
-//     // pushStatus({name:filename, data:{event: '/upload', filename, Bucket, Key, msg:`upload ${filename}`}}, function(){});
+DIAG.usage({aliases:{streamToS3:{
+  Bucket :  'bucket'
+}}});
 
-//     return callback(err, data);
-//   });
-// }
+// The last one wins. Comment out what you dont want.
+DIAG.activeDevelopment(`--Bucket=quick-net-ingest-dump`);
+DIAG.activeDevelopment(`--Bucket=quick-net-ingest-dump --debug`);
+
+mod.xport(DIAG.xport({streamToS3: function(argv, context, callback) {
+  const diag    = DIAG.diagnostic({argv, context, callback});
+diag.i('st3', {argv, ...cleanContext(context)});
+  var   {Body}            = argv;
+  var   {Bucket,Key}      = getBucketAndKey(diag.args());
+
+  if (!(diag.haveArgs({Bucket,Key,Body})))                                  { return diag.exit(); }
+
+  return _streamToS3_(Body, {Bucket, Key}, callback);
+}}));
 
 
 
 
 
+// =======================================================================================================
+// putToS3
 
-DIAG.usage({aliases:{putToS3:{}}});
+DIAG.usage({aliases:{putToS3:{
+  Body :  'body'
+}}});
 
 // The last one wins. Comment out what you dont want.
 DIAG.activeDevelopment(`--Bucket=quick-net-ingest-dump`);
@@ -75,11 +72,34 @@ DIAG.activeDevelopment(`--Bucket=quick-net-ingest-dump --debug`);
 mod.xport(DIAG.xport({putToS3: function(argv, context, callback) {
   const diag    = DIAG.diagnostic({argv, context, callback});
 
-  var  {Bucket,Key,AWS_PROFILE}       = diag.args();
-  var  Body                           = getBody(argv, context) || diag.args().Body;
+  var  {Bucket,Key}     = diag.args();
+  var  Body             = getBody(argv, context)  || diag.args().Body;
+  Bucket                = Bucket                  || ENV.at('QUICKNET_INGEST_BUCKET');
 
-  AWS_PROFILE                         = AWS_PROFILE   || ENV.at('AWS_PROFILE');
-  Bucket                              = Bucket        || ENV.at('IngestBucket');
+  if (!(diag.haveArgs({Bucket,Key,Body})))                                      { return diag.exit(); }
+
+  // Call the real worker
+  return _streamToS3_(stringify(Body), {Bucket, Key}, callback);
+}}));
+
+
+// =======================================================================================================
+// putClientJsonToS3
+
+DIAG.usage({aliases:{putClientJsonToS3:{
+  Body :  'body'
+}}});
+
+// The last one wins. Comment out what you dont want.
+DIAG.activeDevelopment(`--Bucket=quick-net-ingest-dump`);
+DIAG.activeDevelopment(`--Bucket=quick-net-ingest-dump --debug`);
+
+mod.xport(DIAG.xport({putClientJsonToS3: function(argv, context, callback) {
+  const diag    = DIAG.diagnostic({argv, context, callback});
+
+  var  {Bucket,Key}     = diag.args();
+  var  Body             = getBody(argv, context)  || diag.args().Body;
+  Bucket                = Bucket                  || ENV.at('QUICKNET_INGEST_BUCKET');
 
   // If the caller did not provide an AWS Key, we will need the clientId/sessionId
   // to generate it.
@@ -104,29 +124,107 @@ mod.xport(DIAG.xport({putToS3: function(argv, context, callback) {
   }
 
   // Call the real worker
-  return _putToS3_({Body: stringify(Body), Bucket, Key, diag}, callback);
+  return _putClientJsonToS3_(stringify(Body), {Bucket, Key}, callback);
 }}));
 
 
-function _putToS3_({Body, Bucket, Key, diag}, callback) {
-  var upload = S3.upload({Bucket, Key, Body}, {partSize: 6 * 1024 * 1024});
+// ----------------------------------------------------------------------------------------------------
+function _putClientJsonToS3_(Body, {Bucket, Key}, callback) {
+  return _streamToS3_(Body, {Bucket, Key}, callback);
+  // var upload = s3.upload({Bucket, Key, Body}, {partSize: 6 * 1024 * 1024});
+
+  // upload.on('httpUploadProgress', (progress) => {
+  //   diag.i(`uploading file`, {progress, Key});
+  // });
+
+  // upload.send(function(err, data) {
+  //   if (!sg.ok(err, data))  { diag.e(err, `sending upload`, {Bucket, Key}); }
+
+  //   // pushStatus({name:filename, data:{event: '/upload', filename, Bucket, Key, msg:`upload ${filename}`}}, function(){});
+  //   diag.i(`upload-send-done`, {Bucket, Key, err, data});
+
+  //   return callback(err, data);
+  // });
+}
+
+
+// ----------------------------------------------------------------------------------------------------
+var uniq = 0;
+function streamThroughFileToS3(readStream, argv, callback) {
+  const pathname = path.join(os.tmpdir(), `stream-through-file-to-s3-${uniq++}`);
+
+  const out = fs.createWriteStream(pathname);
+  readStream.pipe(out);
+  out.on('close', function() {
+    return _copyFileToS3_(pathname, argv, callback);
+  });
+}
+
+// ----------------------------------------------------------------------------------------------------
+function copyFileToS3(pathname, s3path, callback) {
+  const filename = _last(pathname.split(/[\\/]/));
+  const {Bucket,Key} = parseS3Path(`${s3path}/${filename}`);
+
+  if (!Bucket)    { dg.e(`NoBucket`, `sending uplaod`, {Bucket,Key,pathname,s3path}); return callback(`NoBucket`); }
+  if (!Key)       { dg.e(`NoKey`,    `sending uplaod`, {Bucket,Key,pathname,s3path}); return callback(`NoKey`); }
+
+  return _copyFileToS3_(pathname, {Bucket, Key}, function(err, data) {
+    return callback(err, data);
+  });
+}
+
+// ----------------------------------------------------------------------------------------------------
+function _copyFileToS3_(pathname, argv, callback) {
+  const Body = fs.createReadStream(pathname);
+
+  return _streamToS3_(Body, argv, callback);
+}
+
+// ----------------------------------------------------------------------------------------------------
+function _streamToS3_(Body, {Bucket, Key, ContentType ='application/json'}, callback) {
+
+  if (!Bucket)                              { dg.e(`NoBucket`, `sending uplaod`, {Bucket,Key});   return callback(`NoBucket`); }
+  if (!Key)                                 { dg.e(`NoKey`,    `sending uplaod`, {Bucket,Key});   return callback(`NoKey`); }
+  if (!Body)                                { dg.e(`NoBody`,   `sending uplaod`, {Bucket,Key});   return callback(`NoBody`); }
+
+  var upload = s3.upload({Bucket, Key, Body, ContentType}, {partSize: 6 * 1024 * 1024});
 
   upload.on('httpUploadProgress', (progress) => {
-    diag.i(`uploading file`, {progress, Key});
+    dg.i(`uploading file`, {progress});
   });
 
   upload.send(function(err, data) {
-    if (!sg.ok(err, data))  { diag.e(err, `sending upload`, {Bucket, Key}); }
+    if (!sg.ok(err, data))                  { dg.e(err, `sending upload`, {Bucket, Key}); }
 
-    // pushStatus({name:filename, data:{event: '/upload', filename, Bucket, Key, msg:`upload ${filename}`}}, function(){});
-    diag.i(`upload-send-done`, {Bucket, Key, err, data});
+    dg.i(`upload-send-done`, {Bucket, Key, err, data});
 
     return callback(err, data);
   });
 }
 
+// ----------------------------------------------------------------------------------------------------
+function parseS3Path(s3path) {
+  const m = s3path.match(/s3:[/][/]([^/]+)[/](.*)/);
+  if (!m) { return; }
 
+  const Bucket = m[1];
+  const Key = m[2];
 
+  return {Bucket,Key};
+}
+
+// ----------------------------------------------------------------------------------------------------
+function getBucketAndKey(argv) {
+dg.i(`gpak`, {argv});
+  var   s3path              = argv.s3path;
+  var   {Bucket,Key}        = parseS3Path(s3path);
+
+  Bucket  = argv.Bucket     || Bucket;
+  Key     = argv.Key        || Key;
+
+dg.i(`gpak2`, {argv, Bucket,Key});
+  return {Bucket,Key};
+}
 
 
 
@@ -169,7 +267,7 @@ function hashBody(Body_) {
 }
 
 
-
+// TODO: use from quick-net-client
 function mkClientAndSessionIds(argv, Body) {
   var   sessionId = argv.sessionId  || Body.sessionId;
   var   clientId  = argv.clientId   || Body.clientId;

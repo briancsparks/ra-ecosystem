@@ -8502,6 +8502,11 @@ sg-echo@^1.0.33:
   dependencies:
     sg0 "^1.0.24"
 
+sg-env@^1.0.5:
+  version "1.0.5"
+  resolved "https://registry.yarnpkg.com/sg-env/-/sg-env-1.0.5.tgz#ade99b9910631c63e07431abf961846d5a15dbc6"
+  integrity sha512-NTFpCp/F+r9lhWl4ttLVkTOuFp21EZij2bvLwieHlB07QooddsvTHjoh5v5jq+Ij29QTlth2XRn2SY0DXgO1Kw==
+
 sg-flow@^0.9.11:
   version "0.9.15"
   resolved "https://registry.yarnpkg.com/sg-flow/-/sg-flow-0.9.15.tgz#1608f54cc54518842a0868cfd760c4a385ed9d7d"

@@ -1279,7 +1279,7 @@ sg.safeJSONParse = function(str) {
     try {
       return JSON.parse(str);
     } catch(err) {
-//      console.error("Error parsing JSON", str, err);
+    //  console.error("Error parsing JSON", str, err);
     }
   }
 };
@@ -1290,6 +1290,16 @@ sg.jsonify = function(x) {
   }
 
   return sg.safeJSONParse(x);
+};
+
+sg.safeJSONStringify = function(json, ...rest) {
+  try {
+    return JSON.stringify(json, ...rest);
+  } catch (err) {
+    // console.error(`Failed to stringify JSON`, err);
+  }
+
+  return;
 };
 
 /**

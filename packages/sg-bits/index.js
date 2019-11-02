@@ -29,6 +29,7 @@ function Bits(mod) {
   var   self = this;
 
   self.pieces         = {};
+  self.jsonFile       = null;
   self.currSetupName  = null;
 
   const [dirname, basename, ext]    = splitFilepath(mod.filename);
@@ -100,14 +101,34 @@ function Bits(mod) {
     // We are no longer setting up
     self.currSetupName = null;
 
-    var   subPieces = {};
-    try {
-      subPieces     = await fs_readFile(mainBitsFile);
-      self.pieces   = sg.extend(self.pieces, sg.safeJSONParse(subPieces) || {});    // TODO: should be qm(), right?
+    if (!self.jsonFile) {
+      try {
+        self.jsonFile = await fs_readFile(mainBitsFile);
+        self.pieces   = qm(self.pieces, sg.safeJSONParse(self.jsonFile) || {});
 
-    } catch(err) {
-      // If theres an error, just let it fall thru (we already have self.pieces)
-      // console.error(`getjson error`, err);
+      } catch(err) {
+        // If theres an error, just let it fall thru (we already have self.pieces)
+        // console.error(`getjson error`, err);
+      }
+    }
+
+    return self.pieces;
+  };
+
+  self.loadJsonSync = function() {
+
+    // We are no longer setting up
+    self.currSetupName = null;
+
+    if (!self.jsonFile) {
+      try {
+        self.jsonFile = fs.readFileSync(mainBitsFile);
+        self.pieces   = qm(self.pieces, sg.safeJSONParse(self.jsonFile) || {});
+
+      } catch(err) {
+        // If theres an error, just let it fall thru (we already have self.pieces)
+        // console.error(`getjson error`, err);
+      }
     }
 
     return self.pieces;

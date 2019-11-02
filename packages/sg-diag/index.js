@@ -1,3 +1,4 @@
+/* eslint-disable valid-jsdoc */
 if (process.env.SG_VVVERBOSE) console[process.env.SG_LOAD_STREAM || 'log'](`Loading ${__filename}`);
 
 /**
@@ -87,6 +88,7 @@ module.exports.DIAG = function(mod) {
   };
 
   self.isActiveName = function(name) {
+  console.log(`isactivename`, {name, activeName: self.activeName});
     // // HACK: to maintain current behavior FIXME
     // if (self.activeName === null) {
     //   return true;
@@ -135,11 +137,14 @@ module.exports.DIAG = function(mod) {
     return schema;
   };
 
-  self.sanityCheck = function() {
+  self.sanityCheck = function(msg ='', obj ={}) {
     if (sg.smartValue(process.env.ACTIVE_DEVELOPMENT)) {
       if (!self.activeName) {
         // TODO: use diagnostic.w()
-        console.warn(`ACTIVE_DEVELOPMENT mode, but no DIAG.activeName.\n   Use SG_DIAG_ACTIVE_FN or set DIAG.activeName`);
+        console.warn(`ACTIVE_DEVELOPMENT mode, but no DIAG.activeName.
+        Use SG_DIAG_ACTIVE_FN or set DIAG.activeName
+          activeName: ${self.activeName}
+          ${msg}`, util.inspect(obj, {depth: null, color:true}));
       }
     }
   };
@@ -163,6 +168,17 @@ module.exports.DIAG = function(mod) {
       self.initDiagnostic(diag);
 
       diag.i_if(logApi, `--> ${fnName}:`, {argv});
+    };
+
+    const setupDiag2 = function(argv, context, callback) {
+      const logApi    = argv.log_api || process.env.SG_LOG_API;
+
+      var diag = sgDiagnostic.Diagnostic({argv, context, fnName, callback});
+      self.initDiagnostic(diag);
+
+      diag.i_if(logApi, `--> ${fnName}:`, {argv});
+
+      return diag;
     };
 
     // Build an impostor to hand out -- this fn will be called, and needs to call the real fn
@@ -201,8 +217,10 @@ module.exports.DIAG = function(mod) {
 
       // If we are active development, use those args
       if (sg.smartValue(process.env.ACTIVE_DEVELOPMENT)) {
-        self.sanityCheck();
-        argv = sg.merge(argv ||{}, mkArgv(self.devCliArgs(fnName)));
+        let cliArgs   = self.devCliArgs(fnName);
+        let cliArgs2  = mkArgv(cliArgs);
+        self.sanityCheck(`Checking ACTIVE_DEVELOPMENT. fnName: |${fnName}|, devCliArgs: |${cliArgs}|`, {argv, cliArgs2});
+        argv = sg.merge(argv ||{}, cliArgs2);
         // console.log(`invokingFnB ${fnName}`, util.inspect({argv, async: !isActuallyContinuationStyle}, {depth:null, color:true}));
       }
 
@@ -267,29 +285,25 @@ module.exports.DIAG = function(mod) {
    * @param {Array} args - The typical {argv, context}
    * @returns {Object} The new Diagnostic object.
    */
-  self.diagnostic = function(...args) {
-    var argv,context,callback;
+  self.diagnostic = function({argv,context,callback}, fnName) {
 
-    if (args.length === 1) {
-      ({argv,context,callback} = args[0]);
-    } else {
-      [argv,context,callback] = args;
-    }
-
-    var diagFunctions           = sgDiagnostic.getContextItem(context || self.context, 'diagFunctions') || [];
+    var diagFunctions         = sgDiagnostic.getContextItem(context || self.context, 'diagFunctions') || [];
+    fnName                    = fnName || diagFunctions.fnName;
     // var {fnName}                = sg.merge(diagFunctions[0] || {}, {argv,context});
 
-    var diag = sgDiagnostic.diagnostic({argv,context,callback});
+    var diag = sgDiagnostic.diagnostic({argv, context, fnName, callback});
     return self.initDiagnostic(diag);
   };
 
   self.initDiagnostic = function(diag) {
-    self.diag = diag;
-    diag.DIAG = self;
-    diag.bits = self.bits;
+    self.diag     = diag;
+    diag.DIAG     = self;
+    diag.bits     = self.bits;
+
     return diag;
   };
 
+  self.dg = new sgDiagnostic.Diagnostic();
 };
 
 // module.exports.DIAG = function(...args) {
@@ -303,6 +317,7 @@ module.exports.DIAG = function(mod) {
 
 module.exports.Diagnostic = sgDiagnostic.Diagnostic;
 module.exports.diagnostic = sgDiagnostic.diagnostic;
+module.exports.cleanContext = sgDiagnostic.cleanContext;
 
 _.each(sgCheck,  xport_it);
 _.each(sgParams, xport_it);

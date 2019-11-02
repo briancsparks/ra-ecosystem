@@ -651,6 +651,18 @@ mod.xport({upsertInstance: function(argv, context, callback) {
   });
 }});
 
+/*
+ * TODO:
+ *   - Move the below to lib/s3/...
+ *   - Make it so the DIAG object has logging functions, so you do not have to always have a Diagnostic object instantiated for every fn
+ *   - Make it so the _sg-bits.json files can be read loadSync, but slower.
+ *     - For a given module, only one sg-bits object should be built, so any time _sg-bits.json is read, the loadSync fn would have it cached.
+ *
+ *   - nginx/config.js - add a saveNginxConfigTarballToS3
+ *
+ *   - Overall, add to ra/platform/{entrypoint,host}/x.js the ability to `ra invoke ...` for the 'rewrite' module
+ */
+
 // ----------------------------------------------------------------------------------------------------
 var uniq = 0;
 function streamThroughFileToS3(readStream, argv, callback) {
@@ -714,7 +726,7 @@ function parseS3Path(s3path) {
   return {Bucket,Key};
 }
 
-// ----------------------------------------------------------------------------------------------------
+  // ----------------------------------------------------------------------------------------------------
 function readJsonFile(filename_) {
   if (!filename_) {
     return; /* undefined */

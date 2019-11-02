@@ -3,16 +3,19 @@
 // https://www.nginx.com/resources/wiki/start/topics/examples/full/
 
 const ra                      = require('run-anywhere').v2;
-const sg                      = ra.get3rdPartyLib('sg-flow');
+const sg0                     = ra.get3rdPartyLib('sg-flow');
+const sg                      = sg0.merge(sg0, require('sg-env'));
 const { _ }                   = sg;
 const tar                     = require('tar-stream');
 const fs                      = require('fs');
 const os                      = require('os');
 const path                    = require('path');
+const {streamToS3}            = require('../s3');
 var   {globalBlacklistIps}    = require('./snippets/ip-blacklist');
 
 const mod                     = ra.modSquad(module, 'nginx-config');
 const DIAG                    = sg.DIAG(module);
+const ENV                     = sg.ENV();
 
 // =======================================================================================================
 // saveNginxConfigTarball
@@ -37,7 +40,7 @@ DIAG.activeName = 'saveNginxConfigTarball';
  * @returns
  */
 mod.xport(DIAG.xport({saveNginxConfigTarball: function(argv, context, callback) {
-  const diag        = DIAG.diagnostic(argv, context, callback);
+  const diag        = DIAG.diagnostic({argv, context, callback});
   var   {filename}  = diag.args();
 
   if (!(diag.haveArgs({filename})))                           { return diag.exit(); }
@@ -62,6 +65,51 @@ mod.xport(DIAG.xport({saveNginxConfigTarball: function(argv, context, callback) 
 
 
 // =======================================================================================================
+// saveNginxConfigTarballToS3
+
+DIAG.usage({ aliases: { saveNginxConfigTarballToS3: { args: {
+  serverType    : 'type'
+}}}});
+
+// The last one wins. Comment out what you dont want.
+DIAG.activeDevelopment(`--filename=${path.join(os.tmpdir(),  '_aa-nginx-conf')} --type=localapp --debug`);
+DIAG.activeDevelopment(`--filename=${path.join(os.homedir(), '_aa-nginx-conf')} --type=localapp`);
+DIAG.activeDevelopment(`--filename=${path.join(os.homedir(), '_aa-nginx-conf')} --root=/usr/share/nginx/html --location=/clientstart --upstream=clients --upstream-service=10.1.2.3:3001 --fqdns=example.com --type=localapp --skip-reload --debug`);
+DIAG.activeDevelopment(`--filename=${path.join(os.homedir(), '_aa-nginx-conf')} --root=/usr/share/nginx/html --location=/clientstart --upstream=clients --upstream-service=10.1.2.3:3001 --fqdns=example.com --debug`);
+DIAG.activeName = 'saveNginxConfigTarballToS3';
+
+/**
+ *
+ *
+ * @param {*} argv
+ * @param {*} context
+ * @param {*} callback
+ * @returns
+ */
+mod.xport(DIAG.xport({saveNginxConfigTarballToS3: function(argv, context, callback) {
+  const diag        = DIAG.diagnostic({argv, context, callback});
+  // var   {filename}  = diag.args();
+  // const namespace   = ENV.at('NAMESPACE');
+  const namespace   = 'quicknet';
+
+  if (!(diag.haveArgs({})))                           { return diag.exit(); }
+  // ----------- done checking args
+
+  return getNginxConfigTarball(argv, context, function(err, data) {
+    if (err) { return callback(err); }
+
+    const {pack,cwd,name}   = data;
+    const s3path            = `s3://quick-net/deploy/${namespace.toLowerCase()}/files/tmp/${name}`;
+
+    return streamToS3({Body: pack, s3path, ContentType: 'application/x-tar'}, context, function(err, data) {
+      diag.i(`Upload nginx config tarball`, {cwd, s3path, err, data});
+      return callback(err, data);
+    });
+  });
+}}));
+
+
+// =======================================================================================================
 // getNginxConfigTarball
 
 DIAG.usage({ aliases: { getNginxConfigTarball: { args: {
@@ -81,7 +129,7 @@ DIAG.activeDevelopment(`--filename=${path.join(os.homedir(), '_aa-nginx-conf')} 
  * @returns
  */
 const getNginxConfigTarball = mod.xport(DIAG.xport({getNginxConfigTarball: function(argv, context, callback) {
-  const diag                      = DIAG.diagnostic(argv, context, callback);
+  const diag                      = DIAG.diagnostic({argv, context, callback});
   const {serverType ='upstream'}  = diag.args();
 
   if (!(diag.haveArgs({serverType})))                           { return diag.exit(); }
@@ -121,7 +169,8 @@ const getNginxLocalAppServerConfig = mod.xport(DIAG.xport({getNginxLocalAppServe
   const {skip_reload =true}     = argv;
 
   var   manifest = {
-    cwd       : '/etc/nginx'
+    cwd       : '/etc/nginx',
+    name      : 'nginx-conf.tar'
   };
 
   if (!skip_reload) {
@@ -142,7 +191,7 @@ const getNginxLocalAppServerConfig = mod.xport(DIAG.xport({getNginxLocalAppServe
 
   pack.finalize();
 
-  return callback(null, {ok:true, pack, cwd: manifest.cwd});
+  return callback(null, {ok:true, pack, cwd: manifest.cwd, name: manifest.name});
 }}));
 
 
@@ -177,7 +226,8 @@ const getNginxUpstreamConfig = mod.xport(DIAG.xport({getNginxUpstreamConfig: fun
   fqdns = sg.arrayify(fqdns);
 
   var   manifest = {
-    cwd       : '/etc/nginx'
+    cwd       : '/etc/nginx',
+    name      : 'nginx-conf.tar'
   };
 
   if (!skip_reload) {
@@ -205,7 +255,7 @@ const getNginxUpstreamConfig = mod.xport(DIAG.xport({getNginxUpstreamConfig: fun
 
   pack.finalize();
 
-  return callback(null, {ok:true, pack, cwd: manifest.cwd});
+  return callback(null, {ok:true, pack, cwd: manifest.cwd, name: manifest.name});
 }}));
 
 
@@ -322,7 +372,7 @@ l=[...l,`
 DIAG.usage({ aliases: { getUpstream: { args: {}}}});
 
 function getUpstream(argv, context={}) {
-  const diag                          = DIAG.diagnostic({argv,context});
+  const diag                          = DIAG.diagnostic({argv,context}, 'getUpstream');
   const {upstream}                    = argv; //diag.args();
   const {upstream_service}            = argv; //diag.args();
 
@@ -341,7 +391,7 @@ function getUpstream(argv, context={}) {
 DIAG.usage({ aliases: { getUpstreamServer: { args: {}}}});
 
 function getUpstreamServer(argv, context={}) {
-  const diag                          = DIAG.diagnostic({argv,context});
+  const diag                          = DIAG.diagnostic({argv,context}, 'getUpstreamServer');
   const {https,client,serverNum}      = argv; //diag.args();
   const {location,upstream}           = argv; //diag.args();
   var   {default_server,fqdns,root}   = argv; //diag.args();
