@@ -1,33 +1,46 @@
+if (process.env.SG_VVVERBOSE) console[process.env.SG_LOAD_STREAM || 'log'](`Loading ${__filename}`);
+
+/**
+ * @file
+ *
+ * TODO: Fill in a description.
+ *
+ * As a host, I will:
+ *
+ * 1. Receive input from an entrypoint function.
+ * 2. Dispatch it.
+ * 3. Sanitize the result somehow.
+ *
+ */
 
 const sg                        = require('sg0');
 const _                         = require('lodash');
 const utils                     = require('./utils');
-const platform                  = require('../platform-utils-aws');
 
 var   handlerFns    = [];
 var   dispatcher    = dispatch;
 
 const logApiCalls   = !!process.env.SG_LOG_RA_HOST_API;
 
-
 // -----------------------------------------------------------------
 
 // Lambda handler for the function of being the host
-exports.platform_host_lambda_handler = function(event_, context_, callback) {
+exports.platform_host_template_handler = function(a, b, callback) {       // TODO: change `template` as appr
   const startTime = new Date().getTime();
 
-  const event     = platform.normalizeEvent(event_);
-  logApi(`lambda_handler.params`, {event:event_, context:context_});
+  // const event     = platform.normalizeEvent(a);                        // TODO: convert to event-like thing preping for argvify
+  const event     = a;
+  logApi(`template_handler.params`, {event:a, context:b});
 
   // Turn it into argv,context,callback
-  var   [argv,context]      = argvify(event, context_);
+  var   [argv,context]      = argvify(event, b);
 
   return dispatcher(argv, context, function(err, response) {
     const endTime = new Date().getTime();
 
     const fixedResponse = utils.fixResponse(response);
 
-    logApi(`lambda_handler: (${(endTime - startTime) * 1000})`, {argv, err, response, fixedResponse});
+    logApi(`template_handler: (${(endTime - startTime) * 1000})`, {argv, err, response, fixedResponse});
 
     // OK?
     if (err || !response || !response.ok) {
@@ -37,7 +50,6 @@ exports.platform_host_lambda_handler = function(event_, context_, callback) {
     callback(err, fixedResponse);
   });
 };
-
 
 // -----------------------------------------------------------------
 
@@ -64,7 +76,7 @@ function dispatch(event, context, callback) {
   });
 
   if (!handled) {
-    console.log(`lambda_handler not found`);
+    console.log(`template_handler not found`);
 
     return callback(null, utils.fixResponse({statusCode: 404, body: {ok: false}}));
   }
@@ -76,46 +88,17 @@ function mkHandlerWrapper(select, handleIt) {
 }
 
 
-function argvify(event_, context_) {
-  const event = {...event_};
 
-  const query     = sg.extend(event.queryStringParameters, multiItemItems(event.multiValueQueryStringParameters));
-  const body      = platform.decodeBody(event);
-
-  const headers   = sg.extend(event.headers, multiItemItems(event.multiValueHeaders));
-
-  const argvs     = {...headers, ...(event.pathParameters ||{}), ...(event.stageVariables ||{}), ...body, ...query};
-
-  const context   = {...context_, event: event_};
-
-  const argv = {
-    ...argvs,
-    __meta__: {
-      query,
-      body,
-      path    : event.path,
-      method  : event.method,
-
-      event   : event_
-    }
-  };
-
+function argvify(event, context) {
+  const argv = event;
   return [argv,context];
 }
 
-function multiItemItems(obj) {
-  return sg.reduce(obj, {}, (m,v,k) => {
-    if (v.length > 1) {
-      return sg.kv(m,k,v);
-    }
 
-    return m;
-  });
-}
 
 function logApi(msg, obj, ...rest) {
   if (!logApiCalls) { return; }
 
-  sg.log(`LOGAPI (RA_Host): ${msg}`, obj, ...rest);
+  sg.log(`LOGAPI template(RA_Host): ${msg}`, obj, ...rest);
 }
 

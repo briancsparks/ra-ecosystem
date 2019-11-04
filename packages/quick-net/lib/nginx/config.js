@@ -78,6 +78,7 @@ DIAG.activeDevelopment(`--filename=${path.join(os.tmpdir(),  '_aa-nginx-conf')} 
 DIAG.activeDevelopment(`--filename=${path.join(os.homedir(), '_aa-nginx-conf')} --type=localapp`);
 DIAG.activeDevelopment(`--filename=${path.join(os.homedir(), '_aa-nginx-conf')} --root=/usr/share/nginx/html --location=/clientstart --upstream=clients --upstream-service=10.1.2.3:3001 --fqdns=example.com --type=localapp --skip-reload --debug`);
 DIAG.activeDevelopment(`--filename=${path.join(os.homedir(), '_aa-nginx-conf')} --root=/usr/share/nginx/html --location=/clientstart --upstream=clients --upstream-service=10.1.2.3:3001 --fqdns=example.com --debug`);
+DIAG.activeDevelopment(`--sidecar=/clientstart,3009 --type=qnwebtier --debug`);
 DIAG.activeName = 'saveNginxConfigTarballToS3';
 
 /**
@@ -143,14 +144,16 @@ DIAG.activeDevelopment(`--filename=${path.join(os.homedir(), '_aa-nginx-conf')} 
  */
 const getNginxConfigTarball = mod.xport(DIAG.xport({getNginxConfigTarball: function(argv, context, callback) {
   const diag                      = DIAG.diagnostic({argv, context, callback});
-  const {serverType ='upstream'}  = diag.args();
+  const {serverType ='general'}   = diag.args();
 
   if (!(diag.haveArgs({serverType})))                           { return diag.exit(); }
   // ----------- done checking args
 
-  var   getConfig;
+  var   getConfig = getNginxGeneralConfig;
   if (serverType === 'upstream')                                { getConfig =  getNginxUpstreamConfig; }
   else if (serverType === 'localappserver')                     { getConfig =  getNginxLocalAppServerConfig; }
+  else if (serverType === 'general')                            { getConfig =  getNginxGeneralConfig; }
+  else if (serverType === 'qnwebtier')                          { getConfig =  getNginxQuicknetWebtierConfig; }
 
   return getConfig(argv, context, function(err, data) {
     return callback(err, data);
@@ -266,13 +269,200 @@ const getNginxUpstreamConfig = mod.xport(DIAG.xport({getNginxUpstreamConfig: fun
 
   _.each(fqdns, fqdn => {
     pack.entry({ ...entryDefs(argv), name: `conf.d/upstream-${upstream}.conf` },  getUpstream(argv));
-    pack.entry({ ...entryDefs(argv), name: `conf.d/server-${fqdn}.conf` },        getUpstreamServer(argv));
+    pack.entry({ ...entryDefs(argv), name: `conf.d/server-${fqdn}.conf` },        getServerConfig(argv));
   });
 
   pack.finalize();
 
   return callback(null, {ok:true, pack, cwd: manifest.cwd, name: manifest.name});
 }}));
+
+
+// =======================================================================================================
+// getNginxGeneralConfig
+
+DIAG.usage({ aliases: { getNginxGeneralConfig: { args: {
+  reloadServer:   'reload_server',
+}}}});
+
+// The last one wins. Comment out what you dont want.
+DIAG.activeDevelopment(`--debug`);
+// DIAG.activeName = 'getNginxGeneralConfig';
+
+/**
+ *  Gets a tarball that comprises the nginx config for an upstream server.
+ *
+ * @param {*} argv
+ * @param {*} context
+ * @param {*} callback
+ * @returns
+ */
+const getNginxGeneralConfig = mod.xport(DIAG.xport({getNginxGeneralConfig: function(argv, context, callback) {
+  const diag                    = DIAG.diagnostic({argv,context});
+
+  const {distro ='ubuntu'}      = argv;
+  const {reloadServer =false}   = diag.args();
+  var   {fqdns}                 = diag.args();
+  var   {upstream}              = diag.args();
+
+  if (!(diag.haveArgs({fqdns})))                         { return diag.earlyreturn(null, ''); }
+  // ----------- done checking args
+
+  fqdns = sg.arrayify(fqdns);
+
+  var   manifest = {
+    cwd       : '/etc/nginx',
+    name      : 'nginx-conf.tar'
+  };
+
+  if (reloadServer) {
+    manifest = { ...manifest,
+      command   : {
+        sudo      : true,
+        line      : `$SUDO nginx -t && $SUDO nginx -s reload`
+      }
+    };
+  }
+
+  var pack = tar.pack();
+
+  pack.entry({ ...entryDefs(argv), name: 'manifest.json' }, JSON.stringify(manifest) +'\n');
+
+  pack.entry({ ...entryDefs(argv), name: 'nginx.conf' },                          getNginxConf(argv));
+
+  pack.entry({ ...entryDefs(argv), name: `conf.d/proxy-params` },                 proxy_params(argv));
+  pack.entry({ ...entryDefs(argv), name: `conf.d/rpxi` },                         rpxi(argv));
+
+  _.each(fqdns, fqdn => {
+    pack.entry({ ...entryDefs(argv), name: `conf.d/upstream-${upstream}.conf` },  getUpstream(argv));
+    pack.entry({ ...entryDefs(argv), name: `conf.d/server-${fqdn}.conf` },        getServerConfig(argv));
+  });
+
+  pack.finalize();
+
+  return callback(null, {ok:true, pack, cwd: manifest.cwd, name: manifest.name});
+}}));
+
+
+// =======================================================================================================
+// getNginxQuicknetWebtierConfig
+
+DIAG.usage({ aliases: { getNginxQuicknetWebtierConfig: { args: {
+  reloadServer:   'reload_server',
+}}}});
+
+// The last one wins. Comment out what you dont want.
+DIAG.activeDevelopment(`--root=/usr/share/nginx/html --location=/clientstart --upstream=clients --upstream-service=10.1.2.3:3001 --fqdns=example.com --debug`);
+DIAG.activeDevelopment(`--sidecar=/clientstart,3009 --type=qnwebtier --debug`);
+DIAG.activeDevelopment(`--debug`);
+// DIAG.activeName = 'getNginxQuicknetWebtierConfig';
+
+/**
+ *  Gets a tarball that comprises the nginx config for an upstream server.
+ *
+ * @param {*} argv
+ * @param {*} context
+ * @param {*} callback
+ * @returns
+ */
+const getNginxQuicknetWebtierConfig = mod.xport(DIAG.xport({getNginxQuicknetWebtierConfig: function(argv, context, callback) {
+  const diag                    = DIAG.diagnostic({argv,context});
+
+  const {distro ='ubuntu'}      = argv;
+  const {reloadServer =false}   = diag.args();
+  const {sidecar}               = diag.args();
+  var   {fqdns}                 = diag.args();
+  var   {upstream}              = diag.args();
+
+  // if (!(diag.haveArgs({fqdns})))                         { return diag.earlyreturn(null, ''); }
+  // ----------- done checking args
+
+  fqdns = sg.arrayify(fqdns);
+
+  const manifest = getManifest(diag);
+
+  var pack = tar.pack();
+
+  pack.entry({ ...entryDefs(argv), name: 'manifest.json' }, JSON.stringify(manifest) +'\n');
+
+  pack.entry({ ...entryDefs(argv), name: 'nginx.conf' },                          getNginxConf(argv));
+
+  pack.entry({ ...entryDefs(argv), name: `conf.d/proxy-params` },                 proxy_params(argv));
+  pack.entry({ ...entryDefs(argv), name: `conf.d/rpxi` },                         rpxi(argv));
+
+  const upstreamConfigs = getUpstreams(diag);
+  _.each(upstreamConfigs, (config) => {
+    _.each(config, ({upstream,upstream_service,...rest}, name) => {
+      pack.entry({ ...entryDefs(argv), name: `conf.d/upstream-${upstream}.conf` },  getUpstream({upstream,upstream_service,...rest}));
+    });
+  });
+
+  var serverConfFname = `conf.d/default.conf`;
+  if (fqdns && fqdns.length > 0) {
+    serverConfFname = `conf.d/server-${fqdns[0]}.conf`;
+  }
+
+  var config = {...argv};
+  const locations = getLocations(diag);
+  if (locations) {
+    config = {...config, locations};
+  }
+
+  pack.entry({ ...entryDefs(argv), name: serverConfFname},                          getServerConfig(config));
+
+  pack.finalize();
+
+  return callback(null, {ok:true, pack, cwd: manifest.cwd, name: manifest.name});
+}}));
+
+function getLocations(diag) {
+  var result = [];
+
+  const {sidecar} = diag.args();
+
+  if (sidecar) {
+    let [location,sidecarPort] = sidecar.split(',');
+    result = [...result, {location,sidecarPort}];
+  }
+
+  if (result.length > 0) {
+    return result;
+  }
+}
+
+function getUpstreams(diag) {
+  var   {upstream,upstream_service}              = diag.args();
+
+  var   result = [];
+
+  if (upstream && upstream_service) {
+    result = [...result, {[upstream]: {upstream,upstream_service}}];
+  }
+
+  if (result.length > 0) {
+    return result;
+  }
+}
+
+const def_manifest = {
+  cwd       : '/etc/nginx',
+  name      : 'nginx-conf.tar'
+};
+function getManifest(diag, manifest_) {
+  var manifest = {...(manifest_ || def_manifest)};
+
+  const {reloadServer =false}   = diag.args();
+  if (reloadServer) {
+    manifest = { ...manifest,
+      command   : {
+        sudo      : true,
+        line      : `$SUDO nginx -t && $SUDO nginx -s reload`
+      }
+    };
+  }
+
+  return manifest;
+}
 
 
 
@@ -404,18 +594,20 @@ function getUpstream(argv, context={}) {
 
 
 // =======================================================================================================
-DIAG.usage({ aliases: { getUpstreamServer: { args: {}}}});
+DIAG.usage({ aliases: { getServerConfig: { args: {}}}});
 
-function getUpstreamServer(argv, context={}) {
-  const diag                          = DIAG.diagnostic({argv,context}, 'getUpstreamServer');
-  const {https,client,serverNum}      = argv; //diag.args();
-  const {location,upstream}           = argv; //diag.args();
-  var   {default_server,fqdns,root}   = argv; //diag.args();
+function getServerConfig(argv, context={}) {
+  const diag                          = DIAG.diagnostic({argv,context}, 'getServerConfig');
+  const {https,client,serverNum}      = diag.args();
+  const {location,upstream}           = diag.args();
+  var   {default_server,root}         = diag.args();
+  var   {fqdns,fqdn}                  = diag.args();
 
-  // TODO: fix by parsing arrays from cmd line
-  fqdns = sg.arrayify(fqdns);
+  if (!fqdns && !fqdn) {
+    default_server = true;
+  }
 
-  if (!(diag.haveArgs({location,upstream})))                    { return diag.earlyreturn(null, ''); }
+  // if (!(diag.haveArgs({location,upstream})))                    { return diag.earlyreturn(null, ''); }
 
   if (default_server) {
                                     { default_server  = 'default_server'; }
@@ -429,21 +621,31 @@ function getUpstreamServer(argv, context={}) {
     if (!(diag.haveArgs({fqdns})))                              { return diag.earlyreturn(null, ''); }
   }
 
+  // TODO: fix by parsing arrays from cmd line
+  fqdns = sg.arrayify(fqdns);
+
   if (https) {
     if (!(diag.haveArgs({serverNum})))                          { return diag.earlyreturn(null, '', `with https, need serverNum`); }
   }
 
-  return _getUpstreamServer_({...argv, default_server,fqdns,root}, context);
+  // TODO: Ensure only one of: locations, location/upstream
+
+  return _getServerConfig_({...argv, default_server,fqdns,root}, context);
 }
 
 // =======================================================================================================
-DIAG.usage({ aliases: { _getUpstreamServer_: { args: {}}}});
+DIAG.usage({ aliases: { _getServerConfig_: { args: {}}}});
 
-function _getUpstreamServer_(argv, context={}) {
+function _getServerConfig_(argv, context={}) {
 
   const {https,root,default_server,client,
          fqdns,serverNum,location,upstream}     = argv;
+  var   {locations}                             = argv;
   const fqdn                                    = fqdns[0];
+
+  if (location && upstream) {
+    locations = [{location,upstream}];
+  }
 
 var l=[];
 
@@ -453,6 +655,8 @@ if (upstream) {
 }
 
 l=[...l,`
+
+                # _asjson_: ${sg.safeJSONStringify(argv)}
 
                 # --------------- ${fqdn} ---------------
                 server {
@@ -499,14 +703,34 @@ l=[...l,`
                   }`];
 
 
-
-if (location) {
-  l=[...l,`
+if (locations) {
+  _.each(locations, ({location,upstream,sidecarPort}) => {
+    if (location && upstream) {
+      l=[...l,`
                   location ~* ${location} {
                     include /etc/nginx/conf.d/proxy-params;
                     proxy_pass http://${upstream};
                   }`];
+    }
+
+    if (location && sidecarPort) {
+      l=[...l,`
+                  location ~* ${location} {
+                    include /etc/nginx/conf.d/proxy-params;
+                    proxy_pass http://127.0.0.1:${sidecarPort};
+                  }`];
+    }
+
+  });
 }
+
+// if (location) {
+//   l=[...l,`
+//                   location ~* ${location} {
+//                     include /etc/nginx/conf.d/proxy-params;
+//                     proxy_pass http://${upstream};
+//                   }`];
+// }
 
 if (root) {
   l=[...l,`

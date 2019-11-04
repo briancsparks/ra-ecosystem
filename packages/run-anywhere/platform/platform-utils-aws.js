@@ -7,8 +7,8 @@ const useSmEvents   = !!process.env.SG_LOG_SMALL_EVENTS;
 module.exports.normalizeEvent = normalizeEvent;
 module.exports.decodeBody     = decodeBody;
 
-function normalizeEvent(event_) {
-  const body      = decodeBody(event_);
+function normalizeEvent(event_, context) {
+  const body      = decodeBody(event_, context);
 
   var   event = {...event_};
 
@@ -22,7 +22,7 @@ function normalizeEvent(event_) {
   return event;
 }
 
-function decodeBody(event) {
+function decodeBody(event, context) {
   const {body, isBase64Encoded} = event;
 
   if (sg.isnt(body))        { return body; }
