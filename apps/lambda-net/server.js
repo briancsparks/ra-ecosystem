@@ -23,8 +23,12 @@ const server = http.createServer((req, res) => {
 
   const url = libUrl.parse(req.url);
 
+  // ------------------------------------------------
   var   context = { event: { } };
   context.event.path = url.pathname;
+
+  // ------------------------------------------------
+  var   argv = {__meta__:{ query: {}, body: {}}};
 
   var   should = url.pathname.toLowerCase() === '/clientstart';
 
@@ -54,7 +58,7 @@ const server = http.createServer((req, res) => {
   }
 
   console.log(`handleing`, context);
-  return handle({}, context, function(err, data) {
+  return handle(argv, context, function(err, data) {
     console.log(`handle`, err, data);
 
     if (err) {
