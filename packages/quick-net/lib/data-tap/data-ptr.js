@@ -10,13 +10,15 @@ if (process.env.SG_VVVERBOSE) console[process.env.SG_LOAD_STREAM || 'log'](`Load
 //  Requirements
 //
 const ra                      = require('run-anywhere').v2;
-const sg                      = ra.get3rdPartyLib('sg-flow');
+const sg0                     = ra.get3rdPartyLib('sg-flow');
+const sg                      = sg0.merge(sg0, require('sg-env'));
 const { _ }                   = sg;
 const libFanout               = require('./fanout');
 const redisUtils              = ra.redisUtils;
 const { getQuiet }            = ra.utils;
 
 const mod                     = ra.modSquad(module, 'datatapDataPtr');
+const ENV                     = sg.ENV();
 
 // -------------------------------------------------------------------------------------
 //  Data
@@ -24,7 +26,7 @@ const mod                     = ra.modSquad(module, 'datatapDataPtr');
 
 mod.xport({pushDataPtr: function(argv, context, callback) {
 
-  if (process.env.NO_REDIS) {
+  if (ENV.at('NO_REDIS')) {
     return callback(null, {});
   }
 

@@ -10,7 +10,8 @@ var   lib                     = require('./v2/power');
 
 lib.sgsg                      = _.extend({}, lib.power);
 
-const sg                      = require('sg-flow');
+const sg0                     = require('sg-flow');
+const sg                      = sg0.merge(sg0, require('sg-env'));
 lib.sg                        = sg;
 
 const qmX                     = require('quick-merge').qm;

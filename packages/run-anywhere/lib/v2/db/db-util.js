@@ -15,6 +15,9 @@ const {
   getQuiet, getVerbose, raContext, inspect, qm
 }                               = utils;
 
+const ENV                       = sg.ENV();
+
+
 
 // -------------------------------------------------------------------------------------
 //  Data
@@ -72,7 +75,7 @@ const getXyzDb = async function(collName, context, dbName, dbHostname, dbPortnum
   var   xyzDb           = connections[`${dbName}/${collName}`];
   var   meaningfulClose = false;
 
-  if (process.env.NO_MONGO) {
+  if (ENV.at('NO_MONGO')) {
     xyzDb = theFakeDbCollection;
   }
 
@@ -146,7 +149,7 @@ exports.getGetXyzDb = function(dbname, collname, dbHostname, dbPortnum = 27017) 
  */
 const queryCursor = exports.queryCursor = function(xyzDb, context, ...argvs) {
 
-  if (process.env.NO_MONGO) {
+  if (ENV.at('NO_MONGO')) {
     return new TheFakeCursor();
   }
 
@@ -209,7 +212,7 @@ sanityChecks.push(async function({assert, ...context}) {
  */
 const queryCursorEx = exports.queryCursorEx = function(xyzDb, context, queryKeys, ...argvs) {
 
-  if (process.env.NO_MONGO) {
+  if (ENV.at('NO_MONGO')) {
     return new TheFakeCursor();
   }
 

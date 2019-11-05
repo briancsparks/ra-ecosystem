@@ -10,7 +10,8 @@ if (process.env.SG_VVVERBOSE) console[process.env.SG_LOAD_STREAM || 'log'](`Load
 //  Requirements
 //
 const ra                      = require('run-anywhere').v2;
-const sg                      = ra.get3rdPartyLib('sg-flow');
+const sg0                     = ra.get3rdPartyLib('sg-flow');
+const sg                      = sg0.merge(sg0, require('sg-env'));
 const { _ }                   = sg;
 const { qm }                  = require('quick-merge');
 const redisUtils              = ra.redisUtils;
@@ -20,6 +21,7 @@ const libHttp                 = require('./http');
 const request                 = require('superagent');
 
 const mod                     = ra.modSquad(module, 'dataTransfer');
+const ENV                     = sg.ENV();
 
 
 // -------------------------------------------------------------------------------------
@@ -48,7 +50,7 @@ mod.xport({fetchAndCache: function(argv, context, callback) {
   const ractx             = context.runAnywhere || {};
   const { rax }           = ractx.dataTransfer__fetchAndCache;
   const quiet             = getQuiet(context);
-  const { redis, close }  = process.env.NO_REDIS ? {redis:{}, close:noop} : redisUtils.getRedis(context);
+  const { redis, close }  = ENV.at('NO_REDIS') ? {redis:{}, close:noop} : redisUtils.getRedis(context);
 
   var   key, url;
   var   haveGivenResult = false;
@@ -63,7 +65,7 @@ mod.xport({fetchAndCache: function(argv, context, callback) {
     if (rax.argErrors())    { return rax.abort(); }
 
     return sg.__run2({result:{}}, callback, [function(my, next, last) {
-      if (process.env.NO_REDIS) { return next(); }
+      if (ENV.at('NO_REDIS')) { return next(); }
 
       return GET(key, function(err, data) {
         if (!quiet) { sg.elog(`GET ${key}`, {err, data: smJson(data)}); }
@@ -108,7 +110,7 @@ mod.xport({fetchAndCache: function(argv, context, callback) {
       });
 
     }, function(my, next) {
-      if (process.env.NO_REDIS) { return next(); }
+      if (ENV.at('NO_REDIS')) { return next(); }
 
       const json = JSON.stringify(my.body || {});
       return SET([key, json], function(err, receipt) {
@@ -154,7 +156,7 @@ mod.xport({fetchAndCacheSimple: function(argv, context, callback) {
 
 
   const { rax }           = ra.getContext(context, argv);
-  const { redis, close }  = process.env.NO_REDIS ? {redis:{}, close:noop} : redisUtils.getRedis(context);
+  const { redis, close }  = ENV.at('NO_REDIS') ? {redis:{}, close:noop} : redisUtils.getRedis(context);
   const quiet             = getQuiet(context);
 
   var   key, url;
@@ -169,7 +171,7 @@ mod.xport({fetchAndCacheSimple: function(argv, context, callback) {
     if (rax.argErrors())    { return rax.abort(); }
 
     return rax.__run2({result:{}}, callback, [function(my, next, last) {
-      if (process.env.NO_REDIS) { return next(); }
+      if (ENV.at('NO_REDIS')) { return next(); }
 
       return GET(key, function(err, data) {
         if (!quiet) { sg.elog(`GET ${key}`, {err, data: smJson(data)}); }
@@ -209,7 +211,7 @@ mod.xport({fetchAndCacheSimple: function(argv, context, callback) {
       });
 
     }, function(my, next) {
-      if (process.env.NO_REDIS) { return next(); }
+      if (ENV.at('NO_REDIS')) { return next(); }
 
       // Put the result into the cache
 

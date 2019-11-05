@@ -93,7 +93,6 @@ DIAG.activeName = 'saveNginxConfigTarballToS3';
  */
 mod.xport(DIAG.xport({saveNginxConfigTarballToS3: function(argv, context, callback) {
   const diag        = DIAG.diagnostic({argv, context, callback});
-  // var   {filename}  = diag.args();
   // const namespace   = ENV.at('NAMESPACE');
   const namespace   = 'quicknet';
 

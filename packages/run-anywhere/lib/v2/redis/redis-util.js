@@ -17,6 +17,8 @@ const {
 //  Data
 //
 
+const ENV                     = sg.ENV();
+
 
 const redisPort               = 6379;
 const redisHost               = 'redis';
@@ -48,7 +50,7 @@ exports.getRedis = function(context) {
 
   var   close           = function(){};
 
-  if (process.env.NO_REDIS) {
+  if (ENV.at('NO_REDIS')) {
     return {redis:{}, close};
   }
 
