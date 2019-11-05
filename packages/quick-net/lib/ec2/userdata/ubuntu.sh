@@ -160,11 +160,4 @@ fi
 #ZZZZ INSTALL_NAT
 
 aws s3 cp "s3://quick-net/deploy/quicknet/${INSTANCE_ID}/bootstrap" /tmp
-
-## pwd
-## ls -l /
-## ls -l /tmp
-## ls -l /tmp/
-## ls -l /home
-
 bash -ex /tmp/bootstrap

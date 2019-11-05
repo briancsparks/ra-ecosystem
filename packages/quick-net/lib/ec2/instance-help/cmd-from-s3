@@ -1,0 +1,29 @@
+#!/bin/bash -e
+
+tdir="/tmp/cmdfiles-$$"
+
+die() {
+  echo "$@"
+  test -d "$tdir" && rm -rf "$tdir"
+  exit 11
+}
+
+[[ $# < 1 ]]                                                        && die 'Usage: cmd-from-s3 <s3-path>'
+
+# If we are running as root, we do not need sudo, otherwise use it
+[[ $(id -u) != 0 ]] && export SUDO="sudo"
+
+# -----------------------------
+
+# Make the temp dir
+mkdir -p "${tdir}"
+test -d "${tdir}"                                                   || die "cmd-from-s3 cannot create temp dir at $tdir"
+
+# Copy it down from S3
+aws s3 cp $1 "$tdir/it.tar"
+bash -ex "$tdir/it.tar"
+
+# -----------------------------
+
+# Clean up
+test -d "$tdir" && rm -rf "$tdir"

@@ -35,7 +35,8 @@
     proxy_set_header X-Client-Serial      $ssl_client_serial;
 
     proxy_http_version                    1.1;
-    proxy_method                          ${GET};
+#    proxy_method                          ${GET};
+    proxy_method                          GET;
     set $other_uri                        $1;
 
     proxy_pass http://$other_uri$is_args$args;
@@ -63,7 +64,7 @@
     proxy_set_header X-Client-Serial      $ssl_client_serial;
 
     proxy_http_version                    1.1;
-    proxy_method                          ${PUT};
+    proxy_method                          PUT;
     set $other_uri                        $1;
 
     proxy_pass http://$other_uri$is_args$args;
@@ -91,7 +92,7 @@
     proxy_set_header X-Client-Serial      $ssl_client_serial;
 
     proxy_http_version                    1.1;
-    proxy_method                          ${POST};
+    proxy_method                          POST;
     set $other_uri                        $1;
 
     proxy_pass http://$other_uri$is_args$args;
@@ -119,7 +120,7 @@
     proxy_set_header X-Client-Serial      $ssl_client_serial;
 
     proxy_http_version                    1.1;
-    proxy_method                          ${HEAD};
+    proxy_method                          HEAD;
     set $other_uri                        $1;
 
     proxy_pass http://$other_uri$is_args$args;
@@ -147,7 +148,7 @@
     proxy_set_header X-Client-Serial      $ssl_client_serial;
 
     proxy_http_version                    1.1;
-    proxy_method                          ${DELETE};
+    proxy_method                          DELETE;
     set $other_uri                        $1;
 
     proxy_pass http://$other_uri$is_args$args;

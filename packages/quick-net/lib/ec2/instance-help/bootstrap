@@ -2,8 +2,17 @@
 
 echo "Bootstrap script"
 
+pull_s3() {
+  aws s3 cp "s3://quick-net/deploy/quicknet/${INSTANCE_ID}/$1" /usr/sbin
+  chmod 0755 "/usr/sbin/$1"
+}
+
 aws s3 cp "s3://quick-net/deploy/quicknet/${INSTANCE_ID}/untar-from-s3" /usr/sbin
 chmod 0755 /usr/sbin/untar-from-s3
+
+pull_s3 bootstrap-nonroot
+pull_s3 cmd-from-s3
+pull_s3 sshix
 
 
 # pwd

@@ -32,6 +32,8 @@ module.exports.handle = function(argv, context, callback) {
   // [[Fake it for now]]
   sg.log(`LAMBDA_Net::params`, {argv, context});
 
+  // ------------------ /test
+
   if (context.event.path === '/test') {
 
     var   query = argv.__meta__.query;
@@ -41,6 +43,9 @@ module.exports.handle = function(argv, context, callback) {
     const _200 = sg._200({ok:true, ...data});
     sg.log(`Responding to /test request`, {_200});
     return callback(..._200);
+
+
+  // ------------------ /upload
 
   } else if (context.event.path === '/upload') {
     sg.log(`lam`, {qn: Object.keys(quickNet)});
@@ -63,6 +68,9 @@ module.exports.handle = function(argv, context, callback) {
       sg.log(`Response from app`, {_200});
       return callback(..._200);
     });
+
+
+  // ------------------ /clientStart
 
   } else if (context.event.path.toLowerCase() === '/clientstart') {
     const baseResponse = clientStartConfig(argv, context);

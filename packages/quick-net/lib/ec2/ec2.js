@@ -537,7 +537,7 @@ mod.xport({upsertInstance: function(argv, context, callback) {
 
       if (roles.length > 0) {
         instanceName              = instanceName || roles[0];
-        Tags  = [ ...Tags, {Key:'qn:role', Value: `:${roles.join(':')}:`}];
+        Tags  = [ ...Tags, {Key:'qn:roles', Value: `:${roles.join(':')}:`}];
       }
 
       if (instanceName) {
@@ -611,8 +611,20 @@ mod.xport({upsertInstance: function(argv, context, callback) {
         });
 
       }, function(next) {
+        return copyFileToS3(path.join(__dirname, 'instance-help', 'bootstrap-nonroot'), s3path, function(err, data) {
+          sg.debugLog(`Uploaded bootstrap-nonroot script`, {err, data});
+          return next();
+        });
+
+      }, function(next) {
         return copyFileToS3(path.join(__dirname, 'instance-help', 'untar-from-s3'), s3path, function(err, data) {
           sg.debugLog(`Uploaded untar-from-s3`, {err, data});
+          return next();
+        });
+
+      }, function(next) {
+        return copyFileToS3(path.join(__dirname, 'instance-help', 'cmd-from-s3'), s3path, function(err, data) {
+          sg.debugLog(`Uploaded cmd-from-s3`, {err, data});
           return next();
         });
 
@@ -627,11 +639,14 @@ mod.xport({upsertInstance: function(argv, context, callback) {
 
         // --location=/clientstart --upstream=clients --upstream-service=10.1.2.3:3001
         const ngArgs = {
-          reloadServer        : true,
-          fqdns               : 'www.example.com'.split(','),
-          upstream            : 'clients',
-          upstream_service    : '10.1.2.3:3001',
-          location            : '/clientstart',
+          reloadServer        : false,
+          type                : 'qnwebtier',
+          rpxiPort            : 3009
+          // sidecar             : '/clientstart,3009',
+          // fqdns               : 'www.example.com'.split(','),
+          // upstream            : 'clients',
+          // upstream_service    : '10.1.2.3:3001',
+          // location            : '/clientstart',
         };
 
         return getNginxConfigTarball({distro, ...ngArgs}, {}, function(err0, data) {

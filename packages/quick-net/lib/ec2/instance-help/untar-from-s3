@@ -42,15 +42,18 @@ test -d $workdir                                                    || die "unta
 # Run a custom command?
 command="$(cat "$tdir/manifest.json" | jq -r '.command.line')"
 if [[ "$command" != "null" ]]; then
-  as_sudo="$(cat "$tdir/manifest.json" | jq -r '.command.sudo')"
+  # as_sudo="$(cat "$tdir/manifest.json" | jq -r '.command.sudo')"
 
-  if [[ "$as_sudo" == "true" ]]; then
-    echo eval "$command"
-    eval "$command"
-  else
-    echo "$command"
-    eval "$command"
-  fi
+  # if [[ "$as_sudo" == "true" ]]; then
+  #   echo eval "$command"
+  #   eval "$command"
+  # else
+  #   echo "$command"
+  #   eval "$command"
+  # fi
+
+  echo eval "$command"
+  eval "$command"
 fi
 
 # -----------------------------

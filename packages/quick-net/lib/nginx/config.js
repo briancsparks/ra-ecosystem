@@ -70,7 +70,8 @@ mod.xport(DIAG.xport({saveNginxConfigTarball: function(argv, context, callback) 
 // saveNginxConfigTarballToS3
 
 DIAG.usage({ aliases: { saveNginxConfigTarballToS3: { args: {
-  serverType    : 'type'
+  serverType    : 'type',
+  rpxiPort      : 'rpxi_port',
 }}}});
 
 // The last one wins. Comment out what you dont want.
@@ -78,7 +79,8 @@ DIAG.activeDevelopment(`--filename=${path.join(os.tmpdir(),  '_aa-nginx-conf')} 
 DIAG.activeDevelopment(`--filename=${path.join(os.homedir(), '_aa-nginx-conf')} --type=localapp`);
 DIAG.activeDevelopment(`--filename=${path.join(os.homedir(), '_aa-nginx-conf')} --root=/usr/share/nginx/html --location=/clientstart --upstream=clients --upstream-service=10.1.2.3:3001 --fqdns=example.com --type=localapp --skip-reload --debug`);
 DIAG.activeDevelopment(`--filename=${path.join(os.homedir(), '_aa-nginx-conf')} --root=/usr/share/nginx/html --location=/clientstart --upstream=clients --upstream-service=10.1.2.3:3001 --fqdns=example.com --debug`);
-DIAG.activeDevelopment(`--sidecar=/clientstart,3009 --type=qnwebtier --debug`);
+DIAG.activeDevelopment(`--sidecar=/clientstart,3009 --root=/usr/share/nginx/html --location=/clientstart --upstream=clients --upstream-service=10.1.2.3:3001 --fqdns=example.com --debug`);
+DIAG.activeDevelopment(`--type=qnwebtier --rpxi-port=3009 --debug`);
 DIAG.activeName = 'saveNginxConfigTarballToS3';
 
 /**
@@ -111,7 +113,9 @@ mod.xport(DIAG.xport({saveNginxConfigTarballToS3: function(argv, context, callba
       const bastionIp   = '`instance-by-role qn:roles bastion PublicIpAddress`';
       const webtierIp   = '`instance-by-role qn:roles webtier PrivateIpAddress`';
       const clip        = sshcmd(`ubuntu@${bastionIp}`, '"'+sshcmd(`${webtierIp}`, `'untar-from-s3 ${s3path}'`)+'"');
+
       clipboardy.writeSync(clip);
+      clipboardy.writeSync(`qnsshixx webtier 'untar-from-s3 ${s3path}'`);
 
       return callback(err, data);
     });
@@ -526,6 +530,7 @@ l=[...l,`
                   default_type            ${default_type};
                   client_max_body_size    ${client_max_body_size};`];
 
+// Blacklisted IPs (like BlueCoat)
 var l2=[];
 _.each(blacklistIps, (list, name) => {
   l2=[...l2,`
@@ -566,6 +571,7 @@ l=[...l,`
                   }
 
                   include /etc/nginx/conf.d/upstream-*.conf;
+                  include /etc/nginx/conf.d/default.conf;
                   include /etc/nginx/conf.d/server-*.conf;`];
 
 l=[...l,`
@@ -639,7 +645,8 @@ DIAG.usage({ aliases: { _getServerConfig_: { args: {}}}});
 function _getServerConfig_(argv, context={}) {
 
   const {https,root,default_server,client,
-         fqdns,serverNum,location,upstream}     = argv;
+         fqdns,serverNum,location,upstream,
+        rpxiPort}                               = argv;
   var   {locations}                             = argv;
   const fqdn                                    = fqdns[0];
 
@@ -647,7 +654,16 @@ function _getServerConfig_(argv, context={}) {
     locations = [{location,upstream}];
   }
 
-var l=[];
+  // Make sure we handle setting up the root, if we need to
+  var handledRoot = !root;
+
+  var l=[];
+
+
+
+
+
+
 
 if (upstream) {
   l=[...l,`
@@ -732,13 +748,35 @@ if (locations) {
 //                   }`];
 // }
 
-if (root) {
+if (rpxiPort) {
+  handledRoot = true;
+
+  l=[...l,`
+                  location /error404 {
+                    try_files $uri =404;
+                  }
+
+                  include /etc/nginx/conf.d/rpxi;
+
+                  location / {
+                    try_files maintenance.html $uri $uri/ $uri.html @sidecar;
+                  }
+
+                  location @sidecar {
+                    internal;
+                    include /etc/nginx/conf.d/proxy-params;
+                    proxy_pass http://127.0.0.1:${rpxiPort};
+                  }`];
+}
+
+if (root && !handledRoot) {
+  handledRoot = true;
+
   l=[...l,`
                   location / {
                     try_files $uri $uri/ =404;
                   }`];
 }
-
 
 l=[...l,`
                 }`];
@@ -756,22 +794,22 @@ function getLocalRevProxyAppServer(argv) {
   const fqdn            = fqdns[0];
 
   return `
-server {
-  listen       80;
-  server_name  ${fqdns.join(' ')};
-  access_log   /var/log/nginx/${fqdn}.access.log  main;
+            server {
+              listen       80;
+              server_name  ${fqdns.join(' ')};
+              access_log   /var/log/nginx/${fqdn}.access.log  main;
 
-  # serve static files
-  location ~ ^/(images|javascript|js|css|flash|media|static)/  {
-    root    /var/www/virtual/${fqdn}/htdocs;
-    expires 30d;
-  }
+              # serve static files
+              location ~ ^/(images|javascript|js|css|flash|media|static)/  {
+                root    /var/www/virtual/${fqdn}/htdocs;
+                expires 30d;
+              }
 
-  # pass requests for dynamic content to rails/turbogears/zope, et al
-  location / {
-    proxy_pass      http://127.0.0.1:8080;
-  }
-}` +'\n';
+              # pass requests for dynamic content to rails/turbogears/zope, et al
+              location / {
+                proxy_pass      http://127.0.0.1:8080;
+              }
+            }` +'\n';
 }
 
 // =======================================================================================================
@@ -845,7 +883,7 @@ return `
           proxy_set_header X-Client-Serial      $ssl_client_serial;
 
           proxy_http_version                    1.1;
-          proxy_method                          \${GET};
+          proxy_method                          GET;
           set $other_uri                        $1;
 
           proxy_pass http://$other_uri$is_args$args;
@@ -873,7 +911,7 @@ return `
           proxy_set_header X-Client-Serial      $ssl_client_serial;
 
           proxy_http_version                    1.1;
-          proxy_method                          \${PUT};
+          proxy_method                          PUT;
           set $other_uri                        $1;
 
           proxy_pass http://$other_uri$is_args$args;
@@ -901,7 +939,7 @@ return `
           proxy_set_header X-Client-Serial      $ssl_client_serial;
 
           proxy_http_version                    1.1;
-          proxy_method                          \${POST};
+          proxy_method                          POST;
           set $other_uri                        $1;
 
           proxy_pass http://$other_uri$is_args$args;
@@ -929,7 +967,7 @@ return `
           proxy_set_header X-Client-Serial      $ssl_client_serial;
 
           proxy_http_version                    1.1;
-          proxy_method                          \${HEAD};
+          proxy_method                          HEAD;
           set $other_uri                        $1;
 
           proxy_pass http://$other_uri$is_args$args;
@@ -957,7 +995,7 @@ return `
           proxy_set_header X-Client-Serial      $ssl_client_serial;
 
           proxy_http_version                    1.1;
-          proxy_method                          \${DELETE};
+          proxy_method                          DELETE;
           set $other_uri                        $1;
 
           proxy_pass http://$other_uri$is_args$args;
