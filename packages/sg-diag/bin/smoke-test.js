@@ -24,6 +24,7 @@ DIAG.usage({
 // The last one wins. Comment out what you dont want.
 DIAG.activeDevelopment(`--stage=dev --name=smoke-net`);
 // DIAG.activeDevelopment(`--stage=dev --name=smoke-net --debug`);
+// DIAG.activeName = 'smokeTest';
 
 mod.xport(DIAG.xport({smokeTest: async function(argv, context, callback) {
   const diag                  = DIAG.diagnostic({argv, context, callback});

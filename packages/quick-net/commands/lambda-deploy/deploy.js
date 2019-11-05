@@ -36,6 +36,7 @@ DIAG.usage({
 // The last one wins. Comment out what you dont want.
 DIAG.activeDevelopment(`--stage=dev --lambda-name=lambda-net --class-b=21 --sgs=wide`);
 DIAG.activeDevelopment(`--stage=dev --lambda-name=lambda-net --class-b=21 --sgs=wide --debug`);
+// DIAG.activeName = 'deployLambda';
 
 module.exports.main =
 mod.async(DIAG.async({deployLambda: async function(argv, context) {

@@ -43,6 +43,7 @@ DIAG.usage({aliases:{streamToS3:{
 // The last one wins. Comment out what you dont want.
 DIAG.activeDevelopment(`--Bucket=quick-net-ingest-dump`);
 DIAG.activeDevelopment(`--Bucket=quick-net-ingest-dump --debug`);
+// DIAG.activeName = 'streamToS3';
 
 mod.xport(DIAG.xport({streamToS3: function(argv, context, callback) {
   const diag    = DIAG.diagnostic({argv, context, callback});
@@ -71,6 +72,7 @@ DIAG.usage({aliases:{putToS3:{
 // The last one wins. Comment out what you dont want.
 DIAG.activeDevelopment(`--Bucket=quick-net-ingest-dump`);
 DIAG.activeDevelopment(`--Bucket=quick-net-ingest-dump --debug`);
+// DIAG.activeName = 'putToS3';
 
 mod.xport(DIAG.xport({putToS3: function(argv, context, callback) {
   const diag    = DIAG.diagnostic({argv, context, callback});
@@ -96,6 +98,7 @@ DIAG.usage({aliases:{putClientJsonToS3:{
 // The last one wins. Comment out what you dont want.
 DIAG.activeDevelopment(`--Bucket=quick-net-ingest-dump`);
 DIAG.activeDevelopment(`--Bucket=quick-net-ingest-dump --debug`);
+// DIAG.activeName = 'putClientJsonToS3';
 
 mod.xport(DIAG.xport({putClientJsonToS3: function(argv, context, callback) {
   const diag    = DIAG.diagnostic({argv, context, callback});

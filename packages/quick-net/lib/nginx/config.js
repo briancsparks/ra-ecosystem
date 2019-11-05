@@ -31,7 +31,7 @@ DIAG.activeDevelopment(`--filename=${path.join(os.tmpdir(),  '_aa-nginx-conf')} 
 DIAG.activeDevelopment(`--filename=${path.join(os.homedir(), '_aa-nginx-conf')} --type=localapp`);
 DIAG.activeDevelopment(`--filename=${path.join(os.homedir(), '_aa-nginx-conf')} --location=/clientstart --upstream=clients --fqdns=example.com --type=localapp --skip-reload --debug`);
 DIAG.activeDevelopment(`--filename=${path.join(os.homedir(), '_aa-nginx-conf')} --root=/usr/share/nginx/html --location=/clientstart --upstream=clients --upstream-service=10.1.2.3:3001 --fqdns=example.com --debug`);
-DIAG.activeName = 'saveNginxConfigTarball';
+// DIAG.activeName = 'saveNginxConfigTarball';
 
 /**
  *
@@ -81,7 +81,7 @@ DIAG.activeDevelopment(`--filename=${path.join(os.homedir(), '_aa-nginx-conf')} 
 DIAG.activeDevelopment(`--filename=${path.join(os.homedir(), '_aa-nginx-conf')} --root=/usr/share/nginx/html --location=/clientstart --upstream=clients --upstream-service=10.1.2.3:3001 --fqdns=example.com --debug`);
 DIAG.activeDevelopment(`--sidecar=/clientstart,3009 --root=/usr/share/nginx/html --location=/clientstart --upstream=clients --upstream-service=10.1.2.3:3001 --fqdns=example.com --debug`);
 DIAG.activeDevelopment(`--type=qnwebtier --rpxi-port=3009 --debug`);
-DIAG.activeName = 'saveNginxConfigTarballToS3';
+// DIAG.activeName = 'saveNginxConfigTarballToS3';
 
 /**
  *
