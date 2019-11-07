@@ -20,8 +20,9 @@ mkdir -p "${tdir}"
 test -d "${tdir}"                                                   || die "cmd-from-s3 cannot create temp dir at $tdir"
 
 # Copy it down from S3
-aws s3 cp $1 "$tdir/it.tar"
-bash -ex "$tdir/it.tar"
+aws s3 cp $1 "$tdir/command"
+chmod +x "$tdir/command"
+bash -ex "$tdir/command"
 
 # -----------------------------
 

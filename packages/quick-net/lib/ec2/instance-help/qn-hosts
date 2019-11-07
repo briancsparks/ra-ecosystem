@@ -1,0 +1,16 @@
+#!/bin/bash -e
+
+# Update hosts file
+
+tfile="/tmp/qn-t-hosts-$$"
+
+# If we are running as root, we do not need sudo, otherwise use it
+[[ $(id -u) != 0 ]] && export SUDO="sudo"
+
+NAME="$1"
+IP="$2"
+
+cat /etc/hosts | sed "s/^.*$NAME.*$//g" > $tfile
+echo "$IP $NAME" >> $tfile
+
+$SUDO mv $tfile /etc/hosts

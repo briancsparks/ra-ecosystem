@@ -13,7 +13,7 @@ chmod 0755 /usr/sbin/untar-from-s3
 pull_s3 bootstrap-nonroot
 pull_s3 cmd-from-s3
 pull_s3 sshix
-
+pull_s3 qn-hosts
 
 # pwd
 # aws s3 cp "s3://quick-net/deploy/${NAMESPACE_LC}/${INSTANCE_ID}/bootstrap" /tmp
@@ -25,3 +25,10 @@ for f in $FILES; do
   untar-from-s3 "s3://quick-net/$f"
 
 done
+
+echo "Install clients:" > /home/ubuntu/readme.md
+echo "sudo apt-get install -y redis-tools mongodb-clients" >> /home/ubuntu/readme.md
+echo "" >> /home/ubuntu/readme.md
+
+chown ubuntu:ubuntu /home/ubuntu/readme.md
+

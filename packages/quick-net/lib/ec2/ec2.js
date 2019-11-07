@@ -125,6 +125,11 @@ mod.xport({getUbuntuLtsAmis: function(argv, context, callback) {
  */
 mod.xport({upsertInstance: function(argv, context, callback) {
 
+  // TODO: Get Mongo working for stack
+  // TODO: Get Redis working for stack
+  // TODO: Update hosts with mongo, redis server locations
+  // TODO: Make sg.ENV be run-time changable so NO_REDIS can be turned on and off
+
   /*
     Ubuntu 16.04 as of 1/25/2019
     ra invoke packages\quick-net\lib\ec2\ec2.js upsertInstance --image=ami-03a935aafa6b52b97 --distro=ubuntu --type=t3.small --key= --sgs= --subnet=
@@ -342,7 +347,7 @@ mod.xport({upsertInstance: function(argv, context, callback) {
           `echo NAMESPACE="${namespace}" >> /etc/environment`,
           `echo NAMESPACE_LC="${namespace.toLowerCase()}" >> /etc/environment`
         ],
-    });
+      });
 
       // Install docker?
       if (userdataOpts.INSTALL_DOCKER) {
@@ -603,36 +608,16 @@ mod.xport({upsertInstance: function(argv, context, callback) {
     }, function(my, next) {
 
       // Put stuff on S3 for the instance
+      const utilFiles = 'bootstrap,bootstrap-nonroot,untar-from-s3,cmd-from-s3,sshix,qn-hosts'.split(',');
+
       const s3path = `s3://quick-net/deploy/${namespace.toLowerCase()}/${InstanceId}`;
       return sg.__run2(next, [function(next) {
-        return copyFileToS3(path.join(__dirname, 'instance-help', 'bootstrap'), s3path, function(err, data) {
-          sg.debugLog(`Uploaded bootstrap script`, {err, data});
-          return next();
-        });
-
-      }, function(next) {
-        return copyFileToS3(path.join(__dirname, 'instance-help', 'bootstrap-nonroot'), s3path, function(err, data) {
-          sg.debugLog(`Uploaded bootstrap-nonroot script`, {err, data});
-          return next();
-        });
-
-      }, function(next) {
-        return copyFileToS3(path.join(__dirname, 'instance-help', 'untar-from-s3'), s3path, function(err, data) {
-          sg.debugLog(`Uploaded untar-from-s3`, {err, data});
-          return next();
-        });
-
-      }, function(next) {
-        return copyFileToS3(path.join(__dirname, 'instance-help', 'cmd-from-s3'), s3path, function(err, data) {
-          sg.debugLog(`Uploaded cmd-from-s3`, {err, data});
-          return next();
-        });
-
-      }, function(next) {
-        return copyFileToS3(path.join(__dirname, 'instance-help', 'sshix'), s3path, function(err, data) {
-          sg.debugLog(`Uploaded sshix`, {err, data});
-          return next();
-        });
+        return sg.__eachll(utilFiles, function(filename, next) {
+          return copyFileToS3(path.join(__dirname, 'instance-help', filename), s3path, function(err, data) {
+            sg.debugLog(`Uploaded ${filename} script`, {err, data});
+            return next();
+          });
+        }, next);
 
       }, function(next) {
         if (!userdataOpts.INSTALL_WEBTIER)    { return next(); }
@@ -664,7 +649,10 @@ mod.xport({upsertInstance: function(argv, context, callback) {
     }, function(my, next) {
 
       const {PrivateIpAddress} = my.result.Instance;
-      const clip = `for ((;;)); do ssh -A -o "StrictHostKeyChecking no" -o UserKnownHostsFile=/dev/null -o ConnectTimeout=1 ${PrivateIpAddress} 'tail -F /var/log/cloud-init-output.log'; sleep 0.4; done`;
+      const clip = [
+        `#ssh -A -o "StrictHostKeyChecking no" -o UserKnownHostsFile=/dev/null -o ConnectTimeout=1 ${PrivateIpAddress} 'bootstrap-nonroot'`,
+        `for ((;;)); do ssh -A -o "StrictHostKeyChecking no" -o UserKnownHostsFile=/dev/null -o ConnectTimeout=1 ${PrivateIpAddress} 'tail -F /var/log/cloud-init-output.log'; sleep 0.4; done`
+      ].join('\n');
       clipboardy.writeSync(clip);
 
       return next();
