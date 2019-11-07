@@ -11,7 +11,7 @@ eval "$(cli-shezargs $@)"
 
 [[ $realm == 1 ]] && die "Need --realm="
 [[ -z $realm   ]] && die "Need --realm"
-[[ -z $name    ]] && dir "Need --name"
+[[ -z $name    ]] && die "Need --name"
 
 safename="$(echo $name | tr '.' '-')"
 

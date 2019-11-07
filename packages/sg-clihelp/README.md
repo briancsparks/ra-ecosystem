@@ -19,6 +19,8 @@ Other modules bundled:
 * sg0
 * sg-argv
   * `sg.ARGV()`
+* sg-env
+  * `sg.ENV()`
 * sg-exec
 * sg.fs - Node.js `fs` module.
 * sg.path - Node.js `path` module.

@@ -11,7 +11,7 @@ if (process.env.SG_VVVERBOSE) console[process.env.SG_LOAD_STREAM || 'log'](`Load
 //
 const sg0                     = require('sg-argv');
 const { _ }                   = sg0;
-const sg                      = sg0.merge(sg0, require('sg-exec'));
+const sg                      = sg0.merge(sg0, require('sg-exec'), require('sg-env'));
 
 // Additions
 const fs   = sg.fs            = require('fs');
