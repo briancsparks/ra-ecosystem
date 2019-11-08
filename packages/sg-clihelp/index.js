@@ -37,6 +37,7 @@ sg.dieAsync     = dieAsync;
 sg.grepLines    = grepLines;
 sg.include      = include;
 sg.from         = from;
+sg.all          = all;
 sg.startupDone  = startupDone;
 sg.runTopAsync  = runTopAsync;
 
@@ -55,6 +56,20 @@ _.each(sg, (fn, name) => {
 // -------------------------------------------------------------------------------------
 //  Helper Functions
 //
+
+// const {sg,fs,path,os,util,sh,die,dieAsync,grepLines,include,from,startupDone,runTopAsync,exec,execa,execz,find,grep,ls,mkdir,test,tempdir,inspect} = require('sg-clihelp').all();
+function all() {
+  return {
+    sg,
+    fs, path, os, util,
+    sh,
+    die, dieAsync, grepLines, include, from, startupDone, runTopAsync,
+
+    exec: sh.exec, find: sh.find, grep: sh.grep, ls: sh.ls, mkdir: sh.mkdir, test: fs.test, tempdir: fs.tempdir,
+    execa: sg.execa, execz: sg.execz,
+    inspect: util.inspect
+  };
+}
 
 // ------------------------------------------------------------------------------------------------------------------
 /**

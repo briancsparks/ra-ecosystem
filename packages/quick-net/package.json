@@ -59,6 +59,7 @@
     "shelljs": "^0.8.3",
     "superagent": "^4.1.0",
     "superb": "^3.0.0",
+    "tar-fs": "^2.0.0",
     "tar-stream": "^2.1.0",
     "tmp": "^0.1.0"
   }

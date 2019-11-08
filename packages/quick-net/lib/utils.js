@@ -1,9 +1,54 @@
+/* eslint-disable valid-jsdoc */
 if (process.env.SG_VVVERBOSE) console[process.env.SG_LOAD_STREAM || 'log'](`Loading ${__filename}`);
 
 const ra                      = require('run-anywhere').v2;
-const sg                      = ra.get3rdPartyLib('sg-flow');
+const sg0                     = ra.get3rdPartyLib('sg-flow');
+const sg                      = sg0.merge(sg0, require('sg-env'));
 const { _ }                   = sg;
 const os                      = require('os');
+
+const ENV                     = sg.ENV();
+
+
+/**
+ * Builds:
+ *
+ *   proto://pre/namespace/tween/quick-net/type/path
+ *   first:pre:namespace:tween:quick-net:type:path
+ *
+ * @param {*} proto
+ * @param {*} first
+ * @param {*} pre
+ * @param {*} tween
+ * @param {*} type
+ * @param {*} path
+ * @param {*} namespace_
+ * @param {*} options
+ * @returns
+ */
+exports.namespacedPath = function(proto_, first, pre, tween, type, path, namespace_, options ={sep:'/'}) {
+  const proto     = proto_ ? (proto_.endsWith('://') ? proto_ : proto_+'://') : '';
+  const namespace = namespace_ || ENV.at('NAMESPACE') || 'projectx';
+
+  var parts = [first, pre, namespace, tween, 'quick-net', type, path];
+
+  if (!options.sparse) {
+    parts = _.compact(parts);
+  }
+
+  const str = proto +  parts.join(options.sep);
+  return str;
+};
+
+// exports.s3deployPath = function(path, namespace) {
+//   return exports.namespacedPath('s3', 'deploy', path, namespace);
+// };
+
+exports.mkS3path = function(namespace, pre =null, tween =null) {
+  return function(type, path) {
+    return exports.namespacedPath('s3', /*first*/null, pre, tween, type, path, namespace, {sep:'/'});
+  };
+};
 
 exports.getTag = function(obj = {}, tagName) {
   const tags = obj.Tags;

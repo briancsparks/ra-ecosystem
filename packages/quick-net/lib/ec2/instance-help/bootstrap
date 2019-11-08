@@ -3,11 +3,11 @@
 echo "Bootstrap script"
 
 pull_s3() {
-  aws s3 cp "s3://quick-net/deploy/quicknet/${INSTANCE_ID}/$1" /usr/sbin
+  aws s3 cp "s3://${NAMESPACE_LC}/quick-net/deploy/${INSTANCE_ID}/$1" /usr/sbin
   chmod 0755 "/usr/sbin/$1"
 }
 
-aws s3 cp "s3://quick-net/deploy/quicknet/${INSTANCE_ID}/untar-from-s3" /usr/sbin
+aws s3 cp "s3://${NAMESPACE_LC}/quick-net/deploy/${INSTANCE_ID}/untar-from-s3" /usr/sbin
 chmod 0755 /usr/sbin/untar-from-s3
 
 pull_s3 bootstrap-nonroot
@@ -16,13 +16,13 @@ pull_s3 sshix
 pull_s3 qn-hosts
 
 # pwd
-# aws s3 cp "s3://quick-net/deploy/${NAMESPACE_LC}/${INSTANCE_ID}/bootstrap" /tmp
+# aws s3 cp "s3://${NAMESPACE_LC}/quick-net/deploy/${INSTANCE_ID}/bootstrap" /tmp
 
-FILES="$(aws s3api list-objects --bucket quick-net --prefix deploy/${NAMESPACE_LC}/${INSTANCE_ID}/files | jq -r '.Contents[].Key')"
+FILES="$(aws s3api list-objects --bucket ${NAMESPACE_LC} --prefix quick-net/deploy/${INSTANCE_ID}/files | jq -r '.Contents[].Key')"
 
 for f in $FILES; do
 
-  untar-from-s3 "s3://quick-net/$f"
+  untar-from-s3 "s3://${NAMESPACE_LC}/$f"
 
 done
 

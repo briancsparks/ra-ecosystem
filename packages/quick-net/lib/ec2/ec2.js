@@ -5,6 +5,7 @@ const ra                      = require('run-anywhere').v2;
 const sg                      = ra.get3rdPartyLib('sg-flow');
 const { _ }                   = sg;
 const { qm }                  = ra.get3rdPartyLib('quick-merge');
+const qnutils                 = require('../../lib/utils');
 const fs                      = require('fs');
 const os                      = require('os');
 const path                    = require('path');
@@ -16,6 +17,7 @@ const libAws                  = require('../aws');
 const libVpc                  = require('./vpc');
 const cloudInit               = require('../sh/cloud-init');
 const libNginxConfig          = require('../nginx/config');
+const {mkS3path}              = qnutils;
 
 const mod                     = ra.modSquad(module, 'quickNetEc2');
 
@@ -28,6 +30,10 @@ const iam                     = libAws.awsService('IAM');
 const s3                      = libAws.awsService('S3');
 
 const MimeBuilder             = MimeNode;
+
+// const namespace            = ENV.at('NAMESPACE');
+const namespace               = 'quicknet';
+const s3path                  = mkS3path(namespace.toLowerCase());
 
 /**
  * Gets a list of AMIs.
@@ -610,10 +616,12 @@ mod.xport({upsertInstance: function(argv, context, callback) {
       // Put stuff on S3 for the instance
       const utilFiles = 'bootstrap,bootstrap-nonroot,untar-from-s3,cmd-from-s3,sshix,qn-hosts'.split(',');
 
-      const s3path = `s3://quick-net/deploy/${namespace.toLowerCase()}/${InstanceId}`;
+      // const s3deployPath = `s3://quick-net/deploy/${namespace.toLowerCase()}/${InstanceId}`;
+      const s3deployPath = s3path('deploy', InstanceId);
+
       return sg.__run2(next, [function(next) {
         return sg.__eachll(utilFiles, function(filename, next) {
-          return copyFileToS3(path.join(__dirname, 'instance-help', filename), s3path, function(err, data) {
+          return copyFileToS3(path.join(__dirname, 'instance-help', filename), s3deployPath, function(err, data) {
             sg.debugLog(`Uploaded ${filename} script`, {err, data});
             return next();
           });
@@ -636,7 +644,7 @@ mod.xport({upsertInstance: function(argv, context, callback) {
 
         return getNginxConfigTarball({distro, ...ngArgs}, {}, function(err0, data) {
           const {pack, cwd}   = data;
-          const s3packPath    = _.compact([s3path, 'files', ...(cwd.split('/'))]).join('/');
+          const s3packPath    = _.compact([s3deployPath, 'files', ...(cwd.split('/'))]).join('/');
           const {Bucket,Key}  = parseS3Path(`${s3packPath}/nginx-conf.tar`);
 
           return streamToS3(pack, {Bucket, Key, ContentType: 'application/x-tar'}, function(err, data) {

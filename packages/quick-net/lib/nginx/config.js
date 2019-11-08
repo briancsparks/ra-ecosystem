@@ -6,6 +6,7 @@ const ra                      = require('run-anywhere').v2;
 const sg0                     = ra.get3rdPartyLib('sg-flow');
 const sg                      = sg0.merge(sg0, require('sg-env'));
 const { _ }                   = sg;
+const qnutils                 = require('../../lib/utils');
 const tar                     = require('tar-stream');
 const clipboardy              = require('clipboardy');
 const fs                      = require('fs');
@@ -14,10 +15,15 @@ const path                    = require('path');
 const {streamToS3,
       s3ExpiringTransferPath} = require('../s3');
 var   {globalBlacklistIps}    = require('./snippets/ip-blacklist');
+const {mkS3path}              = qnutils;
 
 const mod                     = ra.modSquad(module, 'nginx-config');
 const DIAG                    = sg.DIAG(module);
 const ENV                     = sg.ENV();
+
+// const namespace            = ENV.at('NAMESPACE');
+const namespace               = 'quicknet';
+const s3path                  = mkS3path(namespace.toLowerCase());
 
 // =======================================================================================================
 // saveNginxConfigTarball
@@ -103,18 +109,19 @@ mod.xport(DIAG.xport({saveNginxConfigTarballToS3: function(argv, context, callba
     if (err) { return callback(err); }
 
     const {pack,cwd,name}   = data;
-    const s3path            = s3ExpiringTransferPath(`s3://quick-net/deploy/${namespace.toLowerCase()}`, name, 3600);
+    // const s3deployPath            = s3ExpiringTransferPath(`s3://quick-net/deploy/${namespace.toLowerCase()}`, name, 3600);
+    const s3deployPath            = s3ExpiringTransferPath(s3path('deploy', ''), name, 3600);
 
-    return streamToS3({Body: pack, s3path, ContentType: 'application/x-tar'}, context, function(err, data) {
-      diag.v(`Upload nginx config tarball`, {cwd, s3path, err, data});
+    return streamToS3({Body: pack, s3deployPath, ContentType: 'application/x-tar'}, context, function(err, data) {
+      diag.v(`Upload nginx config tarball`, {cwd, s3deployPath, err, data});
 
-      // const clip = sshcmd('ubuntu@bastionIp', sshcmd('webtierIp', `untar-from-s3 ${s3path}`));
+      // const clip = sshcmd('ubuntu@bastionIp', sshcmd('webtierIp', `untar-from-s3 ${s3deployPath}`));
       const bastionIp   = '`instance-by-role qn:roles bastion PublicIpAddress`';
       const webtierIp   = '`instance-by-role qn:roles webtier PrivateIpAddress`';
-      const clip        = sshcmd(`ubuntu@${bastionIp}`, '"'+sshcmd(`${webtierIp}`, `'untar-from-s3 ${s3path}'`)+'"');
+      const clip        = sshcmd(`ubuntu@${bastionIp}`, '"'+sshcmd(`${webtierIp}`, `'untar-from-s3 ${s3deployPath}'`)+'"');
 
       clipboardy.writeSync(clip);
-      clipboardy.writeSync(`qnsshixx webtier 'untar-from-s3 ${s3path}'`);
+      clipboardy.writeSync(`qnsshixx webtier 'untar-from-s3 ${s3deployPath}'`);
 
       return callback(err, data);
     });

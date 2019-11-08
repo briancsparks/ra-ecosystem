@@ -1,22 +1,28 @@
 
-const sg                      = require('sg-clihelp');
-const {fs,path,os,util}       = sg;
-const { test }                = sg.sh;
-const {execa}                 = sg;
+const {sg,fs,path,os,util,sh,die,dieAsync,grepLines,include,from,startupDone,runTopAsync,exec,execa,execz,find,grep,ls,mkdir,test,tempdir,inspect} = require('sg-clihelp').all();
+// const sg                      = require('sg-clihelp');
+// const {fs,path,os,util}       = sg;
+// const { test }                = sg.sh;
+// const {execa}                 = sg;
+const tarfs                   = require('tar-fs');
+
+module.exports.getCert        = util.callbackify(getCert);
+module.exports.async.getCert  = getCert;
 
 
-module.exports.getCert = getCert;
+// function getCert(argv, context, callback) {
+//   const getCert_    = util.callbackify(getCert__);
 
-function getCert(argv, context, callback) {
-  const getCert_    = util.callbackify(getCert__);
+//   return getCert_(argv, context, function(err, data) {
+//     return callback(err, data);
+//   });
 
-  return getCert_(argv, context, function(err, data) {
-    return callback(err, data);
-  });
+// }
 
-}
 
-async function getCert__(argv, context) {
+
+// --auth-domain=cdr0.net --domains=api.cdr0.net --emails=briancsparks@gmail.com
+async function getCert(argv, context) {
   var   authDomain    = argv.auth_domain;
   const domains       = sg.arrayify(argv.domains);
   const fqdn          = domains[0];
@@ -24,14 +30,19 @@ async function getCert__(argv, context) {
   var   certdir       = argv.certdir || path.join(os.homedir(), '.quick-net', 'certs', fqdn.replace(/[.]/g, '__'));
 
   const params        = certbotParams(authDomain, domains, emails, certdir);
-  console.log(`params`, {params});
-  // return {ok:true};
+  // console.log(`params`, {params});
 
-  // var   certbotout    = await execa.stdout(path.join(__dirname, 'certbot-get-certs'), params, {cwd: __dirname});
-  var   certbotout    = await execa.stdout(path.join(__dirname, 'certbot'), params, {cwd: __dirname});
-  console.log(sg.splitln(certbotout));
+  var   certbotout    = await execa.stdout(sh.which('certbot'), params, {cwd: __dirname});
+  console.log(sg.splitLn(certbotout));
 
-  return certbotout;
+  var   pack = tarfs.pack(certdir, {
+    ignore: (name, headers) => {
+      console.log(`fs`, {name,headers});
+      return false;
+    }
+  });
+
+  return {certdir, pack};
 }
 
 function certbotParams(auth_domain, domains_, emails, out_dir_) {
@@ -41,8 +52,6 @@ function certbotParams(auth_domain, domains_, emails, out_dir_) {
 
   return [
     'certonly', '--non-interactive', '--manual',
-    // '--manual-auth-hook', `${__dirname}/certbot-route53-auth-hook.sh UPSERT ${auth_domain}`,
-    // '--manual-cleanup-hook', `${__dirname}/certbot-route53-auth-hook.sh DELETE ${auth_domain}`,
     '--manual-auth-hook',     `node "${__dirname}/certbot-route53-auth-hook.js" UPSERT ${auth_domain}`,
     '--manual-cleanup-hook',  `node "${__dirname}/certbot-route53-auth-hook.js" DELETE ${auth_domain}`,
     '--preferred-challenge', 'dns',
@@ -55,16 +64,4 @@ function certbotParams(auth_domain, domains_, emails, out_dir_) {
     '--email', emails,
   ];
 }
-
-// certbot certonly --non-interactive --manual \
-//   --manual-auth-hook "${scripts_dir}/certbot-route53-auth-hook.sh UPSERT ${auth_domain}" \
-//   --manual-cleanup-hook "${scripts_dir}/certbot-route53-auth-hook.sh DELETE ${auth_domain}" \
-//   --preferred-challenge dns \
-//   --config-dir "$out_dir" \
-//   --work-dir "$out_dir" \
-//   --logs-dir "$out_dir" \
-//   --agree-tos \
-//   --manual-public-ip-logging-ok \
-//   --domains ${domains} \
-//   --email "$emails"
 
