@@ -1,6 +1,6 @@
 {
   "name": "@sg0/sg-emit",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "description": "> TODO: description",
   "author": "Brian C Sparks <briancsparks@gmail.com>",
   "homepage": "https://github.com/briancsparks/ra-ecosystem#readme",
@@ -24,7 +24,7 @@
     "url": "https://github.com/briancsparks/ra-ecosystem/issues"
   },
   "dependencies": {
-    "sg0": "^1.0.33"
+    "sg0": "^1.0.34"
   },
   "devDependencies": {
     "ava": "^2.3.0"
