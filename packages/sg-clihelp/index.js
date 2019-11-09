@@ -1,3 +1,4 @@
+/* eslint-disable valid-jsdoc */
 if (process.env.SG_VVVERBOSE) console[process.env.SG_LOAD_STREAM || 'log'](`Loading ${__filename}`);
 
 /**
@@ -57,7 +58,7 @@ _.each(sg, (fn, name) => {
 //  Helper Functions
 //
 
-// const {sg,fs,path,os,util,sh,die,dieAsync,grepLines,include,from,startupDone,runTopAsync,exec,execa,execz,find,grep,ls,mkdir,test,tempdir,inspect} = require('sg-clihelp').all();
+// const {sg,fs,path,os,util,sh,die,dieAsync,grepLines,include,from,startupDone,runTopAsync,exec,execa,execz,exec_ez,find,grep,ls,mkdir,SgDir,test,tempdir,inspect} = require('sg-clihelp').all();
 function all() {
   return {
     sg,
@@ -66,10 +67,33 @@ function all() {
     die, dieAsync, grepLines, include, from, startupDone, runTopAsync,
 
     exec: sh.exec, find: sh.find, grep: sh.grep, ls: sh.ls, mkdir: sh.mkdir, test: fs.test, tempdir: fs.tempdir,
-    execa: sg.execa, execz: sg.execz,
+    execa: sg.execa, execz: sg.execz, exec_ez: sg.exec_ez,
     inspect: util.inspect
   };
 }
+
+
+/**
+ * An object to manage dir and file paths.
+ *
+ * @param {*} paths
+ * @returns
+ */
+function SgDir(...paths) {
+  if (paths.length > 0 && sg.isnt(paths[0]))  { return paths[0]; }
+
+  if (!(this instanceof SgDir)) { return new SgDir(...paths); }
+
+  this.path = path.join(...paths);
+}
+
+SgDir.prototype.dir = function(...paths) {
+  return SgDir(path.join(this.path, ...paths));
+};
+
+SgDir.prototype.file = function(...paths) {
+  return path.join(this.path, ...paths);
+};
 
 // ------------------------------------------------------------------------------------------------------------------
 /**

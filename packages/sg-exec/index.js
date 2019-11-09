@@ -18,6 +18,7 @@ const execa                   = require('execa');
 var   lib                     = {};
 const curl                    = addToLib(require('./lib/curl'));
 const execz                   = addToLib(require('./lib/execz'));
+const exec_ez                 = addToLib(require('./lib/exec-ez'));
 
 const ARGV                    = sg.ARGV();
 

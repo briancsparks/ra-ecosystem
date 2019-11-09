@@ -423,6 +423,8 @@ sg.setTimeout = function(ms, cb) {
 };
 
 sg.firstKey = function(obj) {
+  if (isnt(obj))  { return obj; }
+
   for (var k in obj) {
     return k;
   }
@@ -430,6 +432,8 @@ sg.firstKey = function(obj) {
 };
 
 sg.numKeys = function(obj) {
+  if (isnt(obj))  { return obj; }
+
   var num = 0;
   for (var k in obj) {
     num++;
@@ -980,7 +984,13 @@ sg.trueOrFalse = function(value_) {
   if (value === 'true')                   { return true; }
   if (value === 'false')                  { return false; }
 
-  if (_.isString(value)) { value = +value; }    // Convert to number
+  if (_.isString(value)) {
+    const n = +value;    // Convert to number
+    if (!_.isNaN(n)) {
+      value = n;
+    }
+  }
+
   return !!value;
 };
 sg.tf = sg.trueOrFalse;   // alias
@@ -1015,7 +1025,40 @@ sg.reduce = function(collection, initial, fn) {
   return _.reduce(collection, fn, initial);
 };
 
+/**
+ * A `reduce` implementation that allows easy building of objects.
+ *
+ * Depending on the return value from the callback, assuming callback signature: (m,v,k) => {...}, and
+ * the function would compute key, value.
+ *
+ * * Object       -- The object is used whole, just like in normal reduce()
+ * * [value]      -- A one-element Array means to re-use the k. ( return {...m, [k]: value})
+ * * [key, value] -- A two-element Array means to interpret as [key,value]. ( return {...m, [key]: value})
+ *   * key can be null to re-use k, like [value].
+ * * Otherwise array.length > 2 -- Each item is evaluated individually
+ *   * String   - A key-mirror. ['a', 'b', 'c'] -> {a:'a', b:'b', c:'c'}
+ *   * Array 0  - Placeholder, so [[], 'b', 'c'] -> {a:'a', b:'b', c:'c'}, not {[b]:c}
+ *   * Array 1  - Convert to [k, ...value], and will get processed in Array 2.
+ *   * Array 2  - Just like a top-level Array 2. Allows many key-values to be returned: ['a', 'b', [null, {foo:'bar'}], ['quxx', 42]] -> {a:'a', b:'b', [k]:{foo:'bar'}, quxx:42}
+ *   * Array >2 - An array ['a', 'b', [null, 1,2,3], [key, 'x', 'y', 'z'], ['z', 9,8,7,6]] -> {a:'a', b:'b', [k]:[1,2,3], [key]: ['x', 'y', 'z'], z:[9,8,7,6]}
+ *   * Object   - Merged in -- [[], {a:1, b:42, c:{foo: 'bar'}}]. This is how to return an object whose key-value items are merged into the result.
+ *                the first `[]` is needed to keep it from being interpreted by (Array 1) as [k, {...}], which would yield {[k]: {...}}.
+ *   * Otherwise not string,array,object -- [/regex/] -> {[k]: /regex/}; [new Date()] -> {[k]: new Date()}
+ *
+ * This would add one to each value:
+ *
+ * sg.reduceObj(obj, {}, (m, v, k) => {
+ *   return [+value +1];
+ * });
+ *
+ * @param {*} obj
+ * @param {*} initial
+ * @param {*} fn
+ * @returns
+ */
 sg.reduceObj = function(obj, initial, fn) {
+  if (arguments.length === 2) { return sg.reduceObj(obj, {}, arguments[1]); }
+
   const isObject = sg.isObject(initial);
 
   return _.reduce(obj, function(m, v, k, ...rest) {
@@ -1033,8 +1076,11 @@ sg.reduceObj = function(obj, initial, fn) {
     //
     var   res  = res_;
 
-    // They just returned, without returning any data... Just means 'unchanged'
-    if (_.isUndefined(res))   { return m; }
+    // They returned null... Just means 'unchanged'
+    if (res === null)            { return m; }
+
+    // They just returned, without returning any data... Just means keep the current k/v
+    if (_.isUndefined(res))   { return {...m, [k]:v}; }
 
     // Key-Value pair(s) packed in an Array -- The primary way to use this fn
     if (Array.isArray(res)) {

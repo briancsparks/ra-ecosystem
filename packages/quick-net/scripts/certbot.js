@@ -1,24 +1,18 @@
 
-const {sg,fs,path,os,util,sh,die,dieAsync,grepLines,include,from,startupDone,runTopAsync,exec,execa,execz,find,grep,ls,mkdir,test,tempdir,inspect} = require('sg-clihelp').all();
+const {sg,fs,path,os,util,sh,die,dieAsync,grepLines,include,from,startupDone,runTopAsync,exec,execa,execz,exec_ez,find,grep,ls,mkdir,SgDir,test,tempdir,inspect} = require('sg-clihelp').all();
 // const sg                      = require('sg-clihelp');
 // const {fs,path,os,util}       = sg;
 // const { test }                = sg.sh;
 // const {execa}                 = sg;
+const {mkQuickNetPath}        = require('../lib/utils');
 const tarfs                   = require('tar-fs');
 
+const ENV                     = sg.ENV();
+const certsS3                 = SgDir(mkQuickNetPath('s3', ENV.at('NAMESPACE_LC'), 'secrets/certs'));
+
 module.exports.getCert        = util.callbackify(getCert);
+module.exports.async          = {};
 module.exports.async.getCert  = getCert;
-
-
-// function getCert(argv, context, callback) {
-//   const getCert_    = util.callbackify(getCert__);
-
-//   return getCert_(argv, context, function(err, data) {
-//     return callback(err, data);
-//   });
-
-// }
-
 
 
 // --auth-domain=cdr0.net --domains=api.cdr0.net --emails=briancsparks@gmail.com
@@ -27,22 +21,31 @@ async function getCert(argv, context) {
   const domains       = sg.arrayify(argv.domains);
   const fqdn          = domains[0];
   var   emails        = argv.emails;
-  var   certdir       = argv.certdir || path.join(os.homedir(), '.quick-net', 'certs', fqdn.replace(/[.]/g, '__'));
+  // var   certdir_      = argv.certdir || path.join(os.homedir(), '.quick-net', 'certs', fqdn.replace(/[.]/g, '__'));
+  var   certdir       = SgDir(argv.certdir) || SgDir(os.homedir(), '.quick-net', 'certs', fqdn.replace(/[.]/g, '__'));
 
-  const params        = certbotParams(authDomain, domains, emails, certdir);
+  // TODO: Check if we already have them, if so, do not call certbot, just return what we already have
+
+  const params        = certbotParams(authDomain, domains, emails, certdir.path);
   // console.log(`params`, {params});
 
-  var   certbotout    = await execa.stdout(sh.which('certbot'), params, {cwd: __dirname});
-  console.log(sg.splitLn(certbotout));
+  var   certbotStdout    = await execa.stdout(sh.which('certbot').toString(), params, {cwd: __dirname});
+  console.log(sg.splitLn(certbotStdout));
 
-  var   pack = tarfs.pack(certdir, {
-    ignore: (name, headers) => {
-      console.log(`fs`, {name,headers});
-      return false;
+  var   pack = tarfs.pack(certdir.path, {
+    map: (header) => {
+      console.log(`fs`, {header});
+      return header;
+    },
+    finalize: false,
+    finish: () => {
+      pack.entry({name: certbotStdout}, certbotStdout);
     }
   });
 
-  return {certdir, pack};
+
+  // TODO: Return locations of certs, certs contents
+  return {certdir, pack, certbotStdout};
 }
 
 function certbotParams(auth_domain, domains_, emails, out_dir_) {
