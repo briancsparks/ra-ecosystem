@@ -66,7 +66,7 @@ function all() {
     sh,
     die, dieAsync, grepLines, include, from, startupDone, runTopAsync,
 
-    exec: sh.exec, find: sh.find, grep: sh.grep, ls: sh.ls, mkdir: sh.mkdir, test: fs.test, tempdir: fs.tempdir,
+    exec: sh.exec, find: sh.find, grep: sh.grep, ls: sh.ls, mkdir: sh.mkdir, test: sh.test, tempdir: sh.tempdir,
     SgDir,
     execa: sg.execa, execz: sg.execz, exec_ez: sg.exec_ez,
     inspect: util.inspect

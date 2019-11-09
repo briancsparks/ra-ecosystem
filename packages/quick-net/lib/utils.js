@@ -31,7 +31,7 @@ exports.namespacedPath = function(proto_, first, pre, tween, type, path, namespa
   const namespace = namespace_ || ENV.at('NAMESPACE') || 'projectx';
   const splt      = mkBreakApart(proto, first, options);
 
-  var parts = [first, splt(pre), namespace, splt(tween), 'quick-net', splt(type), splt(path)];
+  var parts = [first, ...splt(pre), namespace, ...splt(tween), 'quick-net', ...splt(type), ...splt(path)];
 
   if (!options.sparse) {
     parts = _.compact(parts);
@@ -40,31 +40,6 @@ exports.namespacedPath = function(proto_, first, pre, tween, type, path, namespa
   const str = proto +  parts.join(options.sep || nsPathOptions(proto).sep);
   return str;
 };
-
-function mkBreakApart(proto, first, options ={}) {
-  return function(str) {
-    if (sg.isnt(str))   { return str; }
-
-    const sep = options.sep || nsPathOptions(proto, first).sep;
-    if (!sep) {
-      return str;
-    }
-
-    var parts = str.split(sep);
-    if (parts.length === 1) {
-      // No split happened, use '/' if sep is for win '\\'
-      if (sep === '\\') {
-        parts = str.split('/');
-      }
-    }
-
-    return _.compact(parts);
-  };
-}
-
-// exports.s3deployPath = function(path, namespace) {
-//   return exports.namespacedPath('s3', 'deploy', path, namespace);
-// };
 
 exports.mkS3path = function(namespace, pre =null, tween =null) {
   const proto = 's3';
@@ -86,8 +61,34 @@ function nsPathOptions(proto, first) {
     return {sep:'/'};
   }
 
-  return {sep: os.sep};
+  // return {sep: os.sep};
+  return {sep: '/'};
 }
+
+function mkBreakApart(proto, first, options ={}) {
+  return function(str) {
+    if (sg.isnt(str))   { return []; }
+
+    const sep = options.sep || nsPathOptions(proto, first).sep;
+    if (!sep) {
+      return [str];
+    }
+
+    var parts = str.split(sep);
+    if (parts.length === 1) {
+      // No split happened, use '/' if sep is for win '\\'
+      if (sep === '\\') {
+        parts = str.split('/');
+      }
+    }
+
+    return _.compact(parts);
+  };
+}
+
+// exports.s3deployPath = function(path, namespace) {
+//   return exports.namespacedPath('s3', 'deploy', path, namespace);
+// };
 
 exports.getTag = function(obj = {}, tagName) {
   const tags = obj.Tags;

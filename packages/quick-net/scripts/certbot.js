@@ -18,6 +18,9 @@ module.exports.async.getCert  = getCert;
 
 // --auth-domain=cdr0.net --domains=api.cdr0.net --emails=briancsparks@gmail.com
 async function getCert(argv, context) {
+  // if (!sh.which('certbot'))           { throw sg.toError(`ENOENT: certbot`); }
+
+  var   pack, certbotStdout;
   var   authDomain    = argv.auth_domain;
   const domains       = sg.arrayify(argv.domains);
   const fqdn          = domains[0];
@@ -25,32 +28,49 @@ async function getCert(argv, context) {
   var   emails        = argv.emails;
   // var   certdir_      = argv.certdir || path.join(os.homedir(), '.quick-net', 'certs', fqdnPathName);
   var   certdir       = SgDir(argv.certdir) || SgDir(os.homedir(), '.quick-net', 'certs', fqdnPathName);
+  var   tardir        = SgDir(argv.certdir) || SgDir(os.homedir(), '.quick-net', 'certs');
+  const certPath      = certdir.path;
 
+  const params        = certbotParams(authDomain, domains, emails, certPath);
+
+  const certsTar      = tardir.file(`${fqdnPathName}.tar`);
+  const certsS3tar    = certsS3Path(`${fqdnPathName}.tar`);
+
+  console.log(`params`, {params, certsS3tar});
+
+  // TODO: Check if it is on S3 already
   // TODO: Check if we already have them, if so, do not call certbot, just return what we already have
-  const certsS3                 = SgDir(certsS3Path(fqdnPathName));
 
-  const params        = certbotParams(authDomain, domains, emails, certdir.path);
-  console.log(`params`, {params});
+  if (!test('-d', params.out_dir)) {
+    // certbotStdout    = await execa.stdout(sh.which('certbot').toString(), params.params, {cwd: __dirname});
+    // console.log(sg.splitLn(certbotStdout));
+  }
 
-  // var   certbotStdout    = await execa.stdout(sh.which('certbot').toString(), params, {cwd: __dirname});
-  // console.log(sg.splitLn(certbotStdout));
+  if (test('-d', params.out_dir)) {
+    pack = tarfs.pack(certPath, {
+      map: (header) => {
+        console.log(`fs`, {header});
+        return header;
+      },
+      finalize: false,
+      finish: () => {
+        console.log(`finish`);
+        pack.entry({name: 'certbotStdout'}, certbotStdout || `certbot not run`);
 
-  // var   pack = tarfs.pack(certdir.path, {
-  //   map: (header) => {
-  //     console.log(`fs`, {header});
-  //     return header;
-  //   },
-  //   finalize: false,
-  //   finish: () => {
-  //     pack.entry({name: certbotStdout}, certbotStdout);
-  //   }
-  // });
+        // pack.finalize();
+      }
+    });
+
+    pack.pipe(fs.createWriteStream(certsTar));
+
+    // TODO: Push to S3
+  }
 
 
-  // // TODO: Return locations of certs, certs contents
-  // return {certdir, pack, certbotStdout};
 
-  return [null, {ok:true}];
+  // TODO: Return locations of certs, certs contents
+  // return [null, {ok:true, certdir, pack, certbotStdout}];
+  return [null, {ok:true, pack}];
 }
 
 function certbotParams(auth_domain, domains_, emails, out_dir_) {
@@ -58,18 +78,20 @@ function certbotParams(auth_domain, domains_, emails, out_dir_) {
   const fqdn        = domains[0];
   const out_dir     = out_dir_      || path.join(os.homedir(), '.quick-net', 'certs', fqdn.replace(/[.]/g, '-'));
 
-  return [
-    'certonly', '--non-interactive', '--manual',
-    '--manual-auth-hook',     `node "${__dirname}/certbot-route53-auth-hook.js" UPSERT ${auth_domain}`,
-    '--manual-cleanup-hook',  `node "${__dirname}/certbot-route53-auth-hook.js" DELETE ${auth_domain}`,
-    '--preferred-challenge', 'dns',
-    '--config-dir', out_dir,
-    '--work-dir', out_dir,
-    '--logs-dir', out_dir,
-    '--agree-tos',
-    '--manual-public-ip-logging-ok',
-    '--domains', domains.join(' '),
-    '--email', emails,
-  ];
+  return {
+    domains, fqdn, out_dir,
+    params: [
+      'certonly', '--non-interactive', '--manual',
+      '--manual-auth-hook',     `node "${__dirname}/certbot-route53-auth-hook.js" UPSERT ${auth_domain}`,
+      '--manual-cleanup-hook',  `node "${__dirname}/certbot-route53-auth-hook.js" DELETE ${auth_domain}`,
+      '--preferred-challenge', 'dns',
+      '--config-dir', out_dir,
+      '--work-dir', out_dir,
+      '--logs-dir', out_dir,
+      '--agree-tos',
+      '--manual-public-ip-logging-ok',
+      '--domains', domains.join(' '),
+      '--email', emails,
+  ]};
 }
 
