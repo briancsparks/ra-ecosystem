@@ -43,6 +43,8 @@ exports.namespacedPath = function(proto_, first, pre, tween, type, path, namespa
 
 function mkBreakApart(proto, first, options ={}) {
   return function(str) {
+    if (sg.isnt(str))   { return str; }
+
     const sep = options.sep || nsPathOptions(proto, first).sep;
     if (!sep) {
       return str;
