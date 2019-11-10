@@ -153,6 +153,12 @@ mod.xport({upsertInstance: function(argv, context, callback) {
     ra invoke packages\quick-net\lib\ec2\ec2.js upsertInstance --image=ami-011a85ba0ae2013bf --distro=amazon2ecs --type=t3.small --key= --sgs= --subnet=
   */
 
+  // Provide system-wide services
+  // INSTALL_DOCKER, INSTALL_NAT, INSTALL_MONGODB, INSTALL_WEBTIER, INSTALL_KUBERNETES
+  //
+  // Provice add-on functionality
+  // INSTALL_AGENTS, INSTALL_MONGO_CLIENTS,INSTALL_AWSCLI_NO, INSTALL_OPS
+
   const ractx     = context.runAnywhere || {};
   const { rax }   = ractx.quickNetEc2__upsertInstance;
 
@@ -252,7 +258,7 @@ mod.xport({upsertInstance: function(argv, context, callback) {
 
         // If we have an instance, return it
         if (count > 0) {
-          my.result = {Instance: theInstance};
+          my.result = {...my.result, Instance: theInstance};
           return callback(null, my);
         }
 
@@ -555,7 +561,8 @@ mod.xport({upsertInstance: function(argv, context, callback) {
 
     }, function(my, next) {
 
-      // -------------------- runInstances
+      // -------------------------------------------------------------------------------------------------------
+      // runInstances
 
       var UserData;
       var params = {};
@@ -600,62 +607,19 @@ mod.xport({upsertInstance: function(argv, context, callback) {
       params = sg.merge(AllAwsParams, params, {ImageId, InstanceType, KeyName, SecurityGroupIds, SubnetId, MaxCount, MinCount, UserData, BlockDeviceMappings, DryRun});
       return runInstances(params, rax.opts({}), function(err, data) {
 
-        my.result   = {Instance: data.Instances[0]};
+        my.result   = {...my.result, Instance: data.Instances[0]};
         InstanceId  = my.result.Instance.InstanceId;
-
         return next();
       });
 
     }, function(my, next) {
 
-      // Must wait for launches
-      return sg.until(function(again, last, count, elapsed) {
-        return describeInstances({InstanceIds:[InstanceId]}, rax.opts({abort:false}), function(err, data) {
-          if (err) {
-            if (err.code === 'InvalidInstanceID.NotFound')    { return again(250); }
-            return abort(err);
-          }
+      // -------------------------------------------------------------------------------------------------------
+      // The instance is launching... We can do other things while it starts.
 
-          // Wait for launch
-          const Instance = data.Reservations[0].Instances[0];
-          if (Instance.State.Name !== 'running') {
-            return again(1000);
-          }
-
-          my.result = {Instance};
-          return last();
-        });
-      }, next);
-
-    }, function(my, next) {
-      if (SourceDestCheck)    { return next(); }
-
-      // Change SourceDestCheck for NAT instances
-      return modifyInstanceAttribute({InstanceId, SourceDestCheck: {Value: SourceDestCheck}}, rax.opts({}), (err, data) => {
-        return next();
-      });
-
-    // }, function(my, next) {
-    //   // Must be stopped
-    //   if (!EnaSupport)    { return next(); }
-    //   return modifyInstanceAttribute({InstanceId, EnaSupport: {Value: EnaSupport}}, rax.opts({}), next);
-
-    }, function(my, next) {
-      if (DisableApiTermination)    { return next(); }
-      return modifyInstanceAttribute({InstanceId, DisableApiTermination: {Value: DisableApiTermination}}, rax.opts({}), next);
-
-    }, function(my, next) {
-      if (!EbsOptimized)    { return next(); }
-      return modifyInstanceAttribute({InstanceId, EbsOptimized: {Value: EbsOptimized}}, rax.opts({}), next);
-
-    }, function(my, next) {
-      if (!InstanceInitiatedShutdownBehavior)    { return next(); }
-      return modifyInstanceAttribute({InstanceId, InstanceInitiatedShutdownBehavior: {Value: InstanceInitiatedShutdownBehavior}}, rax.opts({}), next);
-
-
-    }, function(my, next) {
-
+      // -------------------------------------------------------------------------------------------------------
       // Put stuff on S3 for the instance
+
       const utilFiles     = 'bootstrap,bootstrap-nonroot,untar-from-s3,cmd-from-s3,sshix,qn-hosts,get-certs-from-s3'.split(',');
       const s3deployPath  = s3path('deploy', InstanceId);
 
@@ -737,8 +701,56 @@ mod.xport({upsertInstance: function(argv, context, callback) {
     }, function(my, next) {
 
       // -------------------------------------------------------------------------------------------------------
-      // Set the A record
+      // -------------------------------------------------------------------------------------------------------
+      // The only things we still have left to do require the instance to be started.
+      // Must wait for launch
 
+      return sg.until(function(again, last, count, elapsed) {
+        return describeInstances({InstanceIds:[InstanceId]}, rax.opts({abort:false}), function(err, data) {
+          if (err) {
+            if (err.code === 'InvalidInstanceID.NotFound')    { return again(2000); }
+            return abort(err);
+          }
+
+          // Wait for launch
+          const Instance = data.Reservations[0].Instances[0];
+          if (Instance.State.Name !== 'running') {
+            return again(1000);
+          }
+
+          my.result = {...my.result, Instance};
+          return last();
+        });
+      }, next);
+
+    }, function(my, next) {
+
+      // -------------------------------------------------------------------------------------------------------
+      // Modify instance attributes
+
+      if (SourceDestCheck)    { return next(); }
+
+      // Change SourceDestCheck for NAT instances
+      return modifyInstanceAttribute({InstanceId, SourceDestCheck: {Value: SourceDestCheck}}, rax.opts({}), (err, data) => {
+        return next();
+      });
+
+    }, function(my, next) {
+      if (DisableApiTermination)    { return next(); }
+      return modifyInstanceAttribute({InstanceId, DisableApiTermination: {Value: DisableApiTermination}}, rax.opts({}), next);
+
+    }, function(my, next) {
+      if (!EbsOptimized)    { return next(); }
+      return modifyInstanceAttribute({InstanceId, EbsOptimized: {Value: EbsOptimized}}, rax.opts({}), next);
+
+    }, function(my, next) {
+      if (!InstanceInitiatedShutdownBehavior)    { return next(); }
+      return modifyInstanceAttribute({InstanceId, InstanceInitiatedShutdownBehavior: {Value: InstanceInitiatedShutdownBehavior}}, rax.opts({}), next);
+
+    }, function(my, next) {
+
+      // -------------------------------------------------------------------------------------------------------
+      // Set the A record
       if (!my.result.fqdn)    { return next(); }
 
       const {PublicIpAddress}       = my.result.Instance;

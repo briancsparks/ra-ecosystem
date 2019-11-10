@@ -7,6 +7,7 @@ pull_s3() {
   chmod 0755 "/usr/sbin/$1"
 }
 
+# TODO: do a loop like below, but must be in sibling dir like 'files' below.
 pull_s3 bootstrap-nonroot
 pull_s3 untar-from-s3
 pull_s3 cmd-from-s3
