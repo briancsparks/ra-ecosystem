@@ -4,7 +4,8 @@ const {sg,fs,path,os,util,sh,die,dieAsync,grepLines,include,from,startupDone,run
 // const {fs,path,os,util}       = sg;
 // const { test }                = sg.sh;
 // const {execa}                 = sg;
-const {mkQuickNetPath}        = require('../lib/utils');
+const {safePathFqdn,
+       mkQuickNetPath}        = require('../lib/utils');
 const tarfs                   = require('tar-fs');
 
 const ENV                     = sg.ENV();
@@ -25,7 +26,7 @@ async function getCert(argv, context) {
   var   authDomain    = argv.auth_domain;
   const domains       = sg.arrayify(argv.domains);
   const fqdn          = domains[0];
-  const fqdnPathName  = fqdn.replace(/[.]/g, '__');
+  const fqdnPathName  = safePathFqdn(fqdn);
   var   emails        = argv.emails;
   // var   certdir_      = argv.certdir || path.join(os.homedir(), '.quick-net', 'certs', fqdnPathName);
   var   certdir       = SgDir(argv.certdir) || SgDir(os.homedir(), '.quick-net', 'certs', fqdnPathName);

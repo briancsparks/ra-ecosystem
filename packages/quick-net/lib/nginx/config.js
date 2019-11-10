@@ -17,6 +17,7 @@ const {streamToS3,
 var   {globalBlacklistIps}    = require('./snippets/ip-blacklist');
 const {mkS3path,
        addClip,
+       safePathFqdn,
        mkQuickNetPath}        = qnutils;
 
 const mod                     = ra.modSquad(module, 'nginx-config');
@@ -683,7 +684,7 @@ function _getServerConfig_(argv, context={}) {
         rpxiPort}                               = argv;
   var   {locations}                             = argv;
   const fqdn                                    = fqdns[0];
-  const fqdnPathName                            = fqdn.replace(/[.]/g, '__');
+  const fqdnPathName                            = safePathFqdn(fqdn);
   const ssl_certificate                         = `/etc/nginx/certs/${fqdnPathName}/live/${fqdn}/fullchain.pem`;
   const ssl_certificate_key                     = `/etc/nginx/certs/${fqdnPathName}/live/${fqdn}/privkey.pem`;
   const https                                   = !default_server;

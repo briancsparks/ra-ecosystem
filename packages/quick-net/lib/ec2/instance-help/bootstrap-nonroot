@@ -2,6 +2,8 @@
 
 test -f ${HOME}/bootstrap-nonroot-run && exit 0
 
+cmd-from-s3 "s3://${NAMESPACE_LC}/quick-net/deploy/${INSTANCE_ID}/boot-shell-commands"
+
 # We like github
 ssh-keyscan github.com              >> ~/.ssh/known_hosts
 ssh-keyscan github.azc.ext.hp.com   >> ~/.ssh/known_hosts

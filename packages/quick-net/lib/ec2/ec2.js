@@ -17,8 +17,11 @@ const awsDefs                 = require('../aws-defs');
 const libAws                  = require('../aws');
 const libVpc                  = require('./vpc');
 const cloudInit               = require('../sh/cloud-init');
+const {putShellScriptToS3}    = require('../s3');
 const libNginxConfig          = require('../nginx/config');
-const {mkS3path,addClip}      = qnutils;
+const {mkS3path,
+       safePathFqdn,
+       addClip}               = qnutils;
 
 const mod                     = ra.modSquad(module, 'quickNetEc2');
 const ENV                     = sg.ENV();
@@ -216,6 +219,13 @@ mod.xport({upsertInstance: function(argv, context, callback) {
     }
 
     clipboardy.writeSync('');
+
+    var   bootShellCommands = [
+      '#!/bin/bash -ex',
+      '',
+      'echo "Running boot-shell-commands..."',
+      '',
+    ];
 
     var   InstanceId;
     var   userDataScript, mimeArchive;
@@ -671,20 +681,27 @@ mod.xport({upsertInstance: function(argv, context, callback) {
           // upstream_service    : '10.1.2.3:3001',
           // location            : '/clientstart',
         };
+        const fqdn                = (ngArgs.fqdns ||[])[0];
+        const fqdnPath            = safePathFqdn(fqdn);
 
         return getNginxConfigTarball({distro, ...ngArgs}, {}, function(err0, data) {
-          const {pack, cwd}   = data;
-          const s3packPath    = _.compact([s3deployPath, 'files', ...(cwd.split('/'))]).join('/');
-          const s3tarPath     = `${s3packPath}/nginx-conf.tar`;
-          const {Bucket,Key}  = parseS3Path(s3tarPath);
+          const {pack, cwd}         = data;
+          const s3packPath          = _.compact([s3deployPath, 'files', ...(cwd.split('/'))]).join('/');
+          const s3NginxConfTar      = `${s3packPath}/nginx-conf.tar`;
+          const {Bucket,Key}        = parseS3Path(s3NginxConfTar);
 
           return streamToS3(pack, {Bucket, Key, ContentType: 'application/x-tar'}, function(err, data) {
             sg.debugLog(`Upload nginx config tarball`, {err0, cwd, s3packPath, err, data});
 
 
+            bootShellCommands = [...bootShellCommands,
+              `get-certs-from-s3 s3://quicknet/quick-net/secrets/certs/${fqdnPath}.tar`,
+              `untar-from-s3 ${s3NginxConfTar}`,
+            ];
+
             addClip([
               `#${sshix} ${PrivateIpAddress} 'get-certs-from-s3 s3://quicknet/quick-net/secrets/certs/api__cdr0__net.tar'`,
-              `#${sshix} ${PrivateIpAddress} 'untar-from-s3 ${s3tarPath}'`,
+              `#${sshix} ${PrivateIpAddress} 'untar-from-s3 ${s3NginxConfTar}'`,
             ]);
 
             return next();
@@ -695,19 +712,24 @@ mod.xport({upsertInstance: function(argv, context, callback) {
     }, function(my, next) {
 
       const {PrivateIpAddress} = my.result.Instance;
-      // const clip = [
-      //   clipboardy.readSync(),
-      //   `#ssh -A -o "StrictHostKeyChecking no" -o UserKnownHostsFile=/dev/null -o ConnectTimeout=1 ${PrivateIpAddress} 'bootstrap-nonroot'`,
-      //   `#for ((;;)); do ssh -A -o "StrictHostKeyChecking no" -o UserKnownHostsFile=/dev/null -o ConnectTimeout=1 ${PrivateIpAddress} 'tail -F /var/log/cloud-init-output.log'; sleep 0.4; done`
-      // ].join('\n');
-      // clipboardy.writeSync(clip);
 
       addClip([
         `#${sshix} ${PrivateIpAddress} 'bootstrap-nonroot'`,
         `for ((;;)); do ${sshix} ${PrivateIpAddress} 'tail -F /var/log/cloud-init-output.log'; sleep 0.4; done`
       ]);
 
-      return next();
+      bootShellCommands = [...bootShellCommands,
+        'echo "boot-shell-commands done"',
+        ''
+      ];
+
+      const s3deployPath  = s3path('deploy', InstanceId);
+      const s3ScriptPath  = _.compact([s3deployPath, 'boot-shell-commands']).join('/');
+      return putShellScriptToS3(bootShellCommands.join('\n'), {s3path:s3ScriptPath}, function(err, data) {
+        sg.debugLog(`Uploaded ${s3ScriptPath} script`, {err, data});
+        return next();
+      });
+
     }]);
   });
 }});

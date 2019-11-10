@@ -13,7 +13,12 @@ const ENV                     = sg.ENV();
 exports.addClip = function(arr) {
   const clip = _.compact([clipboardy.readSync(), ...arr]).join('\n');
   clipboardy.writeSync(clip);
-}
+};
+
+exports.safePathFqdn = function(fqdn) {
+  if (sg.isnt(fqdn))    { return fqdn; }
+  return fqdn.replace(/[.]/g, '__');
+};
 
 
 /**
