@@ -17,6 +17,7 @@ const awsDefs                 = require('../aws-defs');
 const libAws                  = require('../aws');
 const libVpc                  = require('./vpc');
 const cloudInit               = require('../sh/cloud-init');
+const {setARecord}            = require('../route53');
 const {putShellScriptToS3}    = require('../s3');
 const libNginxConfig          = require('../nginx/config');
 const {mkS3path,
@@ -668,6 +669,7 @@ mod.xport({upsertInstance: function(argv, context, callback) {
 
       }, function(next) {
         if (!userdataOpts.INSTALL_WEBTIER)    { return next(); }
+
         const {PrivateIpAddress} = my.result.Instance;
 
         // --location=/clientstart --upstream=clients --upstream-service=10.1.2.3:3001
@@ -681,7 +683,7 @@ mod.xport({upsertInstance: function(argv, context, callback) {
           // upstream_service    : '10.1.2.3:3001',
           // location            : '/clientstart',
         };
-        const fqdn                = (ngArgs.fqdns ||[])[0];
+        const fqdn                = my.result.fqdn = (ngArgs.fqdns ||[])[0];
         const fqdnPath            = safePathFqdn(fqdn);
 
         return getNginxConfigTarball({distro, ...ngArgs}, {}, function(err0, data) {
@@ -711,6 +713,9 @@ mod.xport({upsertInstance: function(argv, context, callback) {
 
     }, function(my, next) {
 
+      // -------------------------------------------------------------------------------------------------------
+      // Write commands to a script file that will be run before the non-root bootstrap
+
       const {PrivateIpAddress} = my.result.Instance;
 
       addClip([
@@ -721,12 +726,28 @@ mod.xport({upsertInstance: function(argv, context, callback) {
       bootShellCommands = [...bootShellCommands,
         'echo "boot-shell-commands done"',
         ''
-      ];
+      ].join('\n');
 
-      const s3deployPath  = s3path('deploy', InstanceId);
-      const s3ScriptPath  = _.compact([s3deployPath, 'boot-shell-commands']).join('/');
-      return putShellScriptToS3(bootShellCommands.join('\n'), {s3path:s3ScriptPath}, function(err, data) {
-        sg.debugLog(`Uploaded ${s3ScriptPath} script`, {err, data});
+      const s3filepath  = _.compact([s3path('deploy', InstanceId), 'boot-shell-commands']).join('/');
+      return putShellScriptToS3(bootShellCommands, {s3filepath}, function(err, data) {
+        sg.debugLog(`Uploaded script ${s3filepath} script`, {err, data});
+        return next();
+      });
+
+    }, function(my, next) {
+
+      // -------------------------------------------------------------------------------------------------------
+      // Set the A record
+
+      if (!my.result.fqdn)    { return next(); }
+
+      const {PublicIpAddress}       = my.result.Instance;
+      var   [subdomain, ...domain]  = my.result.fqdn.split('.');
+      domain = domain.join('.');
+
+      const params = {subdomain, domain, ip: PublicIpAddress, fireAndForget: true};
+      return setARecord(params, {}, function(err, data) {
+        sg.debugLog(`set A record ${subdomain}.${domain} (${PublicIpAddress})`, {params, err, data});
         return next();
       });
 
@@ -876,6 +897,9 @@ function fixUserDataScript(shellscript_, options_) {
       var newlines = sg.reduce(_.isObject(userdataOpts) ? userdataOpts : {}, [], (m, v, k) => {
 
         // For example, `set INSTALL_DOCKER="1"`  or `unset INSTALL_DOCKER`
+        if (k.toUpperCase().startsWith('INSTALL_') && !k.toUpperCase().endsWith('_NO')) {
+          userdataEnv[k] = "1";
+        }
 
         var   newline = `${k}="${v === true ? '1' : v}"`;
         if (v === false) {

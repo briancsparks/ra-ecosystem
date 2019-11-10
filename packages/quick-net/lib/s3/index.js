@@ -184,12 +184,12 @@ function streamThroughFileToS3(readStream, argv, callback) {
 }
 
 // ----------------------------------------------------------------------------------------------------
-function copyFileToS3(pathname, s3path, callback) {
+function copyFileToS3(pathname, s3filepath, callback) {
   const filename = _last(pathname.split(/[\\/]/));
-  const {Bucket,Key} = parseS3Path(`${s3path}/${filename}`);
+  const {Bucket,Key} = parseS3Path(`${s3filepath}/${filename}`);
 
-  if (!Bucket)    { dg.e(`NoBucket`, `sending uplaod`, {Bucket,Key,pathname,s3path}); return callback(`NoBucket`); }
-  if (!Key)       { dg.e(`NoKey`,    `sending uplaod`, {Bucket,Key,pathname,s3path}); return callback(`NoKey`); }
+  if (!Bucket)    { dg.e(`NoBucket`, `sending uplaod`, {Bucket,Key,pathname,s3filepath}); return callback(`NoBucket`); }
+  if (!Key)       { dg.e(`NoKey`,    `sending uplaod`, {Bucket,Key,pathname,s3filepath}); return callback(`NoKey`); }
 
   return _copyFileToS3_(pathname, {Bucket, Key}, function(err, data) {
     return callback(err, data);
@@ -228,8 +228,8 @@ function _streamToS3_(Body, {Bucket, Key, ContentType ='application/json'}, call
 
 // ----------------------------------------------------------------------------------------------------
 function putContentToS3(Body, params, callback) {
-  var {Bucket,Key,s3path} = findBucketKeyAndPath(params);
-  var ContentType         = mime.getType(s3path);
+  var {Bucket,Key,s3filepath}   = findBucketKeyAndPath(params);
+  var ContentType               = mime.getType(s3filepath);
   return putMimeContentToS3(Body, {...params, ContentType}, callback);
 }
 
@@ -259,8 +259,8 @@ function putJavascriptToS3(Body, params, callback) {
 }
 
 // ----------------------------------------------------------------------------------------------------
-function parseS3Path(s3path) {
-  const m = s3path.match(/s3:[/][/]([^/]+)[/](.*)/);
+function parseS3Path(s3filepath) {
+  const m = s3filepath.match(/s3:[/][/]([^/]+)[/](.*)/);
   if (!m) { return; }
 
   const Bucket = m[1];
@@ -274,8 +274,8 @@ function parseS3Path(s3path) {
 function getBucketAndKey(argv) {
   dg.tbd(`diagctx`, `getBucketAndKey`, '', {argv});
 
-  var   s3path              = argv.s3path;
-  var   {Bucket,Key}        = parseS3Path(s3path);
+  var   s3filepath          = argv.s3path || argv.s3filepath || argv.path || argv.s3 || argv.filename || argv.name;
+  var   {Bucket,Key}        = parseS3Path(s3filepath);
 
   Bucket  = argv.Bucket     || Bucket;
   Key     = argv.Key        || Key;
@@ -292,11 +292,11 @@ function findBucketKeyAndPath(argv) {
   // Try to get from Bucket and Key params
   var {Bucket,Key} = argv;
   if (!Bucket || !Key) {
-    ({Bucket,Key}       = parseS3Path(argv.s3path || argv.path || argv.s3 || argv.filename || argv.name));
+    ({Bucket,Key}       = parseS3Path(argv.s3path || argv.s3filepath || argv.path || argv.s3 || argv.filename || argv.name));
   }
 
   dg.tbd(`diagctx`, `getBucketAndKey2`, '', {argv, Bucket,Key});
-  return {Bucket, Key, s3path: `s3://${Bucket}${Key}`};
+  return {Bucket, Key, s3filepath: `s3://${Bucket}${Key}`};
 }
 
 
