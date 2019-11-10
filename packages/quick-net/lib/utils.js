@@ -6,8 +6,14 @@ const sg0                     = ra.get3rdPartyLib('sg-flow');
 const sg                      = sg0.merge(sg0, require('sg-env'));
 const { _ }                   = sg;
 const os                      = require('os');
+const clipboardy              = require('clipboardy');
 
 const ENV                     = sg.ENV();
+
+exports.addClip = function(arr) {
+  const clip = _.compact([clipboardy.readSync(), ...arr]).join('\n');
+  clipboardy.writeSync(clip);
+}
 
 
 /**
@@ -28,7 +34,7 @@ const ENV                     = sg.ENV();
  */
 exports.namespacedPath = function(proto_, first, pre, tween, type, path, namespace_, options ={sep:'/'}) {
   const proto     = proto_ ? (proto_.endsWith('://') ? proto_ : proto_+'://') : '';
-  const namespace = namespace_ || ENV.at('NAMESPACE') || 'projectx';
+  const namespace = namespace_ || ENV.lc('NAMESPACE') || 'quicknet';
   const splt      = mkBreakApart(proto, first, options);
 
   var parts = [first, ...splt(pre), namespace, ...splt(tween), 'quick-net', ...splt(type), ...splt(path)];

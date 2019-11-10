@@ -12,6 +12,7 @@ const crypto                  = require('crypto');
 const fs                      = require('fs');
 const os                      = require('os');
 const path                    = require('path');
+const mime                    = require('mime');
 const { awsService }          = require('../aws');
 const s3                      = awsService('S3');
 const _last                   = sg._.last;
@@ -31,6 +32,13 @@ module.exports._copyFileToS3_         = _copyFileToS3_;
 module.exports._streamToS3_           = _streamToS3_;
 module.exports.parseS3Path            = parseS3Path;
 module.exports.s3ExpiringTransferPath = s3ExpiringTransferPath;
+module.exports.putMimeContentToS3     = putMimeContentToS3;
+module.exports.putContentToS3         = putContentToS3;
+module.exports.putShellScriptToS3     = putShellScriptToS3;
+module.exports.putTarToS3             = putTarToS3;
+module.exports.putJsonToS3            = putJsonToS3;
+module.exports.putJsonLdToS3          = putJsonLdToS3;
+module.exports.putJavascriptToS3      = putJavascriptToS3;
 
 
 // =======================================================================================================
@@ -157,6 +165,13 @@ function _putClientJsonToS3_(Body, {Bucket, Key}, callback) {
 
 
 // ----------------------------------------------------------------------------------------------------
+function putMimeContentToS3(Body, {ContentType, ...rest}, callback) {
+  var {Bucket, Key} = findBucketKeyAndPath({...rest});
+  return _streamToS3_(Body, {ContentType, Bucket, Key}, callback);
+}
+
+
+// ----------------------------------------------------------------------------------------------------
 var uniq = 0;
 function streamThroughFileToS3(readStream, argv, callback) {
   const pathname = path.join(os.tmpdir(), `stream-through-file-to-s3-${uniq++}`);
@@ -198,7 +213,7 @@ function _streamToS3_(Body, {Bucket, Key, ContentType ='application/json'}, call
   var upload = s3.upload({Bucket, Key, Body, ContentType}, {partSize: 6 * 1024 * 1024});
 
   upload.on('httpUploadProgress', (progress) => {
-    dg.v(`uploading file`, {progress});
+    dg.v(`uploading file s3://${Bucket}${Key}`, {progress});
   });
 
   upload.send(function(err, data) {
@@ -208,6 +223,39 @@ function _streamToS3_(Body, {Bucket, Key, ContentType ='application/json'}, call
 
     return callback(err, data);
   });
+}
+
+
+// ----------------------------------------------------------------------------------------------------
+function putContentToS3(Body, params, callback) {
+  var {Bucket,Key,s3path} = findBucketKeyAndPath(params);
+  var ContentType         = mime.getType(s3path);
+  return putMimeContentToS3(Body, {...params, ContentType}, callback);
+}
+
+// ----------------------------------------------------------------------------------------------------
+function putShellScriptToS3(Body, params, callback) {
+  return putMimeContentToS3(Body, {...params, ContentType: 'application/x-sh'}, callback);
+}
+
+// ----------------------------------------------------------------------------------------------------
+function putTarToS3(Body, params, callback) {
+  return putMimeContentToS3(Body, {...params, ContentType: 'application/x-tar'}, callback);
+}
+
+// ----------------------------------------------------------------------------------------------------
+function putJsonToS3(Body, params, callback) {
+  return putMimeContentToS3(Body, {...params, ContentType: 'application/json'}, callback);
+}
+
+// ----------------------------------------------------------------------------------------------------
+function putJsonLdToS3(Body, params, callback) {
+  return putMimeContentToS3(Body, {...params, ContentType: 'application/ld+json'}, callback);
+}
+
+// ----------------------------------------------------------------------------------------------------
+function putJavascriptToS3(Body, params, callback) {
+  return putMimeContentToS3(Body, {...params, ContentType: 'text/javascript'}, callback);
 }
 
 // ----------------------------------------------------------------------------------------------------
@@ -222,6 +270,7 @@ function parseS3Path(s3path) {
 }
 
 // ----------------------------------------------------------------------------------------------------
+// findBucketKeyAndPath is better
 function getBucketAndKey(argv) {
   dg.tbd(`diagctx`, `getBucketAndKey`, '', {argv});
 
@@ -237,16 +286,31 @@ function getBucketAndKey(argv) {
 
 
 // ----------------------------------------------------------------------------------------------------
-function s3ExpiringTransferPath(pre, fname, secs) {
+function findBucketKeyAndPath(argv) {
+  dg.tbd(`diagctx`, `getBucketAndKey`, '', {argv});
+
+  // Try to get from Bucket and Key params
+  var {Bucket,Key} = argv;
+  if (!Bucket || !Key) {
+    ({Bucket,Key}       = parseS3Path(argv.s3path || argv.path || argv.s3 || argv.filename || argv.name));
+  }
+
+  dg.tbd(`diagctx`, `getBucketAndKey2`, '', {argv, Bucket,Key});
+  return {Bucket, Key, s3path: `s3://${Bucket}${Key}`};
+}
+
+
+// ----------------------------------------------------------------------------------------------------
+function s3ExpiringTransferPath(fname, secs) {
   const expiry = ''+ (new Date().getTime() + (secs * 1000));
-  return s3ify(`${pre.toLowerCase()}/xfer/until/${expiry}/${fname}`);
+  return `${expiry}/${fname}`;
 }
 
-function s3ify(path) {
-  if (path.toLowerCase().startsWith('s3://'))     { return path; }
+// function s3ify(path) {
+//   if (path.toLowerCase().startsWith('s3://'))     { return path; }
 
-  return `s3://${path}`;
-}
+//   return `s3://${path}`;
+// }
 
 // ----------------------------------------------------------------------------------------------------
 function getBody(argv, context) {

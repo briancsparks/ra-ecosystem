@@ -27,5 +27,13 @@ function ENV(...args) {
   self.at = function(name) {
     if (name in process.env)      { return sg.smartValue(process.env[name]); }
   };
+
+  self.lc = function(name) {
+    if (name in process.env)      { return process.env[name].toLowerCase(); }
+  };
+
+  self.UC = function(name) {
+    if (name in process.env)      { return process.env[name].toUpperCase(); }
+  };
 }
 

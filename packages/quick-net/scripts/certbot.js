@@ -8,8 +8,9 @@ const {mkQuickNetPath}        = require('../lib/utils');
 const tarfs                   = require('tar-fs');
 
 const ENV                     = sg.ENV();
-const certsS3Path             = mkQuickNetPath('s3', ENV.at('NAMESPACE_LC'), 'secrets/certs');
-// const certsS3                 = SgDir(mkQuickNetPath('s3', ENV.at('NAMESPACE_LC'), 'secrets/certs'));
+const namespace               = ENV.lc('NAMESPACE') || 'quicknet';
+
+const s3CertsPath             = mkQuickNetPath('s3', namespace, 'secrets/certs');
 
 module.exports.getCert        = util.callbackify(getCert);
 module.exports.async          = {};
@@ -18,7 +19,7 @@ module.exports.async.getCert  = getCert;
 
 // --auth-domain=cdr0.net --domains=api.cdr0.net --emails=briancsparks@gmail.com
 async function getCert(argv, context) {
-  // if (!sh.which('certbot'))           { throw sg.toError(`ENOENT: certbot`); }
+  if (!sh.which('certbot'))           { throw sg.toError(`ENOENT: certbot`); }
 
   var   pack, certbotStdout;
   var   authDomain    = argv.auth_domain;
@@ -34,7 +35,7 @@ async function getCert(argv, context) {
   const params        = certbotParams(authDomain, domains, emails, certPath);
 
   const certsTar      = tardir.file(`${fqdnPathName}.tar`);
-  const certsS3tar    = certsS3Path(`${fqdnPathName}.tar`);
+  const certsS3tar    = s3CertsPath(`${fqdnPathName}.tar`);
 
   console.log(`params`, {params, certsS3tar});
 
@@ -42,13 +43,14 @@ async function getCert(argv, context) {
   // TODO: Check if we already have them, if so, do not call certbot, just return what we already have
 
   if (!test('-d', params.out_dir)) {
-    // certbotStdout    = await execa.stdout(sh.which('certbot').toString(), params.params, {cwd: __dirname});
-    // console.log(sg.splitLn(certbotStdout));
+    certbotStdout    = await execa.stdout(sh.which('certbot').toString(), params.params, {cwd: __dirname});
+    console.log(sg.splitLn(certbotStdout));
   }
 
   if (test('-d', params.out_dir)) {
     pack = tarfs.pack(certPath, {
       map: (header) => {
+        header.name = [fqdnPathName, header.name].join('/');
         console.log(`fs`, {header});
         return header;
       },

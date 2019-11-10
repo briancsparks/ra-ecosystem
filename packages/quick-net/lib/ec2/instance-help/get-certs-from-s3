@@ -1,0 +1,7 @@
+#!/bin/bash -e
+
+S3_PATH="$1"
+shift
+
+sudo mkdir -p /etc/nginx/certs && cd $_
+aws s3 cp $S3_PATH - | sudo tar --same-owner -xv -f -

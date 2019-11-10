@@ -48,6 +48,7 @@
     "js-yaml": "^3.13.1",
     "kubernetes-client": "^8.2.0",
     "loud-rejection": "^1.6.0",
+    "mime": "^2.4.4",
     "pem": "^1.14.2",
     "qs": "^6.7.0",
     "run-anywhere": "^1.0.119",

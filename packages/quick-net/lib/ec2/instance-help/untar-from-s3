@@ -15,17 +15,30 @@ die() {
 
 # -----------------------------
 
+set +e
+S3_PATH="$1"
+shift
+workdir="$1"
+shift
+command="$@"
+set -e
+
 # Make the temp dir
 mkdir -p "${tdir}"
 test -d "${tdir}"                                                   || die "untar-from-s3 cannot create temp dir at $tdir"
 
 # Copy it down from S3, get the `manifest.json` file
-aws s3 cp $1 "$tdir/it.tar"
+aws s3 cp $S3_PATH "$tdir/it.tar"
+
+set +e
 tar -xO -f "$tdir/it.tar" manifest.json > "$tdir/manifest.json"
-test -f "$tdir/manifest.json"                                       || die "untar-from-s3 did not find  $tdir/manifest.json"
+# test -f "$tdir/manifest.json"                                       || die "untar-from-s3 did not find  $tdir/manifest.json"
+set -e
 
 # Get the workdir (the root to which the tar is to be extracted)
-workdir="$(cat "$tdir/manifest.json" | jq -r '.cwd')"
+[[ -n "$workdir" ]] || workdir="$(cat "$tdir/manifest.json" | jq -r '.cwd')"
+
+mkdir -p $workdir
 test -d $workdir                                                    || die "untar-from-s3 cannot find workdir $workdir"
 
 # Untar it, skip the `manifest.json` file
@@ -40,20 +53,23 @@ test -d $workdir                                                    || die "unta
 # cat "$tdir/manifest.json" | jq .
 
 # Run a custom command?
-command="$(cat "$tdir/manifest.json" | jq -r '.command.line')"
-if [[ "$command" != "null" ]]; then
-  # as_sudo="$(cat "$tdir/manifest.json" | jq -r '.command.sudo')"
+[[ -n "$command" ]] || command="$(cat "$tdir/manifest.json" | jq -r '.command.line')"
 
-  # if [[ "$as_sudo" == "true" ]]; then
-  #   echo eval "$command"
-  #   eval "$command"
-  # else
-  #   echo "$command"
-  #   eval "$command"
-  # fi
+if [[ -n "$command" ]]; then
+  if [[ "$command" != "null" ]]; then
+    # as_sudo="$(cat "$tdir/manifest.json" | jq -r '.command.sudo')"
 
-  echo eval "$command"
-  eval "$command"
+    # if [[ "$as_sudo" == "true" ]]; then
+    #   echo eval "$command"
+    #   eval "$command"
+    # else
+    #   echo "$command"
+    #   eval "$command"
+    # fi
+
+    echo eval "$command"
+    eval "$command"
+  fi
 fi
 
 # -----------------------------

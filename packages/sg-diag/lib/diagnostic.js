@@ -316,12 +316,30 @@ function Diagnostic(ctorArgs ={}) {
     return self.infoOut(2, msg, ...rest);
   };
 
+  /**
+   * Logs [msg, ...rest] just like `i`, if the `feature` is not ignored.
+   *
+   * Allows doing console.log('asdfasf[1-X]', ...) debugging, but using DIAGs more
+   * sophisticated feature set. Also allows ignoring all such items for a given
+   * feature.
+   *
+   * Search for diag.tbd, dg.tbd, and/or any of the names.
+   * Search for tbd\(.diagctx., for diagctx, with regex.
+   *
+   * @param {*} feature - All logs from a feature should have the same name.
+   * @param {*} id      - All logs from a feature should have unique IDs. A filename-ish and number are good.
+   * @param {*} msg_    - `msg` param like for `i`.
+   * @param {*} rest    - `...rest` param like for `i`.
+   * @returns
+   */
   self.tbd = function(feature, id, msg_, ...rest) {
     msgArgv = msgArgv || self.getArgv(ctorArgs);
     if (msgArgv.quiet) { return; }
 
-    // TODO: Fix diagctx and remove this comment
-    if (feature === 'diagctx')  { return; }
+    // List of ignored features
+
+    // if (feature === 'diagctx')  { return; }
+    if (':diagctx:'.indexOf(`:${feature}:`) !== -1)   { return; }
 
     const msg = _.compact([`${feature}-${id}`, msg_]).join('-');
 

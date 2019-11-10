@@ -15,15 +15,17 @@ const path                    = require('path');
 const {streamToS3,
       s3ExpiringTransferPath} = require('../s3');
 var   {globalBlacklistIps}    = require('./snippets/ip-blacklist');
-const {mkS3path}              = qnutils;
+const {mkS3path,
+       addClip,
+       mkQuickNetPath}        = qnutils;
 
 const mod                     = ra.modSquad(module, 'nginx-config');
 const DIAG                    = sg.DIAG(module);
 const ENV                     = sg.ENV();
 
-// const namespace            = ENV.at('NAMESPACE');
-const namespace               = 'quicknet';
-const s3path                  = mkS3path(namespace.toLowerCase());
+const namespace               = ENV.lc('NAMESPACE') || 'quicknet';
+const s3path                  = mkS3path(namespace);
+const s3XferPath              = mkQuickNetPath('s3', namespace, 'xfer/until');
 
 // =======================================================================================================
 // saveNginxConfigTarball
@@ -87,7 +89,7 @@ DIAG.activeDevelopment(`--filename=${path.join(os.homedir(), '_aa-nginx-conf')} 
 DIAG.activeDevelopment(`--filename=${path.join(os.homedir(), '_aa-nginx-conf')} --root=/usr/share/nginx/html --location=/clientstart --upstream=clients --upstream-service=10.1.2.3:3001 --fqdns=example.com --debug`);
 DIAG.activeDevelopment(`--sidecar=/clientstart,3009 --root=/usr/share/nginx/html --location=/clientstart --upstream=clients --upstream-service=10.1.2.3:3001 --fqdns=example.com --debug`);
 DIAG.activeDevelopment(`--type=qnwebtier --rpxi-port=3009 --debug`);
-// DIAG.activeName = 'saveNginxConfigTarballToS3';
+DIAG.activeName = 'saveNginxConfigTarballToS3';
 
 /**
  *
@@ -99,8 +101,8 @@ DIAG.activeDevelopment(`--type=qnwebtier --rpxi-port=3009 --debug`);
  */
 mod.xport(DIAG.xport({saveNginxConfigTarballToS3: function(argv, context, callback) {
   const diag        = DIAG.diagnostic({argv, context, callback});
-  // const namespace   = ENV.at('NAMESPACE');
-  const namespace   = 'quicknet';
+
+  const namespace   = ENV.lc('NAMESPACE') || 'quicknet';
 
   if (!(diag.haveArgs({})))                           { return diag.exit(); }
   // ----------- done checking args
@@ -109,19 +111,23 @@ mod.xport(DIAG.xport({saveNginxConfigTarballToS3: function(argv, context, callba
     if (err) { return callback(err); }
 
     const {pack,cwd,name}   = data;
-    // const s3deployPath            = s3ExpiringTransferPath(`s3://quick-net/deploy/${namespace.toLowerCase()}`, name, 3600);
-    const s3deployPath            = s3ExpiringTransferPath(s3path('deploy', ''), name, 3600);
+    const s3deployPath      = s3XferPath(s3ExpiringTransferPath(name, 3600));
 
-    return streamToS3({Body: pack, s3deployPath, ContentType: 'application/x-tar'}, context, function(err, data) {
+    return streamToS3({Body: pack, s3path:s3deployPath, ContentType: 'application/x-tar'}, context, function(err, data) {
       diag.v(`Upload nginx config tarball`, {cwd, s3deployPath, err, data});
 
       // const clip = sshcmd('ubuntu@bastionIp', sshcmd('webtierIp', `untar-from-s3 ${s3deployPath}`));
-      const bastionIp   = '`instance-by-role qn:roles bastion PublicIpAddress`';
-      const webtierIp   = '`instance-by-role qn:roles webtier PrivateIpAddress`';
-      const clip        = sshcmd(`ubuntu@${bastionIp}`, '"'+sshcmd(`${webtierIp}`, `'untar-from-s3 ${s3deployPath}'`)+'"');
+      // const bastionIp   = '`instance-by-role qn:roles bastion PublicIpAddress`';
+      // const webtierIp   = '`instance-by-role qn:roles webtier PrivateIpAddress`';
+      // const clip        = sshcmd(`ubuntu@${bastionIp}`, '"'+sshcmd(`${webtierIp}`, `'untar-from-s3 ${s3deployPath}'`)+'"');
 
-      clipboardy.writeSync(clip);
-      clipboardy.writeSync(`qnsshixx webtier 'untar-from-s3 ${s3deployPath}'`);
+      // // clipboardy.writeSync(clip);
+      // clipboardy.writeSync([
+      //   clipboardy.readSync(),
+      //   `#qnsshixx webtier 'untar-from-s3 ${s3deployPath}'`
+      // ].join('\n'));
+
+      addClip([`#qnsshixx webtier 'untar-from-s3 ${s3deployPath}'`]);
 
       return callback(err, data);
     });
@@ -279,7 +285,7 @@ const getNginxUpstreamConfig = mod.xport(DIAG.xport({getNginxUpstreamConfig: fun
 
   _.each(fqdns, fqdn => {
     pack.entry({ ...entryDefs(argv), name: `conf.d/upstream-${upstream}.conf` },  getUpstream(argv));
-    pack.entry({ ...entryDefs(argv), name: `conf.d/server-${fqdn}.conf` },        getServerConfig(argv));
+    pack.entry({ ...entryDefs(argv), name: `conf.d/server-${fqdn}.conf` },        getServerConfig(argv).content);
   });
 
   pack.finalize();
@@ -345,7 +351,7 @@ const getNginxGeneralConfig = mod.xport(DIAG.xport({getNginxGeneralConfig: funct
 
   _.each(fqdns, fqdn => {
     pack.entry({ ...entryDefs(argv), name: `conf.d/upstream-${upstream}.conf` },  getUpstream(argv));
-    pack.entry({ ...entryDefs(argv), name: `conf.d/server-${fqdn}.conf` },        getServerConfig(argv));
+    pack.entry({ ...entryDefs(argv), name: `conf.d/server-${fqdn}.conf` },        getServerConfig(argv).content);
   });
 
   pack.finalize();
@@ -359,10 +365,12 @@ const getNginxGeneralConfig = mod.xport(DIAG.xport({getNginxGeneralConfig: funct
 
 DIAG.usage({ aliases: { getNginxQuicknetWebtierConfig: { args: {
   reloadServer:   'reload_server',
+  skipSystem:     'no_system',
+  skipServers:    'no_servers',
 }}}});
 
 // The last one wins. Comment out what you dont want.
-DIAG.activeDevelopment(`--root=/usr/share/nginx/html --location=/clientstart --upstream=clients --upstream-service=10.1.2.3:3001 --fqdns=example.com --debug`);
+DIAG.activeDevelopment(`--skip-system --skip-servers --root=/usr/share/nginx/html --location=/clientstart --upstream=clients --upstream-service=10.1.2.3:3001 --fqdns=example.com --debug`);
 DIAG.activeDevelopment(`--sidecar=/clientstart,3009 --type=qnwebtier --debug`);
 DIAG.activeDevelopment(`--debug`);
 // DIAG.activeName = 'getNginxQuicknetWebtierConfig';
@@ -376,13 +384,14 @@ DIAG.activeDevelopment(`--debug`);
  * @returns
  */
 const getNginxQuicknetWebtierConfig = mod.xport(DIAG.xport({getNginxQuicknetWebtierConfig: function(argv, context, callback) {
-  const diag                    = DIAG.diagnostic({argv,context});
+  const diag                        = DIAG.diagnostic({argv,context});
 
-  const {distro ='ubuntu'}      = argv;
-  const {reloadServer =false}   = diag.args();
-  const {sidecar}               = diag.args();
-  var   {fqdns}                 = diag.args();
-  var   {upstream}              = diag.args();
+  const {distro ='ubuntu'}          = argv;
+  const {reloadServer =false}       = diag.args();
+  const {sidecar}                   = diag.args();
+  var   {fqdns}                     = diag.args();
+  var   {upstream}                  = diag.args();
+  const {skipSystem,skipServers}    = diag.args();
 
   // if (!(diag.haveArgs({fqdns})))                         { return diag.earlyreturn(null, ''); }
   // ----------- done checking args
@@ -393,37 +402,51 @@ const getNginxQuicknetWebtierConfig = mod.xport(DIAG.xport({getNginxQuicknetWebt
 
   var pack = tar.pack();
 
-  pack.entry({ ...entryDefs(argv), name: 'manifest.json' }, JSON.stringify(manifest) +'\n');
+  // ----- manifest.json
+  entry(pack, { ...entryDefs(argv), name: 'manifest.json' }, JSON.stringify(manifest) +'\n');
 
-  pack.entry({ ...entryDefs(argv), name: 'nginx.conf' },                          getNginxConf(argv));
+  // ----- System
+  entry(pack, { ...entryDefs(argv), name: 'nginx.conf' },                          getNginxConf(argv),        skipSystem);
+  entry(pack, { ...entryDefs(argv), name: `conf.d/proxy-params` },                 proxy_params(argv),        skipSystem);
+  entry(pack, { ...entryDefs(argv), name: `conf.d/rpxi` },                         rpxi(argv),                skipSystem);
 
-  pack.entry({ ...entryDefs(argv), name: `conf.d/proxy-params` },                 proxy_params(argv));
-  pack.entry({ ...entryDefs(argv), name: `conf.d/rpxi` },                         rpxi(argv));
+  const defArgv = _.omit(argv, 'fqdns');
+  entry(pack, { ...entryDefs(argv), name: `conf.d/default.conf`},                  getServerConfig(defArgv),  skipSystem);
 
+
+  // ----- Upstreams
   const upstreamConfigs = getUpstreams(diag);
   _.each(upstreamConfigs, (config) => {
     _.each(config, ({upstream,upstream_service,...rest}, name) => {
-      pack.entry({ ...entryDefs(argv), name: `conf.d/upstream-${upstream}.conf` },  getUpstream({upstream,upstream_service,...rest}));
+      entry(pack, { ...entryDefs(argv), name: `conf.d/upstream-${upstream}.conf` },  getUpstream({upstream,upstream_service,...rest}), skipServers);
     });
   });
 
-  var serverConfFname = `conf.d/default.conf`;
-  if (fqdns && fqdns.length > 0) {
-    serverConfFname = `conf.d/server-${fqdns[0]}.conf`;
-  }
 
+  // ----- FQDNS
   var config = {...argv};
   const locations = getLocations(diag);
   if (locations) {
     config = {...config, locations};
   }
 
-  pack.entry({ ...entryDefs(argv), name: serverConfFname},                          getServerConfig(config));
+
+  var fqdnServerConfig = entry(pack, { ...entryDefs(argv), name: `conf.d/server-${fqdns[0]}.conf`},          getServerConfig(config),   skipServers);
+  diag.i(`Config for ${fqdns[0]}`, {fqdnServerConfig});
+
+
 
   pack.finalize();
 
   return callback(null, {ok:true, pack, cwd: manifest.cwd, name: manifest.name});
 }}));
+
+function entry(pack, params, content, skip) {
+  if (skip) { return content; }
+
+  pack.entry(params, _.isString(content) ? content : content.content);
+  return content;
+}
 
 function getLocations(diag) {
   var result = [];
@@ -496,6 +519,11 @@ function entryDefs(argv) {
   return { ...entryDefs_.def, ...(entryDefs_[distro] ||{}), name,size,mode,mtime,type,linkname,uid,gid,uname,gname,devmajor,devminor};
 }
 
+// =======================================================================================================
+
+function __asJSON(params) {
+  return `__asJSON: ${JSON.stringify(params)}`;
+}
 
 // =======================================================================================================
 
@@ -650,15 +678,22 @@ DIAG.usage({ aliases: { _getServerConfig_: { args: {}}}});
 
 function _getServerConfig_(argv, context={}) {
 
-  const {https,root,default_server,client,
+  const {root,default_server,client,
          fqdns,serverNum,location,upstream,
         rpxiPort}                               = argv;
   var   {locations}                             = argv;
   const fqdn                                    = fqdns[0];
+  const fqdnPathName                            = fqdn.replace(/[.]/g, '__');
+  const ssl_certificate                         = `/etc/nginx/certs/${fqdnPathName}/live/${fqdn}/fullchain.pem`;
+  const ssl_certificate_key                     = `/etc/nginx/certs/${fqdnPathName}/live/${fqdn}/privkey.pem`;
+  const https                                   = !default_server;
 
   if (location && upstream) {
     locations = [{location,upstream}];
   }
+
+  // The JSON that made up this content
+  var json = sg.merge({}, {upstream,fqdn,fqdns,default_server,root,https,locations,client,rpxiPort,ssl_certificate_key,ssl_certificate});
 
   // Make sure we handle setting up the root, if we need to
   var handledRoot = !root;
@@ -676,9 +711,12 @@ if (upstream) {
                 # include ${upstream} upstream defs`];
 }
 
+// l=[...l,`
+//                 # _asjson_: ${sg.safeJSONStringify(argv)}`];
+
 l=[...l,`
 
-                # _asjson_: ${sg.safeJSONStringify(argv)}
+                # ${__asJSON(json)}
 
                 # --------------- ${fqdn} ---------------
                 server {
@@ -699,12 +737,12 @@ if (root) {
                   index index.html;`];
 }
 
-if (https) {
+if (https && fqdn !== 'localhost') {
   l=[...l,`
                   ssl_protocols TLSv1.1 TLSv1.2;
                   ssl_ciphers HIGH:!aNULL:!MD5;
-                  ssl_certificate /etc/nginx/ssl/server-${serverNum}/tls.crt;
-                  ssl_certificate_key /etc/nginx/ssl/server-${serverNum}/tls.key;`];
+                  ssl_certificate     ${ssl_certificate};
+                  ssl_certificate_key ${ssl_certificate_key};`];
 }
 
                   // TODO: client certs
@@ -787,7 +825,7 @@ if (root && !handledRoot) {
 l=[...l,`
                 }`];
 
-  return l.join('\n\n') + '\n';
+  return {content: l.join('\n\n') + '\n', json};
 }
 
 // =======================================================================================================

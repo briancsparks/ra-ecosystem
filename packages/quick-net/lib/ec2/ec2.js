@@ -2,7 +2,8 @@ if (process.env.SG_VVVERBOSE) console[process.env.SG_LOAD_STREAM || 'log'](`Load
 
 
 const ra                      = require('run-anywhere').v2;
-const sg                      = ra.get3rdPartyLib('sg-flow');
+const sg0                     = ra.get3rdPartyLib('sg-flow');
+const sg                      = sg0.merge(sg0, require('sg-env'));
 const { _ }                   = sg;
 const { qm }                  = ra.get3rdPartyLib('quick-merge');
 const qnutils                 = require('../../lib/utils');
@@ -17,9 +18,10 @@ const libAws                  = require('../aws');
 const libVpc                  = require('./vpc');
 const cloudInit               = require('../sh/cloud-init');
 const libNginxConfig          = require('../nginx/config');
-const {mkS3path}              = qnutils;
+const {mkS3path,addClip}      = qnutils;
 
 const mod                     = ra.modSquad(module, 'quickNetEc2');
+const ENV                     = sg.ENV();
 
 const awsFilters              = libAws.awsFilters;
 const awsFilter               = libAws.awsFilter;
@@ -29,11 +31,13 @@ const ec2                     = libAws.awsService('EC2');
 const iam                     = libAws.awsService('IAM');
 const s3                      = libAws.awsService('S3');
 
+const sshix                   = `ssh -A -o "StrictHostKeyChecking no" -o UserKnownHostsFile=/dev/null -o ConnectTimeout=1`;
+
+
 const MimeBuilder             = MimeNode;
 
-// const namespace            = ENV.at('NAMESPACE');
-const namespace               = 'quicknet';
-const s3path                  = mkS3path(namespace.toLowerCase());
+const namespace               = ENV.lc('NAMESPACE') || 'quicknet';
+const s3path                  = mkS3path(namespace);
 
 /**
  * Gets a list of AMIs.
@@ -181,7 +185,14 @@ mod.xport({upsertInstance: function(argv, context, callback) {
     const moreShellScript       = rax.arg(argv, 'moreshellscript')                || '';
     const cloudInitData         = rax.arg(argv, 'cloudInit,ci')                   || {};
     const roleKeys              = rax.arg(argv, 'roleKeys');
-    const SourceDestCheck       = !!rax.arg(argv, 'SourceDestCheck');
+
+    // What can be done with ModifyInstanceAttribute
+    const SourceDestCheck                       = !!rax.arg(argv, 'SourceDestCheck');
+    const EnaSupport                            = !!rax.arg(argv, 'EnaSupport');
+    const DisableApiTermination                 = !!rax.arg(argv, 'DisableApiTermination');
+    const EbsOptimized                          = !!rax.arg(argv, 'EbsOptimized');
+    const Terminate                             = rax.arg(argv,   'Terminate');
+    var   InstanceInitiatedShutdownBehavior     = rax.arg(argv,   'InstanceInitiatedShutdownBehavior') || (Terminate && 'terminate'); // Stop or Terminate
 
     const namespace = process.env.NAMESPACE || process.env.NS || 'quicknet';
 
@@ -203,6 +214,8 @@ mod.xport({upsertInstance: function(argv, context, callback) {
         BlockDeviceMappings = [{DeviceName: '/dev/sda1', Ebs:{VolumeSize: rootVolumeSize}}];
       }
     }
+
+    clipboardy.writeSync('');
 
     var   InstanceId;
     var   userDataScript, mimeArchive;
@@ -611,13 +624,29 @@ mod.xport({upsertInstance: function(argv, context, callback) {
         return next();
       });
 
+    // }, function(my, next) {
+    //   // Must be stopped
+    //   if (!EnaSupport)    { return next(); }
+    //   return modifyInstanceAttribute({InstanceId, EnaSupport: {Value: EnaSupport}}, rax.opts({}), next);
+
+    }, function(my, next) {
+      if (DisableApiTermination)    { return next(); }
+      return modifyInstanceAttribute({InstanceId, DisableApiTermination: {Value: DisableApiTermination}}, rax.opts({}), next);
+
+    }, function(my, next) {
+      if (!EbsOptimized)    { return next(); }
+      return modifyInstanceAttribute({InstanceId, EbsOptimized: {Value: EbsOptimized}}, rax.opts({}), next);
+
+    }, function(my, next) {
+      if (!InstanceInitiatedShutdownBehavior)    { return next(); }
+      return modifyInstanceAttribute({InstanceId, InstanceInitiatedShutdownBehavior: {Value: InstanceInitiatedShutdownBehavior}}, rax.opts({}), next);
+
+
     }, function(my, next) {
 
       // Put stuff on S3 for the instance
-      const utilFiles = 'bootstrap,bootstrap-nonroot,untar-from-s3,cmd-from-s3,sshix,qn-hosts'.split(',');
-
-      // const s3deployPath = `s3://quick-net/deploy/${namespace.toLowerCase()}/${InstanceId}`;
-      const s3deployPath = s3path('deploy', InstanceId);
+      const utilFiles     = 'bootstrap,bootstrap-nonroot,untar-from-s3,cmd-from-s3,sshix,qn-hosts,get-certs-from-s3'.split(',');
+      const s3deployPath  = s3path('deploy', InstanceId);
 
       return sg.__run2(next, [function(next) {
         return sg.__eachll(utilFiles, function(filename, next) {
@@ -629,14 +658,15 @@ mod.xport({upsertInstance: function(argv, context, callback) {
 
       }, function(next) {
         if (!userdataOpts.INSTALL_WEBTIER)    { return next(); }
+        const {PrivateIpAddress} = my.result.Instance;
 
         // --location=/clientstart --upstream=clients --upstream-service=10.1.2.3:3001
         const ngArgs = {
           reloadServer        : false,
           type                : 'qnwebtier',
-          rpxiPort            : 3009
+          rpxiPort            : 3009,
+          fqdns               : 'api.cdr0.net'.split(','),
           // sidecar             : '/clientstart,3009',
-          // fqdns               : 'www.example.com'.split(','),
           // upstream            : 'clients',
           // upstream_service    : '10.1.2.3:3001',
           // location            : '/clientstart',
@@ -645,10 +675,18 @@ mod.xport({upsertInstance: function(argv, context, callback) {
         return getNginxConfigTarball({distro, ...ngArgs}, {}, function(err0, data) {
           const {pack, cwd}   = data;
           const s3packPath    = _.compact([s3deployPath, 'files', ...(cwd.split('/'))]).join('/');
-          const {Bucket,Key}  = parseS3Path(`${s3packPath}/nginx-conf.tar`);
+          const s3tarPath     = `${s3packPath}/nginx-conf.tar`;
+          const {Bucket,Key}  = parseS3Path(s3tarPath);
 
           return streamToS3(pack, {Bucket, Key, ContentType: 'application/x-tar'}, function(err, data) {
             sg.debugLog(`Upload nginx config tarball`, {err0, cwd, s3packPath, err, data});
+
+
+            addClip([
+              `#${sshix} ${PrivateIpAddress} 'get-certs-from-s3 s3://quicknet/quick-net/secrets/certs/api__cdr0__net.tar'`,
+              `#${sshix} ${PrivateIpAddress} 'untar-from-s3 ${s3tarPath}'`,
+            ]);
+
             return next();
           });
         });
@@ -657,11 +695,17 @@ mod.xport({upsertInstance: function(argv, context, callback) {
     }, function(my, next) {
 
       const {PrivateIpAddress} = my.result.Instance;
-      const clip = [
-        `#ssh -A -o "StrictHostKeyChecking no" -o UserKnownHostsFile=/dev/null -o ConnectTimeout=1 ${PrivateIpAddress} 'bootstrap-nonroot'`,
-        `for ((;;)); do ssh -A -o "StrictHostKeyChecking no" -o UserKnownHostsFile=/dev/null -o ConnectTimeout=1 ${PrivateIpAddress} 'tail -F /var/log/cloud-init-output.log'; sleep 0.4; done`
-      ].join('\n');
-      clipboardy.writeSync(clip);
+      // const clip = [
+      //   clipboardy.readSync(),
+      //   `#ssh -A -o "StrictHostKeyChecking no" -o UserKnownHostsFile=/dev/null -o ConnectTimeout=1 ${PrivateIpAddress} 'bootstrap-nonroot'`,
+      //   `#for ((;;)); do ssh -A -o "StrictHostKeyChecking no" -o UserKnownHostsFile=/dev/null -o ConnectTimeout=1 ${PrivateIpAddress} 'tail -F /var/log/cloud-init-output.log'; sleep 0.4; done`
+      // ].join('\n');
+      // clipboardy.writeSync(clip);
+
+      addClip([
+        `#${sshix} ${PrivateIpAddress} 'bootstrap-nonroot'`,
+        `for ((;;)); do ${sshix} ${PrivateIpAddress} 'tail -F /var/log/cloud-init-output.log'; sleep 0.4; done`
+      ]);
 
       return next();
     }]);

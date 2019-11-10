@@ -6,16 +6,30 @@ test -f ${HOME}/bootstrap-nonroot-run && exit 0
 ssh-keyscan github.com              >> ~/.ssh/known_hosts
 ssh-keyscan github.azc.ext.hp.com   >> ~/.ssh/known_hosts
 
+# Get Node.js modules
 mkdir -p run && cd $_
 
 git clone git@github.com:briancsparks/ra-ecosystem
 cd ra-ecosystem
 git checkout feature/stack
 
-cd apps/lambda-net
-npm i
+if which nginx; then
+  # ---- lambda-net
+  cd apps/lambda-net
+  npm i
 
-export NO_REDIS=1
-pm2 start server.js
+  export NO_REDIS=1
+  pm2 start server.js
+
+  # Is nginx running?
+  if ps aux | egrep -v grep | egrep nginx; then
+    sudo nginx -t && sudo nginx -s reload
+  else
+    sudo nginx -t && sudo nginx
+  fi
+
+  echo "Nginx processes:"
+  ps aux | egrep -v grep | egrep nginx
+fi
 
 echo "true" > ${HOME}/bootstrap-nonroot-run

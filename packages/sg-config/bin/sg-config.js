@@ -13,7 +13,7 @@ const resolvePkg  = require('resolve-pkg');
 
 const ARGV        = sg.ARGV();
 
-console.log(process.argv, process.argv0, {ARGV});
+// console.log(process.argv, process.argv0, {ARGV});
 
 (async function() {
 

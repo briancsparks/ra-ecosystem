@@ -7,16 +7,13 @@ pull_s3() {
   chmod 0755 "/usr/sbin/$1"
 }
 
-aws s3 cp "s3://${NAMESPACE_LC}/quick-net/deploy/${INSTANCE_ID}/untar-from-s3" /usr/sbin
-chmod 0755 /usr/sbin/untar-from-s3
-
 pull_s3 bootstrap-nonroot
+pull_s3 untar-from-s3
 pull_s3 cmd-from-s3
+pull_s3 get-certs-from-s3
 pull_s3 sshix
 pull_s3 qn-hosts
 
-# pwd
-# aws s3 cp "s3://${NAMESPACE_LC}/quick-net/deploy/${INSTANCE_ID}/bootstrap" /tmp
 
 FILES="$(aws s3api list-objects --bucket ${NAMESPACE_LC} --prefix quick-net/deploy/${INSTANCE_ID}/files | jq -r '.Contents[].Key')"
 
