@@ -178,6 +178,98 @@ const getNginxConfigTarball = mod.xport(DIAG.xport({getNginxConfigTarball: funct
 }}));
 
 
+
+
+// =======================================================================================================
+// =======================================================================================================
+// Specific configurations
+// =======================================================================================================
+// =======================================================================================================
+
+
+// =======================================================================================================
+// getNginxQuicknetWebtierConfig
+
+DIAG.usage({ aliases: { getNginxQuicknetWebtierConfig: { args: {
+  reloadServer:   'reload_server',
+  skipSystem:     'no_system',
+  skipServers:    'no_servers',
+}}}});
+
+// The last one wins. Comment out what you dont want.
+DIAG.activeDevelopment(`--skip-system --skip-servers --root=/usr/share/nginx/html --location=/clientstart --upstream=clients --upstream-service=10.1.2.3:3001 --fqdns=example.com --debug`);
+DIAG.activeDevelopment(`--sidecar=/clientstart,3009 --type=qnwebtier --debug`);
+DIAG.activeDevelopment(`--debug`);
+// DIAG.activeName = 'getNginxQuicknetWebtierConfig';
+
+/**
+ *  Gets a tarball that comprises the nginx config for an upstream server.
+ *
+ * @param {*} argv
+ * @param {*} context
+ * @param {*} callback
+ * @returns
+ */
+const getNginxQuicknetWebtierConfig = mod.xport(DIAG.xport({getNginxQuicknetWebtierConfig: function(argv, context, callback) {
+  const diag                        = DIAG.diagnostic({argv,context});
+
+  const {distro ='ubuntu'}          = argv;
+  const {reloadServer =false}       = diag.args();
+  const {sidecar}                   = diag.args();
+  var   {fqdns}                     = diag.args();
+  var   {upstream}                  = diag.args();
+  const {skipSystem,skipServers}    = diag.args();
+
+  // if (!(diag.haveArgs({fqdns})))                         { return diag.earlyreturn(null, ''); }
+  // ----------- done checking args
+
+  fqdns = sg.arrayify(fqdns);
+
+  const manifest = getManifest(diag);
+
+  var pack = tar.pack();
+
+  // ----- manifest.json
+  entry(pack, { ...entryDefs(argv), name: 'manifest.json' }, JSON.stringify(manifest) +'\n');
+
+  // ----- System
+  entry(pack, { ...entryDefs(argv), name: 'nginx.conf' },                          getNginxConf(argv),        skipSystem);
+  entry(pack, { ...entryDefs(argv), name: `conf.d/proxy-params` },                 proxy_params(argv),        skipSystem);
+  entry(pack, { ...entryDefs(argv), name: `conf.d/rpxi` },                         rpxi(argv),                skipSystem);
+
+  const defArgv = _.omit(argv, 'fqdns');
+  entry(pack, { ...entryDefs(argv), name: `conf.d/default.conf`},                  getServerConfig(defArgv),  skipSystem);
+
+
+  // ----- Upstreams
+  const upstreamConfigs = getUpstreams(diag);
+  _.each(upstreamConfigs, (config) => {
+    _.each(config, ({upstream,upstream_service,...rest}, name) => {
+      entry(pack, { ...entryDefs(argv), name: `conf.d/upstream-${upstream}.conf` },  getUpstream({upstream,upstream_service,...rest}), skipServers);
+    });
+  });
+
+
+  // ----- FQDNS
+  var config = {...argv};
+  const locations = getLocations(diag);
+  if (locations) {
+    config = {...config, locations};
+  }
+
+
+  var fqdnServerConfig = entry(pack, { ...entryDefs(argv), name: `conf.d/server-${fqdns[0]}.conf`},          getServerConfig(config),   skipServers);
+  diag.i(`Config for ${fqdns[0]}`, {fqdnServerConfig});
+
+
+
+  pack.finalize();
+
+  return callback(null, {ok:true, pack, cwd: manifest.cwd, name: manifest.name});
+}}));
+
+
+
 // =======================================================================================================
 // getNginxLocalAppServerConfig
 
@@ -362,85 +454,11 @@ const getNginxGeneralConfig = mod.xport(DIAG.xport({getNginxGeneralConfig: funct
 
 
 // =======================================================================================================
-// getNginxQuicknetWebtierConfig
+// =======================================================================================================
+// Helpers
+// =======================================================================================================
+// =======================================================================================================
 
-DIAG.usage({ aliases: { getNginxQuicknetWebtierConfig: { args: {
-  reloadServer:   'reload_server',
-  skipSystem:     'no_system',
-  skipServers:    'no_servers',
-}}}});
-
-// The last one wins. Comment out what you dont want.
-DIAG.activeDevelopment(`--skip-system --skip-servers --root=/usr/share/nginx/html --location=/clientstart --upstream=clients --upstream-service=10.1.2.3:3001 --fqdns=example.com --debug`);
-DIAG.activeDevelopment(`--sidecar=/clientstart,3009 --type=qnwebtier --debug`);
-DIAG.activeDevelopment(`--debug`);
-// DIAG.activeName = 'getNginxQuicknetWebtierConfig';
-
-/**
- *  Gets a tarball that comprises the nginx config for an upstream server.
- *
- * @param {*} argv
- * @param {*} context
- * @param {*} callback
- * @returns
- */
-const getNginxQuicknetWebtierConfig = mod.xport(DIAG.xport({getNginxQuicknetWebtierConfig: function(argv, context, callback) {
-  const diag                        = DIAG.diagnostic({argv,context});
-
-  const {distro ='ubuntu'}          = argv;
-  const {reloadServer =false}       = diag.args();
-  const {sidecar}                   = diag.args();
-  var   {fqdns}                     = diag.args();
-  var   {upstream}                  = diag.args();
-  const {skipSystem,skipServers}    = diag.args();
-
-  // if (!(diag.haveArgs({fqdns})))                         { return diag.earlyreturn(null, ''); }
-  // ----------- done checking args
-
-  fqdns = sg.arrayify(fqdns);
-
-  const manifest = getManifest(diag);
-
-  var pack = tar.pack();
-
-  // ----- manifest.json
-  entry(pack, { ...entryDefs(argv), name: 'manifest.json' }, JSON.stringify(manifest) +'\n');
-
-  // ----- System
-  entry(pack, { ...entryDefs(argv), name: 'nginx.conf' },                          getNginxConf(argv),        skipSystem);
-  entry(pack, { ...entryDefs(argv), name: `conf.d/proxy-params` },                 proxy_params(argv),        skipSystem);
-  entry(pack, { ...entryDefs(argv), name: `conf.d/rpxi` },                         rpxi(argv),                skipSystem);
-
-  const defArgv = _.omit(argv, 'fqdns');
-  entry(pack, { ...entryDefs(argv), name: `conf.d/default.conf`},                  getServerConfig(defArgv),  skipSystem);
-
-
-  // ----- Upstreams
-  const upstreamConfigs = getUpstreams(diag);
-  _.each(upstreamConfigs, (config) => {
-    _.each(config, ({upstream,upstream_service,...rest}, name) => {
-      entry(pack, { ...entryDefs(argv), name: `conf.d/upstream-${upstream}.conf` },  getUpstream({upstream,upstream_service,...rest}), skipServers);
-    });
-  });
-
-
-  // ----- FQDNS
-  var config = {...argv};
-  const locations = getLocations(diag);
-  if (locations) {
-    config = {...config, locations};
-  }
-
-
-  var fqdnServerConfig = entry(pack, { ...entryDefs(argv), name: `conf.d/server-${fqdns[0]}.conf`},          getServerConfig(config),   skipServers);
-  diag.i(`Config for ${fqdns[0]}`, {fqdnServerConfig});
-
-
-
-  pack.finalize();
-
-  return callback(null, {ok:true, pack, cwd: manifest.cwd, name: manifest.name});
-}}));
 
 function entry(pack, params, content, skip) {
   if (skip) { return content; }
@@ -528,10 +546,22 @@ function __asJSON(params) {
 
 // =======================================================================================================
 
+
+
+
+// =======================================================================================================
+// =======================================================================================================
+// Content Generation
+// =======================================================================================================
+// =======================================================================================================
+
+
 // TODO:
 // See: https://www.nginx.com/blog/tuning-nginx/
 // worker_process should be `auto` if we are using new enough nginx version; # cores; or > # cores for I/O intensive
 
+// =======================================================================================================
+// getNginxConf
 function getNginxConf(argv) {
   const {
     worker_process =1,                              // Or 'auto'
@@ -616,6 +646,7 @@ l=[...l,`
 }
 
 // =======================================================================================================
+// getUpstream
 DIAG.usage({ aliases: { getUpstream: { args: {}}}});
 
 function getUpstream(argv, context={}) {
@@ -635,6 +666,7 @@ function getUpstream(argv, context={}) {
 
 
 // =======================================================================================================
+// getServerConfig
 DIAG.usage({ aliases: { getServerConfig: { args: {}}}});
 
 function getServerConfig(argv, context={}) {
@@ -675,6 +707,7 @@ function getServerConfig(argv, context={}) {
 }
 
 // =======================================================================================================
+// _getServerConfig_
 DIAG.usage({ aliases: { _getServerConfig_: { args: {}}}});
 
 function _getServerConfig_(argv, context={}) {
@@ -694,7 +727,7 @@ function _getServerConfig_(argv, context={}) {
   }
 
   // The JSON that made up this content
-  var json = sg.merge({}, {upstream,fqdn,fqdns,default_server,root,https,locations,client,rpxiPort,ssl_certificate_key,ssl_certificate});
+  var json = sg.merge({}, {upstream,fqdn,fqdns,default_server,root,https,locations,client,rpxiPort,ssl_certificate_key,ssl_certificate,argv});
 
   // Make sure we handle setting up the root, if we need to
   var handledRoot = !root;
@@ -785,14 +818,6 @@ if (locations) {
   });
 }
 
-// if (location) {
-//   l=[...l,`
-//                   location ~* ${location} {
-//                     include /etc/nginx/conf.d/proxy-params;
-//                     proxy_pass http://${upstream};
-//                   }`];
-// }
-
 if (rpxiPort) {
   handledRoot = true;
 
@@ -830,7 +855,7 @@ l=[...l,`
 }
 
 // =======================================================================================================
-
+// getLocalRevProxyAppServer
 function getLocalRevProxyAppServer(argv) {
 
   const {

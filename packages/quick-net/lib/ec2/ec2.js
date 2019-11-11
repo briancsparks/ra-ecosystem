@@ -144,6 +144,8 @@ mod.xport({upsertInstance: function(argv, context, callback) {
   // TODO: Update hosts with mongo, redis server locations
   // TODO: Make sg.ENV be run-time changable so NO_REDIS can be turned on and off
 
+  // TODO: Can move setARecord earlier, cuz it has public ip
+
   /*
     Ubuntu 16.04 as of 1/25/2019
     ra invoke packages\quick-net\lib\ec2\ec2.js upsertInstance --image=ami-03a935aafa6b52b97 --distro=ubuntu --type=t3.small --key= --sgs= --subnet=
