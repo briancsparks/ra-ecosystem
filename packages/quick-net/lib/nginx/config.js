@@ -259,7 +259,7 @@ const getNginxQuicknetWebtierConfig = mod.xport(DIAG.xport({getNginxQuicknetWebt
 
 
   var fqdnServerConfig = entry(pack, { ...entryDefs(argv), name: `conf.d/server-${fqdns[0]}.conf`},          getServerConfig(config),   skipServers);
-  diag.i(`Config for ${fqdns[0]}`, {fqdnServerConfig});
+  // diag.i(`Config for ${fqdns[0]}`, {fqdnServerConfig});
 
 
 

@@ -42,6 +42,30 @@ module.exports.putJavascriptToS3      = putJavascriptToS3;
 
 
 // =======================================================================================================
+// lsS3
+
+DIAG.usage({aliases:{lsS3:{
+  Bucket :  'bucket'
+}}});
+
+// The last one wins. Comment out what you dont want.
+DIAG.activeDevelopment(`--Bucket=quick-net-ingest-dump`);
+DIAG.activeDevelopment(`--Bucket=quick-net-ingest-dump --debug`);
+// DIAG.activeName = 'lsS3';
+
+mod.xport(DIAG.xport({lsS3: function(argv, context, callback) {
+  const diag            = DIAG.diagnostic({argv, context, callback});
+  var   {Bucket,Key}    = findBucketKeyAndPath(diag.args());
+
+  if (!(diag.haveArgs({Bucket,Key})))                                  { return diag.exit(); }
+
+  return s3.listObjectsV2({...argv, Bucket, Prefix:Key}, function(err, data) {
+    return callback(err, data);
+  });
+}}));
+
+
+// =======================================================================================================
 // streamToS3
 
 DIAG.usage({aliases:{streamToS3:{
@@ -65,9 +89,6 @@ mod.xport(DIAG.xport({streamToS3: function(argv, context, callback) {
 
   return _streamToS3_(Body, {Bucket, Key}, callback);
 }}));
-
-
-
 
 
 // =======================================================================================================
@@ -287,7 +308,6 @@ function getBucketAndKey(argv) {
 
 // ----------------------------------------------------------------------------------------------------
 function findBucketKeyAndPath(argv) {
-  dg.tbd(`diagctx`, `getBucketAndKey`, '', {argv});
 
   // Try to get from Bucket and Key params
   var {Bucket,Key} = argv;

@@ -61,7 +61,7 @@ _.each(sg, (fn, name) => {
 // const {sg,fs,path,os,util,sh,die,dieAsync,grepLines,include,from,startupDone,runTopAsync,exec,execa,execz,exec_ez,find,grep,ls,mkdir,SgDir,test,tempdir,inspect} = require('sg-clihelp').all();
 function all() {
   return {
-    sg,
+    sg, sg0:sg,
     fs, path, os, util,
     sh,
     die, dieAsync, grepLines, include, from, startupDone, runTopAsync,

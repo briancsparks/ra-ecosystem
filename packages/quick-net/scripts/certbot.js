@@ -1,14 +1,19 @@
 
-const {sg,fs,path,os,util,sh,die,dieAsync,grepLines,include,from,startupDone,runTopAsync,exec,execa,execz,exec_ez,find,grep,ls,mkdir,SgDir,test,tempdir,inspect} = require('sg-clihelp').all();
+const {sg0,fs,path,os,util,sh,die,dieAsync,grepLines,include,from,startupDone,runTopAsync,exec,execa,execz,exec_ez,find,grep,ls,mkdir,SgDir,test,tempdir,inspect} = require('sg-clihelp').all();
 // const sg                      = require('sg-clihelp');
 // const {fs,path,os,util}       = sg;
 // const { test }                = sg.sh;
 // const {execa}                 = sg;
+const sg                      = sg0.merge(sg0, require('sg-diag'));
 const {safePathFqdn,
        mkQuickNetPath}        = require('../lib/utils');
+const {lsS3}                  = require('../lib/s3').async;
 const tarfs                   = require('tar-fs');
 
+const DIAG                    = sg.DIAG(module);
 const ENV                     = sg.ENV();
+
+const dg                      = DIAG.dg;
 const namespace               = ENV.lc('NAMESPACE') || 'quicknet';
 
 const s3CertsPath             = mkQuickNetPath('s3', namespace, 'secrets/certs');
@@ -28,7 +33,6 @@ async function getCert(argv, context) {
   const fqdn          = domains[0];
   const fqdnPathName  = safePathFqdn(fqdn);
   var   emails        = argv.emails;
-  // var   certdir_      = argv.certdir || path.join(os.homedir(), '.quick-net', 'certs', fqdnPathName);
   var   certdir       = SgDir(argv.certdir) || SgDir(os.homedir(), '.quick-net', 'certs', fqdnPathName);
   var   tardir        = SgDir(argv.certdir) || SgDir(os.homedir(), '.quick-net', 'certs');
   const certPath      = certdir.path;
@@ -38,10 +42,11 @@ async function getCert(argv, context) {
   const certsTar      = tardir.file(`${fqdnPathName}.tar`);
   const certsS3tar    = s3CertsPath(`${fqdnPathName}.tar`);
 
-  console.log(`params`, {params, certsS3tar});
-
   // TODO: Check if it is on S3 already
-  // TODO: Check if we already have them, if so, do not call certbot, just return what we already have
+  const certOnS3  = await lsS3({s3path:certsS3tar}, context);
+  const certsOnS3 = await lsS3({s3path:s3CertsPath('')}, context);
+
+  dg.i(`params`, {params, certsS3tar, certOnS3, certsOnS3});
 
   if (!test('-d', params.out_dir)) {
     certbotStdout    = await execa.stdout(sh.which('certbot').toString(), params.params, {cwd: __dirname});
