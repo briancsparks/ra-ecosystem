@@ -3,7 +3,7 @@ if (process.env.SG_VVVERBOSE) console[process.env.SG_LOAD_STREAM || 'log'](`Load
 
 const ra                      = require('run-anywhere').v2;
 const sg0                     = ra.get3rdPartyLib('sg-flow');
-const sg                      = sg0.merge(sg0, require('sg-env'));
+const sg                      = sg0.merge(sg0, require('sg-env'), require('sg-diag'));
 const { _ }                   = sg;
 const { qm }                  = ra.get3rdPartyLib('quick-merge');
 const qnutils                 = require('../../lib/utils');
@@ -25,7 +25,10 @@ const {mkS3path,
        addClip}               = qnutils;
 
 const mod                     = ra.modSquad(module, 'quickNetEc2');
+const DIAG                    = sg.DIAG(module);
 const ENV                     = sg.ENV();
+
+const dg                      = DIAG.dg;
 
 const awsFilters              = libAws.awsFilters;
 const awsFilter               = libAws.awsFilter;
@@ -134,13 +137,31 @@ mod.xport({getUbuntuLtsAmis: function(argv, context, callback) {
   });
 }});
 
+// =======================================================================================================
+// getNginxQuicknetWebtierConfig
+
+DIAG.usage({ aliases: { upsertInstance: { args: {
+}}}});
+
+DIAG.usefulCliArgs({
+  webiter : [`--distro=ubuntu --classB=13 --iam=quicknetprj-webtier-instance-role --sgs=web  --subnet=webtier --key=quicknetprj_demo`,
+             `--type=t3.micro --az=d      --INSTALL_WEBTIER --INSTALL_CLIENTS --INSTALL_OPS  --Terminate`].join(' '),
+  admin   : [`--distro=ubuntu --classB=13 --iam=quicknetprj-admin-instance-role  --sgs=admin --subnet=admin   --key=HQ`,
+             `--type=t3.nano  --az=d      --INSTALL_ADMIN   --INSTALL_CLIENTS --INSTALL_USER --Terminate`].join(' '),
+  worker  : [`--distro=ubuntu --classB=13 --iam=quicknetprj-worker-instance-role  --sgs=worker --subnet=worker   --key=quicknetprj_demo`,
+             `--type=t3.micro --az=d      --INSTALL_WORKER   --INSTALL_CLIENTS --Terminate`].join(' '),
+});
+
+// The last one wins. Comment out what you dont want.
+DIAG.activeDevelopment(`--debug`);
+// DIAG.activeName = 'upsertInstance';
+
 /**
  * Upsert an instance.
  */
-mod.xport({upsertInstance: function(argv, context, callback) {
+mod.xport(DIAG.xport({upsertInstance: function(argv_, context, callback) {
+  const diag    = DIAG.diagnostic({argv_, context, callback});
 
-  // TODO: Get Mongo working for stack
-  // TODO: Get Redis working for stack
   // TODO: Update hosts with mongo, redis server locations
   // TODO: Make sg.ENV be run-time changable so NO_REDIS can be turned on and off
 
@@ -157,10 +178,15 @@ mod.xport({upsertInstance: function(argv, context, callback) {
   */
 
   // Provide system-wide services
-  // INSTALL_DOCKER, INSTALL_NAT, INSTALL_MONGODB, INSTALL_WEBTIER, INSTALL_KUBERNETES
+  // INSTALL_WEBTIER, INSTALL_NAT, INSTALL_MONGODB, INSTALL_DOCKER, INSTALL_KUBERNETES, INSTALL_CLIENTS
+  // TODO: INSTALL_WORKSTATION
+  // TODO: INSTALL_WORKER
+  // TODO: INSTALL_USER
+  // TODO: INSTALL_ADMIN
   //
-  // Provice add-on functionality
-  // INSTALL_AGENTS, INSTALL_MONGO_CLIENTS,INSTALL_AWSCLI_NO, INSTALL_OPS
+  // Provide add-on functionality
+  // INSTALL_AGENTS, INSTALL_MONGO_CLIENTS, INSTALL_REDIS_CLIENTS, INSTALL_AWSCLI_NO
+  // TODO: INSTALL_OPS -- vimrc, aliases, etc.
 
   const ractx     = context.runAnywhere || {};
   const { rax }   = ractx.quickNetEc2__upsertInstance;
@@ -172,6 +198,14 @@ mod.xport({upsertInstance: function(argv, context, callback) {
     const { getNginxConfigTarball }           = rax.loads(libNginxConfig, 'getNginxConfigTarball', rax.opts({}), abort);
     const { getUbuntuLtsAmis }                = rax.loads('getUbuntuLtsAmis', rax.opts({}), abort);
 
+
+    var   argv                  = {...argv_};
+
+    // INSALL_ meta packages
+    argv.INSTALL_MONGO_CLIENTS  = argv.INSTALL_CLIENTS  || argv.INSTALL_MONGO_CLIENTS;
+    argv.INSTALL_REDIS_CLIENTS  = argv.INSTALL_CLIENTS  || argv.INSTALL_REDIS_CLIENTS;
+    argv.INSTALL_OPS            = argv.INSTALL_USER     || argv.INSTALL_WORKSTATION     || argv.INSTALL_OPS;
+    argv.INSTALL_DOCKER         = argv.INSTALL_WORKER   || argv.INSTALL_DOCKER;
 
     var   AllAwsParams          = sg.reduce(argv, {}, (m,v,k) => ( sg.kv(m, awsKey(k), v) || m ));
 
@@ -206,6 +240,11 @@ mod.xport({upsertInstance: function(argv, context, callback) {
     const EbsOptimized                          = !!rax.arg(argv, 'EbsOptimized');
     const Terminate                             = rax.arg(argv,   'Terminate');
     var   InstanceInitiatedShutdownBehavior     = rax.arg(argv,   'InstanceInitiatedShutdownBehavior') || (Terminate && 'terminate'); // Stop or Terminate
+
+    if (argv.INSTALL_WORKER)           { roles.push('worker'); }
+    if (argv.INSTALL_ADMIN)            { roles.push('admin'); }
+    if (argv.INSTALL_WORKSTATION)      { roles.push('workstation'); }
+
 
     const namespace = process.env.NAMESPACE || process.env.NS || 'quicknet';
 
@@ -459,6 +498,13 @@ mod.xport({upsertInstance: function(argv, context, callback) {
           packages: ['mongodb-clients'],
         });
       }
+
+      if (userdataOpts.INSTALL_REDIS_CLIENTS) {
+        cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
+          packages: ['redis-tools'],
+        });
+      }
+
       // Install kubectl?
 
       // Like:
@@ -623,13 +669,22 @@ mod.xport({upsertInstance: function(argv, context, callback) {
       // -------------------------------------------------------------------------------------------------------
       // Put stuff on S3 for the instance
 
-      const utilFiles     = 'bootstrap,bootstrap-nonroot,untar-from-s3,cmd-from-s3,sshix,qn-hosts,qn-redis,qn-mongo,get-certs-from-s3'.split(',');
+      const utilFiles     = 'bootstrap,bootstrap-nonroot,untar-from-s3,cmd-from-s3,sshix,qn-hosts,qn-redis,qn-mongo,get-certs-from-s3,get-client-certs-from-s3'.split(',');
+      const homeFiles     = '.vimrc'.split(',');
       const s3deployPath  = s3path('deploy', InstanceId);
 
       return sg.__run2(next, [function(next) {
         return sg.__eachll(utilFiles, function(filename, next) {
-          return copyFileToS3(path.join(__dirname, 'instance-help', filename), s3deployPath, function(err, data) {
+          return copyFileToS3(path.join(__dirname, 'instance-help', 'usr-sbin', filename), `${s3deployPath}/usr-sbin`, function(err, data) {
             sg.debugLog(`Uploaded ${filename} script`, {err, data});
+            return next();
+          });
+        }, next);
+
+      }, function(next) {
+        return sg.__eachll(homeFiles, function(filename, next) {
+          return copyFileToS3(path.join(__dirname, 'instance-help', 'home', filename), `${s3deployPath}/home`, function(err, data) {
+            sg.debugLog(`Uploaded ${filename}`, {err, data});
             return next();
           });
         }, next);
@@ -666,6 +721,7 @@ mod.xport({upsertInstance: function(argv, context, callback) {
             bootShellCommands = [...bootShellCommands,
               `get-certs-from-s3 s3://quicknet/quick-net/secrets/certs/${fqdnPath}.tar`,
               `sudo chmod -R a+rx /etc/nginx/certs/${fqdnPath}/`,
+              `get-client-certs-from-s3 s3://quicknet/quick-net/secrets/certs-client/${fqdnPath}-root-client-ca.crt`,
               `untar-from-s3 ${s3NginxConfTar}`,
             ];
 
@@ -702,6 +758,7 @@ mod.xport({upsertInstance: function(argv, context, callback) {
             bootShellCommands = [...bootShellCommands,
               `get-certs-from-s3 s3://quicknet/quick-net/secrets/certs/${fqdnPath}.tar`,
               `sudo chmod -R a+rx /etc/nginx/certs/${fqdnPath}/`,
+              `get-client-certs-from-s3 s3://quicknet/quick-net/secrets/certs-client/${fqdnPath}-root-client-ca.crt`,
               `untar-from-s3 ${s3NginxConfTar}`,
             ];
 
@@ -714,7 +771,7 @@ mod.xport({upsertInstance: function(argv, context, callback) {
     }, function(my, next) {
 
       // -------------------------------------------------------------------------------------------------------
-      // Write commands to a script file that will be run before the non-root bootstrap
+      // Pre bootstrap-nonroot script
 
       const {PrivateIpAddress} = my.result.Instance;
 
@@ -808,7 +865,7 @@ mod.xport({upsertInstance: function(argv, context, callback) {
 
     }]);
   });
-}});
+}}));
 
 /*
  * TODO:

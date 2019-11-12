@@ -35,4 +35,6 @@ if which nginx; then
   ps aux | egrep -v grep | egrep nginx
 fi
 
+aws s3 cp "s3://${NAMESPACE_LC}/quick-net/deploy/${INSTANCE_ID}/home/.vimrc" "$HOME/.vimrc"
+
 echo "true" > ${HOME}/bootstrap-nonroot-run

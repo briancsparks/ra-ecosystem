@@ -125,9 +125,16 @@ function ARGV(input = process.argv) {
   for (var i = 0; i < origKeys.length; ++i) {
     let   key     = origKeys[i];
     let   snaked  = snake_case(key);
+    let   camel   = toCamelCase(key);
+
+    if (key === '_')    { continue; }
 
     if (key !== snaked) {
       argv[snaked] = argv[key];
+    }
+
+    if (key !== camel && camel.length > 0) {
+      argv[camel] = argv[key];
     }
   }
 
@@ -273,19 +280,24 @@ function arrayParam(i, _, args, argv) {
     origCaseKey = m[1];
 
     // Yes.  Get the snake-case key
-    let key = snake_case(m[1]);
+    let skey = snake_case(m[1]);
+    let ckey = toCamelCase(m[1]);
 
     // Create the array
-    argv[key] = [];
+    argv[skey] = [];
 
     // Read args into the array
     for (++i; i < args.length; ++i) {
       if (args[i].startsWith('--'))   { break; }
 
-      argv[key].push(sg.smartValue(args[i]));
+      argv[skey].push(sg.smartValue(args[i]));
     }
 
-    argv[origCaseKey] = argv[key];
+    argv[origCaseKey] = argv[skey];
+
+    if (ckey.length > 0) {
+      argv[ckey]        = argv[skey];
+    }
   }
 
   return i;

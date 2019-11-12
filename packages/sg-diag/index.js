@@ -193,7 +193,7 @@ module.exports.DIAG = function(mod) {
       // If we are active development, use those args
       if (sg.smartValue(process.env.ACTIVE_DEVELOPMENT)) {
         self.sanityCheck();
-        argv = sg.merge(argv ||{}, mkArgv(self.devCliArgs(fnName)));
+        argv = sg.merge(mkArgv(self.devCliArgs(fnName)), argv ||{});
         // console.log(`invokingFnA ${fnName}`, util.inspect({argv, async: !isActuallyContinuationStyle}, {depth:null, color:true}));
       }
       // TODO: else, lookup usefulCliArgs from argv, and replace
@@ -226,10 +226,16 @@ module.exports.DIAG = function(mod) {
         let cliArgs   = self.devCliArgs(fnName);
         let cliArgs2  = mkArgv(cliArgs);
         self.sanityCheck(`Checking ACTIVE_DEVELOPMENT. fnName: |${fnName}|, devCliArgs: |${cliArgs}|`, {argv, cliArgs2});
-        argv = sg.merge(argv ||{}, cliArgs2);
+        argv = sg.merge(cliArgs2, argv ||{});
         // console.log(`invokingFnB ${fnName}`, util.inspect({argv, async: !isActuallyContinuationStyle}, {depth:null, color:true}));
       }
-      // TODO: else, lookup usefulCliArgs from argv, and replace
+
+      if (argv.useful) {
+        // TODO: else, lookup usefulCliArgs from argv, and replace
+        const usefulCliArgs   = self.bits.getData(fnName || self.getCurrFnName(), 'usefulCliArgs');
+        const cliArgs         = mkArgv(usefulCliArgs[argv.useful]);
+        argv                  = sg.merge(cliArgs ||{}, argv ||{});
+      }
 
       setupDiag(argv, context, callback);
 
@@ -361,6 +367,8 @@ function toCamelCase(key) {
 }
 
 function mkArgv(cliString) {
+  if (sg.isnt(cliString))     { return cliString; }
+
   const cliArgs   = cliString.split(/\s+/gi);
   var   argv      = require('minimist')(cliArgs);
 

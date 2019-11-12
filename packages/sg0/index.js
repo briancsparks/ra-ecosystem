@@ -712,6 +712,7 @@ sg.splitLn = function(string) {
  * @param {*} str
  */
 sg.toLowerWord = function(str) {
+  if (str.length === 0)     { return str; }
   return str[0].toLowerCase() + sg.rest(str);
 };
 
@@ -721,6 +722,7 @@ sg.toLowerWord = function(str) {
  * @param {*} str
  */
 sg.toUpperWord = function(str) {
+  if (str.length === 0)     { return str; }
   return str[0].toUpperCase() + sg.rest(str).join('');
 };
 

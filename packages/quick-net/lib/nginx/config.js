@@ -84,13 +84,14 @@ DIAG.usage({ aliases: { saveNginxConfigTarballToS3: { args: {
 }}}});
 
 // The last one wins. Comment out what you dont want.
-DIAG.activeDevelopment(`--filename=${path.join(os.tmpdir(),  '_aa-nginx-conf')} --type=localapp --debug`);
-DIAG.activeDevelopment(`--filename=${path.join(os.homedir(), '_aa-nginx-conf')} --type=localapp`);
-DIAG.activeDevelopment(`--filename=${path.join(os.homedir(), '_aa-nginx-conf')} --root=/usr/share/nginx/html --location=/clientstart --upstream=clients --upstream-service=10.1.2.3:3001 --fqdns=example.com --type=localapp --skip-reload --debug`);
-DIAG.activeDevelopment(`--filename=${path.join(os.homedir(), '_aa-nginx-conf')} --root=/usr/share/nginx/html --location=/clientstart --upstream=clients --upstream-service=10.1.2.3:3001 --fqdns=example.com --debug`);
+DIAG.activeDevelopment(`--type=localapp --debug`);
+DIAG.activeDevelopment(`--type=localapp`);
+DIAG.activeDevelopment(`--root=/usr/share/nginx/html --location=/clientstart --upstream=clients --upstream-service=10.1.2.3:3001 --fqdns=example.com --type=localapp --skip-reload --debug`);
+DIAG.activeDevelopment(`--root=/usr/share/nginx/html --location=/clientstart --upstream=clients --upstream-service=10.1.2.3:3001 --fqdns=example.com --debug`);
 DIAG.activeDevelopment(`--sidecar=/clientstart,3009 --root=/usr/share/nginx/html --location=/clientstart --upstream=clients --upstream-service=10.1.2.3:3001 --fqdns=example.com --debug`);
 DIAG.activeDevelopment(`--type=qnwebtier --rpxi-port=3009 --debug`);
-// DIAG.activeName = 'saveNginxConfigTarballToS3';
+DIAG.activeDevelopment(`--type=qnwebtier --rpxi-port=3008 --skip-server --debug`);
+DIAG.activeName = 'saveNginxConfigTarballToS3';
 
 /**
  *
@@ -237,6 +238,7 @@ const getNginxQuicknetWebtierConfig = mod.xport(DIAG.xport({getNginxQuicknetWebt
   entry(pack, { ...entryDefs(argv), name: `conf.d/proxy-params` },                 proxy_params(argv),        skipSystem);
   entry(pack, { ...entryDefs(argv), name: `conf.d/rpxi` },                         rpxi(argv),                skipSystem);
 
+  // The default server
   const defArgv = _.omit(argv, 'fqdns');
   entry(pack, { ...entryDefs(argv), name: `conf.d/default.conf`},                  getServerConfig(defArgv),  skipSystem);
 
@@ -251,14 +253,19 @@ const getNginxQuicknetWebtierConfig = mod.xport(DIAG.xport({getNginxQuicknetWebt
 
 
   // ----- FQDNS
-  var config = {...argv};
+  const fqdn    = fqdns[0];
+
+  var   config = {...argv};
   const locations = getLocations(diag);
   if (locations) {
     config = {...config, locations};
   }
 
+  if (fqdn) {
+    config = {...config, client: true};
+  }
 
-  var fqdnServerConfig = entry(pack, { ...entryDefs(argv), name: `conf.d/server-${fqdns[0]}.conf`},          getServerConfig(config),   skipServers);
+  var fqdnServerConfig = entry(pack, { ...entryDefs(argv), name: `conf.d/server-${fqdn}.conf`},          getServerConfig(config),   skipServers);
   // diag.i(`Config for ${fqdns[0]}`, {fqdnServerConfig});
 
 
@@ -720,6 +727,7 @@ function _getServerConfig_(argv, context={}) {
   const fqdnPathName                            = safePathFqdn(fqdn);
   const ssl_certificate                         = `/etc/nginx/certs/${fqdnPathName}/live/${fqdn}/fullchain.pem`;
   const ssl_certificate_key                     = `/etc/nginx/certs/${fqdnPathName}/live/${fqdn}/privkey.pem`;
+  const ssl_client_certificate                  = `/etc/nginx/certs-client/${fqdnPathName}-root-client-ca.crt`;
   const https                                   = !default_server;
 
   if (location && upstream) {
@@ -727,7 +735,7 @@ function _getServerConfig_(argv, context={}) {
   }
 
   // The JSON that made up this content
-  var json = sg.merge({}, {upstream,fqdn,fqdns,default_server,root,https,locations,client,rpxiPort,ssl_certificate_key,ssl_certificate,argv});
+  var json = sg.merge({}, {upstream,fqdn,fqdns,default_server,root,https,locations,client,ssl_client_certificate,rpxiPort,ssl_certificate_key,ssl_certificate,argv});
 
   // Make sure we handle setting up the root, if we need to
   var handledRoot = !root;
@@ -773,19 +781,36 @@ if (root) {
 
 if (https && fqdn !== 'localhost') {
   l=[...l,`
-                  ssl_protocols TLSv1.1 TLSv1.2;
-                  ssl_ciphers HIGH:!aNULL:!MD5;
-                  ssl_certificate     ${ssl_certificate};
-                  ssl_certificate_key ${ssl_certificate_key};`];
+                  ssl_protocols                 TLSv1.1 TLSv1.2;
+                  ssl_session_timeout           5m;
+                  ssl_prefer_server_ciphers     on;
+                  ssl_ciphers                   HIGH:!aNULL:!MD5;
+                  ssl_certificate               ${ssl_certificate};
+                  ssl_certificate_key           ${ssl_certificate_key};`];
+
+                  addClip([
+                    `#qnsshixx webtier 'get-certs-from-s3 s3://quicknet/quick-net/secrets/certs/${fqdnPathName}.tar'`,
+                    `##qnsshixx webtier 'sudo chmod -R a+rx /etc/nginx/certs/${fqdnPathName}/'`,
+                  ]);
 }
 
                   // TODO: client certs
+                  // See: https://arcweb.co/securing-websites-nginx-and-client-side-certificate-authentication-linux/
+                  // See also: https://fardog.io/blog/2017/12/30/client-side-certificate-authentication-with-nginx/
+                  // TODO: get ssl_crl working
 if (client) {
   l=[...l,`
-                  ## Client certificates
-                  #ssl_client_certificate /etc/nginx/ssl/client-certs/default-root-client-ca.crt;
-                  #ssl_verify_client optional;`];
+                  # Client certificates
+                  ssl_client_certificate      ${ssl_client_certificate};
+                  #ssl_crl                    /etc/ssl/ca/private/ca.crl;
+                  ssl_verify_client           optional;`];
+
+                  addClip([
+                    `#qnsshixx webtier 'get-client-certs-from-s3 s3://quicknet/quick-net/secrets/certs-client/${fqdnPathName}-root-client-ca.crt'`
+                  ]);
+
 }
+
 
 l=[...l,`
                   location /nginx_status {
@@ -847,6 +872,15 @@ if (root && !handledRoot) {
                     try_files $uri $uri/ =404;
                   }`];
 }
+
+                  // TODO: Look into these
+                  // if ($request_method !~ ^(GET|HEAD|PUT|POST|DELETE|OPTIONS)$ ){
+                  //   return 405;
+                  // }
+
+                  // location ~ \.(php|html)$ {
+                  //   return 405;
+                  // }
 
 l=[...l,`
                 }`];
