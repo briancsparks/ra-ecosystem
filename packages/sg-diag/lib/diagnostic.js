@@ -3,6 +3,7 @@
 const sg0                     = require('sg0');
 const sg                      = sg0.merge(sg0, require('sg-env'), require('sg-argv'));
 const { _ }                   = sg;
+const {scrunch}               = sg;
 const { JsonSocketIoLogger }  = require('./logging-json-to-socket-io');
 const Ajv                     = require('ajv');
 const { util }                = sg.libs;
@@ -201,7 +202,7 @@ function Diagnostic(ctorArgs ={}) {
     _.each(inputArgs, (arg, name) => {
       if (sg.isnt(arg)) {
         const msg = `ENOARG: '${name}'`;
-        self.e(msg);
+        self.e(msg, msg);
         self.errors.push(toError(msg, {cause: `A required argument was not supplied.`, name, fnName:  self.getCurrFnName(), fatal: true}));
       }
     });
@@ -210,7 +211,7 @@ function Diagnostic(ctorArgs ={}) {
     _.each(computedArgs, (arg, name) => {
       if (sg.isnt(arg)) {
         const msg = `WNOARG: '${name}'`;
-        self.e(msg);
+        self.e(msg, msg);
         self.errors.push(toError(msg, {cause: `An important, but not required argument was not supplied.`, name, fnName: self.getCurrFnName(), fatal: false}));
       }
     });
@@ -314,7 +315,7 @@ function Diagnostic(ctorArgs ={}) {
   var msgArgv = ARGV;
 
   self.loud = function(msg, ...rest) {
-    return self.infoOut(2, msg, ...rest);
+    return self.infoOut(2, msg, ...scrunch(rest));
   };
 
   /**
@@ -346,20 +347,20 @@ function Diagnostic(ctorArgs ={}) {
 
     var stillNeedStandardLogging = true;
     if (self.logger && self.logger.tbd) {
-      stillNeedStandardLogging = !self.logger.tbd(msg, ...rest);
+      stillNeedStandardLogging = !self.logger.tbd(msg, ...scrunch(rest));
     }
 
     if (stillNeedStandardLogging) {
       if (self.stdoutIsDataOnly()) {
-        return self.infoOut(2, msg, ...rest);
+        return self.infoOut(2, msg, ...scrunch(rest));
       }
-      return self.out(msg, ...rest);
+      return self.out(msg, ...scrunch(rest));
     }
   };
 
   self.tbd_if = function(test, feature, id, msg, ...rest) {
     if (!test) { return; }
-    return self.tbd(feature, id, msg, ...rest);
+    return self.tbd(feature, id, msg, ...scrunch(rest));
   };
 
 
@@ -370,20 +371,20 @@ function Diagnostic(ctorArgs ={}) {
 
     var stillNeedStandardLogging = true;
     if (self.logger) {
-      stillNeedStandardLogging = !self.logger.i(msg, ...rest);
+      stillNeedStandardLogging = !self.logger.i(msg, ...scrunch(rest));
     }
 
     if (stillNeedStandardLogging) {
       if (self.stdoutIsDataOnly()) {
-        return self.infoOut(2, msg, ...rest);
+        return self.infoOut(2, msg, ...scrunch(rest));
       }
-      return self.out(msg, ...rest);
+      return self.out(msg, ...scrunch(rest));
     }
   };
 
   self.i_if = function(test, msg, ...rest) {
     if (!test) { return; }
-    return self.i(msg, ...rest);
+    return self.i(msg, ...scrunch(rest));
   };
 
   self.d = function(msg, ...rest) {
@@ -393,20 +394,20 @@ function Diagnostic(ctorArgs ={}) {
 
     var stillNeedStandardLogging = true;
     if (self.logger) {
-      stillNeedStandardLogging = !self.logger.d(msg, ...rest);
+      stillNeedStandardLogging = !self.logger.d(msg, ...scrunch(rest));
     }
 
     if (stillNeedStandardLogging) {
       if (self.stdoutIsDataOnly()) {
-        return self.infoOut(2, msg, ...rest);
+        return self.infoOut(2, msg, ...scrunch(rest));
       }
-      return self.out(msg, ...rest);
+      return self.out(msg, ...scrunch(rest));
     }
   };
 
   self.d_if = function(test, msg, ...rest) {
     if (!test) { return; }
-    return self.d(msg, ...rest);
+    return self.d(msg, ...scrunch(rest));
   };
 
   self.v = function(msg, ...rest) {
@@ -416,20 +417,20 @@ function Diagnostic(ctorArgs ={}) {
 
     var stillNeedStandardLogging = true;
     if (self.logger) {
-      stillNeedStandardLogging = !self.logger.v(msg, ...rest);
+      stillNeedStandardLogging = !self.logger.v(msg, ...scrunch(rest));
     }
 
     if (stillNeedStandardLogging) {
       if (self.stdoutIsDataOnly()) {
-        return self.infoOut(2, msg, ...rest);
+        return self.infoOut(2, msg, ...scrunch(rest));
       }
-      return self.out(msg, ...rest);
+      return self.out(msg, ...scrunch(rest));
     }
   };
 
   self.v_if = function(test, msg, ...rest) {
     if (!test) { return; }
-    return self.v(msg, ...rest);
+    return self.v(msg, ...scrunch(rest));
   };
 
   function showBigAnnoyingMessage(err, msg, options, ...rest) {
@@ -442,6 +443,9 @@ function Diagnostic(ctorArgs ={}) {
   self.w = function(msg, ...rest) {
     msgArgv = msgArgv || self.getArgv(ctorArgs);
     if (msgArgv.quiet)    { return; }
+
+    // TODO: `quiet` in this context should mean that the active developer doesnt want to be bugged
+    if (msgArgv.quiet && activeDevelopment())    { return; }
 
     var stillNeedStandardLogging = true;
     if (self.logger) {
@@ -467,11 +471,10 @@ function Diagnostic(ctorArgs ={}) {
   };
 
   // TODO: This needs a lot of work.
-  self.e = function(err, msg, ...rest) {
+  self.e = function(err, msg_, ...rest) {
     msgArgv = msgArgv || self.getArgv(ctorArgs);
 
-    // TODO: `quiet` in this context should mean that the active developer doesnt want to be bugged
-    if (msgArgv.quiet && activeDevelopment())    { return; }
+    const msg = msg_ || _.isString(err) ? err : msg_;
 
     var stillNeedStandardLogging = true;
     if (self.logger) {
@@ -492,6 +495,20 @@ function Diagnostic(ctorArgs ={}) {
   self.assert = self.e_if = function(test, err, msg, ...rest) {
     if (!test) { return; }
     return self.e(err, msg, ...rest);
+  };
+
+  self.id = function(msg, i_params, v_params) {
+    msgArgv = msgArgv || self.getArgv(ctorArgs);
+    if (msgArgv.debug) {
+      return self.d(msg, {...(i_params ||{}), ...v_params});
+    }
+
+    return self.i(msg, i_params);
+  };
+
+  self.id_if = function(test, msg, ...rest) {
+    if (!test) { return; }
+    return self.id(msg, ...rest);
   };
 
   self.iv = function(msg, i_params, v_params) {

@@ -148,8 +148,9 @@ mod.xport({upsertInstance: function(argv, context, callback) {
 
   /*
     Ubuntu 16.04 as of 1/25/2019
-    ra invoke packages\quick-net\lib\ec2\ec2.js upsertInstance --image=ami-03a935aafa6b52b97 --distro=ubuntu --type=t3.small --key= --sgs= --subnet=
-    ra invoke packages\quick-net\lib\ec2\ec2.js upsertInstance --image=ami-03a935aafa6b52b97 --distro=ubuntu --type=c5.xlarge --key= --sgs= --subnet=
+    quick-net upsertInstance --distro=ubuntu --type=t3.micro --key=example --classB=13 --sgs=web --subnet=webtier --az=d --iam=example-webtier-instance-role --INSTALL_WEBTIER --Terminate
+    quick-net upsertInstance --image=ami-03a935aafa6b52b97 --distro=ubuntu --type=t3.small --key= --sgs= --subnet=
+    quick-net upsertInstance --image=ami-03a935aafa6b52b97 --distro=ubuntu --type=c5.xlarge --key= --sgs= --subnet=
 
     Amazon Linux 2 with ECS as of 1/25/2019
     ra invoke packages\quick-net\lib\ec2\ec2.js upsertInstance --image=ami-011a85ba0ae2013bf --distro=amazon2ecs --type=t3.small --key= --sgs= --subnet=
@@ -622,7 +623,7 @@ mod.xport({upsertInstance: function(argv, context, callback) {
       // -------------------------------------------------------------------------------------------------------
       // Put stuff on S3 for the instance
 
-      const utilFiles     = 'bootstrap,bootstrap-nonroot,untar-from-s3,cmd-from-s3,sshix,qn-hosts,get-certs-from-s3'.split(',');
+      const utilFiles     = 'bootstrap,bootstrap-nonroot,untar-from-s3,cmd-from-s3,sshix,qn-hosts,qn-redis,qn-mongo,get-certs-from-s3'.split(',');
       const s3deployPath  = s3path('deploy', InstanceId);
 
       return sg.__run2(next, [function(next) {
@@ -649,8 +650,9 @@ mod.xport({upsertInstance: function(argv, context, callback) {
           // upstream_service    : '10.1.2.3:3001',
           // location            : '/clientstart',
         };
-        const fqdn                = my.result.fqdn = (ngArgs.fqdns ||[])[0];
+        const fqdn                = (ngArgs.fqdns ||[])[0];
         const fqdnPath            = safePathFqdn(fqdn);
+        my.result.fqdns           = [...(my.result.fqdns || []), fqdn];
 
         return getNginxConfigTarball({distro, ...ngArgs}, {}, function(err0, data) {
           const {pack, cwd}         = data;
@@ -661,20 +663,52 @@ mod.xport({upsertInstance: function(argv, context, callback) {
           return streamToS3(pack, {Bucket, Key, ContentType: 'application/x-tar'}, function(err, data) {
             sg.debugLog(`Upload nginx config tarball`, {err0, cwd, s3packPath, err, data});
 
-
             bootShellCommands = [...bootShellCommands,
               `get-certs-from-s3 s3://quicknet/quick-net/secrets/certs/${fqdnPath}.tar`,
+              `sudo chmod -R a+rx /etc/nginx/certs/${fqdnPath}/`,
               `untar-from-s3 ${s3NginxConfTar}`,
             ];
-
-            addClip([
-              `#${sshix} ${PrivateIpAddress} 'get-certs-from-s3 s3://quicknet/quick-net/secrets/certs/api__cdr0__net.tar'`,
-              `#${sshix} ${PrivateIpAddress} 'untar-from-s3 ${s3NginxConfTar}'`,
-            ]);
 
             return next();
           });
         });
+
+      }, function(next) {
+        if (!userdataOpts.INSTALL_WEBTIER)    { return next(); }
+
+        const {PrivateIpAddress} = my.result.Instance;
+
+        // --location=/clientstart --upstream=clients --upstream-service=10.1.2.3:3001
+        const ngArgs = {
+          reloadServer        : false,
+          skipSystem          : true,
+          type                : 'qnwebtier',
+          rpxiPort            : 3008,
+          fqdns               : 'api.coder-zero.net'.split(','),
+        };
+        const fqdn                = (ngArgs.fqdns ||[])[0];
+        const fqdnPath            = safePathFqdn(fqdn);
+        my.result.fqdns           = [...(my.result.fqdns || []), fqdn];
+
+        return getNginxConfigTarball({distro, ...ngArgs}, {}, function(err0, data) {
+          const {pack, cwd}         = data;
+          const s3packPath          = _.compact([s3deployPath, 'files', ...(cwd.split('/'))]).join('/');
+          const s3NginxConfTar      = `${s3packPath}/${fqdnPath}.tar`;
+          const {Bucket,Key}        = parseS3Path(s3NginxConfTar);
+
+          return streamToS3(pack, {Bucket, Key, ContentType: 'application/x-tar'}, function(err, data) {
+            sg.debugLog(`Upload nginx config tarball`, {err0, cwd, s3packPath, err, data});
+
+            bootShellCommands = [...bootShellCommands,
+              `get-certs-from-s3 s3://quicknet/quick-net/secrets/certs/${fqdnPath}.tar`,
+              `sudo chmod -R a+rx /etc/nginx/certs/${fqdnPath}/`,
+              `untar-from-s3 ${s3NginxConfTar}`,
+            ];
+
+            return next();
+          });
+        });
+
       }]);
 
     }, function(my, next) {
@@ -690,6 +724,10 @@ mod.xport({upsertInstance: function(argv, context, callback) {
       ]);
 
       bootShellCommands = [...bootShellCommands,
+        'qn-hosts redis   10.13.54.167',
+        'qn-hosts db      10.13.54.167',
+        'qn-hosts mongo   10.13.54.167',
+        '',
         'echo "boot-shell-commands done"',
         ''
       ].join('\n');
@@ -753,17 +791,20 @@ mod.xport({upsertInstance: function(argv, context, callback) {
 
       // -------------------------------------------------------------------------------------------------------
       // Set the A record
-      if (!my.result.fqdn)    { return next(); }
+      if (!my.result.fqdns)    { return next(); }
 
       const {PublicIpAddress}       = my.result.Instance;
-      var   [subdomain, ...domain]  = my.result.fqdn.split('.');
-      domain = domain.join('.');
 
-      const params = {subdomain, domain, ip: PublicIpAddress, fireAndForget: true};
-      return setARecord(params, {}, function(err, data) {
-        sg.debugLog(`set A record ${subdomain}.${domain} (${PublicIpAddress})`, {params, err, data});
-        return next();
-      });
+      sg.__eachll(my.result.fqdns, function(fqdn, next) {
+        var   [subdomain, ...domain]  = fqdn.split('.');
+        domain = domain.join('.');
+
+        const params = {subdomain, domain, ip: PublicIpAddress, fireAndForget: true};
+        return setARecord(params, {}, function(err, data) {
+          sg.debugLog(`set A record ${subdomain}.${domain} (${PublicIpAddress})`, {params, err, data});
+          return next();
+        });
+      }, next);
 
     }]);
   });

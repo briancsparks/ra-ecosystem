@@ -1,0 +1,3 @@
+#!/bin/bash -e
+
+redis-cli -h redis "$@"

@@ -168,20 +168,6 @@ mod.xport(DIAG.xport({putClientJsonToS3: function(argv, context, callback) {
 // ----------------------------------------------------------------------------------------------------
 function _putClientJsonToS3_(Body, {Bucket, Key}, callback) {
   return _streamToS3_(Body, {Bucket, Key}, callback);
-  // var upload = s3.upload({Bucket, Key, Body}, {partSize: 6 * 1024 * 1024});
-
-  // upload.on('httpUploadProgress', (progress) => {
-  //   diag.i(`uploading file`, {progress, Key});
-  // });
-
-  // upload.send(function(err, data) {
-  //   if (!sg.ok(err, data))  { diag.e(err, `sending upload`, {Bucket, Key}); }
-
-  //   // pushStatus({name:filename, data:{event: '/upload', filename, Bucket, Key, msg:`upload ${filename}`}}, function(){});
-  //   diag.i(`upload-send-done`, {Bucket, Key, err, data});
-
-  //   return callback(err, data);
-  // });
 }
 
 
@@ -227,7 +213,7 @@ function _copyFileToS3_(pathname, argv, callback) {
 // ----------------------------------------------------------------------------------------------------
 function _streamToS3_(Body, {ContentType ='application/json', ...argv}, callback) {
 
-  var {Bucket,Key,s3filepath}   = findBucketKeyAndPath(argv);
+  var {Bucket,Key}      = findBucketKeyAndPath(argv);
 
   if (!Bucket)                              { dg.e(`NoBucket`, `sending uplaod`, {Bucket,Key});   return callback(`NoBucket`); }
   if (!Key)                                 { dg.e(`NoKey`,    `sending uplaod`, {Bucket,Key});   return callback(`NoKey`); }
@@ -235,7 +221,7 @@ function _streamToS3_(Body, {ContentType ='application/json', ...argv}, callback
 
   var upload = s3.upload({Bucket, Key, Body, ContentType}, {partSize: 6 * 1024 * 1024});
 
-  dg.v(`starting upload s://${Bucket}${Key}`, {});
+  dg.v(`starting upload s://${Bucket}${Key}`);
   upload.on('httpUploadProgress', (progress) => {
     dg.v(`uploading file s3://${Bucket}${Key}`, {progress});
   });
@@ -293,20 +279,20 @@ function parseS3Path(s3filepath) {
   return {Bucket,Key};
 }
 
-// ----------------------------------------------------------------------------------------------------
-// findBucketKeyAndPath is better
-function getBucketAndKey(argv) {
-  dg.tbd(`diagctx`, `getBucketAndKey`, '', {argv});
+// // ----------------------------------------------------------------------------------------------------
+// // findBucketKeyAndPath is better
+// function getBucketAndKey(argv) {
+//   dg.tbd(`diagctx`, `getBucketAndKey`, '', {argv});
 
-  var   s3filepath          = argv.s3path || argv.s3filepath || argv.path || argv.s3 || argv.filename || argv.name;
-  var   {Bucket,Key}        = parseS3Path(s3filepath);
+//   var   s3filepath          = argv.s3path || argv.s3filepath || argv.path || argv.s3 || argv.filename || argv.name;
+//   var   {Bucket,Key}        = parseS3Path(s3filepath);
 
-  Bucket  = argv.Bucket     || Bucket;
-  Key     = argv.Key        || Key;
+//   Bucket  = argv.Bucket     || Bucket;
+//   Key     = argv.Key        || Key;
 
-  dg.tbd(`diagctx`, `getBucketAndKey2`, '', {argv, Bucket,Key});
-  return {Bucket,Key};
-}
+//   dg.tbd(`diagctx`, `getBucketAndKey2`, '', {argv, Bucket,Key});
+//   return {Bucket,Key};
+// }
 
 
 // ----------------------------------------------------------------------------------------------------
@@ -318,7 +304,6 @@ function findBucketKeyAndPath(argv) {
     ({Bucket,Key}       = parseS3Path(argv.s3path || argv.s3filepath || argv.path || argv.s3 || argv.filename || argv.name));
   }
 
-  dg.tbd(`diagctx`, `getBucketAndKey2`, '', {argv, Bucket,Key});
   return {Bucket, Key, s3filepath: `s3://${Bucket}${Key}`};
 }
 

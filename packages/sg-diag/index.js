@@ -82,9 +82,13 @@ module.exports.DIAG = function(mod) {
   self.activeDevelopment = function(devCliArgs) {
     // TODO: these args should not be applied unless this specific function is the one
     //       being actively developed.
-    if (sg.smartValue(process.env.ACTIVE_DEVELOPMENT)) {
+    if (ENV.at('ACTIVE_DEVELOPMENT')) {
       self.bits.setData(null, {devCliArgs});
     }
+  };
+
+  self.usefulCliArgs = function(usefulCliArgs) {
+    self.bits.setData(null, {usefulCliArgs});
   };
 
   self.isActiveName = function(name) {
@@ -192,6 +196,7 @@ module.exports.DIAG = function(mod) {
         argv = sg.merge(argv ||{}, mkArgv(self.devCliArgs(fnName)));
         // console.log(`invokingFnA ${fnName}`, util.inspect({argv, async: !isActuallyContinuationStyle}, {depth:null, color:true}));
       }
+      // TODO: else, lookup usefulCliArgs from argv, and replace
 
       setupDiag(argv, context, null);
 
@@ -224,6 +229,7 @@ module.exports.DIAG = function(mod) {
         argv = sg.merge(argv ||{}, cliArgs2);
         // console.log(`invokingFnB ${fnName}`, util.inspect({argv, async: !isActuallyContinuationStyle}, {depth:null, color:true}));
       }
+      // TODO: else, lookup usefulCliArgs from argv, and replace
 
       setupDiag(argv, context, callback);
 

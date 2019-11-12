@@ -14,6 +14,8 @@ pull_s3 cmd-from-s3
 pull_s3 get-certs-from-s3
 pull_s3 sshix
 pull_s3 qn-hosts
+pull_s3 qn-redis
+pull_s3 qn-mongo
 
 
 FILES="$(aws s3api list-objects --bucket ${NAMESPACE_LC} --prefix quick-net/deploy/${INSTANCE_ID}/files | jq -r '.Contents[].Key')"

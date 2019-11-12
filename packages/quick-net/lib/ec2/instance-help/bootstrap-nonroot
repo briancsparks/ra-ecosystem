@@ -20,7 +20,6 @@ if which nginx; then
   cd apps/lambda-net
   npm i
 
-  export NO_REDIS=1
   pm2 start server.js
 
   # Is nginx running?
@@ -29,6 +28,8 @@ if which nginx; then
   else
     sudo nginx -t && sudo nginx
   fi
+
+  tree /etc/nginx
 
   echo "Nginx processes:"
   ps aux | egrep -v grep | egrep nginx

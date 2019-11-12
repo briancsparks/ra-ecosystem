@@ -1,0 +1,6 @@
+#!/bin/bash -e
+
+DB_NAME="$1"
+shift
+
+mongo "mongo/${DB_NAME}" "$@"

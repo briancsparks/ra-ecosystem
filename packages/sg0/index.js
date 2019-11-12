@@ -1471,6 +1471,10 @@ var toError = function(e, e2, httpCode) {
 };
 sg.toError = toError;
 
+sg.scrunch = function(arr) {
+  return arr.filter(x => !sg.isnt(x));
+};
+
 // Export functions
 _.each(sg, function(fn, name) {
   exports[name] = sg[name];
