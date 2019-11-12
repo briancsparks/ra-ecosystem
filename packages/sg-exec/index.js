@@ -9,7 +9,7 @@ if (process.env.SG_VVVERBOSE) console[process.env.SG_LOAD_STREAM || 'log'](`Load
 // -------------------------------------------------------------------------------------
 //  Requirements
 //
-const sg                      = require('sg-argv');
+const sg                      = require('sg0');
 const { _ }                   = sg;
 // const qm                      = require('quick-merge');
 const execa                   = require('execa');
@@ -20,7 +20,7 @@ const curl                    = addToLib(require('./lib/curl'));
 const execz                   = addToLib(require('./lib/execz'));
 const exec_ez                 = addToLib(require('./lib/exec-ez'));
 
-const ARGV                    = sg.ARGV();
+//const ARGV                    = sg.ARGV();
 
 // -------------------------------------------------------------------------------------
 // exports

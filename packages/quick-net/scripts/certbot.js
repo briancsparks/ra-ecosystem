@@ -7,7 +7,9 @@ const {sg0,fs,path,os,util,sh,die,dieAsync,grepLines,include,from,startupDone,ru
 const sg                      = sg0.merge(sg0, require('sg-diag'));
 const {safePathFqdn,
        mkQuickNetPath}        = require('../lib/utils');
-const {lsS3}                  = require('../lib/s3').async;
+const libS3                   = require('../lib/s3');
+const {lsS3}                  = libS3.async;
+const putTarToS3              = util.promisify(libS3.putTarToS3);
 const tarfs                   = require('tar-fs');
 
 const DIAG                    = sg.DIAG(module);
@@ -22,12 +24,13 @@ module.exports.getCert        = util.callbackify(getCert);
 module.exports.async          = {};
 module.exports.async.getCert  = getCert;
 
-
 // --auth-domain=cdr0.net --domains=api.cdr0.net --emails=briancsparks@gmail.com
 async function getCert(argv, context) {
   if (!sh.which('certbot'))           { throw sg.toError(`ENOENT: certbot`); }
 
   var   pack, certbotStdout;
+
+  var   result        = {ok:false};
   var   authDomain    = argv.auth_domain;
   const domains       = sg.arrayify(argv.domains);
   const fqdn          = domains[0];
@@ -42,43 +45,69 @@ async function getCert(argv, context) {
   const certsTar      = tardir.file(`${fqdnPathName}.tar`);
   const certsS3tar    = s3CertsPath(`${fqdnPathName}.tar`);
 
-  // TODO: Check if it is on S3 already
-  const certOnS3  = await lsS3({s3path:certsS3tar}, context);
-  const certsOnS3 = await lsS3({s3path:s3CertsPath('')}, context);
+  try {
 
-  dg.i(`params`, {params, certsS3tar, certOnS3, certsOnS3});
+    // Check if it is on S3 already
+    const certOnS3  = await lsS3({s3path:certsS3tar}, context);
+    result = {...result, s3path:certsS3tar};
 
-  if (!test('-d', params.out_dir)) {
-    certbotStdout    = await execa.stdout(sh.which('certbot').toString(), params.params, {cwd: __dirname});
-    console.log(sg.splitLn(certbotStdout));
+    dg.v(`params`, {params, certsS3tar, certOnS3});
+
+    if (certOnS3.KeyCount > 0) {
+      dg.iv(`The cert for ${fqdn} already exists at ${certsS3tar}.`, null, {certOnS3});
+      return [null, sg.merge(result, {ok:true, msg:'Not Modified'})];
+    }
+
+    // Generate with certbot, if we do not already have it
+    if (!test('-d', params.out_dir)) {
+      dg.i(`Generating cert for ${domains.join(', ')}`);
+
+      certbotStdout   = await execa.stdout(sh.which('certbot').toString(), params.params, {cwd: __dirname});
+      result          = {...result, certbotStdout};
+
+      dg.d(`certbot said:`, sg.splitLn(certbotStdout));
+    }
+
+    // If we have something, pack it up and send to S3
+    if (test('-d', params.out_dir)) {
+      dg.i(`Packing ${params.out_dir}...`);
+
+      pack = tarfs.pack(certPath, {
+        map: (header) => {
+
+          header.name  = [fqdnPathName, header.name].join('/');
+          header.uname = 'root';
+          header.gname = 'root';
+
+          dg.iv(`  ${header.name}`, null, {header});
+
+          return header;
+        },
+
+        finalize: false,
+        finish: () => {
+          const header = {name: `${fqdnPathName}/certbotStdout`, uname: 'root', gname: 'root'};
+          pack.entry(header, certbotStdout || `certbot not run`);
+
+          dg.iv(`  ${header.name}`, null, {header});
+
+          pack.finalize();
+        }
+      });
+
+      // Push to S3
+      dg.i(`Storing ${certsS3tar}...`);
+      const s3data = await putTarToS3(pack, {s3path:certsS3tar});
+      result = {...result, pack, s3data};
+
+      dg.iv(`Stored ${certsS3tar}`, null, {s3data});
+    }
+  } catch(err) {
+    dg.e(`getCert error`, err);
+    return [err, {ok:false}];
   }
 
-  if (test('-d', params.out_dir)) {
-    pack = tarfs.pack(certPath, {
-      map: (header) => {
-        header.name = [fqdnPathName, header.name].join('/');
-        console.log(`fs`, {header});
-        return header;
-      },
-      finalize: false,
-      finish: () => {
-        console.log(`finish`);
-        pack.entry({name: 'certbotStdout'}, certbotStdout || `certbot not run`);
-
-        // pack.finalize();
-      }
-    });
-
-    pack.pipe(fs.createWriteStream(certsTar));
-
-    // TODO: Push to S3
-  }
-
-
-
-  // TODO: Return locations of certs, certs contents
-  // return [null, {ok:true, certdir, pack, certbotStdout}];
-  return [null, {ok:true, pack}];
+  return [null, sg.merge(result, {ok:true})];
 }
 
 function certbotParams(auth_domain, domains_, emails, out_dir_) {

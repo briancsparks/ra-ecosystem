@@ -1,7 +1,7 @@
 /* eslint-disable valid-jsdoc */
 
 const sg0                     = require('sg0');
-const sg                      = sg0.merge(sg0, require('sg-env'));
+const sg                      = sg0.merge(sg0, require('sg-env'), require('sg-argv'));
 const { _ }                   = sg;
 const { JsonSocketIoLogger }  = require('./logging-json-to-socket-io');
 const Ajv                     = require('ajv');
@@ -9,6 +9,7 @@ const { util }                = sg.libs;
 const { toError }             = require('./error');
 
 const ENV                     = sg.ENV();
+const ARGV                    = sg.ARGV();
 
 module.exports.Diagnostic     = Diagnostic;
 module.exports.diagnostic     = diagnostic;
@@ -310,7 +311,7 @@ function Diagnostic(ctorArgs ={}) {
 
 
   // The argv for these messaging functions
-  var msgArgv;
+  var msgArgv = ARGV;
 
   self.loud = function(msg, ...rest) {
     return self.infoOut(2, msg, ...rest);
@@ -496,7 +497,7 @@ function Diagnostic(ctorArgs ={}) {
   self.iv = function(msg, i_params, v_params) {
     msgArgv = msgArgv || self.getArgv(ctorArgs);
     if (msgArgv.verbose) {
-      return self.v(msg, {...i_params, ...v_params});
+      return self.v(msg, {...(i_params ||{}), ...v_params});
     }
 
     return self.i(msg, i_params);

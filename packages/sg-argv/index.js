@@ -8,7 +8,7 @@ if (process.env.SG_VVVERBOSE) console[process.env.SG_LOAD_STREAM || 'log'](`Load
 //  Requirements
 //
 
-const sg                      = require('sg-diag');
+const sg                      = require('sg0');
 const { _ }                   = sg;
 const fs                      = require('fs');
 const path                    = require('path');

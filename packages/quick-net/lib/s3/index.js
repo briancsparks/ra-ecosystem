@@ -83,7 +83,7 @@ mod.xport(DIAG.xport({streamToS3: function(argv, context, callback) {
   diag.tbd(`diagctx`, `streamToS3`, '', {argv, ...cleanContext(context)});
 
   var   {Body}            = argv;
-  var   {Bucket,Key}      = getBucketAndKey(diag.args());
+  var   {Bucket,Key}      = findBucketKeyAndPath(diag.args());
 
   if (!(diag.haveArgs({Bucket,Key,Body})))                                  { return diag.exit(); }
 
@@ -225,7 +225,9 @@ function _copyFileToS3_(pathname, argv, callback) {
 }
 
 // ----------------------------------------------------------------------------------------------------
-function _streamToS3_(Body, {Bucket, Key, ContentType ='application/json'}, callback) {
+function _streamToS3_(Body, {ContentType ='application/json', ...argv}, callback) {
+
+  var {Bucket,Key,s3filepath}   = findBucketKeyAndPath(argv);
 
   if (!Bucket)                              { dg.e(`NoBucket`, `sending uplaod`, {Bucket,Key});   return callback(`NoBucket`); }
   if (!Key)                                 { dg.e(`NoKey`,    `sending uplaod`, {Bucket,Key});   return callback(`NoKey`); }
@@ -233,6 +235,7 @@ function _streamToS3_(Body, {Bucket, Key, ContentType ='application/json'}, call
 
   var upload = s3.upload({Bucket, Key, Body, ContentType}, {partSize: 6 * 1024 * 1024});
 
+  dg.v(`starting upload s://${Bucket}${Key}`, {});
   upload.on('httpUploadProgress', (progress) => {
     dg.v(`uploading file s3://${Bucket}${Key}`, {progress});
   });

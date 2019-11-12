@@ -1,5 +1,5 @@
 
-const sg                      = require('sg-argv');
+const sg                      = require('sg0');
 const {_}                     = sg;
 const sh                      = require('shelljs');
 const qm                      = require('quick-merge');

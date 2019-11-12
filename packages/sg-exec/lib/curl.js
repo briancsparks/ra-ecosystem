@@ -8,7 +8,7 @@
 // -------------------------------------------------------------------------------------
 //  Requirements
 //
-const sg                      = require('sg-argv');
+const sg                      = require('sg0');
 const { _ }                   = sg;
 const execy                   = require('./execz').execy;
 const execa                   = require('execa');
