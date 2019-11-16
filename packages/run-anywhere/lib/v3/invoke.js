@@ -144,10 +144,12 @@ function invoke_v2(lib, fnName, argv_, callback, abort, options_ ={}) {
 }
 
 // ----------------------------------------------------------------------------------------------------------------------------
-function extendFnTable(table, mod_, filename, dirname) {
+function extendFnTable(table, mod, filename, dirname) {
   if (filename) {
+    return extendFnTable(table, safeRequire(path.join(dirname, filename)), null, null);
+  }
 
-    let mod = safeRequire(path.join(dirname, filename));
+  if (mod) {
     if (!mod) {
       // TODO: Use this to make 'ra3 checkRequires' -- to walk through a package and require everything, hoping not to get this message
       sg.logError(`Cannot require(${filename})\n\nuse to see:\n  node ${filename}\n----------------\n\n`, 'ENOENT ==>');
