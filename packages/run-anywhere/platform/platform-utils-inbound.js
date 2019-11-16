@@ -6,8 +6,8 @@
  *
  *
  */
-const sg0                       = require('sg-env');
-const sg                        = sg0.merge(sg0, require('sg0/sg-smart-value'), require('sg-http'));
+const sg0                       = require('sg-argv');
+const sg                        = sg0.merge(sg0, require('@sg0/sg-smart-value'), require('sg-http'), require('sg-env'));
 const {_}                       = sg;
 const libUrl                    = require('url');
 const platform                  = require('./platform-utils');

@@ -8,7 +8,7 @@ if (process.env.SG_VVVERBOSE) console[process.env.SG_LOAD_STREAM || 'log'](`Load
 var _                         = require('lodash');
 var util                      = require('util');
 
-var isnt, anyIsnt, is;
+var isnt, xsnt, anyIsnt, is;
 
 var   sg = {_:_, libs:{util}};
 
@@ -422,6 +422,12 @@ sg.setTimeout = function(ms, cb) {
   return setTimeout(cb, ms);
 };
 
+/**
+ * Returns the first key.
+ *
+ * @param {*} obj
+ * @returns
+ */
 sg.firstKey = function(obj) {
   if (isnt(obj))  { return obj; }
 
@@ -431,6 +437,28 @@ sg.firstKey = function(obj) {
   return;
 };
 
+/**
+ * Returns the first key/value pair as [key, value].
+ *
+ * @param {*} obj
+ * @returns
+ */
+sg.firstKv = function(obj) {
+  var k,v;
+
+  if ((k = sg.firstKey(obj))) {
+    v = obj[k];
+  }
+
+  return [k,v];
+};
+
+/**
+ * Returns the number of keys in the object.
+ *
+ * @param {*} obj
+ * @returns
+ */
 sg.numKeys = function(obj) {
   if (isnt(obj))  { return obj; }
 
@@ -574,6 +602,30 @@ sg.keyMirror = function(x, sep) {
 };
 
 /**
+ *  Makes an object where the key for each item is the same as the value.
+ *
+ * Is recursive.
+ */
+sg.keyMirrorR = function(x, sep) {
+  var result = {};
+
+  if (isnt(x))            { return x; }
+
+  if (_.isString(x))      { return sg.keyMirror(x.split(sep || ',')); }
+  if (sg.isObject(x))     { return sg.keyMirror(_.keys(x)); }
+
+  if (!_.isArray(x))      { return result; }
+
+  var mirror = {};
+  _.each(x, function(item) {
+    mirror = sg.keyMirrorR(item, sep);
+    _.extend(result, mirror);
+  });
+
+  return result;
+};
+
+/**
  *  Is the parameter strictly an Object (and not an Array, or Date, or ...).
  */
 var isObject = sg.isObject = function(x) {
@@ -651,6 +703,37 @@ var isPod = sg.isPod = function(x) {
  */
 isnt = sg.isnt = function(x) {
   return _.isNull(x) || _.isUndefined(x) || _.isNaN(x);
+};
+
+/**
+ * Returns x || alternative, but evaluating `sg.isnt(x)`, not just javascript truthiness for `x`.
+ *
+ * A lot like `sg.isnt()`, the behavior is contingent on x being (`null`, `undefined`, `NaN`).
+ * If it is one of those things, returns the `alternative`, otherwise returns `x`.
+ *
+ * sg.xsnt(0, 'alt')  ==> 0
+ * 0 || 'alt'         ==> 'alt'
+ *
+ * @param {*} x
+ * @returns x or alternative
+ */
+xsnt = sg.xsnt = function(x, alternative) {
+  if (isnt(x))        { return alternative; }
+
+  return x;
+};
+
+/**
+ * Returns `null` if `isnt(x)`, otherwise returns `x`.
+ *
+ * Forces to be `null` if isnt().
+ *
+ */
+var nullity = sg.nullity = function(x) {
+  if (sg.isnt(x)) {
+    return null;
+  }
+  return x;
 };
 
 /**
@@ -1138,10 +1221,11 @@ sg.reduceObj = function(obj, initial, ...rest) {
     // They returned null... Just means 'unchanged'
     if (res === null)             { return m; }
 
-    // They just returned, without returning any data... Just means keep the current k/v
+    // They just returned, without returning any data... Just means to eithe keep the current k/v, or skip
     if (_.isUndefined(res)) {
-      if (options.undefIsSkip)    { return m; }
-      else                        { return {...m, [k]:v}; }
+      if (options.undefIsSkip)          { return m; }
+      else if (options.undefIsKeep)     { return {...m, [k]:v}; }
+      else                              { return m; }
     }
 
     // true is reuse k/v; false is unchanged -- use like filter, or like map, or like ignore
@@ -1378,7 +1462,9 @@ sg.extracts = function(collection /*, names... */) {
   var names  = _.drop(arguments);
   var result = {};
 
-  _.each(names, function(name) {
+  var keyMirror = sg.keyMirrorR(names);
+
+  _.each(Object.keys(keyMirror), function(name) {
     result[name] = sg.extract(collection, name);
   });
 
@@ -1445,6 +1531,38 @@ sg.arrayify = function(x, skipSplitStrings) {
     return x.split(',');
   }
   return _.compact([x]);
+};
+
+/**
+ * Make sure `x` is an array of at least length `len`.
+ */
+sg.arrayvalify = sg.arrayvalueify = function(x, def ='', len =1, skipSplitStrings =false) {
+  if (Array.isArray(x)) {
+    if (x.length >= len) {
+      return x;
+    }
+
+    if (x.length === 0) {
+      if (Array.isArray(def)) {
+        const value = _.last(def);
+        return sg.arrayvalueify(def, value, len, skipSplitStrings);
+      }
+
+      return new Array(len).fill(def);
+    }
+
+    // We have an array, but it is too short
+    const value = _.last(x);
+    return [...x, Array(len - x.len).fill(value)];
+  }
+
+  if (typeof x === 'string' && !skipSplitStrings) {
+    return sg.arrayvalueify(x.split(','), def, len, skipSplitStrings);
+  }
+
+  // `x` is not an Array, make it one
+  const value = xsnt(x, def);
+  return new Array(len).fill(value);
 };
 
 /**

@@ -1,69 +1,60 @@
 
 const sg                      = require('sg-argv');
+const path                    = require('path');
 const libInvoke               = require('./lib/v3/invoke');
 const libGlob                 = require('glob');
 
 const ARGV                    = sg.ARGV();
 
-const {run_v2,extendFnTable}  = libInvoke;
+const {safeRequire}           = libInvoke;
 
 module.exports.main = main;
 
+// TODO: use loud rejection and pipe-break
+
 function main(argv_) {
-  var {
-    fnName,
-    fnTable,
-    filelist,
-    ...argv
-  }               = argv_;
+  var fnName;
+  var argv                    = {...argv_};
   var commands                = argv_._;
 
   fnName = fnName || commands.shift();
 
-  var source      = sg.merge({filelist,fnTable});
+  return find(fnName, function(err, fn) {
+    if (err || !fn)                               { sg.logError(err || `ENOFINDFN`, fnName); return; }
 
-  run_v2(source, fnName, argv, function(err, data, ...rest) {
-    // console.log(`invokeit-cb`, sg.inspect({fns, fnName, argv, err, data, rest}));
-    console.log(`invokeit-cb`, sg.inspect({err, data, rest}));
+    const globIgnore = [__filename];
+
+    // Invoke it ------ !
+    return fn({...argv}, {globIgnore});
   });
+
+  // ==========================================================================================================================
+  function find(fnName, callback) {
+    var fn;
+
+    if (fnName === 'invoke') {
+      let mod = safeRequire(__dirname, './lib/v3/bin/invoke');
+      if (!mod) {
+        return callback(`ENOINVOKE`);
+      }
+
+      fn = mod.main;
+    }
+
+    // TODO: Use this to make 'ra3 checkRequires' -- to walk through a package and require everything, hoping not to get the 'cannot require' message
+
+    // If we cannot find a function, the user gets 'invoke'
+    if (!fn) {
+      // Put the fnName back as the command
+      commands.unshift(fnName);
+
+      return find('invoke', callback);
+    }
+
+    return callback(null, fn);
+  }
 }
 
-function main2(argv_) {
-  var filelist = [], glob;
-  var {fns, fnName, ...argv}  = argv_;
-  var commands                = argv_._;
-
-  fnName = fnName || commands.shift();
-
-  if (sg.isnt(fns)) {
-    ({filelist, ...argv} = argv);
-    if (filelist) {
-      fns = sg.reduce(filelist, fns ||{}, (table, filename) => {
-        return extendFnTable(table, null, filename, process.cwd());
-      });
-
-      return invokeIt();
-    }
-  }
-
-  if (sg.isnt(fns)) {
-    ({glob, ...argv} = argv);
-    if (glob) {
-      // TODO: ...
-      libGlob(glob, function(err, files) {
-console.log(`globbed ${glob}`, {err, files});
-
-      });
-    }
-  }
-
-  function invokeIt() {
-    run_v2(fns, fnName, argv, function(err, data, ...rest) {
-      // console.log(`invokeit-cb2`, sg.inspect({fns, fnName, argv, err, data, rest}));
-      console.log(`invokeit-cb`, sg.inspect({err, data, rest}));
-    });
-  }
-}
 
 // console.log(ARGV);
 

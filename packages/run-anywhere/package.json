@@ -37,7 +37,9 @@
     "sg-config": "^1.0.77",
     "sg-env": "^1.0.7",
     "sg-flow": "^1.0.59",
-    "sgsg": "^0.9.54"
+    "sg0": "^1.0.35",
+    "sgsg": "^0.9.54",
+    "sprintf-js": "^1.1.2"
   },
   "devDependencies": {
     "ava": "^1.0.1"

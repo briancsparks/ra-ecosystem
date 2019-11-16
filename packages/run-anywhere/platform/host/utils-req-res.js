@@ -1,8 +1,8 @@
 
 // TODO: I think none of these are used any more.
 
-const sg0                       = require('sg-env');
-const sg                        = sg0.merge(sg0, require('sg-smart-value'), require('sg-http'));
+const sg0                       = require('sg-argv');
+const sg                        = sg0.merge(sg0, require('@sg0/sg-smart-value'), require('sg-http'));
 const libUrl                    = require('url');
 const utils                     = require('./utils');
 

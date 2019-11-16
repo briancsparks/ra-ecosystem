@@ -111,6 +111,7 @@ exports.express_hookIntoHost = function(app, name, stage, ARGV, options = {}) {
 
   return result;
 };
+exports.hookIntoHost = exports.express_hookIntoHost;
 
 /**
  *  Calls Node.js listen function unless on Lambda, where Lambda will listen on a
