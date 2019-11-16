@@ -5,6 +5,7 @@ module.exports.smartValue   = smartValue;
 module.exports.smartKey     = smartKey;
 module.exports.smartObject  = smartObject;
 module.exports.parseParams  = parseParams;
+module.exports.smartNumber  = smartNumber;
 
 module.exports.arrayParam   = arrayParam;
 
@@ -62,7 +63,7 @@ function parseParams(arr, options) {
       continue;
     }
 
-    // handle --no-foo- as false
+    // handle --no-foo as false
     if ((m = /^--no-([^=]+)$/.exec(arr[i]))) {
       addKV(argv, m[1], false, options);
       continue;
@@ -181,6 +182,16 @@ function smartValue(value, iq =999) {
   }
 
   return value;
+}
+
+function smartNumber(value, def =0) {
+  var n = +smartValue(value);
+
+  if (isNaN(n)) {
+    return def;
+  }
+
+  return n;
 }
 
 function smartKey(key_, preserveCase) {

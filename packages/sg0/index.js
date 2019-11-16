@@ -675,6 +675,59 @@ is = exports.is = function(x) {
 };
 
 /**
+ * Returns x, unless it `isnt()`, in that case it returns `def`.
+ *
+ * A log like doing `x || def`, but `def` is only chosen if `isnt(x)`,
+ * not for zero or '' or etc. Like when you have untrusted input.
+ *
+ * @param {*} x
+ * @param {*} def
+ * @returns
+ */
+exports.or = function(x, ...rest) {
+  if (!sg.isnt(x))            { return x; }
+  if (rest.length === 1)      { return rest[0]; }
+
+  return exports.or(...rest);
+};
+
+/**
+ * Returns x, unless it `isnt()`, in that case it returns `{}`.
+ *
+ * A log like doing `x || {}`, but `{}` is only chosen if `isnt(x)`,
+ * not for zero or '' or etc. Like when you have untrusted input.
+ *
+ * But you can pass in a second param, which becomes the default.
+ *
+ * @param {*} x
+ * @returns
+ */
+exports.orO = exports.orObj = exports.orObject = function(x, def ={}, ...rest) {
+  if (!sg.isnt(x))            { return x; }
+  if (rest.length === 0)      { return def; }
+
+  return exports.or(def, ...rest);
+};
+
+/**
+ * Returns x, unless it `isnt()`, in that case it returns `[]`.
+ *
+ * A log like doing `x || []`, but `[]` is only chosen if `isnt(x)`,
+ * not for zero or '' or etc. Like when you have untrusted input.
+ *
+ * But you can pass in a second param, which becomes the default.
+ *
+ * @param {*} x
+ * @returns
+ */
+exports.orA = exports.orArr = exports.orArray = function(x, def =[], ...rest) {
+  if (!sg.isnt(x))            { return x; }
+  if (rest.length === 0)      { return def; }
+
+  return exports.or(def, ...rest);
+};
+
+/**
  *  Is the value in the list-as-a-sting.
  *
  *  strList : 'a,foo,barbaz'
@@ -1055,10 +1108,14 @@ sg.reduce = function(collection, initial, fn) {
  *
  * @param {*} obj
  * @param {*} initial
+ * @param {*} options
  * @param {*} fn
  * @returns
  */
-sg.reduceObj = function(obj, initial, fn) {
+sg.reduceObj = function(obj, initial, ...rest) {
+  var tser = _.toArray(rest).reverse();
+  var [fn, options ={}] = tser;
+
   if (arguments.length === 2) { return sg.reduceObj(obj, {}, arguments[1]); }
 
   const isObject = sg.isObject(initial);
@@ -1079,15 +1136,30 @@ sg.reduceObj = function(obj, initial, fn) {
     var   res  = res_;
 
     // They returned null... Just means 'unchanged'
-    if (res === null)            { return m; }
+    if (res === null)             { return m; }
 
     // They just returned, without returning any data... Just means keep the current k/v
-    if (_.isUndefined(res))   { return {...m, [k]:v}; }
+    if (_.isUndefined(res)) {
+      if (options.undefIsSkip)    { return m; }
+      else                        { return {...m, [k]:v}; }
+    }
+
+    // true is reuse k/v; false is unchanged -- use like filter, or like map, or like ignore
+    if (options.likeMap) {
+      if (res === true)             { return {...m, [k]:res}; }
+      if (res === false)            { return {...m, [k]:res}; }
+    } else if (options.likeIgnore) {
+      if (res === true)             { return m; }
+      if (res === false)            { return {...m, [k]:v}; }
+    } else /* like filter - the default */ {
+      if (res === true)             { return {...m, [k]:v}; }
+      if (res === false)            { return m; }
+    }
 
     // Key-Value pair(s) packed in an Array -- The primary way to use this fn
     if (Array.isArray(res)) {
 
-      if (res.length === 0)     { return m; }   /* unchanged */
+      if (res.length === 0)       { return m; }   /* unchanged */
 
       // Re-use key, replace value
       if (res.length === 1) {
@@ -1320,6 +1392,13 @@ sg.toArray = function(x) {
   if (x === null || _.isUndefined(x)) { return []; }
   if (_.isArray(x))                   { return x; }
   return [x];
+};
+
+sg.safeRequire = function(filename) {
+  try {
+    return require(filename);
+  } catch(err) {
+  }
 };
 
 sg.safeJSONParse = function(str) {

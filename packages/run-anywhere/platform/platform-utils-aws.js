@@ -1,28 +1,57 @@
 
 const sg                        = require('sg0');
 const _                         = require('lodash');
+const {decodeBodyObj,noop}      = require('./platform-utils');
 
 const useSmEvents   = !!process.env.SG_LOG_SMALL_EVENTS;
 
-module.exports.normalizeEvent = normalizeEvent;
-module.exports.decodeBody     = decodeBody;
+module.exports.argvify                  = argvify;
+module.exports.normalizeEvent           = normalizeEvent;
+module.exports.normalizeEventForLogging = normalizeEventForLogging;
+module.exports.decodeBody               = decodeBody;
 
+module.exports.fixResponse_apiGatewayProxy = fixResponse_apiGatewayProxy;
+
+
+// ------------------------------------------------------------------------------------------------------------------------------
+function argvify(event_, context, callback =noop) {
+  const event     = normalizeEvent(event_, context);
+
+  const query     = sg.extend(event.queryStringParameters, multiItemItems(event.multiValueQueryStringParameters));
+  const body      = event.body;
+  const path      = event.path;
+  const method    = event.method;
+
+  const headers   = sg.extend(event.headers, multiItemItems(event.multiValueHeaders));
+
+  const extras    = {...(event.pathParameters ||{}), ...(event.stageVariables ||{})};
+
+  const argv      = argvify(query, body, headers, extras, path, method, event, context);
+
+  callback(null, argv, context);
+  return [argv, context];
+}
+
+// ------------------------------------------------------------------------------------------------------------------------------
 function normalizeEvent(event_, context) {
-  const body      = decodeBody(event_, context);
+  const body      = decodeBody(event_, context, useSmEvents);
 
-  var   event = {...event_};
-
-  // Must have body for these
-  if (body) {
-    if (useSmEvents) {
-      event   = {...event, body: {...body, payload: [body.payload[0] ||{}, `...and ${body.payload.length} more.`]}};
-    }
-  }
+  var   event = {...event_, ...(body ||{})};
 
   return event;
 }
 
-function decodeBody(event, context) {
+// ------------------------------------------------------------------------------------------------------------------------------
+function normalizeEventForLogging(event_, context) {
+  const body      = decodeBody(event_, context, true);
+
+  var   event = {...event_, ...(body ||{})};
+
+  return event;
+}
+
+// ------------------------------------------------------------------------------------------------------------------------------
+function decodeBody(event, context, smaller) {
   const {body, isBase64Encoded} = event;
 
   if (sg.isnt(body))        { return body; }
@@ -35,18 +64,52 @@ function decodeBody(event, context) {
     body_       = buf.toString('ascii');
   }
 
-  body_ = sg.safeJSONParse(body_)   || {payload:[]};
-
-  // Make much smaller sometimes
-  if (sg.modes().debug) {
-    if (Array.isArray(body_.payload) && body_.payload.length > 1) {
-      body_ = {...body_, payload: [body_.payload[0], `${body_.payload.length} more items.`]};
-    }
-  }
+  body_ = decodeBodyObj(body_, event, context, {smaller});
 
   event.body              = body_;
   event.isBase64Encoded   = false;
 
   return body_;
 }
+
+// ------------------------------------------------------------------------------------------------------------------------------
+function multiItemItems(obj) {
+  return sg.reduce(obj, {}, (m,v,k) => {
+    if (v.length > 1) {
+      return sg.kv(m,k,v);
+    }
+
+    return m;
+  });
+}
+
+// ------------------------------------------------------------------------------------------------------------------------------
+function fixResponse_apiGatewayProxy(resp) {
+
+  // Do we have a response?
+  if (!resp) {
+    sg.elog(`ENORESP: No response`);
+
+    // Have to return something
+    return {
+      statusCode        : 500,
+      body              : sg.safeJSONStringify({error: 'server'}),
+      isBase64Encoded   : false
+    };
+  }
+
+  // Maybe the response is already in the right format
+  if ('statusCode' in resp && typeof resp.body === 'string' && 'isBase64Encoded' in resp) {
+    return resp;
+  }
+
+  // NOTE: You can also have "headers" : {}
+
+  return {
+    statusCode        : resp.statusCode ||  resp.httpCode || (resp.ok === true ? 200 : 404),
+    body              : sg.safeJSONStringify(resp),
+    isBase64Encoded   : false
+  };
+}
+
 

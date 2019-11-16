@@ -24,12 +24,7 @@ module.exports.handle = function(argv, context, callback) {
   // So, this is it! We are now handling the event/request. We have to dispatch it, and
   // then handle the final callback to the AWS service.
 
-  // Convert to argv -- TODO: remove once it is in ra
-  // const [argv, context]      = argvify(event, context_);
-  // const [argv, context]      = [event, context_];
-
-  // TODO: Dispatch it somewhere
-  // [[Fake it for now]]
+  // Dispatch it somewhere
   sg.log(`LAMBDA_Net::params`, {argv, context});
 
   // ------------------ /test

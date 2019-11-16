@@ -31,6 +31,7 @@
   },
   "dependencies": {
     "@kubernetes/client-node": "^0.10.2",
+    "@sg0/sg-smart-value": "^1.0.2",
     "aws-sdk": "^2.382.0",
     "clipboardy": "^2.1.0",
     "commander": "^2.20.0",
@@ -57,6 +58,7 @@
     "sg-diag": "^1.0.50",
     "sg-env": "^1.0.7",
     "sg-exec": "^1.0.61",
+    "sg-http": "^1.0.10",
     "shelljs": "^0.8.3",
     "superagent": "^4.1.0",
     "superb": "^3.0.0",

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* eslint-disable valid-jsdoc */
 
 if (process.env.SG_VVVERBOSE) console[process.env.SG_LOAD_STREAM || 'log'](`Loading ${__filename}`);
 
@@ -49,6 +50,13 @@ var main = function() {
 
   /* otherwise -- unknown command */
   console.error("Unknown command, known commands: ", _.keys(commands));
+};
+
+commands.ra3 = function() {
+  const ARGV = require('sg-argv').ARGV();
+  const bin3 = require('./bin3');
+
+  return bin3.main(ARGV);
 };
 
 commands['invoke-script'] = commands.invokeScript = commands.invokescript = function() {

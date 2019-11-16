@@ -506,8 +506,13 @@ const FuncRa = function(argv, context, callback, origCallback, ractx, options_ =
    * Loads a run-anywhere style function, so it can be easily called by other run-anywhere
    * functions.
    *
-   * If you are calling a (argv, context, callback) run-anywhere function from another one, use `loads()`.
+   * If you are calling a (argv, context, callback) run-anywhere function from another one, use `loads()/loads2()`.
    * If you are calling a (argv, context, callback) run-anywhere function from one that isnt, use `invokers()`.
+   *
+   * loads2() builds functions that have a flexible signature, loads() has an inflexible signature.
+   *
+   * * loads()  -> function(argv_, options2, continuation) {}
+   * * loads2() -- options2 is optional.
    *
    * 1. Remembers the `context` object, so you do not have to pass it around.
    * 2. Adds special CLI params like `--debug` and `--verbose` down to all `argv` objects.
@@ -602,8 +607,13 @@ const FuncRa = function(argv, context, callback, origCallback, ractx, options_ =
    * Loads a run-anywhere style function, so it can be easily called by other run-anywhere
    * functions.
    *
-   * If you are calling a (argv, context, callback) run-anywhere function from another one, use `loads()`.
+   * If you are calling a (argv, context, callback) run-anywhere function from another one, use `loads2()/loads()`.
    * If you are calling a (argv, context, callback) run-anywhere function from one that isnt, use `invokers()`.
+   *
+   * loads2() builds functions that have a flexible signature, loads() has an inflexible signature.
+   *
+   * * loads()  -> function(argv_, options2, continuation) {}
+   * * loads2() -- options2 is optional.
    *
    * 1. Remembers the `context` object, so you do not have to pass it around.
    * 2. Adds special CLI params like `--debug` and `--verbose` down to all `argv` objects.

@@ -14,42 +14,49 @@ if (process.env.SG_VVVERBOSE) console[process.env.SG_LOAD_STREAM || 'log'](`Load
 
 const sg                        = require('sg0');
 const _                         = require('lodash');
-const utils                     = require('./utils');
-const platform                  = require('../platform-utils-instance');
+const utils                     = sg.merge(require('./utils'), require('./utils-req-res'));
+const inbound                   = require('../platform-utils-inbound');
+const {reqRes}                  = inbound;
+const {mkLogApi,
+       mkLogApiV}               = require('../platform-utils');
+
+const logApi                    = mkLogApi('host', 'reqresinst');
+const logApiV                   = mkLogApiV('host', 'reqresinst');
 
 var   handlerFns    = [];
 var   dispatcher    = dispatch;
 
-const logApiCalls   = !!process.env.SG_LOG_RA_HOST_API;
+// const logApiCalls   = !!process.env.SG_LOG_RA_HOST_API;
 
 // TODO: Be able to invoke any RA function from all the entrypoint/host combinations.
 // TODO: Add a cli entrypoint
 
 // -----------------------------------------------------------------
 
-// Lambda handler for the function of being the host
-exports.platform_host_reqresinst_handler = function(a, b, callback) {
+// Handler for the function of being the host
+exports.platform_host_reqresinst_handler = function(event, context_, callback) {
   const startTime = new Date().getTime();
 
-  const event     = platform.normalizeEvent(a);
-  logApi(`reqresinst_handler.params`, {event:a, context:b});
+  // const event     = normalizeEvent(a, b);
+  logApiV(`reqresinst_handler.params`, {event, context:context_});
 
-  // Turn it into argv,context,callback
-  var   [argv,context]      = argvify(event, b);
+  // Fix args
+  return reqRes.inboundify(event, context_, function(err, argv, context) {
 
-  return dispatcher(argv, context, function(err, response) {
-    const endTime = new Date().getTime();
+    return dispatcher(argv, context, function(err, response) {
+      const endTime = new Date().getTime();
 
-    const fixedResponse = utils.fixResponse(response);
+      const fixedResponse = reqRes.fixResponse(response);
 
-    logApi(`reqresinst_handler: (${(endTime - startTime) * 1000})`, {argv, err, response, fixedResponse});
+      logApi(`reqresinst_handler: (${(endTime - startTime) * 1000})`, {argv, err, response, fixedResponse});
 
-    // OK?
-    if (err || !response || !response.ok) {
-      return callback(err, fixedResponse);
-    }
+      // OK?
+      if (err || !fixedResponse || !fixedResponse.ok) {
+        return callback(err, fixedResponse);
+      }
 
-    callback(err, fixedResponse);
+      callback(err, fixedResponse);
+    });
   });
 };
 
@@ -80,27 +87,12 @@ function dispatch(event, context, callback) {
   if (!handled) {
     console.log(`reqresinst_handler not found`);
 
-    return callback(null, utils.fixResponse({statusCode: 404, body: {ok: false}}));
+    return callback(null, reqRes.fixResponse({statusCode: 404, body: {ok: false}}));
   }
 }
 
 
 function mkHandlerWrapper(select, handleIt) {
   return {select, handleIt};
-}
-
-
-
-function argvify(event, context) {
-  const argv = event;
-  return [argv,context];
-}
-
-
-
-function logApi(msg, obj, ...rest) {
-  if (!logApiCalls) { return; }
-
-  sg.log(`LOGAPI reqresinst(RA_Host): ${msg}`, obj, ...rest);
 }
 

@@ -25,6 +25,7 @@ sg.libs = {...(sg.libs || {}), fs, path};
 
 sg.ARGV       = ARGV;
 sg.argvGet    = argvGet;
+sg.argvPod    = argvPod;
 
 // -------------------------------------------------------------------------------------
 // exports
@@ -97,10 +98,10 @@ function ARGV(input = process.argv) {
     var   value = argv[key];
     var   orig  = value;
 
-    // A value that is an Array of one string is just the string
-    if (Array.isArray(value) && value.length === 1 && typeof value[0] === 'string') {
-      value = value[0];
-    }
+    // // A value that is an Array of one string is just the string
+    // if (Array.isArray(value) && value.length === 1 && typeof value[0] === 'string') {
+    //   value = value[0];
+    // }
 
     // `@filename` means read from the file
     if (_.isString(value)) {
@@ -249,7 +250,7 @@ function ARGV(input = process.argv) {
  * @returns {string[]} The remainder parameters.
  */
 function preProcess(args, argv) {
-  var   result = [];
+  var   result = [], m;
 
   var old;
   for (var i = 0; i < args.length;) {
@@ -259,6 +260,23 @@ function preProcess(args, argv) {
 
     // See if the array-param understanding function wants to handle this one
     i   = arrayParam(i, result, args, argv);
+    if (i !== old) {
+      continue;
+    }
+
+    const arg = args[i];
+
+    // handle --no-foo as false
+    if ((m = /^--no-([^=]+)$/.exec(arg))) {
+      argv[m[1]] = false;
+      i += 1;
+    }
+
+    // handle --foo- as false
+    if ((m = /^--([^=]+)-$/.exec(arg))) {
+      argv[m[1]] = false;
+      i += 1;
+    }
 
     // If the current was handled, it will increment `i`
     if (i === old) {
@@ -332,6 +350,12 @@ function argvGet(argv, names, options) {
       // return sg.kv(m, name, argv[name]);
       return argv[name];
     }
+  });
+}
+
+function argvPod(argv) {
+  return sg.reduceObj(argv, {}, (m,v,k) => {
+    return (typeof v !== 'function') && (k !== '_');
   });
 }
 

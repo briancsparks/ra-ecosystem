@@ -18,7 +18,7 @@ const {mkWarmup}      = require('./warmup');
 
 module.exports.mkWarmupLambda = mkWarmupLambda;
 
-function mkWarmupLambda(options, handler) {
+function mkWarmupLambda(options, handler, lambdaName) {
 
   // For example, handler.getKey(), options.ttl, options.lambdaName
 
@@ -34,7 +34,7 @@ function mkWarmupLambda(options, handler) {
   // =======================================================================================
 
   function callLambda(argv, context, callback) {
-    // ... call lambda, send result
+    // ... call lambda, send result, use lambdaName
     return callback(null, {});
   }
 }

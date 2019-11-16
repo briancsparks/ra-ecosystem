@@ -3,7 +3,7 @@ if (process.env.SG_VVVERBOSE) console[process.env.SG_LOAD_STREAM || 'log'](`Load
 /**
  * @file
  *
- * As an entrypoint, I know the format of the request and respons. However,
+ * As an entrypoint, I know the format of the request and response. However,
  * for efficiencys sake, we usually only do the translation of the response,
  * and let the host-level function translate into the argv style.
  *
@@ -13,18 +13,24 @@ if (process.env.SG_VVVERBOSE) console[process.env.SG_LOAD_STREAM || 'log'](`Load
 const sg                        = require('sg0');
 const _                         = require('lodash');
 // const utils                     = require('./utils');
+const outbound                  = require('../platform-utils-outbound');
+const {apiGatewayProxy}         = outbound;
+const {mkLogApi,
+       mkLogApiV}               = require('../platform-utils');
+
+const logApi                    = mkLogApi('entrypoint', 'apigateway');
+const logApiV                   = mkLogApiV('entrypoint', 'apigateway');
 
 var   handlerFns    = [];
-const logApiCalls   = !!process.env.SG_LOG_RA_ENTRYPOINT_API;
 
 // -----------------------------------------------------------------
 
 // Lambda handler for the function of being the entrypoint
 exports.platform_entrypoint_apigateway_lambda_handler = function(event, context, callback) {
-  logApi(`lambda_handler.params`, {event, context});
+  logApiV(`lambda_handler.params`, {event, context});
 
   return dispatch(event, context, function(err, response) {
-    logApi(`lambda_handler.response`, {err, response});
+    logApi(`lambda_handler.response`, {event, err, response});
     return callback(err, response);
   });
 };
@@ -32,17 +38,10 @@ exports.platform_entrypoint_apigateway_lambda_handler = function(event, context,
 
 // Dispatch the call
 function dispatch(event, context, callback) {
-  logApi(`dispatch.start`, {event, context});
+  logApiV(`dispatch.start`, {event, context});
 
   // So, this is it! We are now handling the event/request. We have to dispatch it, and
   // then handle the final callback to the AWS service.
-
-  // TODO: There should not be any argv here
-  // var   [argv,context]      = [event, context_];
-
-  // TODO: Dispatch it somewhere
-  // [[Fake it for now]]
-  logApi(`Dispatching into app`, {event, context});
 
   // Loop over the registered handlers, and see which one to give it to
   var   handled       = false;
@@ -55,7 +54,8 @@ function dispatch(event, context, callback) {
 
       // Let the handler do its thing
       return handler.handleIt(event, context, function(err, response) {
-        const fixedResponse = fixResponseForApiGatewayLambdaProxy(response);
+        const fixedResponse = apiGatewayProxy.fixResponse(response);
+        logApiV(`Dispatched`, {event, err, response: fixedResponse});
         return callback(err, fixedResponse);
       });
     }
@@ -81,37 +81,31 @@ function mkHandlerWrapper(select, handleIt) {
   return {select, handleIt};
 }
 
-function fixResponseForApiGatewayLambdaProxy(resp) {
+// function fixResponseForApiGatewayLambdaProxy(resp) {
 
-  // Do we have a response?
-  if (!resp) {
-    sg.elog(`ENORESP: No response`);
+//   // Do we have a response?
+//   if (!resp) {
+//     sg.elog(`ENORESP: No response`);
 
-    // Have to return something
-    return {
-      statusCode        : 500,
-      body              : sg.safeJSONStringify({error: 'server'}),
-      isBase64Encoded   : false
-    };
-  }
+//     // Have to return something
+//     return {
+//       statusCode        : 500,
+//       body              : sg.safeJSONStringify({error: 'server'}),
+//       isBase64Encoded   : false
+//     };
+//   }
 
-  // Maybe the response is already in the right format
-  if ('statusCode' in resp && typeof resp.body === 'string' && 'isBase64Encoded' in resp) {
-    return resp;
-  }
+//   // Maybe the response is already in the right format
+//   if ('statusCode' in resp && typeof resp.body === 'string' && 'isBase64Encoded' in resp) {
+//     return resp;
+//   }
 
-  // NOTE: You can also have "headers" : {}
+//   // NOTE: You can also have "headers" : {}
 
-  return {
-    statusCode        : resp.statusCode ||  resp.httpCode || (resp.ok === true ? 200 : 404),
-    body              : sg.safeJSONStringify(resp),
-    isBase64Encoded   : false
-  };
-}
-
-function logApi(msg, obj, ...rest) {
-  if (!logApiCalls) { return; }
-
-  sg.log(`LOGAPI (RA_Entrypoint): ${msg}`, obj, ...rest);
-}
+//   return {
+//     statusCode        : resp.statusCode ||  resp.httpCode || (resp.ok === true ? 200 : 404),
+//     body              : sg.safeJSONStringify(resp),
+//     isBase64Encoded   : false
+//   };
+// }
 

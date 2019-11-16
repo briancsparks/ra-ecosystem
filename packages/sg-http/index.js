@@ -39,19 +39,19 @@ var getRawBody = sg.getRawBody = function(req, callback) {
  * @param {function}        callback  - The standard callback.
  * @returns {Object}                  - The parsed JSON object.
  */
-var getBodyJson = function(req, callback) {
+var getBodyJson = sg.getBodyJson = function(req, callback) {
   var json;
 
   return getRawBody(req, function(err, buf) {
-    if (err)                { return callback(err); }
-    if (buf.length === 0)   { return callback('ENOBODY'); }
+    if (err)                { return callback(err, {}); }
+    if (buf.length === 0)   { return callback('ENOBODY', {}); }
 
     if (req.bodyJson)       { return callback(null, req.bodyJson); }
 
     // Get JSON
     json = sg.safeJSONParse(buf.toString());
     if (!json) {
-      return callback('EPARSE');
+      return callback('EPARSE', {body:json});
     }
 
     // Success! Return it
