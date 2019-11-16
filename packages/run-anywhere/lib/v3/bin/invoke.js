@@ -19,18 +19,15 @@ function main(argv_, user_sys_argv_ ={}) {
   var {
     // sys_argv:
     fnName,
-    fnTable,
-    filelist,
-    glob,
     ignore, globIgnore,
+    // fnTable, filelist, glob,
 
     user_sys_argv,
     argv,
-
-    ...others
+    ...sys_argv
   }               = extractSysArgv({argv: argv_}, {user_sys_argv: user_sys_argv_});
 
-  sg.warn_if(sg.firstKey(others), `ENOTCLEAN`, {others});
+  // sg.warn_if(sg.firstKey(others), `ENOTCLEAN`, {others});
 
   var commands    = argv_._;
 
@@ -40,7 +37,7 @@ function main(argv_, user_sys_argv_ ={}) {
   // ---
   ignore          = [__filename, ...sg.arrayify(globIgnore || ignore)];
 
-  var sys_argv    = sg.merge({filelist,glob,fnTable,ignore, ...user_sys_argv});
+  sys_argv    = sg.merge({ignore, ...sys_argv, ...user_sys_argv});
   run_v2(sys_argv, fnName, argv, function(err, data, ...rest) {
     // console.log(`invokeit-cb`, sg.inspect({fns, fnName, argv, err, data, rest}));
     console.log(`invokeit-cb`, sg.inspect({err, data, rest}));
