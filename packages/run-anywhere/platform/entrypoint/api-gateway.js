@@ -22,20 +22,27 @@ const logApi                    = mkLogApi('entrypoint', 'apigateway');
 const logApiV                   = mkLogApiV('entrypoint', 'apigateway');
 
 var   handlerFns    = [];
+var   dispatcher    = dispatch;
 
-// -----------------------------------------------------------------
+exports.apigateway = {};
 
+
+
+// ----------------------------------------------------------------------------------------------------------------------------
 // Lambda handler for the function of being the entrypoint
+exports.apigateway_lambda_handler =
+exports.apigateway.lambda_handler =
 exports.platform_entrypoint_apigateway_lambda_handler = function(event, context, callback) {
   logApiV(`lambda_handler.params`, {event, context});
 
-  return dispatch(event, context, function(err, response) {
+  return dispatcher(event, context, function(err, response) {
     logApi(`lambda_handler.response`, {event, err, response});
     return callback(err, response);
   });
 };
 
 
+// ----------------------------------------------------------------------------------------------------------------------------
 // Dispatch the call
 function dispatch(event, context, callback) {
   logApiV(`dispatch.start`, {event, context});
@@ -69,43 +76,23 @@ function dispatch(event, context, callback) {
   }
 }
 
+// ----------------------------------------------------------------------------------------------------------------------------
+exports.apigateway_setDispatcher =
+exports.apigateway.setDispatcher =
+exports.setDispatcher = function(d) {
+  dispatcher = d;
+};
 
-
-
-
+// ----------------------------------------------------------------------------------------------------------------------------
+exports.apigateway_registerHandler =
+exports.apigateway.registerHandler =
 exports.registerHandler = function(selector, handler) {
   handlerFns.push(mkHandlerWrapper(selector, handler));
 };
 
+// ----------------------------------------------------------------------------------------------------------------------------
 function mkHandlerWrapper(select, handleIt) {
   return {select, handleIt};
 }
 
-// function fixResponseForApiGatewayLambdaProxy(resp) {
-
-//   // Do we have a response?
-//   if (!resp) {
-//     sg.elog(`ENORESP: No response`);
-
-//     // Have to return something
-//     return {
-//       statusCode        : 500,
-//       body              : sg.safeJSONStringify({error: 'server'}),
-//       isBase64Encoded   : false
-//     };
-//   }
-
-//   // Maybe the response is already in the right format
-//   if ('statusCode' in resp && typeof resp.body === 'string' && 'isBase64Encoded' in resp) {
-//     return resp;
-//   }
-
-//   // NOTE: You can also have "headers" : {}
-
-//   return {
-//     statusCode        : resp.statusCode ||  resp.httpCode || (resp.ok === true ? 200 : 404),
-//     body              : sg.safeJSONStringify(resp),
-//     isBase64Encoded   : false
-//   };
-// }
 

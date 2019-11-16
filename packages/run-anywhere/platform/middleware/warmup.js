@@ -14,6 +14,7 @@
 
 module.exports.mkWarmup = mkWarmup;
 
+// ----------------------------------------------------------------------------------------------------------------------------
 function mkWarmup(options, handler, handle) {
 
   // For example, handler.getKey(), options.ttl

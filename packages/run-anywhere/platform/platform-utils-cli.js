@@ -4,6 +4,7 @@
 
 module.exports.fixResponse_stdout     = fixResponse_stdout;
 
+// ----------------------------------------------------------------------------------------------------------------------------
 function fixResponse_stdout(err, data) {
 
   return {...data};

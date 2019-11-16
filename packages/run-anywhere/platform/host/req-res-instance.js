@@ -14,7 +14,6 @@ if (process.env.SG_VVVERBOSE) console[process.env.SG_LOAD_STREAM || 'log'](`Load
 
 const sg                        = require('sg0');
 const _                         = require('lodash');
-const utils                     = sg.merge(require('./utils'), require('./utils-req-res'));
 const inbound                   = require('../platform-utils-inbound');
 const {reqRes}                  = inbound;
 const {mkLogApi,
@@ -31,8 +30,7 @@ var   dispatcher    = dispatch;
 // TODO: Be able to invoke any RA function from all the entrypoint/host combinations.
 // TODO: Add a cli entrypoint
 
-// -----------------------------------------------------------------
-
+// ------------------------------------------------------------------------------------------------------------------------------
 // Handler for the function of being the host
 exports.platform_host_reqresinst_handler = function(event, context_, callback) {
   const startTime = new Date().getTime();
@@ -59,19 +57,23 @@ exports.platform_host_reqresinst_handler = function(event, context_, callback) {
   });
 };
 
-// -----------------------------------------------------------------
 
+
+
+
+
+// ------------------------------------------------------------------------------------------------------------------------------
 exports.setDispatcher = function(d) {
   dispatcher = d;
 };
 
+// ------------------------------------------------------------------------------------------------------------------------------
 exports.registerHandler = function(selector, handler) {
   handlerFns.push(mkHandlerWrapper(selector, handler));
 };
 
 
-
-
+// ------------------------------------------------------------------------------------------------------------------------------
 function dispatch(event, context, callback) {
   var   handled       = false;
   _.each(handlerFns, (handler) => {
@@ -91,6 +93,7 @@ function dispatch(event, context, callback) {
 }
 
 
+// ------------------------------------------------------------------------------------------------------------------------------
 function mkHandlerWrapper(select, handleIt) {
   return {select, handleIt};
 }

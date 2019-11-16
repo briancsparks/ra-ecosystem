@@ -14,7 +14,6 @@ const sg                        = require('sg-argv');
 const _                         = require('lodash');
 const http                      = require('http');
 const libUrl                    = require('url');
-// const utils                     = require('./utils-req-res');
 const {extractSysArgv}          = require('../../lib/v3/invoke');
 const outbound                  = require('../platform-utils-outbound');
 const {cli}                     = outbound;
@@ -29,7 +28,7 @@ const logApiV                   = mkLogApiV('entrypoint', 'cli');
 var   handlerFns    = [];
 var   dispatcher    = dispatch;
 
-// ============================================================================================================================
+// ----------------------------------------------------------------------------------------------------------------------------
 exports.main = function(argv_, user_sys_argv_ ={}) {
   if (sg.isnt(argv_))     { return exports.main(sg.ARGV() ||{}); }
 
@@ -43,6 +42,7 @@ exports.main = function(argv_, user_sys_argv_ ={}) {
 };
 
 
+// ----------------------------------------------------------------------------------------------------------------------------
 // Handler for the function of being the entrypoint
 exports.platform_entrypoint = function(event, context, callback) {
   logApiV(`cli_handler.params`, {event, context});
@@ -54,6 +54,9 @@ exports.platform_entrypoint = function(event, context, callback) {
   });
 };
 
+
+
+// ----------------------------------------------------------------------------------------------------------------------------
 // Dispatch the call
 function dispatch(event, context, callback) {
   logApiV(`dispatch.start`, {event, context});
@@ -87,23 +90,18 @@ function dispatch(event, context, callback) {
   }
 }
 
-//
+// ----------------------------------------------------------------------------------------------------------------------------
 exports.setDispatcher = function(d) {
   dispatcher = d;
 };
 
+// ----------------------------------------------------------------------------------------------------------------------------
 exports.registerHandler = function(selector, handler) {
   handlerFns.push(mkHandlerWrapper(selector, handler));
 };
 
+// ----------------------------------------------------------------------------------------------------------------------------
 function mkHandlerWrapper(select, handleIt) {
   return {select, handleIt};
 }
 
-function contextify(sys_argv, argv, callback) {
-
-  var event     = argv;
-  var context   = {sys_argv};
-
-  return callback(null, event, context);
-}

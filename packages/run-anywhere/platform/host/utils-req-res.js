@@ -8,6 +8,7 @@ const utils                     = require('./utils');
 
 module.exports.argvify = argvify;
 
+// ------------------------------------------------------------------------------------------------------------------------------
 function argvify(event, context, callback =noop) {
 
   // req and res are on event
@@ -29,15 +30,18 @@ function argvify(event, context, callback =noop) {
   });
 }
 
+// ------------------------------------------------------------------------------------------------------------------------------
 function normalizeHeaders(headers) {
   return sg.reduceObj(headers, {}, function(m, v, k) {
     return [sg.smartKey(k), v];
   });
 }
 
+// ------------------------------------------------------------------------------------------------------------------------------
 const bodies = ':put:post:';
 function methodHasBody(method) {
   return bodies.indexOf(':'+ method.toLowerCase() +':') !== -1;
 }
 
+// ------------------------------------------------------------------------------------------------------------------------------
 function noop(){}

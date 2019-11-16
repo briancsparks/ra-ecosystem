@@ -13,7 +13,6 @@ if (process.env.SG_VVVERBOSE) console[process.env.SG_LOAD_STREAM || 'log'](`Load
 const sg                        = require('sg-env');
 const _                         = require('lodash');
 const http                      = require('http');
-const libUrl                    = require('url');
 const utils                     = require('./utils-req-res');
 const outbound                  = require('../platform-utils-outbound');
 const {nginxRpxi}               = outbound;
@@ -29,8 +28,7 @@ const ENV                       = sg.ENV();
 var   handlerFns    = [];
 var   dispatcher    = dispatch;
 
-// -----------------------------------------------------------------
-
+// ----------------------------------------------------------------------------------------------------------------------------
 exports.startServer = function(port_) {
   const port                    = ENV.at('SIDECAR_PORT') || port_ || 3009;
 
@@ -60,6 +58,7 @@ exports.startServer = function(port_) {
 };
 
 
+// ----------------------------------------------------------------------------------------------------------------------------
 // Handler for the function of being the entrypoint
 exports.platform_entrypoint = function(event, context, callback) {
   logApiV(`nginx_sidecarproxy_handler.params`, {event, context});
@@ -71,6 +70,13 @@ exports.platform_entrypoint = function(event, context, callback) {
   });
 };
 
+
+
+
+
+
+
+// ----------------------------------------------------------------------------------------------------------------------------
 // Dispatch the call
 function dispatch(event, context, callback) {
   logApiV(`dispatch.start`, {event, context});
@@ -104,15 +110,17 @@ function dispatch(event, context, callback) {
   }
 }
 
-//
+// ----------------------------------------------------------------------------------------------------------------------------
 exports.setDispatcher = function(d) {
   dispatcher = d;
 };
 
+// ----------------------------------------------------------------------------------------------------------------------------
 exports.registerHandler = function(selector, handler) {
   handlerFns.push(mkHandlerWrapper(selector, handler));
 };
 
+// ----------------------------------------------------------------------------------------------------------------------------
 function mkHandlerWrapper(select, handleIt) {
   return {select, handleIt};
 }

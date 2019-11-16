@@ -10,6 +10,7 @@ const {run_v2,build_fnTable}                = require('../../lib/v3/invoke');
 
 module.exports.mkInvokeRa = mkInvokeRa;
 
+// ----------------------------------------------------------------------------------------------------------------------------
 function mkInvokeRa(options_, handler, fnName_) {
   var options = options_ || {};
   var getting_fnTable = false;

@@ -8,6 +8,7 @@
 
 module.exports.mkInvokeLambda = mkInvokeLambda;
 
+// ----------------------------------------------------------------------------------------------------------------------------
 function mkInvokeLambda(options, handler, lambdaName) {
 
   // For example, handler.getKey(), options.ttl

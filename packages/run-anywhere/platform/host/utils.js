@@ -7,6 +7,7 @@ const _                         = require('lodash');
 module.exports.fixResponse = fixResponse;
 module.exports.argvify     = argvify;
 
+// ------------------------------------------------------------------------------------------------------------------------------
 function fixResponse(resp_) {
   if (sg.isnt(resp_))   { return resp_; }
 
@@ -19,6 +20,7 @@ function fixResponse(resp_) {
   return resp;
 }
 
+// ------------------------------------------------------------------------------------------------------------------------------
 function argvify(query_, body_, headers_, extras, path_, method_, event_, context_) {
   const event = {...event_};
 

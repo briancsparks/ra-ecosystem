@@ -10,36 +10,9 @@ const {decodeBodyObj,
 
 const useSmEvents   = !!process.env.SG_LOG_SMALL_EVENTS;
 
-// module.exports.argvify                  = argvify;
 module.exports.normalizeEvent           = normalizeEvent;
 module.exports.normalizeEventForLogging = normalizeEventForLogging;
 module.exports.decodeBody               = decodeBody;
-
-// ------------------------------------------------------------------------------------------------------------------------------
-// function argvify(ARGV, context_, callback =noop) {
-//   var {sys_argv, ...context} = context_;
-
-//   // req and res are on event
-//   const url     = libUrl.parse(event.req, true);
-//   const method  = url.method;
-//   const query   = url.query;
-//   const path    = url.pathname;
-//   const headers = normalizeHeaders(event.req.headers);
-
-//   if (!methodHasBody(method)) {
-//     let argv =  platform.argvify(query, /*body=*/{}, headers, /*extras=*/{}, path, method, event, context);
-//     callback(null, argv, context);
-//     return [argv, context];
-//   }
-
-//   return sg.getBodyJson(event.req, function(err, body_) {
-//     const event_    = normalizeEvent({...event, body_}, context);
-//     const body      = event_.body || body_;
-
-//     const argv      =  platform.argvify(query, body, headers, /*extras=*/{}, path, method, event_, context);
-//     return callback(err, argv, context);
-//   });
-// }
 
 // ------------------------------------------------------------------------------------------------------------------------------
 function normalizeEvent(event_, context) {
