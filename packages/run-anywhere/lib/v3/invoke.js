@@ -10,10 +10,13 @@ const {
   ensureThreeArgvContext
 }                             = libThreeContext;
 
-// module.exports.extendFnTable  = extendFnTable;
+module.exports.build_fnTable  = build_fnTable;
 module.exports.invoke_v2      = invoke_v2;
 module.exports.run_v2         = run_v2;
 module.exports.safeRequire    = safeRequire;
+
+// get `extractSysArgv`, `extractSysArgvNamed`
+sg._extend(module.exports, require('./bin/utils'));
 
 // ----------------------------------------------------------------------------------------------------------------------------
 const globIgnore = [
@@ -23,57 +26,92 @@ const globIgnore = [
   '**/*.test.js'
 ];
 
-function relativify(filename, dir) {
-  if (path.isAbsolute(filename)) {
-    return path.relative(dir, filename);
-  }
-  return filename;
-}
-
 // ----------------------------------------------------------------------------------------------------------------------------
-function run_v2(sys_argv, fnName, argv_, callback) {
+function build_fnTable(sys_argv, callback) {
+
+  if (!sg.isnt(sys_argv.fnTable)) {
+    return callback(null, sys_argv.fnTable);
+  }
+
   var {fnTable}   = sys_argv;
   let {filelist}  = sys_argv;
   let {glob}      = sys_argv;
   var {cwd}       = sys_argv;
+
+  if (filelist) {
+    fnTable = sg.reduce(filelist, fnTable ||{}, (table, filename) => {
+      return extendFnTable(table, null, filename, process.cwd());
+    });
+
+    return build_fnTable({fnTable}, callback);
+  }
+
+  if (glob) {
+    cwd     = cwd || process.cwd();
+    const options = {
+      ignore    : [...globIgnore, ...(sys_argv.ignore ||[])].map(x => relativify(x, cwd)),
+      cwd,
+    };
+
+    // console.log(`invoke-glob`, sg.inspect({options, ignore: sys_argv.ignore}));
+    return libGlob(glob, options, function(err, filelist) {
+      // console.log(`build_fnTable`, sg.inspect({err, filelist}));
+      return build_fnTable({filelist}, callback);
+    });
+  }
+
+  return callback(`ENOFNTABLE`);
+}
+
+// ----------------------------------------------------------------------------------------------------------------------------
+function run_v2(sys_argv, fnName, argv_, callback, ...rest /* rest is [options, abort]*/) {
+  // var {fnTable}   = sys_argv;
+  // let {filelist}  = sys_argv;
+  // let {glob}      = sys_argv;
+  // var {cwd}       = sys_argv;
   var argv        = {...argv_};
 
-  if (sg.isnt(fnTable)) {
-    if (filelist) {
-      fnTable = sg.reduce(filelist, fnTable ||{}, (table, filename) => {
-        return extendFnTable(table, null, filename, process.cwd());
-      });
+  // if (sg.isnt(fnTable)) {
+  //   if (filelist) {
+  //     fnTable = sg.reduce(filelist, fnTable ||{}, (table, filename) => {
+  //       return extendFnTable(table, null, filename, process.cwd());
+  //     });
 
-      return run_v2({fnTable}, fnName, argv_, callback);
-    }
-  }
+  //     return run_v2({fnTable}, fnName, argv_, callback);
+  //   }
+  // }
 
-  if (sg.isnt(fnTable)) {
-    if (glob) {
-      cwd     = cwd || process.cwd();
-      const options = {
-        ignore    : [...globIgnore, ...(sys_argv.ignore ||[])].map(x => relativify(x, cwd)),
-        cwd,
-      };
+  // if (sg.isnt(fnTable)) {
+  //   if (glob) {
+  //     cwd     = cwd || process.cwd();
+  //     const options = {
+  //       ignore    : [...globIgnore, ...(sys_argv.ignore ||[])].map(x => relativify(x, cwd)),
+  //       cwd,
+  //     };
 
-      // console.log(`invoke-glob`, sg.inspect({options, ignore: sys_argv.ignore}));
-      return libGlob(glob, options, function(err, filelist) {
-        // console.log(sg.inspect({err, filelist}));
-        return run_v2({filelist}, fnName, argv_, callback);
-      });
-    }
-  }
+  //     // console.log(`invoke-glob`, sg.inspect({options, ignore: sys_argv.ignore}));
+  //     return libGlob(glob, options, function(err, filelist) {
+  //       // console.log(sg.inspect({err, filelist}));
+  //       return run_v2({filelist}, fnName, argv_, callback);
+  //     });
+  //   }
+  // }
 
-  return invokeIt_v2();
+  return build_fnTable(sys_argv, function(err, fnTable) {
+    if (err)  { return callback(err); }
+    return invokeIt_v2(fnTable);
+  });
+
+  // return invokeIt_v2(fnTable);
 
   // =====================================================================================
-  function invokeIt_v2() {
+  function invokeIt_v2(fnTable) {
 
     if (sg.isnt(fnTable)) {
       return callback(`ENOFN`);
     }
 
-    run_v2FromTable(fnTable, fnName, argv, onResult /* TODO: , abort, options*/);
+    run_v2FromTable(fnTable, fnName, argv, onResult, ...rest /* rest is [options, abort]*/);
 
     // =====================================================================================
     function onResult(err, data, ...rest) {
@@ -93,7 +131,7 @@ function run_v2FromTable(fnTable, fnName, argv, callback, ...rest) {
 }
 
 // ----------------------------------------------------------------------------------------------------------------------------
-function invoke_v2(lib, fnName, argv_, callback, abort, options_ ={}) {
+function invoke_v2(lib, fnName, argv_, callback, options__ ={}, abort =null) {
   const fn = lib[fnName];
   if (!fn)                                { return callback(`ENOFN`); }
 
@@ -105,6 +143,13 @@ function invoke_v2(lib, fnName, argv_, callback, abort, options_ ={}) {
 
   var   argv = sg.argvPod(argv_);
 
+  // Get options
+  // const {context, ...options_} = options__;
+  const [context0, options_] = sg.reduce(options__, [{},{}], (m,v,k) => {
+    if (k === 'context')  { return [v, m[1]]; }                   /* put context into [0] */
+    return [m[0], {...m[1], [k]:v}];                              /* Accumulate into [1] */
+  });
+
   // Get args
   const {
     debug, silent, verbose, ddebug, forceSilent, vverbose, machine, human
@@ -114,8 +159,11 @@ function invoke_v2(lib, fnName, argv_, callback, abort, options_ ={}) {
   // Will get invoked at the bottom of this function
   const invoke_v2_main = function() {
 
+    // TODO: what does context0 mean? We need to preserve it, for sure.
+
     // Build up or get the context
     var   context_ = {
+      ...context0,
       isRaInvoked:    true,
       invokedFnName:  fnName
     };
@@ -252,6 +300,14 @@ function sm(x) {
   }
 
   return [];
+}
+
+// ----------------------------------------------------------------------------------------------------------------------------
+function relativify(filename, dir) {
+  if (path.isAbsolute(filename)) {
+    return path.relative(dir, filename);
+  }
+  return filename;
 }
 
 

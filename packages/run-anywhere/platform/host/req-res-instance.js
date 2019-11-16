@@ -37,7 +37,6 @@ var   dispatcher    = dispatch;
 exports.platform_host_reqresinst_handler = function(event, context_, callback) {
   const startTime = new Date().getTime();
 
-  // const event     = normalizeEvent(a, b);
   logApiV(`reqresinst_handler.params`, {event, context:context_});
 
   // Fix args

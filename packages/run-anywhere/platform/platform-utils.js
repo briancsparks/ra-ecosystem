@@ -1,5 +1,6 @@
 
-const sg                        = require('sg-env');
+const sg0                       = require('sg-argv');
+const sg                        = sg0.merge(sg0, require('sg-env'));
 const _                         = require('lodash');
 
 const ENV                       = sg.ENV();
@@ -20,6 +21,7 @@ module.exports.methodHasBody    = methodHasBody;
 module.exports.fixResponse      = fixResponse;
 module.exports.mkLogApi         = mkLogApi;
 module.exports.mkLogApiV        = mkLogApiV;
+module.exports.asErr            = asErr;
 module.exports.noop             = noop;
 
 
@@ -45,7 +47,7 @@ function decodeBodyObj(body_, event, context, {smaller}) {
 }
 
 // ------------------------------------------------------------------------------------------------------------------------------
-function argvify(query_, body_, headers_, extras, path_, method_, event_, context) {
+function argvify(query_, body_, headers_, extras, path_, method_, event_, context ={}, extraContext ={}) {
   const event = {...(event_ ||{})};
 
   const query     = query_    || {};
@@ -70,7 +72,7 @@ function argvify(query_, body_, headers_, extras, path_, method_, event_, contex
     }
   };
 
-  return [argv, context ||{}];
+  return [argv, {...context, ...extraContext}];
 }
 
 // ------------------------------------------------------------------------------------------------------------------------------
@@ -177,6 +179,16 @@ function mkLogApiV(modType, modName) {
 
     sg.log(`LOGAPI ${modName}(RA_${modType}): ${msg}`, obj, ...rest);
   };
+}
+
+// ------------------------------------------------------------------------------------------------------------------------------
+function asErr(obj) {
+  const squashed = sg.merge(obj);
+  if (sg.firstKey(squashed)) {
+    return squashed;
+  }
+
+  return null;
 }
 
 

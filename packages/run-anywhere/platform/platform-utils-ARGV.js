@@ -2,6 +2,7 @@
 const sg                        = require('sg0');
 const _                         = require('lodash');
 const libUrl                    = require('url');
+const {extractSysArgv}          = require('../lib/v3/invoke');
 const platform                  = require('./platform-utils');
 const {decodeBodyObj,
        noop,
@@ -10,36 +11,55 @@ const {decodeBodyObj,
 
 const useSmEvents   = !!process.env.SG_LOG_SMALL_EVENTS;
 
-// module.exports.argvify                  = argvify;
+module.exports.argvify                  = argvify;
+module.exports.contextify               = contextify;
 module.exports.normalizeEvent           = normalizeEvent;
 module.exports.normalizeEventForLogging = normalizeEventForLogging;
 module.exports.decodeBody               = decodeBody;
 
 // ------------------------------------------------------------------------------------------------------------------------------
-// function argvify(ARGV, context_, callback =noop) {
-//   var {sys_argv, ...context} = context_;
+function argvify(event, context_, callback =noop) {
+  var context;
+  const argv_           = event.argv;
+  const user_sys_argv_  = event.user_sys_argv;
 
-//   // req and res are on event
-//   const url     = libUrl.parse(event.req, true);
-//   const method  = url.method;
-//   const query   = url.query;
-//   const path    = url.pathname;
-//   const headers = normalizeHeaders(event.req.headers);
+  var {
+    // sys_argv:
+    fnName,
+    ignore, globIgnore,
+    // fnTable, filelist, glob,
 
-//   if (!methodHasBody(method)) {
-//     let argv =  platform.argvify(query, /*body=*/{}, headers, /*extras=*/{}, path, method, event, context);
-//     callback(null, argv, context);
-//     return [argv, context];
-//   }
+    user_sys_argv,
+    argv,
+    ...sys_argv
+  }               = extractSysArgv({argv: argv_}, {user_sys_argv: user_sys_argv_});
 
-//   return sg.getBodyJson(event.req, function(err, body_) {
-//     const event_    = normalizeEvent({...event, body_}, context);
-//     const body      = event_.body || body_;
+  // sg.warn_if(sg.firstKey(others), `ENOTCLEAN`, {others});
 
-//     const argv      =  platform.argvify(query, body, headers, /*extras=*/{}, path, method, event_, context);
-//     return callback(err, argv, context);
-//   });
-// }
+  var commands    = argv_._;
+
+  // ---
+  fnName          = fnName || commands.shift();
+
+  // ---
+  ignore          = [__filename, ...sg.arrayify(globIgnore || ignore)];
+
+  sys_argv        = sg.merge({ignore, ...sys_argv, ...user_sys_argv});
+
+  const method  = 'INVOKE';
+  const query   = argv;
+  const path    = '';
+  const headers = normalizeHeaders({});
+
+  [argv,context]      =  platform.argvify(query, /*body=*/{}, headers, /*extras=*/{}, path, method, event, context_, {sys_argv});
+  callback(null, argv, context);
+  return [argv, context];
+}
+
+// ------------------------------------------------------------------------------------------------------------------------------
+function contextify(event, context, callback) {
+  return platform.contextify_Xyz(event, context, callback);
+}
 
 // ------------------------------------------------------------------------------------------------------------------------------
 function normalizeEvent(event_, context) {

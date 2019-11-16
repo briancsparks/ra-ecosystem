@@ -1,7 +1,8 @@
 
 const sg                        = require('sg0');
 const _                         = require('lodash');
-const {decodeBodyObj,noop}      = require('./platform-utils');
+const platform                  = require('./platform-utils');
+const {decodeBodyObj,noop}      = platform;
 
 const useSmEvents   = !!process.env.SG_LOG_SMALL_EVENTS;
 
@@ -26,7 +27,7 @@ function argvify(event_, context, callback =noop) {
 
   const extras    = {...(event.pathParameters ||{}), ...(event.stageVariables ||{})};
 
-  const argv      = argvify(query, body, headers, extras, path, method, event, context);
+  const argv      = platform.argvify(query, body, headers, extras, path, method, event, context);
 
   callback(null, argv, context);
   return [argv, context];

@@ -1412,6 +1412,18 @@ sg.extend = function() {
 };
 
 /**
+ *  Just like _.extend.
+ */
+sg._extend = function(...args) {
+  // var args = sg.reduce(arguments, [], function(m, arg) {
+  //   return sg.ap(m, arg);
+  // });
+
+  // args.unshift({});
+  return _.extend.apply(_, args);
+};
+
+/**
  *  Smart sg.extend().
  */
 sg.smartExtend = function() {

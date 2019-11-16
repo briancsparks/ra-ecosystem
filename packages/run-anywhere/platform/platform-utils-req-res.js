@@ -1,8 +1,8 @@
 
 const sg                        = require('sg0');
 const _                         = require('lodash');
-const libUrl                    = require('url');
 const platform                  = require('./platform-utils');
+const libUrl                    = require('url');
 const {decodeBodyObj,
        noop,
        normalizeHeaders,
@@ -10,36 +10,35 @@ const {decodeBodyObj,
 
 const useSmEvents   = !!process.env.SG_LOG_SMALL_EVENTS;
 
-// module.exports.argvify                  = argvify;
+module.exports.argvify                  = argvify;
 module.exports.normalizeEvent           = normalizeEvent;
 module.exports.normalizeEventForLogging = normalizeEventForLogging;
 module.exports.decodeBody               = decodeBody;
 
 // ------------------------------------------------------------------------------------------------------------------------------
-// function argvify(ARGV, context_, callback =noop) {
-//   var {sys_argv, ...context} = context_;
+function argvify(event_, context, callback =noop) {
 
-//   // req and res are on event
-//   const url     = libUrl.parse(event.req, true);
-//   const method  = url.method;
-//   const query   = url.query;
-//   const path    = url.pathname;
-//   const headers = normalizeHeaders(event.req.headers);
+  // req and res are on event
+  const url     = libUrl.parse(event.req, true);
+  const method  = url.method;
+  const query   = url.query;
+  const path    = url.pathname;
+  const headers = normalizeHeaders(event.req.headers);
 
-//   if (!methodHasBody(method)) {
-//     let argv =  platform.argvify(query, /*body=*/{}, headers, /*extras=*/{}, path, method, event, context);
-//     callback(null, argv, context);
-//     return [argv, context];
-//   }
+  if (!methodHasBody(method)) {
+    let argv =  platform.argvify(query, /*body=*/{}, headers, /*extras=*/{}, path, method, event, context);
+    callback(null, argv, context);
+    return [argv, context];
+  }
 
-//   return sg.getBodyJson(event.req, function(err, body_) {
-//     const event_    = normalizeEvent({...event, body_}, context);
-//     const body      = event_.body || body_;
+  return sg.getBodyJson(event.req, function(err, body) {
+    const event_    = normalizeEvent({...event, body}, context);
+    const body_      = event_.body || body;
 
-//     const argv      =  platform.argvify(query, body, headers, /*extras=*/{}, path, method, event_, context);
-//     return callback(err, argv, context);
-//   });
-// }
+    const argv      =  platform.argvify(query, body_, headers, /*extras=*/{}, path, method, event_, context);
+    return callback(err, argv, context);
+  });
+}
 
 // ------------------------------------------------------------------------------------------------------------------------------
 function normalizeEvent(event_, context) {
