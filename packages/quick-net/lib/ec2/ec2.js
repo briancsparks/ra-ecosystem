@@ -138,7 +138,7 @@ mod.xport({getUbuntuLtsAmis: function(argv, context, callback) {
 }});
 
 // =======================================================================================================
-// getNginxQuicknetWebtierConfig
+// upsertInstance
 
 DIAG.usage({ aliases: { upsertInstance: { args: {
 }}}});
@@ -162,7 +162,6 @@ DIAG.activeDevelopment(`--debug`);
 mod.xport(DIAG.xport({upsertInstance: function(argv_, context, callback) {
   const diag    = DIAG.diagnostic({argv_, context, callback});
 
-  // TODO: Update hosts with mongo, redis server locations
   // TODO: Make sg.ENV be run-time changable so NO_REDIS can be turned on and off
 
   // TODO: Can move setARecord earlier, cuz it has public ip
@@ -218,9 +217,8 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context, callback) {
     const classB                = rax.arg(argv, 'class_b,classB,b');
     var   az                    = rax.arg(argv, 'AvailabilityZone,az');
     const KeyName               = rax.arg(argv, 'KeyName,key', {required:true});
-    var   SecurityGroupIds      = rax.arg(argv, 'SecurityGroupIds,sgs', {required:true, array:true});
-    var   SubnetId              = rax.arg(argv, 'SubnetId,subnet', {required:true});
-    const iamName               = rax.arg(argv, 'iamName,iam')    || 'supercow';
+    var   SecurityGroupIds      = rax.arg(argv, 'SecurityGroupIds,sgs', { /*required:true,*/ array:true})   || getSgsForInstance(argv);
+    var   SubnetId              = rax.arg(argv, 'SubnetId,subnet' /*, {required:true}*/)                    || getSubnetForInstance(argv);
     var   BlockDeviceMappings   = rax.arg(argv, 'BlockDeviceMappings,devices');
     const rootVolumeSize        = rax.arg(argv, 'rootVolumeSize,size', {def:8});
     const count                 = rax.arg(argv, 'count', {def:1});
@@ -232,6 +230,7 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context, callback) {
     const moreShellScript       = rax.arg(argv, 'moreshellscript')                || '';
     const cloudInitData         = rax.arg(argv, 'cloudInit,ci')                   || {};
     const roleKeys              = rax.arg(argv, 'roleKeys');
+    const iamName               = rax.arg(argv, 'iamName,iam')    || `quicknetprj-${getIamTypeForInstance(argv)}-instance-role`;
 
     // What can be done with ModifyInstanceAttribute
     const SourceDestCheck                       = !!rax.arg(argv, 'SourceDestCheck');
@@ -866,6 +865,38 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context, callback) {
     }]);
   });
 }}));
+
+function getSubnetForInstance(...args) {
+  return getTypeForInstance(...args);
+}
+
+function getSgsForInstance(argv) {
+
+  if (argv.INSTALL_WEBTIER)             { return ['web']; }
+  else if (argv.INSTALL_NAT)            { return ['access']; }
+  else if (argv.INSTALL_ADMIN)          { return ['admin']; }
+  else if (argv.INSTALL_MONGODB)        { return ['db']; }
+  else if (argv.INSTALL_WORKER)         { return ['worker']; }
+
+  sg.logError(`ENOSGTYPE`, `Cannot determine instance security groups`, {argv});
+}
+
+function getIamTypeForInstance(...args) {
+  return getTypeForInstance(...args);
+}
+
+function getTypeForInstance(argv) {
+
+  if (argv.INSTALL_WEBTIER)             { return 'webtier'; }
+  else if (argv.INSTALL_NAT)            { return 'access'; }
+  else if (argv.INSTALL_ADMIN)          { return 'admin'; }
+  else if (argv.INSTALL_MONGODB)        { return 'db'; }
+  else if (argv.INSTALL_WORKER)         { return 'worker'; }
+
+  sg.logError(`ENOTYPE`, `Cannot determine instance type`, {argv});
+}
+
+
 
 /*
  * TODO:
