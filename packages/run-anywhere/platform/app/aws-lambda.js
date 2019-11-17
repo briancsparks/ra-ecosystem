@@ -27,7 +27,7 @@ host.setDispatcher(function(argv, context, callback) {
 
   // TODO: Dispatch it somewhere
   // [[Fake it for now]]
-  console.log(`QUICK_Net::params`, {argv, context});
+  console.log(`QUICK_Net::params (${__filename})`, {argv, context});
 
   // Could do something like this, if you use sg-http
   // const _200 = sg._200({ok:true, ...data});

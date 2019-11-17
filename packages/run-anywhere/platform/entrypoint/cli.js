@@ -30,14 +30,15 @@ var   dispatcher    = dispatch;
 
 // ----------------------------------------------------------------------------------------------------------------------------
 exports.main = function(argv_, user_sys_argv_ ={}) {
-  if (sg.isnt(argv_))     { return exports.main(sg.ARGV() ||{}); }
+  if (sg.isnt(argv_))                                                             { return exports.main(sg.ARGV() ||{}); }
+  if ((argv_._command || (argv_._ && argv_._[0]) || '') === 'test-require-all')   { return; }
 
   const event     = {argv:argv_, user_sys_argv:user_sys_argv_};
   const context   = {};
 
   return exports.platform_entrypoint(event, context, function(err, response, ...rest) {
     var {httpCode, ...data} = response;
-    console.log(`invokeit-cb`, sg.inspect({err, data, rest}));
+    console.log(`cli-entrypoint-main-cb`, sg.inspect({err, data, rest}));
   });
 };
 

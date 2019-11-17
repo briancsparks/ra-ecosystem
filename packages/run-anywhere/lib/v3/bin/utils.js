@@ -2,9 +2,41 @@
 const sg                      = require('sg0');
 
 
+module.exports.crackInvokeArgs      = crackInvokeArgs;
 module.exports.extractSysArgv       = extractSysArgv;
 module.exports.extractSysArgvNamed  = extractSysArgvNamed;
 
+// ----------------------------------------------------------------------------------------------------------------------------
+function crackInvokeArgs(argv_, user_sys_argv_ ={}) {
+  if (sg.isnt(argv_))     { return crackInvokeArgs(sg.ARGV() ||{}); }
+
+  var {
+    // sys_argv:
+    fnName,
+    command,
+    ignore, globIgnore,
+    // fnTable, filelist, glob,
+
+    user_sys_argv,
+    argv,
+    ...sys_argv
+  }               = extractSysArgv({argv: argv_}, {user_sys_argv: user_sys_argv_});
+
+  // sg.warn_if(sg.firstKey(others), `ENOTCLEAN`, {others});
+
+  var commands    = argv_._;
+
+  // ---
+  fnName          = fnName || commands.shift();
+  command         = fnName;
+
+  // ---
+  globIgnore      = ignore = [...sg.arrayify(globIgnore || ignore)];
+
+  sys_argv        = sg.merge({...sys_argv, ...user_sys_argv, ignore, globIgnore, fnName, commands, command});
+
+  return sg.merge({fnName,ignore,globIgnore,user_sys_argv,argv,sys_argv,commands,command});
+}
 
 // ----------------------------------------------------------------------------------------------------------------------------
 function extractSysArgvNamed(from, ...others) {

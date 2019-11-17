@@ -39,8 +39,7 @@ function main(argv_, user_sys_argv_ ={}) {
 
   sys_argv    = sg.merge({ignore, ...sys_argv, ...user_sys_argv});
   run_v2(sys_argv, fnName, argv, function(err, data, ...rest) {
-    // console.log(`invokeit-cb`, sg.inspect({fns, fnName, argv, err, data, rest}));
-    console.log(`invokeit-cb`, sg.inspect({err, data, rest}));
+    console.log(`bin/invokeit-cb ${err && __filename+'\n'}`, sg.inspect({err, data, rest}));
   });
 }
 

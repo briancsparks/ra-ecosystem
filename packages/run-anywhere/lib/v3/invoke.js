@@ -15,14 +15,15 @@ module.exports.invoke_v2      = invoke_v2;
 module.exports.run_v2         = run_v2;
 module.exports.safeRequire    = safeRequire;
 
-// get `extractSysArgv`, `extractSysArgvNamed`
-sg._extend(module.exports, require('./bin/utils'));
+sg._extend(module.exports, require('./bin/utils'));                 // get `extractSysArgv`, `extractSysArgvNamed`
 
 // ----------------------------------------------------------------------------------------------------------------------------
 const globIgnore = [
   '**/node_modules/**',
   '**/__tests__/**',
   '**/__test__/**',
+  'tests/**',
+  'test/**',
   '**/*.test.js'
 ];
 
@@ -37,26 +38,27 @@ function build_fnTable(sys_argv, callback) {
   let {filelist}  = sys_argv;
   let {glob}      = sys_argv;
   var {cwd}       = sys_argv;
+  var {reqFailFn} = sys_argv;
 
   if (filelist) {
     fnTable = sg.reduce(filelist, fnTable ||{}, (table, filename) => {
-      return extendFnTable(table, null, filename, process.cwd());
+      return extendFnTable(table, null, filename, process.cwd(), reqFailFn);
     });
 
-    return build_fnTable({fnTable}, callback);
+    return build_fnTable({...sys_argv, fnTable}, callback);
   }
 
   if (glob) {
     cwd     = cwd || process.cwd();
     const options = {
-      ignore    : [...globIgnore, ...(sys_argv.ignore ||[])].map(x => relativify(x, cwd)),
+      ignore    : [...globIgnore, ...(sys_argv.ignore || sys_argv.globIgnore ||[])].map(x => relativify(x, cwd)),
       cwd,
     };
 
-    // console.log(`invoke-glob`, sg.inspect({options, ignore: sys_argv.ignore}));
+    // console.log(`invoke-glob`, sg.inspect({options, ignore: sys_argv.ignore, sys_argv}));
     return libGlob(glob, options, function(err, filelist) {
       // console.log(`build_fnTable`, sg.inspect({err, filelist}));
-      return build_fnTable({filelist}, callback);
+      return build_fnTable({...sys_argv, filelist}, callback);
     });
   }
 
@@ -65,44 +67,12 @@ function build_fnTable(sys_argv, callback) {
 
 // ----------------------------------------------------------------------------------------------------------------------------
 function run_v2(sys_argv, fnName, argv_, callback, ...rest /* rest is [options, abort]*/) {
-  // var {fnTable}   = sys_argv;
-  // let {filelist}  = sys_argv;
-  // let {glob}      = sys_argv;
-  // var {cwd}       = sys_argv;
   var argv        = {...argv_};
-
-  // if (sg.isnt(fnTable)) {
-  //   if (filelist) {
-  //     fnTable = sg.reduce(filelist, fnTable ||{}, (table, filename) => {
-  //       return extendFnTable(table, null, filename, process.cwd());
-  //     });
-
-  //     return run_v2({fnTable}, fnName, argv_, callback);
-  //   }
-  // }
-
-  // if (sg.isnt(fnTable)) {
-  //   if (glob) {
-  //     cwd     = cwd || process.cwd();
-  //     const options = {
-  //       ignore    : [...globIgnore, ...(sys_argv.ignore ||[])].map(x => relativify(x, cwd)),
-  //       cwd,
-  //     };
-
-  //     // console.log(`invoke-glob`, sg.inspect({options, ignore: sys_argv.ignore}));
-  //     return libGlob(glob, options, function(err, filelist) {
-  //       // console.log(sg.inspect({err, filelist}));
-  //       return run_v2({filelist}, fnName, argv_, callback);
-  //     });
-  //   }
-  // }
 
   return build_fnTable(sys_argv, function(err, fnTable) {
     if (err)  { return callback(err); }
     return invokeIt_v2(fnTable);
   });
-
-  // return invokeIt_v2(fnTable);
 
   // =====================================================================================
   function invokeIt_v2(fnTable) {
@@ -192,35 +162,39 @@ function invoke_v2(lib, fnName, argv_, callback, options__ ={}, abort =null) {
 }
 
 // ----------------------------------------------------------------------------------------------------------------------------
-function extendFnTable(table, mod, filename, dirname) {
-  if (filename) {
-    return extendFnTable(table, safeRequire(path.join(dirname, filename)), null, null);
-  }
+function extendFnTable(table, mod, filename, dirname, reqFailFn = extendFnTable_requireFail) {
 
   if (mod) {
-    if (!mod) {
-      // TODO: Use this to make 'ra3 checkRequires' -- to walk through a package and require everything, hoping not to get this message
-      sg.logError(`Cannot require(${filename})\n\nuse to see:\n  node ${filename}\n----------------\n\n`, 'ENOENT ==>');
+    sg._.each(mod, (value,fnName) => {
+      if (typeof value === 'function') {
+        // if (value.length !== 3) {
+        //   sg.elog(sprintf(`Skipping (Arity %2d) %-29s %s`, value.length, fnName, (''+value).split('\n')[0]));
+        // }
 
+        const arity       = value.length;
+        const hasAsync    = !!(mod && mod.async && typeof mod.async[fnName] === 'function');
+        const score       = scoreRaFnSignature(value);
+
+        var   entry       = {arity, hasAsync, ...score, fn: value, filename, fnName};
+        entry             = {...entry, tier: scoreTier(entry)};
+
+        // sg.elog(sprintf(`Adding %-29s %j %s`, fnName, entry, (''+value).split('\n')[0]));
+
+        table[fnName] = {mod, ...entry};
+      } else {
+        // sg.elog(`[[so says ${__filename}]]: "${fnName}"  is not a function while loading ${filename}: (it is a ${typeof value})`);
+      }
+    });
+
+  } else if (filename) {
+    const reqPath   = path.join(dirname, filename);
+    reqFailFn(null, reqPath);
+
+    const mod_      = safeRequire(reqPath);
+    if (!mod_) {
+      reqFailFn(reqPath);
     } else {
-      sg._.each(mod, (value,fnName) => {
-        if (typeof value === 'function') {
-          // if (value.length !== 3) {
-          //   sg.elog(sprintf(`Skipping (Arity %2d) %-29s %s`, value.length, fnName, (''+value).split('\n')[0]));
-          // }
-
-          const arity       = value.length;
-          const hasAsync    = !!(mod && mod.async && typeof mod.async[fnName] === 'function');
-          const score       = scoreRaFnSignature(value);
-          var   entry       = {arity, hasAsync, ...score, fn: value, filename};
-
-          // sg.elog(sprintf(`Adding %-29s %j %s`, fnName, entry, (''+value).split('\n')[0]));
-
-          table[fnName] = {mod, ...entry};
-        } else {
-          // sg.elog(`[[so says ${__filename}]]: "${fnName}"  is not a function while loading ${filename}: (it is a ${typeof value})`);
-        }
-      });
+      return extendFnTable(table, mod_, filename, dirname, reqFailFn);
     }
   }
 
@@ -228,13 +202,21 @@ function extendFnTable(table, mod, filename, dirname) {
 }
 
 // ----------------------------------------------------------------------------------------------------------------------------
-function scoreRaFnSignature(fn) {
-  var   arity   = fn.length;
-  const first   = (''+fn).split('\n')[0];       /* First line of function (string) */
-  var   params  = first.match(/\(([^)]+)\)/);   /* Parameters to function (regex) */
+function extendFnTable_requireFail(failFilename, reqFilename) {
+  if (failFilename) {
+    sg.logError(`Cannot require(${failFilename})\n\nuse to see:\n  node ${failFilename}\n----------------\n\n`, 'ENOENT ==>');
+  }
+}
 
-  params = (params && params[1]) ||'';          /* Parameters to function (string) */
-  params = params.split(/,\s*/g);               /* Parameters to function (array<string>) */
+// ----------------------------------------------------------------------------------------------------------------------------
+function scoreRaFnSignature(fn) {
+  var   arity       = fn.length;
+  const first       = (''+fn).split('\n')[0];       /* First line of function (string) */
+  var   params      = first.match(/\(([^)]+)\)/);   /* Parameters to function (regex) */
+  var   paramsStr   = '';
+
+  paramsStr         = (params && params[1]) ||'';          /* Parameters to function (string) */
+  params            = paramsStr.split(/,\s*/g);               /* Parameters to function (array<string>) */
 
   // Are the names to the function right?
   var   names = true;
@@ -247,7 +229,29 @@ function scoreRaFnSignature(fn) {
     }
   }
 
-  return {arity, names};
+  return {arity, names, paramsStr};
+}
+
+// ----------------------------------------------------------------------------------------------------------------------------
+function scoreTier(entry) {
+
+  // Tier1
+  if (entry.hasAsync && entry.names) {
+    return 1;
+  }
+
+  // Tier2
+  if (entry.hasAsync) {
+    return 2;
+  }
+
+  // Tier3
+  else if (entry.names) {
+    return 3;
+  }
+
+  // Tier4
+  return 4;
 }
 
 // ----------------------------------------------------------------------------------------------------------------------------

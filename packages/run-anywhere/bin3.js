@@ -32,16 +32,28 @@ function main(argv_) {
   function find(fnName, callback) {
     var fn;
 
-    if (fnName === 'invoke') {
-      let mod = safeRequire(__dirname, './lib/v3/bin/invoke');
-      if (!mod) {
-        return callback(`ENOINVOKE`);
-      }
+    if (!fn) {
+      if (fnName === 'invoke') {
+        let mod = safeRequire(__dirname, './lib/v3/bin/invoke');
+        if (!mod) {
+          return callback(`ENOINVOKE`);
+        }
 
-      fn = mod.main;
+        fn = mod.main;
+      }
     }
 
     // TODO: Use this to make 'ra3 checkRequires' -- to walk through a package and require everything, hoping not to get the 'cannot require' message
+    if (!fn) {
+      if (fnName === 'test-require-all') {
+        let mod = safeRequire(__dirname, './lib/v3/bin/test-require-all');
+        if (!mod) {
+          return callback(`ENOINVOKE`);
+        }
+
+        fn = mod.main;
+      }
+    }
 
     // If we cannot find a function, the user gets 'invoke'
     if (!fn) {
