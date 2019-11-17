@@ -32,7 +32,12 @@ function main(argv_, user_sys_argv_ ={}) {
   var params      = {};
   params.reqFailFn = function(failFilename, reqFilename) {
     if (failFilename) {
-      console.log(`Cannot require(${failFilename})\n\nuse to see:\n  node ${failFilename}\n----------------\n\n`);
+      console.log(`Cannot require(${failFilename})\n\nuse to see:\n  node ${failFilename}\n----------------\n`);
+      try {
+        require(failFilename);
+      } catch (err) {
+        console.log(err, `\n----------------\n\n`);
+      }
     }
 
     if (reqFilename) {
