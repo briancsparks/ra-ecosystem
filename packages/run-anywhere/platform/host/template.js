@@ -26,10 +26,6 @@ const logApiV                   = mkLogApiV('host', 'template');
 var   handlerFns    = [];
 var   dispatcher    = dispatch;
 
-module.exports.template = {};
-module.exports.template.handler = template_handler;
-module.exports.template_handler = template_handler;
-
 
 // ----------------------------------------------------------------------------------------------------------------------------
 // Lambda handler for the function of being the host
@@ -57,6 +53,10 @@ const template_handler = exports.platform_host_template_handler = function(event
     });
   });
 };
+
+module.exports.template = {};
+module.exports.template.handler = template_handler;
+module.exports.template_handler = template_handler;
 
 
 

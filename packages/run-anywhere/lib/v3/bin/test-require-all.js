@@ -46,9 +46,7 @@ function main(argv_, user_sys_argv_ ={}) {
   };
 
   return build_fnTable({...sys_argv, ...params}, function(err, fnTable) {
-    // // console.log(`test-require-all-cb ${err && __filename+'\n'}`, sg.inspect({err, fnTable: sg.firstKv(fnTable)}));
-
-    console.log(`test-require-all-cb ${err && __filename+'\n'}`, sg.inspect({err, fnTable: cleanTable(fnTable)}));
+    console.log(`\ntest-require-all-cb ${err && __filename+'\n'}`, sg.inspect({err, fnTable: cleanTable(fnTable)}));
   });
 }
 
