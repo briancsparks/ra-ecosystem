@@ -4,7 +4,12 @@ const route53   = new AWS.Route53();
 
 const [x,y, action, domain] = process.argv;
 
-(async function main() {
+if (require.main === module) {
+  sg.runTopAsync(main);
+}
+
+
+async function main() {
   try {
     const {HostedZones} = await route53.listHostedZonesByName({DNSName: domain}).promise();
 
@@ -21,7 +26,7 @@ const [x,y, action, domain] = process.argv;
     console.error(err);
     process.exit(3);
   }
-}());
+}();
 
 function changeBatch() {
   return {

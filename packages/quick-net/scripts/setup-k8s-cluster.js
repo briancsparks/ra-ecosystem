@@ -51,5 +51,9 @@ async function main() {
   return [null, result];
 }
 
-sg.runTopAsync(main, 'setup-k8s-cluster');
+// Do not be too eager if we are just being required
+if (require.main === module) {
+  sg.runTopAsync(main, 'setup-k8s-cluster');
+}
+
 

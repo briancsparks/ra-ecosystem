@@ -218,7 +218,7 @@ async function main() {
 }
 
 // Do not be too eager if we are just being required
-if (ARGV._userKeys().filter(k => k !== '_').length > 0) {
+if (require.main === module) {
   sg.runTopAsync(main, 'setup');
 }
 

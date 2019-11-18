@@ -19,7 +19,10 @@ const {execa}     = sg;                         // https://github.com/sindresorh
 const ARGV        = sg.ARGV();
 const ENV         = sg.ENV();
 
-sg.runTopAsync(main);
+// Do not be too eager if we are just being required
+if (require.main === module) {
+  sg.runTopAsync(main);
+}
 
 async function main() {
   const foo   = ARGV.foo;
@@ -64,7 +67,10 @@ const {sg,fs,path,os,util,sh,die,dieAsync,grepLines,include,from,startupDone,run
 const ARGV        = sg.ARGV();
 const ENV         = sg.ENV();
 
-sg.runTopAsync(main);
+// Do not be too eager if we are just being required
+if (require.main === module) {
+  sg.runTopAsync(main);
+}
 
 async function main() {
   // ...

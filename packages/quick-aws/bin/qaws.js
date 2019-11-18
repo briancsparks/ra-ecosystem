@@ -5,7 +5,9 @@ const AWS                     = require('aws-sdk');
 const ARGV  = sg.ARGV();
 sg.elog(`ARGV`, {ARGV});
 
-sg.runTopAsync(main);
+if (require.main === module) {
+  sg.runTopAsync(main);
+}
 
 async function main() {
   const [awsModName, awsFnName] = ARGV._;

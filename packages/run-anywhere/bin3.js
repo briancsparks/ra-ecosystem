@@ -102,4 +102,7 @@ function main(argv_) {
 
 // console.log(ARGV);
 
-main(ARGV);
+// Do not be too eager if we are just being required
+if (require.main === module) {
+  main(ARGV);
+}
