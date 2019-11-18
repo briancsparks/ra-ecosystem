@@ -42,8 +42,9 @@ const workstation_handler = exports.platform_host_workstation_handler = function
         const endTime = new Date().getTime();
 
         const fixedResponse = workstation.fixResponse(response);
+        // console.log(`host_workstation-dispatch: (${(endTime - startTime) * 1})`, {err, response, fixedResponse});
 
-        logApi(`workstation_handler: (${(endTime - startTime) * 1000})`, {argv, err, response, fixedResponse});
+        logApi(`workstation_handler: (${(endTime - startTime) * 1})`, {argv, err, response, fixedResponse});
 
         // OK?
         if (err || !fixedResponse || !fixedResponse.ok) {

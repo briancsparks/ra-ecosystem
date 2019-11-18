@@ -1534,6 +1534,23 @@ sg.safeJSONStringify = function(json, replacer, space) {
 };
 
 /**
+ * Just like safeJSONStringify, but uses json-stringify-safe, and defaults to 2 spaces. use (json, null, null) to
+ * to have no whitespace.
+ */
+sg.safeJSONStringify2 = function(json, replacer, space, cycleReplacer) {
+  var rest = [replacer, space === null ? null : 2, cycleReplacer];
+
+  try {
+    var stringify = require('json-stringify-safe');
+    return stringify(json, ...rest);
+  } catch (err) {
+    // console.error(`Failed to stringify JSON`, err);
+  }
+
+  return;
+};
+
+/**
  * Make sure x is an Array.
  *
  * @param {*} x                       - The thing to arrayify.

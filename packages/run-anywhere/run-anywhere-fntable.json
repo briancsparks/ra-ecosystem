@@ -13,6 +13,20 @@
     "fnName": "main",
     "tier": 4
   },
+  "echo": {
+    "arity": 3,
+    "hasAsync": false,
+    "tier": 1,
+    "names": true,
+    "fnLen": 3,
+    "isAsync": false,
+    "paramsStr": "argv, context_, callback",
+    "first": "function echo (argv, context_, callback) {",
+    "filename": "echo.js",
+    "dirname": "C:\\Users\\sparksb\\dev\\bcs\\ra-ecosystem\\packages\\run-anywhere",
+    "fullfilename": "C:\\Users\\sparksb\\dev\\bcs\\ra-ecosystem\\packages\\run-anywhere\\echo.js",
+    "fnName": "echo"
+  },
   "args": {
     "arity": 3,
     "hasAsync": false,
@@ -21,7 +35,7 @@
     "fnLen": 3,
     "isAsync": false,
     "paramsStr": "argv, context, callback",
-    "first": "function(argv, context, callback) {",
+    "first": "function args (argv, context, callback) {",
     "filename": "echo.js",
     "dirname": "C:\\Users\\sparksb\\dev\\bcs\\ra-ecosystem\\packages\\run-anywhere",
     "fullfilename": "C:\\Users\\sparksb\\dev\\bcs\\ra-ecosystem\\packages\\run-anywhere\\echo.js",

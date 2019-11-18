@@ -38,7 +38,7 @@ host.setDispatcher(function(argv, context_, callback) {
 
   // TODO: Dispatch it somewhere
   // [[Fake it for now]]
-  console.log(`QUICK_Net::params (${__filename})`, {argv, context});
+  // console.log(`QUICK_Net::params (${__filename})`, {argv, context});
 
   // Could do something like this, if you use sg-http
   // const _200 = sg._200({ok:true, ...data});
@@ -47,10 +47,11 @@ host.setDispatcher(function(argv, context_, callback) {
   // TODO: set fnName from inputs
   var fnName = argv._command || argv._[0];
   return invoke_ra({...argv, fnName}, context, function(err, data, ...rest) {
+    // console.log(`workstation-cli-dispatch`, {err, data, rest});
     return callback(err, data, ...rest);
   });
 });
 
-if (process.argv[1] === __filename) {
+if (require.main === module) {
   entrypoint.main(null, null, true);
 }

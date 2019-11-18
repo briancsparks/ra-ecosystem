@@ -154,7 +154,7 @@ function methodHasBody(method) {
 function fixResponse(resp_) {
   if (sg.isnt(resp_))   { return resp_; }
 
-  var   resp = {};
+  var   resp = {...resp_};
 
   if (sg.modes().prod) {
     resp = _.omit(resp_, 'debug', 'dbg');

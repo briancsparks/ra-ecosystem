@@ -1,5 +1,5 @@
 
-const sg                        = require('sg0');
+const sg                        = require('sg-argv');
 const _                         = require('lodash');
 const libUrl                    = require('url');
 const {extractSysArgv}          = require('../lib/v3/invoke');
@@ -32,7 +32,7 @@ function argvify(event, context_, callback =noop) {
     user_sys_argv,
     argv,
     ...sys_argv
-  }               = extractSysArgv({argv: argv_}, {user_sys_argv: user_sys_argv_});
+  }               = extractSysArgv({argv: sg.argvPod(event.argv)}, {user_sys_argv: user_sys_argv_});
 
   // sg.warn_if(sg.firstKey(others), `ENOTCLEAN`, {others});
 
@@ -47,11 +47,12 @@ function argvify(event, context_, callback =noop) {
   sys_argv        = sg.merge({ignore, ...sys_argv, ...user_sys_argv});
 
   const method  = 'INVOKE';
-  const query   = argv;
+  const query   = sg.argvPod(argv);
   const path    = '';
   const headers = normalizeHeaders({});
+  const event_  = {...event, argv:sg.argvPod(event.argv)};
 
-  [argv,context]      =  platform.argvify(query, /*body=*/{}, headers, /*extras=*/{}, path, method, event, context_, {sys_argv});
+  [argv,context]      =  platform.argvify(query, /*body=*/{}, headers, /*extras=*/{}, path, method, event_, context_, {sys_argv});
   callback(null, argv, context);
   return [argv, context];
 }

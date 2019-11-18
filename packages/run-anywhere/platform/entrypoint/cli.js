@@ -14,6 +14,7 @@ const sg                        = require('sg-argv');
 const _                         = require('lodash');
 const http                      = require('http');
 const libUrl                    = require('url');
+const {logSmData}               = require('../../lib/v3/utils');
 const {extractSysArgv}          = require('../../lib/v3/invoke');
 const outbound                  = require('../platform-utils-outbound');
 const {cli}                     = outbound;
@@ -39,7 +40,7 @@ exports.main = function(argv_, user_sys_argv_ ={}, start) {
 
   return exports.platform_entrypoint(event, context, function(err, response, ...rest) {
     var {httpCode, ...data} = response;
-    console.log(`cli-entrypoint-main-cb`, sg.inspect({err, data, rest}));
+    console.log(`cli-entrypoint-main-cb`, sg.inspect({err, httpCode, ...logSmData({data, rest})}));
   });
 };
 

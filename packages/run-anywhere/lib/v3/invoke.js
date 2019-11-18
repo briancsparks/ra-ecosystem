@@ -4,6 +4,7 @@ const path                    = require('path');
 const fs                      = require('fs');
 const libGlob                 = require('glob');
 const {sprintf}               = require('sprintf-js');
+const {logSmData}             = require('./utils');
 
 const libThreeContext         = require('../v2/three-context');
 
@@ -52,6 +53,8 @@ function build_fnTableSmart(sys_argv, callback) {
         if (fnTable) {
           readFnTable = theFnTable = fnTable;
 
+          // console.log(`build_fnTableSmart-readFile`, {fns: (fnTable && Object.keys(fnTable))});
+          // console.log(`build_fnTableSmart-readFile`, {fn:  (fnTable && fnTable[fnName])});
           if (fnName && fnTable && fnTable[fnName]) {
             doneOnce(fnTable);
           }
@@ -62,12 +65,15 @@ function build_fnTableSmart(sys_argv, callback) {
     });
 
   }, function(next) {
-    if (theFnTable) { return next(); }
+    if (fnName && theFnTable && theFnTable[fnName])         { return next(); }
 
     return build_fnTable({...sys_argv}, function(err, fnTable) {
       if (err)  { errors.push(err); return next(); }
 
       builtFnTable = theFnTable = fnTable;
+
+      // console.log(`build_fnTableSmart-require`, {fns: (fnTable && Object.keys(fnTable))});
+      // console.log(`build_fnTableSmart-require`, {fn:  (fnTable && fnTable[fnName])});
       if (fnName && fnTable && fnTable[fnName]) {
         doneOnce(fnTable);
       }
@@ -155,8 +161,7 @@ function run_v2(sys_argv, fnName, argv_, callback, ...rest /* rest is [options, 
 
     // =====================================================================================
     function onResult(err, data, ...rest) {
-      // console.log(`invokeit-cb`, sg.inspect({fnTable, fnName, argv, err, data, rest}));
-      console.log(`run_v2-cb`, sg.inspect({err, data, rest}));
+      console.log(`run_v2-cb`, sg.inspect({err, ...logSmData({data, rest})}));
       return callback(err, data, ...rest);
     }
   }

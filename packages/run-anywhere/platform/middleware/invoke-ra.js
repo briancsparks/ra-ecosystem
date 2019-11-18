@@ -6,7 +6,11 @@
  *
  */
 const sg                                    = require('sg0');
-const {run_v2,build_fnTable}                = require('../../lib/v3/invoke');
+const {
+  run_v2,
+  build_fnTable,
+  build_fnTableSmart,
+}                                           = require('../../lib/v3/invoke');
 
 module.exports.mkInvokeRa = mkInvokeRa;
 
@@ -32,6 +36,7 @@ function mkInvokeRa(options_, handler, fnName_) {
 
     // ========================================================
     function continuation(err, data, ...rest) {
+      // console.log(`invoke-ra-continuation`, {err, data, rest});
       return callback(err, data, ...rest);
     }
   };
@@ -50,7 +55,7 @@ function mkInvokeRa(options_, handler, fnName_) {
     // Its me... Im getting it
     getting_fnTable = true;
 
-    return build_fnTable(sys_argv, function(err, fnTable_) {
+    return build_fnTableSmart(sys_argv, function(err, fnTable_) {
       fnTable           = fnTable_;
       getting_fnTable   = false;
 

@@ -69,7 +69,7 @@ function extractSysArgv_(from, ...others_) {
 // ----------------------------------------------------------------------------------------------------------------------------
 function extractOneSysArgv(from, seed = {}) {
   var   [key, value]  = sg.firstKv(from);
-  var   { fnTable, filelist, glob, ignore, globIgnore, ...rest }  = value;
+  var   { fnTable, filelist, glob, ignore, globIgnore, ...rest }  = value ||{};
   const sys_argv = sg.merge({ fnTable, filelist, glob, ignore, globIgnore, ...seed });
 
   return [sys_argv, {[key]:rest}];

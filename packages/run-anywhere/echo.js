@@ -1,30 +1,22 @@
 
 /**
+ * @file
  *
  */
-
-
-// -------------------------------------------------------------------------------------
-//  requirements
-//
-
 const sg                      = require('sg-argv');
 const _                       = sg._;
 
 const argvGet                 = sg.argvGet;
-// const argvExtract             = sg.argvExtract;
+const argvPod                 = sg.argvPod;
 
-// -------------------------------------------------------------------------------------
-//  Data
-//
-
-var lib = {};
+module.exports.echo = echo;
+module.exports.args = args;
 
 // -------------------------------------------------------------------------------------
 //  Functions
 //
 
-lib.args = function(argv, context, callback) {
+function args (argv, context, callback) {
   const verbose = argvGet(argv, 'verbose,v');
 
   if (verbose) {
@@ -34,14 +26,10 @@ lib.args = function(argv, context, callback) {
   const error   = argvGet(argv, 'error,err');
 
   return callback(error, argv);
-};
+}
 
-
-_.each(lib, (value, key) => {
-  exports[key] = value;
-});
-
-// -------------------------------------------------------------------------------------
-//  Helper functions
-//
+function echo (argv, context_, callback) {
+  const context = sg.safeJSONParse(sg.safeJSONStringify2(context_));
+  return callback(null, {argv, context});
+}
 
