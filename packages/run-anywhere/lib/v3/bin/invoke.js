@@ -40,6 +40,7 @@ function main(argv_, user_sys_argv_ ={}) {
   ignore          = [__filename, ...sg.arrayify(globIgnore || ignore)];
 
   sys_argv    = sg.merge({ignore, ...sys_argv, ...user_sys_argv});
+
   run_v2(sys_argv, fnName, argv, function(err, data, ...rest) {
     console.log(`bin/invokeit-cb ${err && __filename+'\n'}`, sg.inspect({err, data, rest}));
   });

@@ -1,3 +1,4 @@
+/* eslint-disable valid-jsdoc */
 if (process.env.SG_VVVERBOSE) console[process.env.SG_LOAD_STREAM || 'log'](`Loading ${__filename}`);
 
 /**
@@ -23,9 +24,18 @@ sg.libs = {...(sg.libs || {}), fs, path};
 //  Functions
 //
 
-sg.ARGV       = ARGV;
-sg.argvGet    = argvGet;
-sg.argvPod    = argvPod;
+sg.ARGV           = ARGV;
+sg.argvGet        = argvGet;
+sg.argvPod        = argvPod;
+
+
+// You either want ARGV(), to have the full features, or:
+sg.ARGVnormal     = ARGVnormal;       // Most normal: no logging fns, all spellings of keys, no favors
+sg.ARGV3          = ARGV3;            // Most normal (ARGVnormal), but easier to use name   ******* use this one *******
+sg.ARGVplain      = ARGVplain;        // ARGV, no favors, no logging fns, just camelCase keys (most JS will expect camelCase)
+sg.ARGVpod        = ARGVpod;          // Simpliest: no favors, just the data, but will all spelling variations
+sg.ARGVasIs       = ARGVasIs;         // Basic: no nothing
+sg.ARGVsnakeCase  = ARGVsnakeCase;    // Simple. Uses snake_case only
 
 // -------------------------------------------------------------------------------------
 // exports
@@ -39,21 +49,80 @@ sg._.each(sg, (v, k) => {
 //  Helper Functions
 //
 
+
+//-----------------------------------------------------------------------------------------------------------------------------
+// No favors, No logging
+function ARGVplain(input = process.argv) {
+  return ARGV({noAuto:true, onlyCamelCase:true, noLog:true}, input);
+}
+
+//-----------------------------------------------------------------------------------------------------------------------------
+// No favors, Just data-centric
+function ARGVpod(input = process.argv) {
+  return ARGV({noAuto:true, pod:true}, input);
+}
+
+//-----------------------------------------------------------------------------------------------------------------------------
+// No favors, Just like command-line
+function ARGVasIs(input = process.argv) {
+  return ARGV({noAuto:true, noExtraCases:true, pod:true}, input);
+}
+
+//-----------------------------------------------------------------------------------------------------------------------------
+// No favors, Just data-centric, Make valid keys (snake-case)
+function ARGVnormal(input = process.argv) {
+  return ARGV({noAuto:true, noLog:true}, input);
+}
+
+//-----------------------------------------------------------------------------------------------------------------------------
+// No favors, Just data-centric, Make valid keys (camel-case)
+function ARGVsnakeCase(input = process.argv) {
+  return ARGV({noAuto:true, onlySnakeCase:true, noLog:true}, input);
+}
+
+//-----------------------------------------------------------------------------------------------------------------------------
+// Alias for ARGVnormal
+// No favors, Just data-centric, Make valid keys (snake-case)
+function ARGV3(...args) {
+  return ARGVnormal(...args);
+}
+
+//-----------------------------------------------------------------------------------------------------------------------------
 /**
  * Returns the ARGV object from the passed-in array (typically process.argv.)
  *
  * `minimist` does the heavy-lifting, but we pre-process the args first, to provide
  * some added functionality.
  *
+ * @param {string[]} [options={}]         - Options
  * @param {string[]} [input=process.argv] - The parameters to be parsed.
  *
  * @returns {Object} The ARGV Object, which has the parameters.
  */
-function ARGV(input = process.argv) {
-  var args = [], argv = {};
+function ARGV(options_ ={}, input = process.argv) {
+  var options   = options_ || {};
+  var args      = [];
+  var argv      = {};
+
+  if (options.noExtraCases) {
+    options.noSnakeCase     = true;
+    options.noCamelCase     = true;
+  }
+
+  if (options.onlySnakeCase) {
+    options.noOriginalCase  = true;
+    options.noCamelCase     = true;
+  }
+
+  if (options.onlyCamelCase) {
+    options.noOriginalCase  = true;
+    options.noSnakeCase     = true;
+  }
+
+  options.noAutoDebug = options.noAutoDebug || options.noAuto;
 
   // Pre-process the args
-  args    = preProcess(input.slice(2), argv);
+  args    = preProcess(input.slice(2), argv, options);
 
   // Let `minimist` add what it does best
   argv    = sg.smartExtend(argv, require('minimist')(args));
@@ -61,9 +130,14 @@ function ARGV(input = process.argv) {
   // Remember what keys the user specified (we potentially add more.)
   const userKeys = sg.keys(argv);
 
-  // Active development means debug (unless quiet)
-  if (process.env.ACTIVE_DEVELOPMENT && !argv.quiet) {
-    argv.debug = true;
+  // noAutoDebug means 'If caller did not set --debug or kind, do not set any for them'
+  //                   Setting .debug because .verbose is set by user is OK
+
+  if (!options.noAutoDebug) {
+    // Active development means debug (unless quiet)
+    if (process.env.ACTIVE_DEVELOPMENT && !argv.quiet) {
+      argv.debug = true;
+    }
   }
 
   // Verbose implies debug
@@ -83,13 +157,17 @@ function ARGV(input = process.argv) {
   // so knowing the `origKeys` means we can keep from double-processing.
   const origKeys = sg.keys(argv);
 
-  argv._origKeys = function() {
-    return origKeys;
-  };
+  if (!options.pod) {
+    //-----------------------------------------------------------------------------------------------------------------------------
+    argv._origKeys = function() {
+      return origKeys;
+    };
 
-  argv._userKeys = function() {
-    return userKeys;
-  };
+    //-----------------------------------------------------------------------------------------------------------------------------
+    argv._userKeys = function() {
+      return userKeys;
+    };
+  }
 
   // See if any values are special values (like reading from file)
   origKeys.forEach(key => {
@@ -125,17 +203,20 @@ function ARGV(input = process.argv) {
   // Add snake-cased keys
   for (var i = 0; i < origKeys.length; ++i) {
     let   key     = origKeys[i];
+    let   value   = argv[key];
     let   snaked  = snake_case(key);
     let   camel   = toCamelCase(key);
 
     if (key === '_')    { continue; }
 
-    if (key !== snaked) {
-      argv[snaked] = argv[key];
+    if (key !== snaked && !options.noSnakeCase) {
+      del(key);
+      argv[snaked] = value;
     }
 
-    if (key !== camel && camel.length > 0) {
-      argv[camel] = argv[key];
+    if (key !== camel && camel.length > 0 && !options.noCamelCase) {
+      del(key);
+      argv[camel] = value;
     }
   }
 
@@ -148,94 +229,130 @@ function ARGV(input = process.argv) {
     argv._command = argv._[0];
   }
 
-  argv._plus = function(more) {
-    _.each(more, (v,k) => {
-      argv[k] = v;
-    });
+  if (!options.pod) {
+    //-----------------------------------------------------------------------------------------------------------------------------
+    argv._plus = function(more) {
+      _.each(more, (v,k) => {
+        argv[k] = v;
+      });
 
-    return argv;
-  };
+      return argv;
+    };
 
-  argv._get = function(...args) {
-    return argvGet(argv, ...args);
-  };
+    //-----------------------------------------------------------------------------------------------------------------------------
+    argv._get = function(...args) {
+      return argvGet(argv, ...args);
+    };
 
-  argv.i = function(msg, one='', two='', ...args) {
-    if (argv.quiet) { return; }
-    return sg.log(msg, one, two, ...args);
-  };
+    //-----------------------------------------------------------------------------------------------------------------------------
+    argv._merge = function(...args) {
+      return sg.merge(argv, ...args);
+    };
 
-  argv.i_if = function(test, msg, one='', two='', ...args) {
-    if (argv.quiet || !test) { return; }
-    return sg.log(msg, one, two, ...args);
-  };
+    //-----------------------------------------------------------------------------------------------------------------------------
+    argv._extend = function(...args) {
+      return sg.extend(argv, ...args);
+    };
+  }
 
-  argv.d = function(msg, one='', two='', ...args) {
-    if (!argv.debug) { return; }
-    return sg.elog(msg, one, two, ...args);
-  };
+  if (!options.pod && !options.noLog) {
+    //-----------------------------------------------------------------------------------------------------------------------------
+    argv.i = function(msg, one='', two='', ...args) {
+      if (argv.quiet) { return; }
+      return sg.log(msg, one, two, ...args);
+    };
 
-  argv.d_if = function(test, msg, one='', two='', ...args) {
-    if (!argv.debug || !test) { return; }
-    return sg.elog(msg, one, two, ...args);
-  };
+    //-----------------------------------------------------------------------------------------------------------------------------
+    argv.i_if = function(test, msg, one='', two='', ...args) {
+      if (argv.quiet || !test) { return; }
+      return sg.log(msg, one, two, ...args);
+    };
 
-  argv.v = function(msg, one='', two='', ...args) {
-    if (!argv.verbose) { return; }
-    return sg.elog(msg, one, two, ...args);
-  };
+    //-----------------------------------------------------------------------------------------------------------------------------
+    argv.d = function(msg, one='', two='', ...args) {
+      if (!argv.debug) { return; }
+      return sg.elog(msg, one, two, ...args);
+    };
 
-  argv.v_if = function(test, msg, one='', two='', ...args) {
-    if (!argv.verbose || !test) { return; }
-    return sg.elog(msg, one, two, ...args);
-  };
+    //-----------------------------------------------------------------------------------------------------------------------------
+    argv.d_if = function(test, msg, one='', two='', ...args) {
+      if (!argv.debug || !test) { return; }
+      return sg.elog(msg, one, two, ...args);
+    };
 
-  argv.w = function(msg, one='', two='', ...args) {
-    return sg.warn(msg, one, two, ...args);
-  };
+    //-----------------------------------------------------------------------------------------------------------------------------
+    argv.v = function(msg, one='', two='', ...args) {
+      if (!argv.verbose) { return; }
+      return sg.elog(msg, one, two, ...args);
+    };
 
-  argv.w_if = function(test, msg, one='', two='', ...args) {
-    if (!test) { return; }
-    return sg.warn(msg, one, two, ...args);
-  };
+    //-----------------------------------------------------------------------------------------------------------------------------
+    argv.v_if = function(test, msg, one='', two='', ...args) {
+      if (!argv.verbose || !test) { return; }
+      return sg.elog(msg, one, two, ...args);
+    };
 
-  argv.iv = function(msg, i_params, v_params) {
-    if (argv.verbose) {
-      return argv.v(msg, {...i_params, ...v_params});
-    }
+    //-----------------------------------------------------------------------------------------------------------------------------
+    argv.w = function(msg, one='', two='', ...args) {
+      return sg.warn(msg, one, two, ...args);
+    };
 
-    return argv.i(msg, i_params);
-  };
+    //-----------------------------------------------------------------------------------------------------------------------------
+    argv.w_if = function(test, msg, one='', two='', ...args) {
+      if (!test) { return; }
+      return sg.warn(msg, one, two, ...args);
+    };
 
-  argv.iv_if = function(test, ...rest) {
-    if (!test) { return; }
-    return argv.iv(...rest);
-  };
+    //-----------------------------------------------------------------------------------------------------------------------------
+    argv.iv = function(msg, i_params, v_params) {
+      if (argv.verbose) {
+        return argv.v(msg, {...i_params, ...v_params});
+      }
 
-  argv.pod = argv._pod = function() {
-    return sg.reduce(argv, {}, (m,v,k) => {
-      if (_.isFunction(v))  { return m; }
+      return argv.i(msg, i_params);
+    };
 
-      return sg.kv(m, k, v);
-    });
-  };
+    //-----------------------------------------------------------------------------------------------------------------------------
+    argv.iv_if = function(test, ...rest) {
+      if (!test) { return; }
+      return argv.iv(...rest);
+    };
 
-  // Get the args as a JavaScript object, using camelCase keys
-  argv._options = function() {
-    const options = sg.reduce(argv._origKeys(), {}, (m,k) => {
-      const v = argv[k];
-      if (_.isFunction(v))  { return m; }
+    //-----------------------------------------------------------------------------------------------------------------------------
+    argv.pod = argv._pod = function() {
+      return sg.reduce(argv, {}, (m,v,k) => {
+        if (_.isFunction(v))  { return m; }
 
-      return sg.kv(m, toCamelCase(k), v);
-    });
+        return sg.kv(m, k, v);
+      });
+    };
 
-    // Deep copy
-    return JSON.parse(JSON.stringify(options));
-  };
+    //-----------------------------------------------------------------------------------------------------------------------------
+    // Get the args as a JavaScript object, using camelCase keys
+    argv._options = function() {
+      const options = sg.reduce(argv._origKeys(), {}, (m,k) => {
+        const v = argv[k];
+        if (_.isFunction(v))  { return m; }
+
+        return sg.kv(m, toCamelCase(k), v);
+      });
+
+      // Deep copy
+      return JSON.parse(JSON.stringify(options));
+    };
+  }
 
   return argv;
+
+  //===========================================================================================================================
+  function del(key) {
+    if (options.noOriginalCase) {
+      delete argv[key];
+    }
+  }
 }
 
+//-----------------------------------------------------------------------------------------------------------------------------
 /**
  * Loop through the args and pick out the ones that have a meaning that `minimist`
  * does not understand, and process those.
@@ -249,7 +366,7 @@ function ARGV(input = process.argv) {
  *
  * @returns {string[]} The remainder parameters.
  */
-function preProcess(args, argv) {
+function preProcess(args, argv, options ={}) {
   var   result = [], m;
 
   var old;
@@ -259,7 +376,7 @@ function preProcess(args, argv) {
     old = i;
 
     // See if the array-param understanding function wants to handle this one
-    i   = arrayParam(i, result, args, argv);
+    i   = arrayParam(i, result, args, argv, options);
     if (i !== old) {
       continue;
     }
@@ -288,7 +405,8 @@ function preProcess(args, argv) {
   return result;
 }
 
-function arrayParam(i, _, args, argv) {
+//-----------------------------------------------------------------------------------------------------------------------------
+function arrayParam(i, _, args, argv, options ={}) {
 
   var   m;
   var   origCaseKey;
@@ -302,29 +420,39 @@ function arrayParam(i, _, args, argv) {
     let ckey = toCamelCase(m[1]);
 
     // Create the array
-    argv[skey] = [];
+    let value = [];
 
     // Read args into the array
     for (++i; i < args.length; ++i) {
       if (args[i].startsWith('--'))   { break; }
 
-      argv[skey].push(sg.smartValue(args[i]));
+      value.push(sg.smartValue(args[i]));
     }
 
-    argv[origCaseKey] = argv[skey];
+    if (!options.noOriginalCase) {
+      argv[origCaseKey] = value;
+    }
 
-    if (ckey.length > 0) {
-      argv[ckey]        = argv[skey];
+    if (!options.noSnakeCase) {
+      argv[skey] = value;
+    }
+
+    if (!options.noCamelCase) {
+      if (ckey.length > 0) {
+        argv[ckey]        = value;
+      }
     }
   }
 
   return i;
 }
 
+//-----------------------------------------------------------------------------------------------------------------------------
 function snake_case(key) {
   return key.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
 }
 
+//-----------------------------------------------------------------------------------------------------------------------------
 function toCamelCase(key) {
   var parts = key.split(/[^a-zA-Z0-9]/);
   var first = parts.shift();
@@ -333,6 +461,7 @@ function toCamelCase(key) {
   });
 }
 
+//-----------------------------------------------------------------------------------------------------------------------------
 /**
  * Get an option from the args.
  *
@@ -353,12 +482,14 @@ function argvGet(argv, names, options) {
   });
 }
 
+//-----------------------------------------------------------------------------------------------------------------------------
 function argvPod(argv) {
   return sg.reduceObj(argv, {}, (m,v,k) => {
     return (typeof v !== 'function') && (k !== '_');
   });
 }
 
+//-----------------------------------------------------------------------------------------------------------------------------
 function figureOutFile(filename_) {
   var   filename  = filename_;
   var   stats     = fs.statSync(filename);

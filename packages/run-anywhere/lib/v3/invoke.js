@@ -1,6 +1,7 @@
 
-const sg                      = require('sg-argv');
+const sg                      = require('sg-flow');
 const path                    = require('path');
+const fs                      = require('fs');
 const libGlob                 = require('glob');
 const {sprintf}               = require('sprintf-js');
 
@@ -10,10 +11,12 @@ const {
   ensureThreeArgvContext
 }                             = libThreeContext;
 
-module.exports.build_fnTable  = build_fnTable;
-module.exports.invoke_v2      = invoke_v2;
-module.exports.run_v2         = run_v2;
-module.exports.safeRequire    = safeRequire;
+
+module.exports.build_fnTableSmart   = build_fnTableSmart;
+module.exports.build_fnTable        = build_fnTable;
+module.exports.invoke_v2            = invoke_v2;
+module.exports.run_v2               = run_v2;
+module.exports.safeRequire          = safeRequire;
 
 sg._extend(module.exports, require('./bin/utils'));                 // get `extractSysArgv`, `extractSysArgvNamed`
 
@@ -28,9 +31,64 @@ const globIgnore = [
 ];
 
 // ----------------------------------------------------------------------------------------------------------------------------
+// Get the fnTable. (1) build it, and (2) load it. compare
+function build_fnTableSmart(sys_argv, callback) {
+  var cwd     = sys_argv.cwd        || process.cwd();
+  var fnName  = sys_argv.fnName;
+
+  var errors = [];
+  var builtFnTable, readFnTable;
+
+  const doneOnce = sg._.once(done);
+
+  return sg.__runll([function(next) {
+    return build_fnTable({...sys_argv}, function(err, fnTable) {
+      if (err)  { errors.push(err); return next(); }
+
+      builtFnTable = fnTable;
+      if (fnName && fnTable && fnTable[fnName]) {
+        doneOnce(fnTable);
+      }
+
+      return next();
+    });
+
+  }, function(next) {
+
+    return fs.readFile(path.join(cwd, `run-anywhere-fntable.json`), 'utf8', function(err, data) {
+
+      if (sg.ok(err, data)) {
+        let fnTable = sg.safeJSONParse(data);
+        if (fnTable) {
+          readFnTable = fnTable;
+
+          if (fnName && fnTable && fnTable[fnName]) {
+            doneOnce(fnTable);
+          }
+        }
+      }
+
+      return next();
+    });
+
+  }], function() {
+    // TODO: compare results, report or update file
+    return doneOnce();
+  });
+
+  function done() {
+    errors = sg.compact(errors);
+    errors = errors.length === 0 ? null : errors[0];
+
+    return callback(errors, builtFnTable || readFnTable || (!errors && {}));
+  }
+}
+
+// ----------------------------------------------------------------------------------------------------------------------------
 function build_fnTable(sys_argv, callback) {
 
   if (!sg.isnt(sys_argv.fnTable)) {
+    if (sys_argv.verbose) { console.log(`Finished build_fnTable`); }
     return callback(null, sys_argv.fnTable);
   }
 
@@ -41,10 +99,13 @@ function build_fnTable(sys_argv, callback) {
   var {reqFailFn} = sys_argv;
 
   if (filelist) {
+    if (sys_argv.verbose) { console.log(`Starting build_fnTable: requiring`); }
+
     fnTable = sg.reduce(filelist, fnTable ||{}, (table, filename) => {
       return extendFnTable(table, null, filename, process.cwd(), reqFailFn);
     });
 
+    if (sys_argv.verbose) { console.log(`Starting build_fnTable: required ${filelist.length}`); }
     return build_fnTable({...sys_argv, fnTable}, callback);
   }
 
@@ -56,8 +117,10 @@ function build_fnTable(sys_argv, callback) {
     };
 
     // console.log(`invoke-glob`, sg.inspect({options, ignore: sys_argv.ignore, sys_argv}));
+    if (sys_argv.verbose) { console.log(`Starting build_fnTable: globbing`); }
     return libGlob(glob, options, function(err, filelist) {
       // console.log(`build_fnTable`, sg.inspect({err, filelist}));
+      if (sys_argv.verbose) { console.log(`Starting build_fnTable: globbed ${filelist.length}`); }
       return build_fnTable({...sys_argv, filelist}, callback);
     });
   }
@@ -67,9 +130,12 @@ function build_fnTable(sys_argv, callback) {
 
 // ----------------------------------------------------------------------------------------------------------------------------
 function run_v2(sys_argv, fnName, argv_, callback, ...rest /* rest is [options, abort]*/) {
-  var argv        = {...argv_};
+  var argv                    = {...argv_};
+  var {debug,verbose}         = argv;
 
-  return build_fnTable(sys_argv, function(err, fnTable) {
+  ({debug,verbose,...argv} = argv);
+
+  return build_fnTableSmart({...sys_argv,debug,verbose,fnName}, function(err, fnTable) {
     if (err)  { return callback(err); }
     return invokeIt_v2(fnTable);
   });
@@ -175,7 +241,7 @@ function extendFnTable(table, mod, filename, dirname, reqFailFn = extendFnTable_
         const hasAsync    = !!(mod && mod.async && typeof mod.async[fnName] === 'function');
         const score       = scoreRaFnSignature(mod, fnName, value);
 
-        var   entry       = {arity, hasAsync, ...score, fn: value, filename, fnName};
+        var   entry       = {arity, hasAsync, ...score, fn: value, filename, dirname, fullfilename: path.join(dirname, filename), fnName};
         entry             = {...entry, tier: scoreTier(entry)};
 
         // sg.elog(sprintf(`Adding %-29s %j %s`, fnName, entry, (''+value).split('\n')[0]));
@@ -331,6 +397,10 @@ function findFn(fnTable, fnName) {
 
   if (typeof item.fn === 'function') {
     return mkMod(item.fn);
+  }
+
+  if (item.fullfilename) {
+    return safeRequire(item.fullfilename);
   }
 
   if (item.filename) {

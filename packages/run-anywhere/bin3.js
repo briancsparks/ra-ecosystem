@@ -65,6 +65,24 @@ function main(argv_) {
 
         fn = mod.main;
       }
+
+      if (fnName.toLowerCase().startsWith('list-fns')) {
+        let mod = safeRequire(__dirname, './lib/v3/bin/list-fns');
+        if (!mod) {
+          return callback(`ENOINVOKE`);
+        }
+
+        // Put the fnName back as the command
+        commands.unshift(fnName);
+
+        fn = function(argv, ...rest) {
+          var extras = {};
+          if (fnName === 'list-fns-json')         { extras.asJson = true; }
+          if (fnName === 'list-fns-save-json')    { extras.saveJson = true; }
+
+          return mod.main({...argv, ...extras}, ...rest);
+        };
+      }
     }
 
     // If we cannot find a function, the user gets 'invoke'

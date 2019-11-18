@@ -51,7 +51,91 @@ sg.argvValue = function(key) {
   return arg.split('=')[1];
 };
 
+/**
+ *  Just like _.extend, but does not mutate the 1st arg.
+ */
+sg.extend = function() {
+  var args = sg.reduce(arguments, [], function(m, arg) {
+    return sg.ap(m, arg);
+  });
 
+  args.unshift({});
+  return _.extend.apply(_, args);
+};
+
+/**
+ *  Just like _.extend.
+ */
+sg._extend = function(...args) {
+  // var args = sg.reduce(arguments, [], function(m, arg) {
+  //   return sg.ap(m, arg);
+  // });
+
+  // args.unshift({});
+  return _.extend.apply(_, args);
+};
+
+/**
+ *  Smart sg.extend().
+ */
+sg.smartExtend = function() {
+  var args = sg.reduce(arguments, [], function(m, arg) {
+    return sg.ap(m, sg.isObject(arg) ? sg.smartAttrs(arg) : arg);
+  });
+
+  args.unshift({});
+  return _.extend.apply(_, args);
+};
+
+/**
+ *  Merge objects.
+ */
+sg.merge = function() {
+  var args = sg.reduce(arguments, [], function(m, arg) {
+    return sg.ap(m, sg.reduce(arg, {}, function(m, value, key) {
+      return sg.kv(m, key, value);
+    }));
+  });
+
+  args.unshift({});
+  return _.extend.apply(_, args);
+};
+
+/**
+ * Pulls the item out of the object and returns it.
+ *
+ * @param {*} collection_
+ * @param {*} name
+ * @returns
+ */
+sg.extract = function(collection_, name) {
+  var collection  = collection_ || {};
+  var value       = collection[name];
+
+  delete collection[name];
+  return value;
+};
+
+/**
+ * Pulls the items out of the object and returns a new object with those items.
+ *
+ * @param {*} collection
+ * @returns
+ */
+sg.extracts = function(collection /*, names... */) {
+  var names  = _.drop(arguments);
+  var result = {};
+
+  var keyMirror = sg.keyMirrorR(names);
+
+  _.each(Object.keys(keyMirror), function(name) {
+    result[name] = sg.extract(collection, name);
+  });
+
+  return result;
+};
+
+sg.compact = _.compact;
 
 var stage       = sg.argvValue('stage');
 var fastFail    = sg.argvFlag('fastfail');
@@ -1400,90 +1484,6 @@ sg.where        = _.filter;
 
 
 /**
- *  Just like _.extend, but does not mutate the 1st arg.
- */
-sg.extend = function() {
-  var args = sg.reduce(arguments, [], function(m, arg) {
-    return sg.ap(m, arg);
-  });
-
-  args.unshift({});
-  return _.extend.apply(_, args);
-};
-
-/**
- *  Just like _.extend.
- */
-sg._extend = function(...args) {
-  // var args = sg.reduce(arguments, [], function(m, arg) {
-  //   return sg.ap(m, arg);
-  // });
-
-  // args.unshift({});
-  return _.extend.apply(_, args);
-};
-
-/**
- *  Smart sg.extend().
- */
-sg.smartExtend = function() {
-  var args = sg.reduce(arguments, [], function(m, arg) {
-    return sg.ap(m, sg.isObject(arg) ? sg.smartAttrs(arg) : arg);
-  });
-
-  args.unshift({});
-  return _.extend.apply(_, args);
-};
-
-/**
- *  Merge objects.
- */
-sg.merge = function() {
-  var args = sg.reduce(arguments, [], function(m, arg) {
-    return sg.ap(m, sg.reduce(arg, {}, function(m, value, key) {
-      return sg.kv(m, key, value);
-    }));
-  });
-
-  args.unshift({});
-  return _.extend.apply(_, args);
-};
-
-/**
- * Pulls the item out of the object and returns it.
- *
- * @param {*} collection_
- * @param {*} name
- * @returns
- */
-sg.extract = function(collection_, name) {
-  var collection  = collection_ || {};
-  var value       = collection[name];
-
-  delete collection[name];
-  return value;
-};
-
-/**
- * Pulls the items out of the object and returns a new object with those items.
- *
- * @param {*} collection
- * @returns
- */
-sg.extracts = function(collection /*, names... */) {
-  var names  = _.drop(arguments);
-  var result = {};
-
-  var keyMirror = sg.keyMirrorR(names);
-
-  _.each(Object.keys(keyMirror), function(name) {
-    result[name] = sg.extract(collection, name);
-  });
-
-  return result;
-};
-
-/**
  *  Make sure the item is an array.
  */
 sg.toArray = function(x) {
@@ -1517,7 +1517,13 @@ sg.jsonify = function(x) {
   return sg.safeJSONParse(x);
 };
 
-sg.safeJSONStringify = function(json, ...rest) {
+/**
+ * Just like JSON.stringify, but does not throw, and defaults to 2 spaces. use (json, null, null) to
+ * to have no whitespace.
+ */
+sg.safeJSONStringify = function(json, replacer, space) {
+  var rest = [replacer, space === null ? null : 2];
+
   try {
     return JSON.stringify(json, ...rest);
   } catch (err) {
