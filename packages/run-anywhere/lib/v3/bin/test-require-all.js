@@ -30,8 +30,13 @@ function main(argv_, user_sys_argv_ ={}) {
   const {fnName,ignore,globIgnore,user_sys_argv,argv,sys_argv,commands}
         = crackInvokeArgs(argv_, {...user_sys_argv_, glob: glob_, globIgnore: globIgnore_});
 
-  var params      = {};
-  params.reqFailFn = function(failFilename, reqFilename) {
+  var params      = {reqFailFn};
+
+  return build_fnTable({...sys_argv, ...params}, function(err, fnTable) {
+    console.log(`\ntest-require-all-cb ${err && __filename+'\n'}`, sg.inspect({err, fnTable: cleanTable(fnTable, 1)}));
+  });
+
+  function reqFailFn(failFilename, reqFilename) {
     if (failFilename) {
       console.log(`Cannot require(${failFilename})\n\nuse to see:\n  node ${failFilename}\n----------------\n`);
       try {
@@ -44,12 +49,7 @@ function main(argv_, user_sys_argv_ ={}) {
     if (reqFilename) {
       console.log(`require(${reqFilename})`);
     }
-  };
-
-  return build_fnTable({...sys_argv, ...params}, function(err, fnTable) {
-    console.log(`\ntest-require-all-cb ${err && __filename+'\n'}`, sg.inspect({err, fnTable: cleanTable(fnTable, 1)}));
-  });
-}
+  }}
 
 //-----------------------------------------------------------------------------------------------------------------------------
 function cleanTableX(fnTable) {

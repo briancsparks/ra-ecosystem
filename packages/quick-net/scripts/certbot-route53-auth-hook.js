@@ -1,4 +1,5 @@
 
+const sg        = require('sg-clihelp');
 const AWS       = require('aws-sdk');
 const route53   = new AWS.Route53();
 
@@ -10,6 +11,11 @@ if (require.main === module) {
 
 
 async function main() {
+  require('loud-rejection/register');
+  require('exit-on-epipe');
+
+  var result = 'notrun';
+
   try {
     const {HostedZones} = await route53.listHostedZonesByName({DNSName: domain}).promise();
 
@@ -19,14 +25,16 @@ async function main() {
         const HostedZoneId = zone.Id;
         const ChangeBatch = changeBatch();
         const {ChangeInfo} = await route53.changeResourceRecordSets({HostedZoneId, ChangeBatch}).promise();
-        const result = await route53.waitFor('resourceRecordSetsChanged', {Id: ChangeInfo.Id}).promise();
+        result = await route53.waitFor('resourceRecordSetsChanged', {Id: ChangeInfo.Id}).promise();
       }
     }
   } catch(err) {
     console.error(err);
     process.exit(3);
   }
-}();
+
+  return [null, result];
+}
 
 function changeBatch() {
   return {

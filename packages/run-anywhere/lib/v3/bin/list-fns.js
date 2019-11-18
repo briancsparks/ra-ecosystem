@@ -42,21 +42,7 @@ function main(argv_, user_sys_argv_ ={}) {
 
   const cwd       = argv.cwd || process.cwd();
 
-  var params      = {};
-  params.reqFailFn = function(failFilename, reqFilename) {
-    if (failFilename) {
-      console.log(`Cannot require(${failFilename})\n\nuse to see:\n  node ${failFilename}\n----------------\n`);
-      try {
-        require(failFilename);
-      } catch (err) {
-        console.log(err, `\n----------------\n\n`);
-      }
-    }
-
-    if (reqFilename) {
-      console.log(`require(${reqFilename})`);
-    }
-  };
+  var params      = {reqFailFn};
 
   return build_fnTable({...sys_argv, ...params}, function(err, fnTable_) {
     const fnTable = cleanTable(fnTable_);
@@ -67,10 +53,8 @@ function main(argv_, user_sys_argv_ ={}) {
       const json      = cleanTableJson(fnTable_);
       const str       = sg.safeJSONStringify(json);
       const filename  = path.join(cwd, `run-anywhere-fntable.json`);
-console.log(`asdfasave1`, {filename, len:str.length, num:str.split('\n').length});
 
       const result = fs.writeFileSync(filename, str);
-      // console.log(`asdfasave3`, {filename, len:str.length, num:str.split('\n').length, err, result});
     } else {
       _.each([fnTable.tier4,fnTable.tier3,fnTable.tier2,fnTable.tier1], tier => {
         _.each(tier, item => {
@@ -89,6 +73,21 @@ console.log(`asdfasave1`, {filename, len:str.length, num:str.split('\n').length}
     }
     // console.log(`\nlist-fns-cb ${err && __filename+'\n'}`, sg.inspect({err, fnTable: cleanTable(fnTable_)}));
   });
+
+  function reqFailFn(failFilename, reqFilename) {
+    if (failFilename) {
+      console.log(`Cannot require(${failFilename})\n\nuse to see:\n  node ${failFilename}\n----------------\n`);
+      try {
+        require(failFilename);
+      } catch (err) {
+        console.log(err, `\n----------------\n\n`);
+      }
+    }
+
+    if (reqFilename) {
+      console.log(`require(${reqFilename})`);
+    }
+  }
 }
 
 //-----------------------------------------------------------------------------------------------------------------------------

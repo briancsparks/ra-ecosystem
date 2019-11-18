@@ -71,7 +71,9 @@ var   commands = {
 //  Helper Functions
 //
 
-quickNet();
+if (require.main === module) {
+  quickNet();
+}
 
 function quickNet() {
   // Do not be too eager if we are just being required

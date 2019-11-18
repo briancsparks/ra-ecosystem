@@ -37,22 +37,12 @@ function build_fnTableSmart(sys_argv, callback) {
   var fnName  = sys_argv.fnName;
 
   var errors = [];
-  var builtFnTable, readFnTable;
+  var builtFnTable, readFnTable, theFnTable;
 
   const doneOnce = sg._.once(done);
 
-  return sg.__runll([function(next) {
-    return build_fnTable({...sys_argv}, function(err, fnTable) {
-      if (err)  { errors.push(err); return next(); }
-
-      builtFnTable = fnTable;
-      if (fnName && fnTable && fnTable[fnName]) {
-        doneOnce(fnTable);
-      }
-
-      return next();
-    });
-
+  return sg.__run([function(next) {
+    return next();
   }, function(next) {
 
     return fs.readFile(path.join(cwd, `run-anywhere-fntable.json`), 'utf8', function(err, data) {
@@ -60,12 +50,26 @@ function build_fnTableSmart(sys_argv, callback) {
       if (sg.ok(err, data)) {
         let fnTable = sg.safeJSONParse(data);
         if (fnTable) {
-          readFnTable = fnTable;
+          readFnTable = theFnTable = fnTable;
 
           if (fnName && fnTable && fnTable[fnName]) {
             doneOnce(fnTable);
           }
         }
+      }
+
+      return next();
+    });
+
+  }, function(next) {
+    if (theFnTable) { return next(); }
+
+    return build_fnTable({...sys_argv}, function(err, fnTable) {
+      if (err)  { errors.push(err); return next(); }
+
+      builtFnTable = theFnTable = fnTable;
+      if (fnName && fnTable && fnTable[fnName]) {
+        doneOnce(fnTable);
       }
 
       return next();

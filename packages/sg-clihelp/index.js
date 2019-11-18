@@ -265,9 +265,14 @@ function _include_(filename) {
  */
 function runTopAsync(main, name='main') {
   (async () => {
-    var [err, result] = await main();
+    const mainResult = await main();
+    var [err, result] = sg.arrayify(mainResult);
     if (err) {
       return announceError(err);
+    }
+
+    if (!result) {
+      result = mainResult;
     }
 
     const message = sg.extract(result ||{}, 'finalMessage');

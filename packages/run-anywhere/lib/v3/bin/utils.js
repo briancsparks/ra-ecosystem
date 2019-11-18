@@ -23,8 +23,6 @@ function crackInvokeArgs(argv_, user_sys_argv_ ={}) {
     ...sys_argv
   }               = extractSysArgv({argv: argv_}, {user_sys_argv: user_sys_argv_});
 
-  // sg.warn_if(sg.firstKey(others), `ENOTCLEAN`, {others});
-
   var commands    = argv_._;
 
   // ---

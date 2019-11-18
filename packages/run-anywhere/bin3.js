@@ -10,9 +10,11 @@ const {safeRequire}           = libInvoke;
 
 module.exports.main = main;
 
-// TODO: use loud rejection and pipe-break
 
 function main(argv_) {
+  require('loud-rejection/register');
+  require('exit-on-epipe');
+
   var fnName;
   var argv                    = {...argv_};
   var commands                = argv_._;
@@ -27,6 +29,9 @@ function main(argv_) {
     // Invoke it ------ !
     return fn({...argv}, {globIgnore});
   });
+
+
+
 
   // ==========================================================================================================================
   function find(fnName, callback) {
@@ -66,7 +71,7 @@ function main(argv_) {
         fn = mod.main;
       }
 
-      if (fnName.toLowerCase().startsWith('list-fns')) {
+      if (fnName.toLowerCase().startsWith('list-fns-')) {
         let mod = safeRequire(__dirname, './lib/v3/bin/list-fns');
         if (!mod) {
           return callback(`ENOINVOKE`);
