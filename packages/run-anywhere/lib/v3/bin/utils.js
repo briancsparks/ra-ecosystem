@@ -5,6 +5,7 @@ const sg                      = require('sg0');
 module.exports.crackInvokeArgs      = crackInvokeArgs;
 module.exports.extractSysArgv       = extractSysArgv;
 module.exports.extractSysArgvNamed  = extractSysArgvNamed;
+module.exports.cleanTable           = cleanTable;
 
 // ----------------------------------------------------------------------------------------------------------------------------
 function crackInvokeArgs(argv_, user_sys_argv_ ={}) {
@@ -92,5 +93,46 @@ function extractOne(keys_, from, seed = {}) {
   });
 
   return [result, {[key]:rest}];
+}
+
+//-----------------------------------------------------------------------------------------------------------------------------
+function cleanTable(fnTable, squashLevel =9) {
+  var   result  = {};
+  var   tier2   = {};
+  var   tier3   = {};
+  var   tier4   = {};
+
+  result.tier1 = sg.reduceObj(fnTable, {}, (m,v,k) => {
+    var value = {...v, mod: !!v.mod, fn: !!v.fn};
+
+    // Tier1
+    if (v.tier === 1) {
+      return [value];
+    }
+
+    // Tier2
+    if (v.tier === 2) {
+      tier2 = {...tier2, [k]:value};
+    }
+
+    // Tier3
+    else if (v.tier === 3) {
+      tier3 = {...tier3, [k]:value};
+    }
+
+    // Tier4
+    else {
+      tier4 = {...tier4, [k]:value};
+    }
+  });
+
+  result = {...result, tier2, tier3, tier4};
+
+  if (squashLevel <= 1)        { result.tier1 = {numKeys: sg.numKeys(result.tier1)}; }
+  if (squashLevel <= 2)        { result.tier2 = {numKeys: sg.numKeys(result.tier2)}; }
+  if (squashLevel <= 3)        { result.tier3 = {numKeys: sg.numKeys(result.tier3)}; }
+  if (squashLevel <= 4)        { result.tier4 = {numKeys: sg.numKeys(result.tier4)}; }
+
+  return result;
 }
 

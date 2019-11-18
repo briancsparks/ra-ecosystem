@@ -65,7 +65,7 @@ mod.async({addServiceRoute: async function(argv, context ={}) {
   var   result        = await addToConfigMap({...argv, configItems: {...serverconfig}}, context);
 
   // ---------- Register LB as our subdomain ----------
-  const ingressService  = await getKClient().api.v1.namespace(namespace).service('nginx-ingress').get();
+  const ingressService  = await Kutils.getKClient().api.v1.namespace(namespace).service('nginx-ingress').get();
   const lbHostName      = sg.deref(ingressService, 'body.status.loadBalancer.ingress')[0].hostname;
   const ChangeBatch     = changeBatch('UPSERT', server_name, lbHostName);
 
@@ -111,7 +111,7 @@ _addToConfigMap_ = mod.async({_addToConfigMap_: async function(argv, context ={}
 
   // Get the configmap from the API, or...
   if (hasConfigMap) {
-    configmap = await getKClient().api.v1.namespace(namespace).configmap(config_name).get();
+    configmap = await Kutils.getKClient().api.v1.namespace(namespace).configmap(config_name).get();
     configmap = configmap.body || {};
 
   } else {
@@ -136,9 +136,9 @@ _addToConfigMap_ = mod.async({_addToConfigMap_: async function(argv, context ={}
 
   // Put data back to k8s
   if (hasConfigMap) {
-    result = await getKClient().api.v1.namespace(namespace).configmaps(config_name).put({body});
+    result = await Kutils.getKClient().api.v1.namespace(namespace).configmaps(config_name).put({body});
   } else {
-    result = await getKClient().api.v1.namespace(namespace).configmap.post({body});
+    result = await Kutils.getKClient().api.v1.namespace(namespace).configmap.post({body});
   }
 
   return result;
@@ -180,9 +180,9 @@ _createConfigMap_ = mod.async({_createConfigMap_: async function(argv, context =
     const data          = mergeConfigMap(configmap.data || {});
 
     if (await getHasConfigmap(namespace, config_name)) {
-      result = await getKClient().api.v1.namespace(namespace).configmaps(config_name).put({body: {...configmap, data}});
+      result = await Kutils.getKClient().api.v1.namespace(namespace).configmaps(config_name).put({body: {...configmap, data}});
     } else {
-      result = await getKClient().api.v1.namespace(namespace).configmap.post({body: {...configmap, data}});
+      result = await Kutils.getKClient().api.v1.namespace(namespace).configmap.post({body: {...configmap, data}});
     }
 
   } catch(err) {
@@ -202,18 +202,18 @@ _createConfigMap_ = mod.async({_createConfigMap_: async function(argv, context =
 // Helpers
 // -------------------------------------------------------------------------------------------------------------------------------------------------------
 
-// -------------------------------------------------------------------------------------------------------------------------------------------------------
-var kClient;
-function getKClient() {
-  if (kClient) {
-    return kClient;
-  }
+// // -------------------------------------------------------------------------------------------------------------------------------------------------------
+// var kClient;
+// function getKClient() {
+//   if (kClient) {
+//     return kClient;
+//   }
 
-  kubeconfig.loadFromDefault();
+//   kubeconfig.loadFromDefault();
 
-  const backend  = new Request({kubeconfig});
-  return kClient = new Client({backend, version: '1.13'});
-}
+//   const backend  = new Request({kubeconfig});
+//   return kClient = new Client({backend, version: '1.13'});
+// }
 
 // -------------------------------------------------------------------------------------------------------------------------------------------------------
 /**
@@ -262,7 +262,7 @@ function stringify(x) {
  * @param {string} name      -- The name of the configmap.
  */
 async function getHasConfigmap(namespace, name) {
-  const configmaps  = await getKClient().api.v1.namespace(namespace).configmaps.get();
+  const configmaps  = await Kutils.getKClient().api.v1.namespace(namespace).configmaps.get();
 
   if (!configmaps || configmaps.statusCode >= 400)  { return false; }
 

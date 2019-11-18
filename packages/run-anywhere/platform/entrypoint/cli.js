@@ -29,9 +29,10 @@ var   handlerFns    = [];
 var   dispatcher    = dispatch;
 
 // ----------------------------------------------------------------------------------------------------------------------------
-exports.main = function(argv_, user_sys_argv_ ={}) {
-  if (sg.isnt(argv_))                                                             { return exports.main(sg.ARGV() ||{}); }
-  if ((argv_._command || (argv_._ && argv_._[0]) || '') === 'test-require-all')   { return; }
+exports.main = function(argv_, user_sys_argv_ ={}, start) {
+  if (sg.isnt(argv_))                                                         { return exports.main(sg.ARGV() ||{}, user_sys_argv_, start); }
+  if (!start)                                                                 { return; }
+  // if ((argv_._command || (argv_._ && argv_._[0]) || '').startsWith('rai_'))   { return; }
 
   const event     = {argv:argv_, user_sys_argv:user_sys_argv_};
   const context   = {};

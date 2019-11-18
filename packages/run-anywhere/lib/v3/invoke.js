@@ -173,7 +173,7 @@ function extendFnTable(table, mod, filename, dirname, reqFailFn = extendFnTable_
 
         const arity       = value.length;
         const hasAsync    = !!(mod && mod.async && typeof mod.async[fnName] === 'function');
-        const score       = scoreRaFnSignature(value);
+        const score       = scoreRaFnSignature(mod, fnName, value);
 
         var   entry       = {arity, hasAsync, ...score, fn: value, filename, fnName};
         entry             = {...entry, tier: scoreTier(entry)};
@@ -209,31 +209,83 @@ function extendFnTable_requireFail(failFilename, reqFilename) {
 }
 
 // ----------------------------------------------------------------------------------------------------------------------------
-function scoreRaFnSignature(fn) {
+function scoreRaFnSignature(mod, fnName, fn_) {
+  var   fn          = fn_;
   var   arity       = fn.length;
-  const first       = (''+fn).split('\n')[0];       /* First line of function (string) */
-  var   params      = first.match(/\(([^)]+)\)/);   /* Parameters to function (regex) */
+  var   first       = (''+fn).split('\n')[0];         /* First line of function (string) */
+  var   params      = first.match(/\(([^)]+)\)/);     /* Parameters to function (regex) */
+  var   isAsync     = false;
+  var   hasAsync    = !!(mod && mod.async && typeof mod.async[fnName] === 'function');
   var   paramsStr   = '';
+// console.log(`first0`, {first:first.substr(0, params && params.index || 0)}, params && params[0]);
 
-  paramsStr         = (params && params[1]) ||'';          /* Parameters to function (string) */
-  params            = paramsStr.split(/,\s*/g);               /* Parameters to function (array<string>) */
+  var sub;
+  if (params && (sub = first.substr(0, params.index))) {
+    if (sub.indexOf('callbackified') !== -1) {
+      // We have a function that is async, that was registered mod.async({xyz: async function(...)})
+      // We need to look at the real function that the user wrote
+      fn = mod.async && mod.async[fnName];
+
+      arity       = fn.length;
+      first       = (''+fn).split('\n')[0];         /* First line of function (string) */
+      params      = first.match(/\(([^)]+)\)/);     /* Parameters to function (regex) */
+      isAsync     = true;
+      hasAsync    = !!(mod && typeof mod[fnName] === 'function');
+    }
+  }
+// console.log(`first1`, {first:first.substr(0, params && params.index || 0)}, params && params[0]);
+  paramsStr         = (params && params[1]) ||'';     /* Parameters to function (string) */
+  params            = paramsStr.split(/,\s*/g);       /* Parameters to function (array<string>) */
 
   // Are the names to the function right?
   var   names = true;
-  if (arity > 0 || params.length > 0) {       names = names && (':argv:event:req:'.indexOf(`:${params[0] = cleanParam(params[0])}:`) !== -1); }
-  if (arity > 1 || params.length > 1) {       names = names && (':context:res:'.indexOf(`:${params[1] = cleanParam(params[1])}:`) !== -1); }
+  if (arity > 0 || params.length > 0) {           names = names &&   (':argv:event:req:'.indexOf(`:${params[0] = cleanParam(params[0])}:`) !== -1); }
+  if (arity > 1 || params.length > 1) {           names = names &&      (':context:res:'.indexOf(`:${params[1] = cleanParam(params[1])}:`) !== -1); }
 
-  if (arity > 2 || params.length > 2) {       names = names && (':callback:cb:rest:'.indexOf(`:${params[2] = cleanParam(params[2])}:`) !== -1);
+  if (arity === 3 || params.length === 3) {       names = names && (':callback:cb:rest:'.indexOf(`:${params[2] = cleanParam(params[2])}:`) !== -1);
     if (names && params[2] !== 'rest') {
       arity = Math.max(arity, 3);
     }
+  } else if (arity === 2) {
+    // names is already computed
   }
 
-  return {arity, names, paramsStr};
+  // Cannot have names right if not 2 or 3 arity
+  if (arity < 2 || arity > 3) {
+    names = false;
+  }
+
+  var result = {};
+
+  // However, if you have the perfect signature, youre good
+
+  // (argv, context, callback)
+  // (argv, context, callback_)
+  // (argv_, context__, callback____)
+
+  if (fn.length === 3) {
+    // /argv(_*)\s*,/ is: 'argv' followed by zero or more underscores, any whitespace, and a comma.
+    if ((paramsStr.match(/argv(_*)\s*,\s*context(_*)\s*,\s*callback(_*)/i))) {
+      result.tier   = 1;
+      result.names  = true;
+    }
+  } else if (fn.length === 2) {
+    if ((paramsStr.match(/argv(_*)\s*,\s*context(_*)/i))) {
+      result.tier   = 1;
+      result.names  = true;
+    }
+  }
+
+  result = {...result, arity, fnLen: fn.length, names, hasAsync, isAsync, paramsStr, first};
+// console.log(`first2`, {result});
+
+  return result;
 }
 
 // ----------------------------------------------------------------------------------------------------------------------------
 function scoreTier(entry) {
+
+  if (!sg.isnt(entry.tier))           { return entry.tier; }
 
   // Tier1
   if (entry.hasAsync && entry.names) {

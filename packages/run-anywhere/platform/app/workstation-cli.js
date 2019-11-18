@@ -51,4 +51,6 @@ host.setDispatcher(function(argv, context_, callback) {
   });
 });
 
-entrypoint.main();
+if (process.argv[1] === __filename) {
+  entrypoint.main(null, null, true);
+}

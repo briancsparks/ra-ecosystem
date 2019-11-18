@@ -24,9 +24,9 @@ const kubeconfig              = new KubeConfig();
 //const mod                     = ra.modSquad(module, 'configMap');
 
 kubeconfig.loadFromDefault();
-const backend                 = new Request({kubeconfig});
-const client                  = new Client({backend, version: '1.13'});
+// const backend                 = new Request({kubeconfig});
+// const client                  = new Client({backend, version: '1.13'});
 
-exports.kclient               = client;
-exports.kubeconfig            = kubeconfig;
+// exports.kclient               = client;
+// exports.kubeconfig            = kubeconfig;
 

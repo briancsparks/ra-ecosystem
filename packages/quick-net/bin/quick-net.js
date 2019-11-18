@@ -74,6 +74,9 @@ var   commands = {
 quickNet();
 
 function quickNet() {
+  // Do not be too eager if we are just being required
+  if (ARGV._userKeys().filter(k => k !== '_').length === 0)                   { return; }
+
   return ra.command2(ARGV, /*loadedMods=*/ {}, raModFnMap || {}, raModFilenames, null, /*opts=*/ {}, commands, (err, data) => {
     // if (err) {
     //   return quickNetX();

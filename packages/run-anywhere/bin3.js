@@ -43,7 +43,7 @@ function main(argv_) {
       }
     }
 
-    // TODO: Use this to make 'ra3 checkRequires' -- to walk through a package and require everything, hoping not to get the 'cannot require' message
+    // Make 'ra3 checkRequires' -- to walk through a package and require everything, hoping not to get the 'cannot require' message
     if (!fn) {
       if (fnName === 'test-require-all') {
         let mod = safeRequire(__dirname, './lib/v3/bin/test-require-all');
@@ -55,8 +55,22 @@ function main(argv_) {
       }
     }
 
+    // Make 'ra3 list-fns' -- to walk through a package and require everything, hoping not to get the 'cannot require' message
+    if (!fn) {
+      if (fnName === 'list-fns') {
+        let mod = safeRequire(__dirname, './lib/v3/bin/list-fns');
+        if (!mod) {
+          return callback(`ENOINVOKE`);
+        }
+
+        fn = mod.main;
+      }
+    }
+
     // If we cannot find a function, the user gets 'invoke'
     if (!fn) {
+      sg.elog(`Warn: auto loading 'invoke'. Is this what you want? (For function: ${fnName})`);
+
       // Put the fnName back as the command
       commands.unshift(fnName);
 

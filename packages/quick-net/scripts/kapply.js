@@ -14,4 +14,7 @@ async function main() {
   return [null, {ok:true}];
 }
 
-sg.runTopAsync(main, 'kubectl apply -k');
+// Do not be too eager if we are just being required
+if (ARGV._userKeys().filter(k => k !== '_').length > 0) {
+  sg.runTopAsync(main, 'kubectl apply -k');
+}

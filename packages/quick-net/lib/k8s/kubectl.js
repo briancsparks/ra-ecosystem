@@ -11,6 +11,7 @@ const qm                      = require('quick-merge').qm;
 const sg                      = sg0.merge(sg0, require('sg-exec'), require('sg-clihelp'));
 const Request                 = require('kubernetes-client/backends/request');
 const Client                  = require('kubernetes-client').Client;
+const Kutils                  = require('./lib/utils');
 const pem                     = require('pem');
 const util                    = require('util');
 const {execz,execa}           = sg;
@@ -18,8 +19,8 @@ const {test}                  = sg.sh;
 
 const mod                     = ra.modSquad(module, 'kubectl');
 
-const backend                 = new Request(Request.config.fromKubeconfig(`${os.homedir()}/.kube/config`));
-const client                  = new Client({backend, version: '1.13'});
+// const backend                 = new Request(Request.config.fromKubeconfig(`${os.homedir()}/.kube/config`));
+// const client                  = new Client({backend, version: '1.13'});
 
 sg.ARGV();
 
@@ -37,14 +38,14 @@ mod.async({nginxConfConfigMap: async function(argv, context) {
 
     var currentConfigMap;
     try {
-      currentConfigMap = await client.api.v1.namespace(ns(argv)).configmap('nginxconfig').get();
+      currentConfigMap = await Kutils.getKClient().api.v1.namespace(ns(argv)).configmap('nginxconfig').get();
     } catch(err) {
     }
 
     if (currentConfigMap) {
-      result = await client.api.v1.namespace(ns(argv)).configmaps('nginxconfig').put({body: json});
+      result = await Kutils.getKClient().api.v1.namespace(ns(argv)).configmaps('nginxconfig').put({body: json});
     } else {
-      result = await client.api.v1.namespace(ns(argv)).configmap.post({body: json});
+      result = await Kutils.getKClient().api.v1.namespace(ns(argv)).configmap.post({body: json});
     }
 
   } catch(err) {
@@ -57,7 +58,7 @@ mod.async({nginxConfConfigMap: async function(argv, context) {
 mod.async({ensureCerts: async function(argv, context) {
   try {
     const name = 'nginxcert';
-    const secret = await client.api.v1.namespaces(ns(argv)).secrets(name).get();
+    const secret = await Kutils.getKClient().api.v1.namespaces(ns(argv)).secrets(name).get();
 
     return secret;
   } catch(err) {
@@ -87,11 +88,11 @@ mod.async({ensureCerts: async function(argv, context) {
 
 mod.async({deployWebtier: async function(argv, context) {
   const manifest      = nginxDeployment();
-  var   createReceipt = await client.apis.apps.v1.namespaces(ns(argv)).deployments.post({body: manifest});
-  const deployment    = await client.apis.apps.v1.namespaces(ns(argv)).deployments(manifest.metadata.name).get();
+  var   createReceipt = await Kutils.getKClient().apis.apps.v1.namespaces(ns(argv)).deployments.post({body: manifest});
+  const deployment    = await Kutils.getKClient().apis.apps.v1.namespaces(ns(argv)).deployments(manifest.metadata.name).get();
 
   const serviceSpec   = nginxService();
-  createReceipt       = await client.api.v1.namespaces(ns(argv)).services.post({body: serviceSpec});
+  createReceipt       = await Kutils.getKClient().api.v1.namespaces(ns(argv)).services.post({body: serviceSpec});
 
   return deployment;
 }});

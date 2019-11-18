@@ -343,7 +343,15 @@ function findMod(mods = [], modFnMap={}, allMods=[], fnName) {            // COD
     });
   });
 
-  if (!mod) { sg.elog(`Fail to load fn ${fnName}`, available); }
+  if (!mod) {
+    sg.elog(`Fail to load fn ${fnName}`, available);
+    try {
+      require(modFilename);
+    } catch(err) {
+      console.log(err);
+    }
+  }
+
   return mod;
 
   function isTheMod(m, mod) {

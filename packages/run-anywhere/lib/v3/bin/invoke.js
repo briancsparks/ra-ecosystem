@@ -2,7 +2,9 @@
 
 const sg                      = require('sg-argv');
 const path                    = require('path');
-const {extractSysArgv}        = require('./utils');
+const {
+  extractSysArgv,
+}                             = require('./utils');
 const libInvoke               = require('../invoke');
 const {run_v2}                = libInvoke;
 

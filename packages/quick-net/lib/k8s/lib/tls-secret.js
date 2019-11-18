@@ -20,13 +20,14 @@ const {test}                  = sg.sh;
 
 const mod                     = ra.modSquad(module, 'tlsCerts');
 
-const backend                 = new Request(Request.config.fromKubeconfig(`${os.homedir()}/.kube/config`));
-const client                  = new Client({backend, version: '1.13'});
+// const backend                 = new Request(Request.config.fromKubeconfig(`${os.homedir()}/.kube/config`));
+// const client                  = new Client({backend, version: '1.13'});
 
 const {ns,isFile,isDir}       = Kutils;
 
 sg.ARGV();
 
+//-----------------------------------------------------------------------------------------------------------------------------
 const _createTlsSecret_ = mod.async({_createTlsSecret_: async function(argv, context ={}) {
 
   const {keyfile,crtfile,name} = argv;
@@ -37,6 +38,7 @@ const _createTlsSecret_ = mod.async({_createTlsSecret_: async function(argv, con
   return result;
 }});
 
+//-----------------------------------------------------------------------------------------------------------------------------
 mod.async({createTlsSecret: async function(argv, context ={}) {
 
   const {keyfile,crtfile,name} = argv;
@@ -46,13 +48,14 @@ mod.async({createTlsSecret: async function(argv, context ={}) {
   return _createTlsSecret_({...argv,keyfile,crtfile,name}, context);
 }});
 
+//-----------------------------------------------------------------------------------------------------------------------------
 const _ensureTlsSecret_ = mod.async({_ensureTlsSecret_: async function(argv, context ={}) {
 
   const {name,namespace} = argv;
 
   try {
     // This will throw 404 if not found
-    const secret = await client.api.v1.namespaces(namespace).secrets(name).get();
+    const secret = await Kutils.getKClient().api.v1.namespaces(namespace).secrets(name).get();
     return {result: !!secret};
 
   } catch(err) {
@@ -95,6 +98,7 @@ const _ensureTlsSecret_ = mod.async({_ensureTlsSecret_: async function(argv, con
   return result;
 }});
 
+//-----------------------------------------------------------------------------------------------------------------------------
 mod.async({ensureTlsSecret: async function(argv, context ={}) {
 
   const namespace     = ns(argv);
