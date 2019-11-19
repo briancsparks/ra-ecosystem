@@ -226,7 +226,7 @@ function invoke_v2(lib, fnName, argv_, callback, options__ ={}, abort =null) {
   // The wrapper to get context, rax, et. al. involved.
   init = mod.xport({init: function(argv, context, callback) {
     const {rax}    = ra.getContext(context, argv /* , 1 gets more: {isApiGateway,isAws} */);
-    assertArgvContext(true, argv, true, context, __filename);
+    assertArgvContext(`invoke-v2`, true, argv, true, context, __filename);
 
     return rax.iwrap(...[...sm(abort), function(abort) {
       const fn  = rax.loads2(lib, fnName, options, abort)[fnName];

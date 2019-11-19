@@ -1,10 +1,12 @@
 
 const entrypoint              = require('../entrypoint/cli');
 const host                    = require('../host/workstation');
+const checkMw                 = require('../middleware/check-config');
 const invokeMw                = require('../middleware/invoke-ra');
 const {logSmData}             = require('../../lib/utils');
 
 const {mkInvokeRa}            = invokeMw;
+const {mkDetector}            = checkMw;
 
 // -------------------------------------------------------------------------------------
 // We need to export a function that AWS Lambda can call.
@@ -27,7 +29,8 @@ var sys_argv = {
   globIgnore
 };
 
-const invoke_ra = mkInvokeRa({sys_argv:{glob: '**/*.js'}}, {}, /*fnName*/ '');
+const invoke_ra             = mkInvokeRa({sys_argv:{glob: '**/*.js'}}, {}, /*fnName*/ '');
+const detect_probs_invoke   = mkDetector({}, invoke_ra);
 
 // -------------------------------------------------------------------------------------
 // Now we also have to register with RAs `host` module.
@@ -47,7 +50,7 @@ host.setDispatcher(function(argv, context_, callback) {
 
   // TODO: set fnName from inputs
   var fnName = argv._command || argv._[0];
-  return invoke_ra({...argv, fnName}, context, function(err, data, ...rest) {
+  return detect_probs_invoke({...argv, fnName}, context, function(err, data, ...rest) {
     // console.log(`workstation-cli-dispatch`, {err, ...logSmData({data, rest})});
     return callback(err, data, ...rest);
   });

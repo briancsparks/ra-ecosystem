@@ -24,12 +24,10 @@ function argvify(event, context_, callback =noop) {
   const query   = url.query;
   const path    = url.pathname;
   const headers = normalizeHeaders(event.req.headers);
-console.log(`agf`, sg.inspect({url, method, query, path, headers}));
 
   if (!methodHasBody(method)) {
     let [argv, context] =  platform.argvify(query, /*body=*/{}, headers, /*extras=*/{}, path, method, event, context_);
-// console.log(`agf`, sg.inspect({url, method, query, path, headers, argv}));
-console.log(`agf`, sg.inspect({url, method, query, path, headers}));
+
     callback(null, argv, context);
     return [argv, context];
   }
@@ -39,7 +37,6 @@ console.log(`agf`, sg.inspect({url, method, query, path, headers}));
     const body_      = event_.body || body;
 
     const [argv, context]      =  platform.argvify(query, body_, headers, /*extras=*/{}, path, method, event_, context_);
-console.log(`agf`, sg.inspect({url, method, query, path, headers, argv, err, body}));
     return callback(err, argv, context);
   });
 }

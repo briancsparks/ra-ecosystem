@@ -31,13 +31,13 @@ function mkInvokeRa(options_, handler, fnName_) {
   return function(argv_, context, callback) {
 
     var   {fnName, ...argv}    = argv_;
-    // assertArgvContext(true, argv, false, context, __filename);
+    // assertArgvContext(`invoke-ra.enter`, true, argv, false, context, __filename);
 
     fnName = fnName || fnName_;
 
     // ... call ra
     return get_fnTable(function(err, fnTable) {
-      assertArgvContext(true, argv, false, context, __filename);
+      assertArgvContext(`invoke-ra.pre-run-v2`, true, argv, false, context, __filename);
       return run_v2({...sys_argv, fnTable}, fnName, argv, continuation, {context});
     });
 
@@ -87,6 +87,7 @@ function mkInvokeRaV2(fnTable, getRequestInfo) {
     return getRequestInfo(argv, context, function(err, info) {
       var   {fnName, sys_argv}    = info;
 
+      assertArgvContext(`invoke-ra.pre-run2-v2`, true, argv, false, context, __filename);
       return run_v2({...sys_argv, fnTable}, fnName, argv, continuation, {context});
 
       // ========================================================

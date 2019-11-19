@@ -10,9 +10,14 @@ const assert                  = require('assert');
 
 module.exports.assertArgvContext = assertArgvContext;
 
-function assertArgvContext(haveArgv, argv, haveContext, context, filename) {
+//-----------------------------------------------------------------------------------------------------------------------------
+//
+//  assertArgvContext(`echo`, true, argv, true, context, __filename);
+//
+function assertArgvContext(note, haveArgv, argv, haveContext, context, filename, loud_) {
+  const loud = loud_;
   // const loud = true;
-  const loud = false;
+  // const loud = false;
 
 
   var numBad = 0;
@@ -31,13 +36,15 @@ function assertArgvContext(haveArgv, argv, haveContext, context, filename) {
     good(`worked`);
   }
 
+  return numBad;
+
   function dump(msg) {
-    console.error(`ASSERTION FAIL ${msg} from ${filename}`, {argv: Object.keys(argv), context: Object.keys(context)});
+    console.error(`ASSERTION FAIL ${msg} from ${filename} (${note})`, {argv: Object.keys(argv), context: Object.keys(context)});
     numBad += 1;
   }
 
   function good(msg) {
-    console.log(`good ${msg} from ${filename}`, {argv: argv && argvKeys(), context: context && Object.keys(context)});
+    console.log(`good ${msg} from ${filename} (${note})`, {argv: argv && argvKeys(), context: context && Object.keys(context)});
   }
 
   function argvKeys() {

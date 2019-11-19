@@ -2,6 +2,7 @@
 const sg                      = require('sg-argv');
 const entrypoint              = require('../entrypoint/nginx-sidecar-rproxy');
 const host                    = require('../host/req-res-instance');
+const checkMw                 = require('../middleware/check-config');
 const invokeMw                = require('../middleware/invoke-ra');
 const {
   logSmData,
@@ -13,6 +14,7 @@ const {
   mkInvokeRaV2,
   getFnTable,
 }                             = invokeMw;
+const {mkDetector}            = checkMw;
 
 // -------------------------------------------------------------------------------------
 // We need to export a function that AWS Lambda can call.
@@ -37,7 +39,8 @@ function main(ARGV, user_sys_argv_ ={}) {
   return getFnTable(sys_argv, function(err, fnTable) {
     if (err) { console.log(err); return; }
 
-    const invoke_ra = mkInvokeRaV2(fnTable, getRequestInfo);
+    const invoke_ra             = mkInvokeRaV2(fnTable, getRequestInfo);
+    const detect_probs_invoke   = mkDetector({}, invoke_ra);
 
     // -------------------------------------------------------------------------------------
     // Now we also have to register with RAs `host` module.
@@ -58,7 +61,7 @@ function main(ARGV, user_sys_argv_ ={}) {
       // TODO: set fnName from inputs
       // var fnName = argv._command || argv._[0];
 
-      return invoke_ra({...argv}, context, function(err, data, ...rest) {
+      return detect_probs_invoke({...argv}, context, function(err, data, ...rest) {
         // console.log(`nginx-sidecar-dispatch`, {err, ...logSmData({data, rest})});
         return callback(err, data, ...rest);
       });

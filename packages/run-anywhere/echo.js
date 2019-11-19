@@ -34,7 +34,7 @@ function args (argv, context, callback) {
 function echo (argv, context_, callback) {
   const context = sg.safeJSONParse(sg.safeJSONStringify2(context_));
 
-  assertArgvContext(true, argv, true, context, __filename);
+  assertArgvContext(`echo`, true, argv, true, context, __filename);
 
   return callback(null, {argv:smArgv(argv), context: smContext(context)});
   // return callback(null, {argv, context});
