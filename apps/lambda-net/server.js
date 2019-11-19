@@ -19,7 +19,16 @@ const http                    = require('http');
 const port                    = process.env.SIDECAR_PORT || 3009;
 
 const server = http.createServer((req, res) => {
-  console.log(`Handling: ${req.url}...`);
+  console.log(`Handling: ${req.url}...`, {headers: req.headers});
+
+  if (req && req.headers && req.headers['x-client-verify'] !== 'SUCCESS') {
+    console.log('PERMISSIONERROR', {client_verify: req.headers['x-client-verify']});
+
+    res.statusCode = 403;
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify({ok:false}));
+    return;
+  }
 
   const url = libUrl.parse(req.url);
 
