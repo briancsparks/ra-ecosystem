@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/bash -ex
 
 test -f ${HOME}/bootstrap-nonroot-run && exit 0
 
@@ -35,6 +35,18 @@ if which nginx; then
   ps aux | egrep -v grep | egrep nginx
 fi
 
-aws s3 cp "s3://${NAMESPACE_LC}/quick-net/deploy/${INSTANCE_ID}/home/.vimrc" "$HOME/.vimrc"
+aws s3 cp "s3://${NAMESPACE_LC}/quick-net/deploy/${INSTANCE_ID}/home/.vimrc"        - >> "$HOME/.vimrc"
+aws s3 cp "s3://${NAMESPACE_LC}/quick-net/deploy/${INSTANCE_ID}/home/.bashrc"       - >> "$HOME/.bashrc"
+aws s3 cp "s3://${NAMESPACE_LC}/quick-net/deploy/${INSTANCE_ID}/home/.profile"      - >> "$HOME/.profile"
+aws s3 cp "s3://${NAMESPACE_LC}/quick-net/deploy/${INSTANCE_ID}/home/.bash_aliases" - >> "$HOME/.bash_aliases"
+
+
+# FILES="$(aws s3api list-objects --bucket ${NAMESPACE_LC} --prefix quick-net/deploy/${INSTANCE_ID}/home | jq -r '.Contents[].Key')"
+# for f in $FILES; do
+#   aws s3 cp "s3://${NAMESPACE_LC}/$f" - >> "$HOME"
+#   chmod 0755 "/usr/sbin/$1"
+# done
+
+
 
 echo "true" > ${HOME}/bootstrap-nonroot-run

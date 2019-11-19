@@ -2,21 +2,29 @@
 
 echo "Bootstrap script"
 
-pull_s3() {
-  aws s3 cp "s3://${NAMESPACE_LC}/quick-net/deploy/${INSTANCE_ID}/usr-sbin/$1" /usr/sbin
-  chmod 0755 "/usr/sbin/$1"
-}
+# pull_s3() {
+#   aws s3 cp "s3://${NAMESPACE_LC}/quick-net/deploy/${INSTANCE_ID}/usr-sbin/$1" /usr/sbin
+#   chmod 0755 "/usr/sbin/$1"
+# }
 
-# TODO: do a loop like below, but must be in sibling dir like 'files' below.
-pull_s3 bootstrap-nonroot
-pull_s3 untar-from-s3
-pull_s3 cmd-from-s3
-pull_s3 get-certs-from-s3
-pull_s3 get-client-certs-from-s3
-pull_s3 sshix
-pull_s3 qn-hosts
-pull_s3 qn-redis
-pull_s3 qn-mongo
+# # TODO: do a loop like below, but must be in sibling dir like 'files' below.
+# pull_s3 bootstrap-nonroot
+# pull_s3 untar-from-s3
+# pull_s3 cmd-from-s3
+# pull_s3 get-certs-from-s3
+# pull_s3 get-client-certs-from-s3
+# pull_s3 sshix
+# pull_s3 qn-hosts
+# pull_s3 qn-redis
+# pull_s3 qn-mongo
+
+FILES="$(aws s3api list-objects --bucket ${NAMESPACE_LC} --prefix quick-net/deploy/${INSTANCE_ID}/usr-sbin | jq -r '.Contents[].Key')"
+
+for f in $FILES; do
+  # pull_s3 "s3://${NAMESPACE_LC}/$f"
+  aws s3 cp "s3://${NAMESPACE_LC}/$f" /usr/sbin
+  chmod 0755 "/usr/sbin/$(basename $f)"
+done
 
 
 FILES="$(aws s3api list-objects --bucket ${NAMESPACE_LC} --prefix quick-net/deploy/${INSTANCE_ID}/files | jq -r '.Contents[].Key')"

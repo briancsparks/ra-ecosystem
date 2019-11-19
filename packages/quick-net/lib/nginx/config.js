@@ -798,6 +798,14 @@ if (https && fqdn !== 'localhost') {
                   // See: https://arcweb.co/securing-websites-nginx-and-client-side-certificate-authentication-linux/
                   // See also: https://fardog.io/blog/2017/12/30/client-side-certificate-authentication-with-nginx/
                   // TODO: get ssl_crl working
+                  // See: http://nginx.org/en/docs/http/ngx_http_ssl_module.html#variables for variables
+                  // $ssl_client_i_dn, $ssl_client_i_dn_legacy
+                  // $ssl_client_s_dn, $ssl_client_s_dn_legacy
+                  // $ssl_client_serial
+                  // $ssl_client_v_end
+                  // $ssl_client_v_start
+                  // $ssl_client_verify   --------------   "SUCCESS", "FAILED:reason", and "NONE"
+                  // $
 if (client) {
   l=[...l,`
                   # Client certificates

@@ -146,8 +146,10 @@ DIAG.usage({ aliases: { upsertInstance: { args: {
 DIAG.usefulCliArgs({
   webiter : [`--distro=ubuntu --classB=13 --iam=quicknetprj-webtier-instance-role --sgs=web  --subnet=webtier --key=quicknetprj_demo`,
              `--type=t3.micro --az=d      --INSTALL_WEBTIER --INSTALL_CLIENTS --INSTALL_OPS  --Terminate`].join(' '),
-  admin   : [`--distro=ubuntu --classB=13 --iam=quicknetprj-admin-instance-role  --sgs=admin --subnet=admin   --key=HQ`,
+  admin   : [`--distro=ubuntu --classB=13 --key=HQ`,
              `--type=t3.nano  --az=d      --INSTALL_ADMIN   --INSTALL_CLIENTS --INSTALL_USER --Terminate`].join(' '),
+  adminX  : [`--distro=ubuntu --classB=13 --iam=quicknetprj-admin-instance-role  --sgs=admin --subnet=admin   --key=HQ`,
+            `--type=t3.nano  --az=d      --INSTALL_ADMIN   --INSTALL_CLIENTS --INSTALL_USER --Terminate`].join(' '),
   worker  : [`--distro=ubuntu --classB=13 --iam=quicknetprj-worker-instance-role  --sgs=worker --subnet=worker   --key=quicknetprj_demo`,
              `--type=t3.micro --az=d      --INSTALL_WORKER   --INSTALL_CLIENTS --Terminate`].join(' '),
 });
@@ -201,8 +203,8 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context, callback) {
     var   argv                  = {...argv_};
 
     // INSALL_ meta packages
-    argv.INSTALL_MONGO_CLIENTS  = argv.INSTALL_CLIENTS  || argv.INSTALL_MONGO_CLIENTS;
-    argv.INSTALL_REDIS_CLIENTS  = argv.INSTALL_CLIENTS  || argv.INSTALL_REDIS_CLIENTS;
+    argv.INSTALL_MONGO_CLIENTS  = argv.INSTALL_CLIENTS  || argv.INSTALL_MONGO_CLIENTS   || true;
+    argv.INSTALL_REDIS_CLIENTS  = argv.INSTALL_CLIENTS  || argv.INSTALL_REDIS_CLIENTS   || true;
     argv.INSTALL_OPS            = argv.INSTALL_USER     || argv.INSTALL_WORKSTATION     || argv.INSTALL_OPS;
     argv.INSTALL_DOCKER         = argv.INSTALL_WORKER   || argv.INSTALL_DOCKER;
 
@@ -668,8 +670,8 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context, callback) {
       // -------------------------------------------------------------------------------------------------------
       // Put stuff on S3 for the instance
 
-      const utilFiles     = 'bootstrap,bootstrap-nonroot,untar-from-s3,cmd-from-s3,sshix,qn-hosts,qn-redis,qn-mongo,get-certs-from-s3,get-client-certs-from-s3'.split(',');
-      const homeFiles     = '.vimrc'.split(',');
+      const utilFiles     = 'bootstrap,bootstrap-nonroot,bootstrap-other,untar-from-s3,cmd-from-s3,sshix,qn-hosts,qn-redis,qn-mongo,get-certs-from-s3,get-client-certs-from-s3'.split(',');
+      const homeFiles     = '.vimrc,.profile,.bashrc,.bash_aliases'.split(',');
       const s3deployPath  = s3path('deploy', InstanceId);
 
       return sg.__run2(next, [function(next) {
@@ -774,9 +776,28 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context, callback) {
 
       const {PrivateIpAddress} = my.result.Instance;
 
+      // addClip([
+      //   `#${sshix} ${PrivateIpAddress} 'bootstrap-nonroot'`,
+      //   // `for ((;;)); do ${sshix} ${PrivateIpAddress} 'tail -F /var/log/cloud-init-output.log'; export SUCCESS="$?"; ; sleep 0.4; done`
+
+      //   // Spin and wait for the instance to do the cloud-init thing. It will exit with fail code until the `whoami` command succeeds, then we sleep for a few
+      //   `for ((;;)); do ${sshix} ${PrivateIpAddress} 'whoami'; export SUCCESS="$?"; echo "$SUCCESS"; if [[ $SUCCESS == 0 ]]; then break; fi; sleep 0.4; done`,
+      //   `sleep 3`,
+
+      //   // Watch as cloud-init does its thing. The instance will reboot, kicking us out.
+      //   `${sshix} ${PrivateIpAddress} 'tail -F /var/log/cloud-init-output.log'`,
+      //   `sleep 1`,
+
+      //   // Spin again, waiting for it to reboot
+      //   `for ((;;)); do ${sshix} ${PrivateIpAddress} 'whoami'; export SUCCESS="$?"; echo "$SUCCESS"; if [[ $SUCCESS == 0 ]]; then break; fi; sleep 0.4; done`,
+      //   `sleep 3`,
+      //   `${sshix} ${PrivateIpAddress} 'bootstrap-nonroot'`,
+      // ]);
+
       addClip([
-        `#${sshix} ${PrivateIpAddress} 'bootstrap-nonroot'`,
-        `for ((;;)); do ${sshix} ${PrivateIpAddress} 'tail -F /var/log/cloud-init-output.log'; sleep 0.4; done`
+        `#for ((;;)); do ${sshix} ${PrivateIpAddress} 'whoami'; export SUCCESS="$?"; echo "$SUCCESS"; if [[ $SUCCESS == 0 ]]; then break; fi; sleep 0.4; done`,
+        `#${sshix} ${PrivateIpAddress} 'tail -F /var/log/cloud-init-output.log'`,
+        `bootstrap-other ${PrivateIpAddress}`,
       ]);
 
       bootShellCommands = [...bootShellCommands,

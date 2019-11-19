@@ -1,0 +1,83 @@
+#!/bin/bash -e
+
+PrivateIpAddress="$1"
+
+# # Used to be
+# for ((;;)); do
+#   ${sshix} ${PrivateIpAddress} 'tail -F /var/log/cloud-init-output.log'
+#   export SUCCESS="$?"
+#   sleep 0.4
+# done
+
+# Spin and wait for the instance to do the cloud-init thing. It will exit with fail code until the `whoami` command succeeds, then we sleep for a few
+
+echo "========================================================================================"
+echo "Spin, waiting for it to start"
+echo "========================================================================================"
+
+set +e
+for ((;;)); do
+  sshix ${PrivateIpAddress} 'whoami'
+  export SUCCESS="$?";
+  echo "sshix ${PrivateIpAddress} 'whoami': --> $SUCCESS";
+
+  # It finally worked... were outta here
+  if [[ $SUCCESS == 0 ]]; then
+    break
+  fi
+
+  # Wait to do it again
+  sleep 0.4
+done
+set -e
+
+echo "========================================================================================"
+echo "Waiting a few secs..."
+echo "========================================================================================"
+sleep 3
+
+
+# Watch as cloud-init does its thing. The instance will reboot, kicking us out.
+echo "========================================================================================"
+echo "Watch cloud-init..."
+echo "========================================================================================"
+
+set +e
+sshix ${PrivateIpAddress} 'tail -F /var/log/cloud-init-output.log'
+set -e
+
+echo "========================================================================================"
+echo "Waiting a few secs..."
+echo "========================================================================================"
+sleep 1
+
+
+# Spin again, waiting for it to reboot
+echo "========================================================================================"
+echo "Spin again, waiting for it to reboot"
+echo "========================================================================================"
+set +e
+for ((;;)); do
+  sshix ${PrivateIpAddress} 'whoami';
+  export SUCCESS="$?";
+  echo "sshix ${PrivateIpAddress} 'whoami': --> $SUCCESS";
+
+  if [[ $SUCCESS == 0 ]]; then
+    break;
+  fi;
+
+  sleep 0.4;
+done
+set -e
+
+echo "========================================================================================"
+echo "Waiting a few secs..."
+echo "========================================================================================"
+sleep 3
+
+# Do the final boot
+echo "========================================================================================"
+echo "Do the non-root bootstrap"
+echo "========================================================================================"
+sshix ${PrivateIpAddress} 'bootstrap-nonroot'
+
