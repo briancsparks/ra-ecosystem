@@ -794,6 +794,7 @@ if (https && fqdn !== 'localhost') {
                   ]);
 }
 
+                  // see: https://www.ssltrust.com.au/help/setup-guides/client-certificate-authentication
                   // TODO: client certs
                   // See: https://arcweb.co/securing-websites-nginx-and-client-side-certificate-authentication-linux/
                   // See also: https://fardog.io/blog/2017/12/30/client-side-certificate-authentication-with-nginx/
@@ -805,7 +806,14 @@ if (https && fqdn !== 'localhost') {
                   // $ssl_client_v_end
                   // $ssl_client_v_start
                   // $ssl_client_verify   --------------   "SUCCESS", "FAILED:reason", and "NONE"
-                  // $
+                  //
+                  // Headers when OK:
+                  //  'x-client-verify': 'SUCCESS',
+                  //  'x-client-i-dn': 'CN=api.cdr0.net,OU=cdr0.net,O=coder-zero,L=San Diego,ST=California,C=US',
+                  //  'x-client-s-dn': 'CN=briancsparks@gmail.com,OU=coder-zero,O=coder-zero,L=San Diego,ST=California,C=US',
+                  //  'x-client-serial': '01',
+                  //  host: 'api.cdr0.net',
+                  //
 if (client) {
   l=[...l,`
                   # Client certificates
