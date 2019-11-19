@@ -2,6 +2,7 @@
 const entrypoint              = require('../entrypoint/cli');
 const host                    = require('../host/workstation');
 const invokeMw                = require('../middleware/invoke-ra');
+const {logSmData}             = require('../../lib/utils');
 
 const {mkInvokeRa}            = invokeMw;
 
@@ -9,11 +10,11 @@ const {mkInvokeRa}            = invokeMw;
 // We need to export a function that AWS Lambda can call.
 //
 // The easiest thing to do is just to get the 'entrypoint' one from RA, and export it.
-exports.handler = entrypoint.cli_handler;
+exports.handler = entrypoint.cli_entrypoint;
 
 // However, you could handle the function call and call RAs entrypoint.
 // exports.handler = function(event, context, callback) {
-//   entrypoints.aws_lambda.platform_entrypoint_apigateway_lambda_handler(event, context, callback);
+//   entrypoint.cli_entrypoint(event, context, callback);
 // };
 
 // -------------------------------------------------------------------------------------
@@ -47,7 +48,7 @@ host.setDispatcher(function(argv, context_, callback) {
   // TODO: set fnName from inputs
   var fnName = argv._command || argv._[0];
   return invoke_ra({...argv, fnName}, context, function(err, data, ...rest) {
-    // console.log(`workstation-cli-dispatch`, {err, data, rest});
+    // console.log(`workstation-cli-dispatch`, {err, ...logSmData({data, rest})});
     return callback(err, data, ...rest);
   });
 });

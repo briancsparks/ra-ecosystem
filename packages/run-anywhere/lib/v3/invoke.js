@@ -5,6 +5,7 @@ const fs                      = require('fs');
 const libGlob                 = require('glob');
 const {sprintf}               = require('sprintf-js');
 const {logSmData}             = require('./utils');
+const {assertArgvContext}     = require('../../platform/utils');
 
 const libThreeContext         = require('../v2/three-context');
 
@@ -161,7 +162,7 @@ function run_v2(sys_argv, fnName, argv_, callback, ...rest /* rest is [options, 
 
     // =====================================================================================
     function onResult(err, data, ...rest) {
-      console.log(`run_v2-cb`, sg.inspect({err, ...logSmData({data, rest})}));
+      // console.log(`run_v2-cb`, sg.inspect({err, ...logSmData({data, rest})}));
       return callback(err, data, ...rest);
     }
   }
@@ -225,6 +226,7 @@ function invoke_v2(lib, fnName, argv_, callback, options__ ={}, abort =null) {
   // The wrapper to get context, rax, et. al. involved.
   init = mod.xport({init: function(argv, context, callback) {
     const {rax}    = ra.getContext(context, argv /* , 1 gets more: {isApiGateway,isAws} */);
+    assertArgvContext(true, argv, true, context, __filename);
 
     return rax.iwrap(...[...sm(abort), function(abort) {
       const fn  = rax.loads2(lib, fnName, options, abort)[fnName];

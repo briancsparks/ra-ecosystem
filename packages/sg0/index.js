@@ -1550,6 +1550,10 @@ sg.safeJSONStringify2 = function(json, replacer, space, cycleReplacer) {
   return;
 };
 
+sg.makeSafeJSON = function(json) {
+  return JSON.parse(sg.safeJSONStringify2(json, null, null));
+};
+
 /**
  * Make sure x is an Array.
  *

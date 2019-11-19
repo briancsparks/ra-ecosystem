@@ -674,7 +674,7 @@ const FuncRa = function(argv, context, callback, origCallback, ractx, options_ =
         // self.opts() propigates --debug and --verbose; options is a combination of options1 and options2 for this call.
         var   options   = sg.merge({...(options1 || {}), ...self.opts(options2)});
         var   argv      = self.opts(argv_, options);
-        var   logArgv   = utils.omitDebug(argv);
+        var   logArgv   = utils.omitDebug(sg.makeSafeJSON(argv));
 
         options.abort   = ('abort' in options ? options.abort : true);
 

@@ -1,5 +1,6 @@
 
-const sg                        = require('sg0');
+const sg0                       = require('sg0');
+const sg                        = sg0.merge(sg0, require('@sg0/sg-smart-value'));
 const _                         = require('lodash');
 const libUrl                    = require('url');
 const {decodeBodyObj,

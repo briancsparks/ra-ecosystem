@@ -32,10 +32,11 @@ var   dispatcher    = dispatch;
 
 // ------------------------------------------------------------------------------------------------------------------------------
 // Handler for the function of being the host
-exports.platform_host_reqresinst_handler = function(event, context_, callback) {
+exports.reqresinst_handler = exports.platform_host_reqresinst_handler = function(event, context_, callback) {
   const startTime = new Date().getTime();
 
   logApiV(`reqresinst_handler.params`, {event, context:context_});
+  console.log(`reqresinst_handler.params`, sg.inspect({event:smEvent(event)}));
 
   // Fix args
   return reqRes.inboundify(event, context_, function(err, argv, context) {
@@ -44,6 +45,7 @@ exports.platform_host_reqresinst_handler = function(event, context_, callback) {
       const endTime = new Date().getTime();
 
       const fixedResponse = reqRes.fixResponse(response);
+      // console.log(`host_reqResInstance-dispatch: (${(endTime - startTime) * 1})`, {err, response, fixedResponse});
 
       logApi(`reqresinst_handler: (${(endTime - startTime) * 1000})`, {argv, err, response, fixedResponse});
 
@@ -58,7 +60,12 @@ exports.platform_host_reqresinst_handler = function(event, context_, callback) {
 };
 
 
-
+function smEvent(event) {
+  return {...event,
+    req : event.req.url,
+    res : !!event.res,
+  };
+}
 
 
 

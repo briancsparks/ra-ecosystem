@@ -16,26 +16,30 @@ module.exports.normalizeEventForLogging = normalizeEventForLogging;
 module.exports.decodeBody               = decodeBody;
 
 // ------------------------------------------------------------------------------------------------------------------------------
-function argvify(event_, context, callback =noop) {
+function argvify(event, context_, callback =noop) {
 
   // req and res are on event
-  const url     = libUrl.parse(event.req, true);
-  const method  = url.method;
+  const url     = libUrl.parse(event.req.url, true);
+  const method  = event.req.method;
   const query   = url.query;
   const path    = url.pathname;
   const headers = normalizeHeaders(event.req.headers);
+console.log(`agf`, sg.inspect({url, method, query, path, headers}));
 
   if (!methodHasBody(method)) {
-    let argv =  platform.argvify(query, /*body=*/{}, headers, /*extras=*/{}, path, method, event, context);
+    let [argv, context] =  platform.argvify(query, /*body=*/{}, headers, /*extras=*/{}, path, method, event, context_);
+// console.log(`agf`, sg.inspect({url, method, query, path, headers, argv}));
+console.log(`agf`, sg.inspect({url, method, query, path, headers}));
     callback(null, argv, context);
     return [argv, context];
   }
 
   return sg.getBodyJson(event.req, function(err, body) {
-    const event_    = normalizeEvent({...event, body}, context);
+    const event_    = normalizeEvent({...event, body}, context_);
     const body_      = event_.body || body;
 
-    const argv      =  platform.argvify(query, body_, headers, /*extras=*/{}, path, method, event_, context);
+    const [argv, context]      =  platform.argvify(query, body_, headers, /*extras=*/{}, path, method, event_, context_);
+console.log(`agf`, sg.inspect({url, method, query, path, headers, argv, err, body}));
     return callback(err, argv, context);
   });
 }

@@ -10,7 +10,8 @@ if (process.env.SG_VVVERBOSE) console[process.env.SG_LOAD_STREAM || 'log'](`Load
  *
  */
 
-const sg                        = require('sg-env');
+const sg0                       = require('sg-http');
+const sg                        = sg0.merge(sg0, require('sg-env'));
 const _                         = require('lodash');
 const http                      = require('http');
 const utils                     = require('./utils-req-res');
@@ -45,7 +46,7 @@ exports.startServer = function(port_) {
 
         res.statusCode = httpCode;
         res.setHeader('Content-Type', contentType);
-        res.end(JSON.stringify(data));
+        res.end(sg.safeJSONStringify2(data));
 
       });
     });
@@ -60,7 +61,7 @@ exports.startServer = function(port_) {
 
 // ----------------------------------------------------------------------------------------------------------------------------
 // Handler for the function of being the entrypoint
-exports.platform_entrypoint = function(event, context, callback) {
+exports.nginx_sidecar_entrypoint = exports.platform_entrypoint = function(event, context, callback) {
   logApiV(`nginx_sidecarproxy_handler.params`, {event, context});
 
   return dispatcher(event, context, function(err, response) {

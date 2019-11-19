@@ -1,6 +1,14 @@
 
+/**
+ * @file
+ *
+ * This is the file for utilities that help implement platform.
+ *
+ * utils.js is for users of platform.
+ */
+
 const sg0                       = require('sg-argv');
-const sg                        = sg0.merge(sg0, require('sg-env'));
+const sg                        = sg0.merge(sg0, require('sg-env'), require('@sg0/sg-smart-value'));
 const _                         = require('lodash');
 
 const ENV                       = sg.ENV();

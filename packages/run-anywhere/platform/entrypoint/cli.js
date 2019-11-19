@@ -40,14 +40,16 @@ exports.main = function(argv_, user_sys_argv_ ={}, start) {
 
   return exports.platform_entrypoint(event, context, function(err, response, ...rest) {
     var {httpCode, ...data} = response;
-    console.log(`cli-entrypoint-main-cb`, sg.inspect({err, httpCode, ...logSmData({data, rest})}));
+    // console.log(`cli-entrypoint-main-cb`, sg.inspect({err, httpCode, ...logSmData({data, rest})}));
+
+    process.stdout.write(sg.safeJSONStringify([err, {httpCode, ...data}]));
   });
 };
 
 
 // ----------------------------------------------------------------------------------------------------------------------------
 // Handler for the function of being the entrypoint
-exports.platform_entrypoint = function(event, context, callback) {
+exports.cli_entrypoint = exports.platform_entrypoint = function(event, context, callback) {
   logApiV(`cli_handler.params`, {event, context});
 
   return dispatcher(event, context, function(err, response) {
