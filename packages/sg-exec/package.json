@@ -1,6 +1,6 @@
 {
   "name": "sg-exec",
-  "version": "1.0.64",
+  "version": "1.0.65",
   "description": "Help to spawn and run executables",
   "main": "index.js",
   "scripts": {
@@ -13,8 +13,8 @@
     "get-stream": "^4.1.0",
     "noop-stream": "^0.1.0",
     "quick-merge": "^1.0.17",
-    "sg-argv": "^1.0.69",
-    "sg0": "^1.0.38",
+    "sg-argv": "^1.0.70",
+    "sg0": "^1.0.39",
     "shelljs": "^0.8.3"
   }
 }
