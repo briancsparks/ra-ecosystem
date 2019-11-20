@@ -120,7 +120,7 @@ function formatServerBlock(argv, context) {
 
     # ----- ${server_name} -----
     server {
-            listen 80;
+            #listen 80;
             #listen [::]:80  ipv6only=on;
             listen 443      ssl;
             server_name     ${server_name};

@@ -145,7 +145,9 @@ DIAG.usage({ aliases: { upsertInstance: { args: {
 }}}});
 
 DIAG.usefulCliArgs({
-  webiter : [`--distro=ubuntu --classB=13 --iam=quicknetprj-webtier-instance-role --sgs=web  --subnet=webtier --key=quicknetprj_demo`,
+  webtier : [`--distro=ubuntu --classB=13 --key=quicknetprj_demo`,
+             `--type=t3.micro --az=d      --INSTALL_WEBTIER --INSTALL_CLIENTS --INSTALL_OPS  --Terminate`].join(' '),
+  webtierX : [`--distro=ubuntu --classB=13 --iam=quicknetprj-webtier-instance-role --sgs=web  --subnet=webtier --key=quicknetprj_demo`,
              `--type=t3.micro --az=d      --INSTALL_WEBTIER --INSTALL_CLIENTS --INSTALL_OPS  --Terminate`].join(' '),
   admin   : [`--distro=ubuntu --classB=13 --key=HQ`,
              `--type=t3.nano  --az=d      --INSTALL_ADMIN   --INSTALL_CLIENTS --INSTALL_USER --Terminate`].join(' '),
@@ -156,8 +158,8 @@ DIAG.usefulCliArgs({
 });
 
 // The last one wins. Comment out what you dont want.
-DIAG.activeDevelopment(`--debug`);
-// DIAG.activeName = 'upsertInstance';
+DIAG.activeDevelopment(`--useful=webtier --debug`);
+DIAG.activeName = 'upsertInstance';
 
 /**
  * Upsert an instance.
@@ -202,7 +204,7 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context, callback) {
 
 
     var   argv                  = {...argv_};
-
+console.log(`dsf`, {argv});
     // INSALL_ meta packages
     argv.INSTALL_MONGO_CLIENTS  = argv.INSTALL_CLIENTS  || argv.INSTALL_MONGO_CLIENTS   || true;
     argv.INSTALL_REDIS_CLIENTS  = argv.INSTALL_CLIENTS  || argv.INSTALL_REDIS_CLIENTS   || true;
@@ -409,7 +411,7 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context, callback) {
         package_update: true,
         package_upgrade: true,
         // packages: ['ntp', 'tree', 'htop', 'zip', 'unzip', 'nodejs', 'yarn', 'jq'],
-        packages: ['ntp', 'tree', 'htop', 'zip', 'unzip', 'nodejs', 'jq'],
+        packages: ['ntp', 'tree', 'htop', 'zip', 'unzip', 'nodejs', 'jq', 'silversearcher-ag'],
         apt:      {
           preserve_sources_list: true,
           sources: {
@@ -898,7 +900,9 @@ DIAG.usage({ aliases: { upstartInstances: { args: {
 
 const clis =
 DIAG.usefulCliArgs({
-  webiter : [`--distro=ubuntu --classB=13 --iam=quicknetprj-webtier-instance-role --sgs=web  --subnet=webtier --key=quicknetprj_demo`,
+  webtier : [`--distro=ubuntu --classB=13 --key=quicknetprj_demo`,
+             `--type=t3.micro --az=d      --INSTALL_WEBTIER --INSTALL_CLIENTS --INSTALL_OPS  --Terminate`].join(' '),
+  webtierX : [`--distro=ubuntu --classB=13 --iam=quicknetprj-webtier-instance-role --sgs=web  --subnet=webtier --key=quicknetprj_demo`,
              `--type=t3.micro --az=d      --INSTALL_WEBTIER --INSTALL_CLIENTS --INSTALL_OPS  --Terminate`].join(' '),
   admin   : [`--distro=ubuntu --classB=13 --key=HQ`,
              `--type=t3.nano  --az=d      --INSTALL_ADMIN   --INSTALL_CLIENTS --INSTALL_USER --Terminate`].join(' '),
@@ -910,7 +914,7 @@ DIAG.usefulCliArgs({
 
 // The last one wins. Comment out what you dont want.
 DIAG.activeDevelopment(clis.admin);
-DIAG.activeName = 'upstartInstances';
+// DIAG.activeName = 'upstartInstances';
 
 /**
  * Upsert an instance.
@@ -1017,12 +1021,6 @@ function enumInstances(data, callback) {
       m.state[state].push(instance);
       m.realm[tags.realm].push(instance);
 
-      // (theInstances[state] = theInstances[state] ||{})[InstanceId] = instance;
-
-      // if (state === 'stopped' && tags.realm === 'quicknet') {
-      //   toBeStarted.push(InstanceId);
-      //   return m+1;
-      // }
       return m;
     });
   });

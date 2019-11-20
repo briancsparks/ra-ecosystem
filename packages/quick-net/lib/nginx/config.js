@@ -660,6 +660,16 @@ l=[...l,`
                     ''        close;
                   }
 
+                  # A simple config to force HTTPS for everything
+                  server {
+                    listen 80 default_server;
+
+                    server_name _;
+
+                    return 301 https://$host$request_uri;
+                  }
+
+
                   include /etc/nginx/conf.d/upstream-*.conf;
                   include /etc/nginx/conf.d/default.conf;
                   include /etc/nginx/conf.d/server-*.conf;`];
@@ -783,7 +793,7 @@ l=[...l,`
                   #listen [::]:80  ipv6only=on;
 
                   server_name   ${fqdns.join(' ')};
-                  listen        80                                  ${default_server};
+                  #listen        80                                  ${default_server};
                   access_log    /var/log/nginx/${fqdn}.access.log   main;`];
 
 if (https) {
@@ -933,7 +943,7 @@ function getLocalRevProxyAppServer(argv) {
 
   return `
             server {
-              listen       80;
+              #listen       80;
               server_name  ${fqdns.join(' ')};
               access_log   /var/log/nginx/${fqdn}.access.log  main;
 
