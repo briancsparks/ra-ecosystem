@@ -89,6 +89,7 @@ module.exports.DIAG = function(mod) {
 
   self.usefulCliArgs = function(usefulCliArgs) {
     self.bits.setData(null, {usefulCliArgs});
+    return usefulCliArgs;
   };
 
   self.isActiveName = function(name) {

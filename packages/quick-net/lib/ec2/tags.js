@@ -13,6 +13,32 @@ const mod                     = ra.modSquad(module);
 const config                  = new AWS.Config({paramValidation:false, region:'us-east-1', ...awsDefs.options});
 const ec2                     = new AWS.EC2(config);
 
+//-----------------------------------------------------------------------------------------------------------------------------
+exports.deTag = function(items, depth =0) {
+
+  var count = 0;
+
+  return sg.reduceObj(items, {}, (m,v,k) => {
+    if (v.Tags) {
+      // I am a top-level item, because I have a 'Tags' entry... re-use my key, but fixup the value
+      return [exports.deTag(v, depth +1)];
+    }
+
+    if (k === 'Tags') {
+      // I am the Tags object: { ..., Tags: [{Key:'a', Value: 'b'}, ...], ... }...
+      // Keep me (the first `true`), and also add { tags:{...} }
+      return [[true, 'tags', sg.reduceObj(v, {}, function(m2, value) {
+        return sg.kv(m2, value.Key, value.Value);
+      })]];
+    }
+
+    // Keep me as-is
+    return true;
+  });
+};
+
+//-----------------------------------------------------------------------------------------------------------------------------
+// Tag AWS resources
 mod.xport({tag: function(argv, context, callback) {
 
   const type      = argv.type;
@@ -32,11 +58,13 @@ mod.xport({tag: function(argv, context, callback) {
   // return callback(null, {Resources, Tags});
 }});
 
+//-----------------------------------------------------------------------------------------------------------------------------
 const gTags = {
   namespace:  process.env.NAMESPACE || process.env.NS || 'quicknet',
   owner:      process.env.OWNER
 };
 
+//-----------------------------------------------------------------------------------------------------------------------------
 exports.mkTags = function(type, seed, adjective, suffix) {
   if (sg.isnt(seed))      { return; }
 
@@ -59,6 +87,7 @@ exports.mkTags = function(type, seed, adjective, suffix) {
   // return {tags: result};
 };
 
+//-----------------------------------------------------------------------------------------------------------------------------
 function nonsense(str, type, adjective_, suffix) {
   var   adjective = adjective_ || superb.random();
 

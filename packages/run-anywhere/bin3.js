@@ -92,7 +92,7 @@ function main(argv_) {
 
     // If we cannot find a function, the user gets 'invoke'
     if (!fn) {
-      sg.elog(`Warn: auto loading 'invoke'. Is this what you want? (For function: ${fnName})`);
+      sg.elog(`Warn: auto loading 'invoke' from bin3. Is this what you want? (For function: ${fnName})`);
 
       // Put the fnName back as the command
       commands.unshift(fnName);

@@ -1331,7 +1331,14 @@ sg.reduceObj = function(obj, initial, ...rest) {
 
       // Re-use key, replace value
       if (res.length === 1) {
-        res = [k, ...res];
+        if (!Array.isArray(res[0]) || (res[0].length !== 3)) {
+          res = [k, ...res];
+        }
+
+        else if (typeof res[0][0] === 'boolean' && typeof res[0][1] === 'string') {
+          let orig = res[0][0] ? [k,v] : [];
+          res = [[], orig, [res[0][1], res[0][2]]];  /* [[], origKv, newKv] */
+        }
       }
 
       // ['key', {value}], ['key', 'value'], ['key', value] -- value can be any type

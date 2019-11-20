@@ -1,0 +1,21 @@
+
+    proxy_connect_timeout                 5000;
+    proxy_send_timeout                    5000;
+    proxy_read_timeout                    5000;
+    send_timeout                          5000;
+
+    proxy_set_header Host                 $http_host;
+    proxy_set_header X-Real-IP            $remote_addr;
+    proxy_set_header X-Forwarded-For      $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto    $scheme;
+    proxy_set_header X-NginX-Proxy        true;
+    # proxy_set_header Connection           "";
+
+    proxy_set_header X-Client-Verify      $ssl_client_verify;
+    proxy_set_header X-Client-I-Dn        $ssl_client_i_dn;
+    proxy_set_header X-Client-S-Dn        $ssl_client_s_dn;
+    #proxy_set_header X-Client-V-End       $ssl_client_v_end;
+    proxy_set_header X-Client-Serial      $ssl_client_serial;
+
+# vim: ft=nginx:
+

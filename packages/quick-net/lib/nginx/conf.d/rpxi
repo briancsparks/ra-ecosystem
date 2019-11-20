@@ -12,56 +12,31 @@
   #
   #   proxy_pass http://10.13.1.10:8401;
   # }
+  #
+  # ------
+  # Then respond with X-Accel-Redirect header:
+  #
+  #   "X-Accel-Redirect": "/rpxi/GET/path/to/resource"
+  #
 
+  # "X-Accel-Redirect": "/rpxi/GET/path/to/resource"
   location ~* ^/rpxi/GET/(.*) {
     internal;
 
-    proxy_connect_timeout                 5000;
-    proxy_send_timeout                    5000;
-    proxy_read_timeout                    5000;
-    send_timeout                          5000;
-
-    proxy_set_header Host                 $http_host;
-    proxy_set_header X-Real-IP            $remote_addr;
-    proxy_set_header X-Forwarded-For      $proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Proto    $scheme;
-    proxy_set_header X-NginX-Proxy        true;
-    # proxy_set_header Connection           "";
-
-    proxy_set_header X-Client-Verify      $ssl_client_verify;
-    proxy_set_header X-Client-I-Dn        $ssl_client_i_dn;
-    proxy_set_header X-Client-S-Dn        $ssl_client_s_dn;
-    #proxy_set_header X-Client-V-End       $ssl_client_v_end;
-    proxy_set_header X-Client-Serial      $ssl_client_serial;
+    include /etc/nginx/conf.d/rpxi-proxy-params;
 
     proxy_http_version                    1.1;
-#    proxy_method                          ${GET};
     proxy_method                          GET;
     set $other_uri                        $1;
 
     proxy_pass http://$other_uri$is_args$args;
   }
 
+  # "X-Accel-Redirect": "/rpxi/PUT/path/to/resource"
   location ~* ^/rpxi/PUT/(.*) {
     internal;
 
-    proxy_connect_timeout                 5000;
-    proxy_send_timeout                    5000;
-    proxy_read_timeout                    5000;
-    send_timeout                          5000;
-
-    proxy_set_header Host                 $http_host;
-    proxy_set_header X-Real-IP            $remote_addr;
-    proxy_set_header X-Forwarded-For      $proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Proto    $scheme;
-    proxy_set_header X-NginX-Proxy        true;
-    # proxy_set_header Connection           "";
-
-    proxy_set_header X-Client-Verify      $ssl_client_verify;
-    proxy_set_header X-Client-I-Dn        $ssl_client_i_dn;
-    proxy_set_header X-Client-S-Dn        $ssl_client_s_dn;
-    #proxy_set_header X-Client-V-End       $ssl_client_v_end;
-    proxy_set_header X-Client-Serial      $ssl_client_serial;
+    include /etc/nginx/conf.d/rpxi-proxy-params;
 
     proxy_http_version                    1.1;
     proxy_method                          PUT;
@@ -70,26 +45,11 @@
     proxy_pass http://$other_uri$is_args$args;
   }
 
+  # "X-Accel-Redirect": "/rpxi/POST/path/to/resource"
   location ~* ^/rpxi/POST/(.*) {
     internal;
 
-    proxy_connect_timeout                 5000;
-    proxy_send_timeout                    5000;
-    proxy_read_timeout                    5000;
-    send_timeout                          5000;
-
-    proxy_set_header Host                 $http_host;
-    proxy_set_header X-Real-IP            $remote_addr;
-    proxy_set_header X-Forwarded-For      $proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Proto    $scheme;
-    proxy_set_header X-NginX-Proxy        true;
-    # proxy_set_header Connection           "";
-
-    proxy_set_header X-Client-Verify      $ssl_client_verify;
-    proxy_set_header X-Client-I-Dn        $ssl_client_i_dn;
-    proxy_set_header X-Client-S-Dn        $ssl_client_s_dn;
-    #proxy_set_header X-Client-V-End       $ssl_client_v_end;
-    proxy_set_header X-Client-Serial      $ssl_client_serial;
+    include /etc/nginx/conf.d/rpxi-proxy-params;
 
     proxy_http_version                    1.1;
     proxy_method                          POST;
@@ -98,26 +58,11 @@
     proxy_pass http://$other_uri$is_args$args;
   }
 
+  # "X-Accel-Redirect": "/rpxi/HEAD/path/to/resource"
   location ~* ^/rpxi/HEAD/(.*) {
     internal;
 
-    proxy_connect_timeout                 5000;
-    proxy_send_timeout                    5000;
-    proxy_read_timeout                    5000;
-    send_timeout                          5000;
-
-    proxy_set_header Host                 $http_host;
-    proxy_set_header X-Real-IP            $remote_addr;
-    proxy_set_header X-Forwarded-For      $proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Proto    $scheme;
-    proxy_set_header X-NginX-Proxy        true;
-    # proxy_set_header Connection           "";
-
-    proxy_set_header X-Client-Verify      $ssl_client_verify;
-    proxy_set_header X-Client-I-Dn        $ssl_client_i_dn;
-    proxy_set_header X-Client-S-Dn        $ssl_client_s_dn;
-    #proxy_set_header X-Client-V-End       $ssl_client_v_end;
-    proxy_set_header X-Client-Serial      $ssl_client_serial;
+    include /etc/nginx/conf.d/rpxi-proxy-params;
 
     proxy_http_version                    1.1;
     proxy_method                          HEAD;
@@ -126,26 +71,11 @@
     proxy_pass http://$other_uri$is_args$args;
   }
 
+  # "X-Accel-Redirect": "/rpxi/DELETE/path/to/resource"
   location ~* ^/rpxi/DELETE/(.*) {
     internal;
 
-    proxy_connect_timeout                 5000;
-    proxy_send_timeout                    5000;
-    proxy_read_timeout                    5000;
-    send_timeout                          5000;
-
-    proxy_set_header Host                 $http_host;
-    proxy_set_header X-Real-IP            $remote_addr;
-    proxy_set_header X-Forwarded-For      $proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Proto    $scheme;
-    proxy_set_header X-NginX-Proxy        true;
-    # proxy_set_header Connection           "";
-
-    proxy_set_header X-Client-Verify      $ssl_client_verify;
-    proxy_set_header X-Client-I-Dn        $ssl_client_i_dn;
-    proxy_set_header X-Client-S-Dn        $ssl_client_s_dn;
-    #proxy_set_header X-Client-V-End       $ssl_client_v_end;
-    proxy_set_header X-Client-Serial      $ssl_client_serial;
+    include /etc/nginx/conf.d/rpxi-proxy-params;
 
     proxy_http_version                    1.1;
     proxy_method                          DELETE;
@@ -153,6 +83,61 @@
 
     proxy_pass http://$other_uri$is_args$args;
   }
+
+
+
+
+
+  # "X-Accel-Redirect": "/int/GET/path/to/resource"
+  #
+  # Fetches from localhost. Does not ever use the local disk.
+  #
+  location ~* ^/int/GET/(.*) {
+    internal;
+
+    include /etc/nginx/conf.d/cache-proxy-params;
+
+    set $download_uri $1;
+
+    proxy_pass http://127.0.0.1/$download_uri$is_args$args;
+  }
+
+
+  # "X-Accel-Redirect": "/int/GET/www.example.com/path/to/resource"
+  #
+  # Fetches from download_host. Does not ever use the local disk.
+  #
+  location ~* ^/int/GET/(.*)/(.*) {
+    internal;
+
+    include /etc/nginx/conf.d/cache-proxy-params;
+
+    set $download_host $1;
+    set $download_path $2;
+
+    proxy_pass http://$download_host/$download_path$is_args$args;
+  }
+
+
+  # "X-Accel-Redirect": "/int/GET/www.example.com/path/to/resource"
+  #
+  # Fetches from download_host. Does not ever use the local disk.
+  #
+  location ~* ^/secret_external_rev_proxy/(.*?)/(.*) {
+    internal;
+
+    include /etc/nginx/conf.d/cache-proxy-params;
+
+    set $download_host $1;
+    set $download_uri $2;
+    set $download_url http://$download_host/$download_uri;
+
+    proxy_set_header Host $download_host;
+
+    proxy_pass $download_url$is_args$args;
+  }
+
+
 
 # vim: ft=nginx:
 

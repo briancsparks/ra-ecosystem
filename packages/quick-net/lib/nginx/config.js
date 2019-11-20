@@ -91,7 +91,7 @@ DIAG.activeDevelopment(`--root=/usr/share/nginx/html --location=/clientstart --u
 DIAG.activeDevelopment(`--sidecar=/clientstart,3009 --root=/usr/share/nginx/html --location=/clientstart --upstream=clients --upstream-service=10.1.2.3:3001 --fqdns=example.com --debug`);
 DIAG.activeDevelopment(`--type=qnwebtier --rpxi-port=3009 --debug`);
 DIAG.activeDevelopment(`--type=qnwebtier --rpxi-port=3008 --skip-server --debug`);
-DIAG.activeName = 'saveNginxConfigTarballToS3';
+// DIAG.activeName = 'saveNginxConfigTarballToS3';
 
 /**
  *
@@ -234,45 +234,63 @@ const getNginxQuicknetWebtierConfig = mod.xport(DIAG.xport({getNginxQuicknetWebt
   entry(pack, { ...entryDefs(argv), name: 'manifest.json' }, JSON.stringify(manifest) +'\n');
 
   // ----- System
-  entry(pack, { ...entryDefs(argv), name: 'nginx.conf' },                          getNginxConf(argv),        skipSystem);
-  entry(pack, { ...entryDefs(argv), name: `conf.d/proxy-params` },                 proxy_params(argv),        skipSystem);
-  entry(pack, { ...entryDefs(argv), name: `conf.d/rpxi` },                         rpxi(argv),                skipSystem);
+  return sg.__run2([function(next) {
+    const utilFiles     = 'cache-proxy-params,proxy-params,rpxi,rpxi-proxy-params'.split(',');
+    return sg.__eachll(utilFiles, function(filename, next) {
+      const name = `conf.d/${filename}`;
 
-  // The default server
-  const defArgv = _.omit(argv, 'fqdns');
-  entry(pack, { ...entryDefs(argv), name: `conf.d/default.conf`},                  getServerConfig(defArgv),  skipSystem);
+      return fs.readFile(path.join(__dirname, name), 'utf8', function(err, content) {
+        if (sg.ok(err, content)) {
+          entry(pack, { ...entryDefs(argv), name}, proxy_params(argv), skipSystem);
+        }
+
+        return next();
+      });
 
 
-  // ----- Upstreams
-  const upstreamConfigs = getUpstreams(diag);
-  _.each(upstreamConfigs, (config) => {
-    _.each(config, ({upstream,upstream_service,...rest}, name) => {
-      entry(pack, { ...entryDefs(argv), name: `conf.d/upstream-${upstream}.conf` },  getUpstream({upstream,upstream_service,...rest}), skipServers);
+    }, function() {
+
+      entry(pack, { ...entryDefs(argv), name: 'nginx.conf' },                          getNginxConf(argv),        skipSystem);
+      // entry(pack, { ...entryDefs(argv), name: `conf.d/proxy-params` },                 proxy_params(argv),        skipSystem);
+      // entry(pack, { ...entryDefs(argv), name: `conf.d/rpxi` },                         rpxi(argv),                skipSystem);
+
+      // The default server
+      const defArgv = _.omit(argv, 'fqdns');
+      entry(pack, { ...entryDefs(argv), name: `conf.d/default.conf`},                  getServerConfig(defArgv),  skipSystem);
+
+
+      // ----- Upstreams
+      const upstreamConfigs = getUpstreams(diag);
+      _.each(upstreamConfigs, (config) => {
+        _.each(config, ({upstream,upstream_service,...rest}, name) => {
+          entry(pack, { ...entryDefs(argv), name: `conf.d/upstream-${upstream}.conf` },  getUpstream({upstream,upstream_service,...rest}), skipServers);
+        });
+      });
+
+
+      // ----- FQDNS
+      const fqdn    = fqdns[0];
+
+      var   config = {...argv};
+      const locations = getLocations(diag);
+      if (locations) {
+        config = {...config, locations};
+      }
+
+      if (fqdn) {
+        config = {...config, client: true};
+      }
+
+      var fqdnServerConfig = entry(pack, { ...entryDefs(argv), name: `conf.d/server-${fqdn}.conf`},          getServerConfig(config),   skipServers);
+      // diag.i(`Config for ${fqdns[0]}`, {fqdnServerConfig});
+
+
+
+      pack.finalize();
+
+      return callback(null, {ok:true, pack, cwd: manifest.cwd, name: manifest.name});
     });
-  });
-
-
-  // ----- FQDNS
-  const fqdn    = fqdns[0];
-
-  var   config = {...argv};
-  const locations = getLocations(diag);
-  if (locations) {
-    config = {...config, locations};
-  }
-
-  if (fqdn) {
-    config = {...config, client: true};
-  }
-
-  var fqdnServerConfig = entry(pack, { ...entryDefs(argv), name: `conf.d/server-${fqdn}.conf`},          getServerConfig(config),   skipServers);
-  // diag.i(`Config for ${fqdns[0]}`, {fqdnServerConfig});
-
-
-
-  pack.finalize();
-
-  return callback(null, {ok:true, pack, cwd: manifest.cwd, name: manifest.name});
+  }]);
 }}));
 
 
@@ -967,158 +985,84 @@ function rpxi() {
 
 return `
 
-        #
-        # Put these lines (with a corrected proxy_pass value) AFTER you include this file.
-        #
-        # location / {
-        #   try_files maintenance.html $uri $uri/ $uri.html @router
-        # }
-        #
-        # location @router {
-        #   internal;
-        #   include /etc/nginx/conf.d/proxy-params;
-        #
-        #   proxy_pass http://10.13.1.10:8401;
-        # }
+            #
+            # Put these lines (with a corrected proxy_pass value) AFTER you include this file.
+            #
+            # location / {
+            #   try_files maintenance.html $uri $uri/ $uri.html @router
+            # }
+            #
+            # location @router {
+            #   internal;
+            #   include /etc/nginx/conf.d/proxy-params;
+            #
+            #   proxy_pass http://10.13.1.10:8401;
+            # }
 
-        location ~* ^/rpxi/GET/(.*) {
-          internal;
+            location ~* ^/rpxi/GET/(.*) {
+              internal;
 
-          proxy_connect_timeout                 5000;
-          proxy_send_timeout                    5000;
-          proxy_read_timeout                    5000;
-          send_timeout                          5000;
+              include /etc/nginx/conf.d/rpxi-proxy-params;
 
-          proxy_set_header Host                 $http_host;
-          proxy_set_header X-Real-IP            $remote_addr;
-          proxy_set_header X-Forwarded-For      $proxy_add_x_forwarded_for;
-          proxy_set_header X-Forwarded-Proto    $scheme;
-          proxy_set_header X-NginX-Proxy        true;
-          # proxy_set_header Connection           "";
+              proxy_http_version                    1.1;
+              proxy_method                          GET;
+              set $other_uri                        $1;
 
-          proxy_set_header X-Client-Verify      $ssl_client_verify;
-          proxy_set_header X-Client-I-Dn        $ssl_client_i_dn;
-          proxy_set_header X-Client-S-Dn        $ssl_client_s_dn;
-          #proxy_set_header X-Client-V-End       $ssl_client_v_end;
-          proxy_set_header X-Client-Serial      $ssl_client_serial;
+              proxy_pass http://$other_uri$is_args$args;
+            }
 
-          proxy_http_version                    1.1;
-          proxy_method                          GET;
-          set $other_uri                        $1;
+            location ~* ^/rpxi/PUT/(.*) {
+              internal;
 
-          proxy_pass http://$other_uri$is_args$args;
-        }
+              include /etc/nginx/conf.d/rpxi-proxy-params;
 
-        location ~* ^/rpxi/PUT/(.*) {
-          internal;
+              proxy_http_version                    1.1;
+              proxy_method                          PUT;
+              set $other_uri                        $1;
 
-          proxy_connect_timeout                 5000;
-          proxy_send_timeout                    5000;
-          proxy_read_timeout                    5000;
-          send_timeout                          5000;
+              proxy_pass http://$other_uri$is_args$args;
+            }
 
-          proxy_set_header Host                 $http_host;
-          proxy_set_header X-Real-IP            $remote_addr;
-          proxy_set_header X-Forwarded-For      $proxy_add_x_forwarded_for;
-          proxy_set_header X-Forwarded-Proto    $scheme;
-          proxy_set_header X-NginX-Proxy        true;
-          # proxy_set_header Connection           "";
 
-          proxy_set_header X-Client-Verify      $ssl_client_verify;
-          proxy_set_header X-Client-I-Dn        $ssl_client_i_dn;
-          proxy_set_header X-Client-S-Dn        $ssl_client_s_dn;
-          #proxy_set_header X-Client-V-End       $ssl_client_v_end;
-          proxy_set_header X-Client-Serial      $ssl_client_serial;
+            location ~* ^/rpxi/POST/(.*) {
+              internal;
 
-          proxy_http_version                    1.1;
-          proxy_method                          PUT;
-          set $other_uri                        $1;
+              include /etc/nginx/conf.d/rpxi-proxy-params;
 
-          proxy_pass http://$other_uri$is_args$args;
-        }
+              proxy_http_version                    1.1;
+              proxy_method                          POST;
+              set $other_uri                        $1;
 
-        location ~* ^/rpxi/POST/(.*) {
-          internal;
+              proxy_pass http://$other_uri$is_args$args;
+            }
 
-          proxy_connect_timeout                 5000;
-          proxy_send_timeout                    5000;
-          proxy_read_timeout                    5000;
-          send_timeout                          5000;
+            location ~* ^/rpxi/HEAD/(.*) {
+              internal;
 
-          proxy_set_header Host                 $http_host;
-          proxy_set_header X-Real-IP            $remote_addr;
-          proxy_set_header X-Forwarded-For      $proxy_add_x_forwarded_for;
-          proxy_set_header X-Forwarded-Proto    $scheme;
-          proxy_set_header X-NginX-Proxy        true;
-          # proxy_set_header Connection           "";
+              include /etc/nginx/conf.d/rpxi-proxy-params;
 
-          proxy_set_header X-Client-Verify      $ssl_client_verify;
-          proxy_set_header X-Client-I-Dn        $ssl_client_i_dn;
-          proxy_set_header X-Client-S-Dn        $ssl_client_s_dn;
-          #proxy_set_header X-Client-V-End       $ssl_client_v_end;
-          proxy_set_header X-Client-Serial      $ssl_client_serial;
+              proxy_http_version                    1.1;
+              proxy_method                          HEAD;
+              set $other_uri                        $1;
 
-          proxy_http_version                    1.1;
-          proxy_method                          POST;
-          set $other_uri                        $1;
+              proxy_pass http://$other_uri$is_args$args;
+            }
 
-          proxy_pass http://$other_uri$is_args$args;
-        }
+            location ~* ^/rpxi/DELETE/(.*) {
+              internal;
 
-        location ~* ^/rpxi/HEAD/(.*) {
-          internal;
+              include /etc/nginx/conf.d/rpxi-proxy-params;
 
-          proxy_connect_timeout                 5000;
-          proxy_send_timeout                    5000;
-          proxy_read_timeout                    5000;
-          send_timeout                          5000;
+              proxy_http_version                    1.1;
+              proxy_method                          DELETE;
+              set $other_uri                        $1;
 
-          proxy_set_header Host                 $http_host;
-          proxy_set_header X-Real-IP            $remote_addr;
-          proxy_set_header X-Forwarded-For      $proxy_add_x_forwarded_for;
-          proxy_set_header X-Forwarded-Proto    $scheme;
-          proxy_set_header X-NginX-Proxy        true;
-          # proxy_set_header Connection           "";
+              proxy_pass http://$other_uri$is_args$args;
+            }
 
-          proxy_set_header X-Client-Verify      $ssl_client_verify;
-          proxy_set_header X-Client-I-Dn        $ssl_client_i_dn;
-          proxy_set_header X-Client-S-Dn        $ssl_client_s_dn;
-          #proxy_set_header X-Client-V-End       $ssl_client_v_end;
-          proxy_set_header X-Client-Serial      $ssl_client_serial;
+            # vim: ft=nginx:`;
 
-          proxy_http_version                    1.1;
-          proxy_method                          HEAD;
-          set $other_uri                        $1;
-
-          proxy_pass http://$other_uri$is_args$args;
-        }
-
-        location ~* ^/rpxi/DELETE/(.*) {
-          internal;
-
-          proxy_connect_timeout                 5000;
-          proxy_send_timeout                    5000;
-          proxy_read_timeout                    5000;
-          send_timeout                          5000;
-
-          proxy_set_header Host                 $http_host;
-          proxy_set_header X-Real-IP            $remote_addr;
-          proxy_set_header X-Forwarded-For      $proxy_add_x_forwarded_for;
-          proxy_set_header X-Forwarded-Proto    $scheme;
-          proxy_set_header X-NginX-Proxy        true;
-          # proxy_set_header Connection           "";
-
-          proxy_set_header X-Client-Verify      $ssl_client_verify;
-          proxy_set_header X-Client-I-Dn        $ssl_client_i_dn;
-          proxy_set_header X-Client-S-Dn        $ssl_client_s_dn;
-          #proxy_set_header X-Client-V-End       $ssl_client_v_end;
-          proxy_set_header X-Client-Serial      $ssl_client_serial;
-
-          proxy_http_version                    1.1;
-          proxy_method                          DELETE;
-          set $other_uri                        $1;
-
-          proxy_pass http://$other_uri$is_args$args;
-        }`;
 }
 
+
+module.exports.ra_active_fn_name = DIAG.activeName;
