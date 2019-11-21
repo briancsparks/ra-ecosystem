@@ -225,23 +225,18 @@ module.exports.DIAG = function(mod) {
       // If we are active development, use those args
       if (sg.smartValue(process.env.ACTIVE_DEVELOPMENT)) {
         let cliArgs   = self.devCliArgs(fnName);
-console.log(`kjhkha9`, {argv, cliArgs});
         let cliArgs2  = mkArgv(cliArgs);
         self.sanityCheck(`Checking ACTIVE_DEVELOPMENT. fnName: |${fnName}|, devCliArgs: |${cliArgs}|`, {argv, cliArgs2});
         argv = sg.merge(cliArgs2, argv ||{});
         // console.log(`invokingFnB ${fnName}`, util.inspect({argv, async: !isActuallyContinuationStyle}, {depth:null, color:true}));
       }
 
-console.log(`kjhkha1`, {argv});
       if (argv.useful) {
         // TODO: else, lookup usefulCliArgs from argv, and replace
         const usefulCliArgs   = self.bits.getData(fnName || self.getCurrFnName(), 'usefulCliArgs');
-console.log(`kjhkha2`, {argv, usefulCliArgs});
         const cliArgs         = mkArgv(usefulCliArgs[argv.useful]);
-console.log(`kjhkha3`, {argv, usefulCliArgs, cliArgs});
         argv                  = sg.merge(cliArgs ||{}, argv ||{});
       }
-console.log(`kjhkha4`, {argv});
 
       setupDiag(argv, context, callback);
 

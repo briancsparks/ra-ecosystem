@@ -135,7 +135,7 @@ sg.extracts = function(collection /*, names... */) {
   return result;
 };
 
-sg.compact = _.compact;
+// sg.compact = _.compact;
 
 var stage       = sg.argvValue('stage');
 var fastFail    = sg.argvFlag('fastfail');
@@ -1467,6 +1467,16 @@ sg.compact = function(arr) {
   return arr.filter(Boolean);
 };
 
+/**
+ * Just like compact, but only removes items according to sg.isnt().
+ *
+ * @param {*} arr
+ * @returns
+ */
+sg.scrunch = function(arr) {
+  return arr.filter(x => !sg.isnt(x));
+};
+
 // From https://github.com/lodash/lodash/wiki/Migrating
 sg.pluck        = _.map;
 sg.head         = _.take;
@@ -1716,8 +1726,32 @@ var toError = function(e, e2, httpCode) {
 };
 sg.toError = toError;
 
-sg.scrunch = function(arr) {
-  return arr.filter(x => !sg.isnt(x));
+/**
+ * Exports all the stuff on the `lib` onto the `module`.
+ *
+ * @param {*} modjule
+ * @param {*} lib
+ */
+sg.re_export = sg.exportify = function(modjule, lib) {
+  if (sg.isnt(modjule) || sg.isnt(lib))                     { return; }
+
+  for (const key in lib) {
+    modjule[key] = lib;
+  }
+
+  return modjule;
+};
+
+/**
+ * Make a function that fills in the `modjule` argument for re_export.
+ *
+ * @param {*} modjule
+ * @returns
+ */
+sg.re_exporter = function(modjule) {
+  return function(lib) {
+    return sg.re_export(modjule, lib);
+  };
 };
 
 // Export functions

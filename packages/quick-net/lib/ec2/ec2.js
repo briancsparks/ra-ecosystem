@@ -159,7 +159,7 @@ DIAG.usefulCliArgs({
 
 // The last one wins. Comment out what you dont want.
 DIAG.activeDevelopment(`--useful=webtier --debug`);
-DIAG.activeName = 'upsertInstance';
+// DIAG.activeName = 'upsertInstance';
 
 /**
  * Upsert an instance.
@@ -204,7 +204,6 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context, callback) {
 
 
     var   argv                  = {...argv_};
-console.log(`dsf`, {argv});
     // INSALL_ meta packages
     argv.INSTALL_MONGO_CLIENTS  = argv.INSTALL_CLIENTS  || argv.INSTALL_MONGO_CLIENTS   || true;
     argv.INSTALL_REDIS_CLIENTS  = argv.INSTALL_CLIENTS  || argv.INSTALL_REDIS_CLIENTS   || true;

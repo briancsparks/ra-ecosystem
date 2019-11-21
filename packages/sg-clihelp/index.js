@@ -41,6 +41,7 @@ sg.from         = from;
 sg.all          = all;
 sg.startupDone  = startupDone;
 sg.runTopAsync  = runTopAsync;
+sg.runTopSync   = runTopSync;
 
 // -------------------------------------------------------------------------------------
 // routes
@@ -58,10 +59,10 @@ _.each(sg, (fn, name) => {
 //  Helper Functions
 //
 
-// const {sg,fs,path,os,util,sh,die,dieAsync,grepLines,include,from,startupDone,runTopAsync,exec,execa,execz,exec_ez,find,grep,ls,mkdir,SgDir,test,tempdir,inspect} = require('sg-clihelp').all();
+// const {sg,_,fs,path,os,util,sh,die,dieAsync,grepLines,include,from,startupDone,runTopAsync,runTopSync,exec,execa,execz,exec_ez,find,grep,ls,mkdir,SgDir,test,tempdir,inspect} = require('sg-clihelp').all();
 function all() {
   return {
-    sg, sg0:sg,
+    sg, sg0:sg, _,
     fs, path, os, util,
     sh,
     die, dieAsync, grepLines, include, from, startupDone, runTopAsync,
@@ -290,5 +291,38 @@ function runTopAsync(main, name='main') {
     return err;
   }
 }
+
+// ------------------------------------------------------------------------------------------------------------------
+/**
+ * Runs a function from the top-level a mirror of runTopAsync.
+ *
+ * @param {function}  main            - The function to run.
+ * @param {string}    [name='main']   - The name of the function for display and debugging.
+ */
+function runTopSync(main, name='main') {
+
+  return main(function(err, mainResult) {
+    var result;
+    if (err) {
+      return announceError(err);
+    }
+
+    if (!result) {
+      result = mainResult;
+    }
+
+    const message = sg.extract(result ||{}, 'finalMessage');
+    ARGV.i(`function ${name} finished:`, {result}, message);
+  });
+
+  function announceError(err) {
+    ARGV.w(`Error in ${name}`, err);
+    if ('code' in err) {
+      process.exit(err.code);
+    }
+    return err;
+  }
+}
+
 
 

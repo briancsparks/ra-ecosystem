@@ -72,9 +72,32 @@ if (require.main === module) {
   sg.runTopAsync(main);
 }
 
+
+
+//-----------------------------------------------------------------------------------------------------------------------------
 async function main() {
+  const foo   = ARGV.foo;
+  const bar   = ENV.at('BAR');
+
+  const confDir = path.join(os.homedir(), 'quxxdir'));
+
+  if (!test('-d', confDir)) {
+    return sg.dieAsync(`Need ${confDir}`);
+  }
+
+  const configFile = path.join(confDir, 'config.json'));
+  if (!test('-f', configFile)) {
+    return sg.dieAsync(`Need ${configFile}`);
+  }
+
+  const battConfig = sg.from(confDir, 'config.json', 'foo.bar.batt');
+
   // ...
 
+  const cmdStdout = await execa.stdout(sh.which('command').toString(), ['arg1', 'arg2']);
+  console.log(sg.splitLn(cmdStdout));
+
+  // ...
 }
 ```
 
