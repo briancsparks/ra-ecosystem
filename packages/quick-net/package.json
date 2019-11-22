@@ -1,6 +1,6 @@
 {
   "name": "quick-net",
-  "version": "1.0.152",
+  "version": "1.0.153",
   "description": "Create quick cloud network",
   "main": "index.js",
   "bin": {
@@ -31,7 +31,7 @@
   },
   "dependencies": {
     "@kubernetes/client-node": "^0.10.2",
-    "@sg0/sg-cache-redis": "^1.0.3",
+    "@sg0/sg-cache-redis": "^1.0.4",
     "@sg0/sg-smart-value": "^1.0.7",
     "aws-sdk": "^2.382.0",
     "clipboardy": "^2.1.0",
@@ -53,7 +53,7 @@
     "mime": "^2.4.4",
     "pem": "^1.14.2",
     "qs": "^6.7.0",
-    "run-anywhere": "^1.0.129",
+    "run-anywhere": "^1.0.130",
     "sg-argv": "^1.0.73",
     "sg-clihelp": "^1.0.72",
     "sg-diag": "^1.0.57",
