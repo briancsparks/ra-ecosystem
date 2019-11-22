@@ -68,7 +68,7 @@ AwsDataBlob.prototype.addResult = function(blob) {
       return [...m, ...iList];
     }, []);
 
-    return self.parse({Instances: instanceList});
+    return self.addResult({Instances: instanceList});
   }
 };
 

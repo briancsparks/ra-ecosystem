@@ -582,7 +582,13 @@ function Diagnostic(ctorArgs ={}) {
   self.stdoutIsDataOnly = function() {
     // TODO: Fix -- this is a property of the utility
 
-    return ENV.at('SG_STDOUT_IS_DATA_ONLY');
+    // return ENV.at('SG_STDOUT_IS_DATA_ONLY');
+
+    var result = true;
+
+    result = result && !ENV.at('SG_STDOUT_IS_DATA_AND_MESSAGES');
+
+    return result;
   };
 
   /**

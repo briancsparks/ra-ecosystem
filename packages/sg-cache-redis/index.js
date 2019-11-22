@@ -4,7 +4,7 @@
  * @file
  */
 const sg0                     = require('sg0');
-const sg                      = sg0.merge(sg0, require('sg-diag'));
+const sg                      = sg0.merge(sg0, require('sg-diag'), require('sg-flow'));
 const { _ }                   = sg;
 const fs                      = require('fs');
 const path                    = require('path');
@@ -20,18 +20,20 @@ const qm                      = quickMerge.quickMergeImmutable;
 // const ENV                     = sg.ENV();
 const diag                    = DIAG.dg;
 
+module.exports.getCache = getCache;
 
 
 //===========================================================================================================================
-function getCache(key, expensiveOp, callback) {
-  var [redis, close] = localRedis.mkConnection();
+function getCache(key, options, expensiveOp, callback) {
+  var [redis, close]  = localRedis.mkConnection();
+  var {ttl}           = options;
 
   return redis.GET(key, function(err, cacheData_) {       // ===========================================      This is where data was just read out of redis
     var   cacheData = cacheData_;
 
     if (err)  { return fin(err); }
 
-    if (sg0.ok(err, cacheData_)) {
+    if (sg.ok(err, cacheData_)) {
       cacheData = sg.safeJSONParse(cacheData_) || cacheData_;
       diag.v(`Retrieved key: (${key}) from cache`, smlog({err, cacheData}));
       return fin(null, cacheData);
@@ -63,19 +65,35 @@ function getCache(key, expensiveOp, callback) {
     return redis.SET(key, data, function(err, result) {           // ===========================================      This is where data gets put into redis
       diag.v(`Stored key: (${key}) in cache`, smlog({data, err, result}));
 
-      // Now, set the TTL on the key, so it doesnt stick around forever
-      redis.EXPIRE(key, /*ttl=*/40, function(err, result) {
-        // Report the results, but do not block
-        diag.v(`Stored key: (${key}) in cache`, {err, result});
-      });
+      // // Now, set the TTL on the key, so it doesnt stick around forever
+      // redis.EXPIRE(key, ttl, function(err, result) {
+      //   // Report the results, but do not block
+      //   diag.v(`Stored key: (${key}) in cache`, {err, result});
+      // });
 
       return storeCacheCallback(err, result);
     });
   }
 
-  function fin(...args) {
-    close();
-    return callback(...args);
+  function fin(err, ...args) {
+    // Return the results, then stick around to finish up.
+    callback(err, ...args);
+
+    if (!err) {
+      // Now, set the TTL on the key, so it doesnt stick around forever
+      return redis.EXPIRE(key, ttl, function(err, result) {
+        diag.v(`Stored key: (${key}) in cache`, {err, result});         // Report the results, but do not block
+
+        return closeIt();
+      });
+    }
+
+    return closeIt();
+
+    function closeIt() {
+      // Need to keep the connection open until we are done
+      close();
+    }
   }
 }
 

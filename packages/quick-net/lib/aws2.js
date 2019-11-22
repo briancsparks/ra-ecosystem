@@ -6,29 +6,37 @@ const {_}                     = sg;
 const quickMerge              = require('quick-merge');
 const util                    = require('util');
 const AWS                     = require('aws-sdk');
-// const sgRedis                 = require('sg-cache-redis');
+const sgRedis                 = require('@sg0/sg-cache-redis');
 const {AwsDataBlob}           = require('./aws3');
 const DIAG                    = sg0.DIAG(module);
 
-const sgRedis                 = {};   // TODO: wrong
+// const sgRedis                 = {};   // TODO: wrong
 const {getCache}              = sgRedis;
 const qm                      = quickMerge.quickMergeImmutable;
 
 // const ARGV                    = sg.ARGV();
 // const ENV                     = sg.ENV();
-// const dg                      = DIAG.dg;
+const dg                      = DIAG.dg;
 
 module.exports.awsService     = awsService;
 
+awsService({serviceName:"EC2", command: 'describeInstances'}, {}, function(err, data, ...rest) {
+  dg.i(`describeInstances`, {err, data});
+});
 
 function awsService(argv, context, callback) {
   const {serviceName, command} = argv;
 
-  // var   ttl = 10 * 60;     /* 10 min */
-  var   ttl = 3;              /* 3 sec */
+  // dg.i(`Getting awsService ${serviceName}`, {argv});
+  // dg.d(`Getting awsService ${serviceName}`, {argv});
+  // dg.v(`Getting awsService ${serviceName}`, {argv});
+
+  var   ttl = 60 * 60;      /* 60 min */
+  // var   ttl = 10 * 60;   /* 10 min */
+  // var   ttl = 3;         /* 3 sec */
 
   const key = `jsaws:${serviceName}:${command}`;
-  return getCache(key, util.callbackify(async function getFromAws() {
+  return getCache(key, {ttl}, util.callbackify(async function getFromAws() {
 
     // Expensive op to get from AWS
     const service   = new AWS[serviceName]({region:'us-east-1'});
@@ -40,7 +48,7 @@ function awsService(argv, context, callback) {
     // return data;
 
     const bob = new AwsDataBlob();
-    bob.parse(data);
+    bob.addResult(data);
 
     const value = bob.getData();
     return value;
@@ -48,12 +56,12 @@ function awsService(argv, context, callback) {
   }), function(err, data) {
     // console.log(`debug`, serviceName, command, data);
 
-    const bob = new AwsDataBlob();
-    bob.parse(data);
+    // const bob = new AwsDataBlob();
+    // bob.addResult(data);
 
-    const value = bob.getData();
+    // const value = bob.getData();
 
-    // console.log(`bob`, value);
-    return callback(null, value);
+    // console.log(`bob`, data);
+    return callback(err, data);
   });
 }
