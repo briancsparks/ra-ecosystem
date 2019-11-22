@@ -1,6 +1,6 @@
 {
   "name": "run-anywhere",
-  "version": "1.0.126",
+  "version": "1.0.127",
   "description": "Write your Node.js functions in the run-anywhere format, and run them anywhere (CLI, AWS Lambda, etc.)",
   "main": "ra.js",
   "bin": {
@@ -21,7 +21,7 @@
   },
   "homepage": "https://github.com/briancsparks/ra-ecosystem/tree/master/packages/run-anywhere#readme",
   "dependencies": {
-    "@sg0/sg-smart-value": "^1.0.4",
+    "@sg0/sg-smart-value": "^1.0.5",
     "aws-serverless-express": "^3.3.5",
     "difflet": "^1.0.1",
     "exit-on-epipe": "^1.0.1",
@@ -33,11 +33,11 @@
     "mongodb": "^3.1.10",
     "quick-merge": "^1.0.17",
     "redis": "^2.8.0",
-    "sg-argv": "^1.0.70",
-    "sg-config": "^1.0.81",
-    "sg-env": "^1.0.9",
-    "sg-flow": "^1.0.63",
-    "sg0": "^1.0.39",
+    "sg-argv": "^1.0.71",
+    "sg-config": "^1.0.82",
+    "sg-env": "^1.0.10",
+    "sg-flow": "^1.0.64",
+    "sg0": "^1.0.40",
     "sgsg": "^0.9.54",
     "sprintf-js": "^1.1.2"
   },

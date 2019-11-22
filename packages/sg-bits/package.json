@@ -1,6 +1,6 @@
 {
   "name": "sg-bits",
-  "version": "1.0.22",
+  "version": "1.0.23",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -10,6 +10,6 @@
   "license": "MIT",
   "dependencies": {
     "quick-merge": "^1.0.17",
-    "sg0": "^1.0.39"
+    "sg0": "^1.0.40"
   }
 }
