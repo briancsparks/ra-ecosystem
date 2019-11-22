@@ -1736,7 +1736,7 @@ sg.re_export = sg.exportify = function(modjule, lib) {
   if (sg.isnt(modjule) || sg.isnt(lib))                     { return; }
 
   for (const key in lib) {
-    modjule[key] = lib;
+    modjule.exports[key] = lib;
   }
 
   return modjule;

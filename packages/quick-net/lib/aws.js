@@ -14,6 +14,7 @@ const config                  = new AWS.Config(config_);
 const ec2                     = new AWS.EC2(config);
 const sts                     = new AWS.STS(config);
 
+sg.re_export(module, require('./aws2'));
 exports.defs                  = {...awsDefs.options, options:awsDefs.options};
 
 // ----------------------------------------------------------------------------------------------------------------------------
@@ -222,5 +223,4 @@ exports.AWS               = AWS;
 exports.getCallerArn      = getCallerArn;
 exports.getCallerAccount  = getCallerAccount;
 
-// sg.re_export(module.exports, require('./aws2'));
 

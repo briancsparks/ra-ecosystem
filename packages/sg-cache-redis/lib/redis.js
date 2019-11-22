@@ -27,6 +27,6 @@ function mkConnection() {
     }
 
     return [redis, close];
-  }
+  };
 }
 
