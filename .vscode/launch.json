@@ -34,6 +34,15 @@
     {
       "type": "node",
       "request": "launch",
+      "name": "Debug current file using run-anywhere/platform/app/workstation-cli.js",
+      "program": "${workspaceFolder}/packages/run-anywhere/platform/app/workstation-cli.js",
+      "args": ["${file}"],
+      "cwd": "C:/Users/sparksb/dev/bcs/ra-ecosystem/apps/lambda-net",
+      "internalConsoleOptions": "openOnSessionStart",
+    },
+    {
+      "type": "node",
+      "request": "launch",
       "name": "Debug deploy.js run-anywhere",
       "program": "${workspaceFolder}/packages/run-anywhere/bin.js",
       "args": ["invoke", "${workspaceFolder}/packages/quick-net/commands/lambda-deploy/deploy.js", "deployLambda", "--stage=dev", "--name=lambda-net", "--class-b=21", "--sgs=wide", "--debug", "--log-api"],

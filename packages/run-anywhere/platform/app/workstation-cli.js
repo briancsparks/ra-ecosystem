@@ -3,7 +3,7 @@ const entrypoint              = require('../entrypoint/cli');
 const host                    = require('../host/workstation');
 const checkMw                 = require('../middleware/check-config');
 const invokeMw                = require('../middleware/invoke-ra');
-const {logSmData}             = require('../../lib/utils');
+const {logSmData}             = require('../../lib/v3/utils');
 
 const {mkInvokeRa}            = invokeMw;
 const {mkDetector}            = checkMw;
@@ -40,10 +40,6 @@ host.setDispatcher(function(argv, context_, callback) {
   // So, this is it! We are now handling the event/request. We have to dispatch it, and
   // then handle the final callback to the AWS service.
 
-  // TODO: Dispatch it somewhere
-  // [[Fake it for now]]
-  // console.log(`QUICK_Net::params (${__filename})`, {argv, context});
-
   // Could do something like this, if you use sg-http
   // const _200 = sg._200({ok:true, ...data});
   // return callback(..._200);
@@ -51,7 +47,11 @@ host.setDispatcher(function(argv, context_, callback) {
   // TODO: set fnName from inputs
   var fnName = argv._command || argv._[0];
   return detect_probs_invoke({...argv, fnName}, context, function(err, data, ...rest) {
-    // console.log(`workstation-cli-dispatch`, {err, ...logSmData({data, rest})});
+    if (typeof err === 'string' && err === 'ENOFN') {
+      console.error(`---- Could not find your function. Maybe run list-fns-save-json`);
+    }
+
+    console.log(`workstation-cli-dispatch`, {err, ...logSmData({data, rest})});
     return callback(err, data, ...rest);
   });
 });

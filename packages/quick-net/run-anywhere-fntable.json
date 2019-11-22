@@ -294,18 +294,18 @@
     "tier": 4
   },
   "awsService": {
-    "arity": 2,
+    "arity": 3,
     "hasAsync": false,
-    "fnLen": 2,
-    "names": false,
+    "tier": 1,
+    "names": true,
+    "fnLen": 3,
     "isAsync": false,
-    "paramsStr": "name, options",
-    "first": "function(name, options) {",
-    "filename": "lib/aws.js",
+    "paramsStr": "argv, context, callback",
+    "first": "function awsService(argv, context, callback) {",
+    "filename": "lib/aws2.js",
     "dirname": "C:\\Users\\sparksb\\dev\\bcs\\ra-ecosystem\\packages\\quick-net",
-    "fullfilename": "C:\\Users\\sparksb\\dev\\bcs\\ra-ecosystem\\packages\\quick-net\\lib\\aws.js",
-    "fnName": "awsService",
-    "tier": 4
+    "fullfilename": "C:\\Users\\sparksb\\dev\\bcs\\ra-ecosystem\\packages\\quick-net\\lib\\aws2.js",
+    "fnName": "awsService"
   },
   "awsFns": {
     "arity": 4,
@@ -445,6 +445,20 @@
     "dirname": "C:\\Users\\sparksb\\dev\\bcs\\ra-ecosystem\\packages\\quick-net",
     "fullfilename": "C:\\Users\\sparksb\\dev\\bcs\\ra-ecosystem\\packages\\quick-net\\lib\\aws.js",
     "fnName": "getCallerAccount",
+    "tier": 4
+  },
+  "AwsDataBlob": {
+    "arity": 0,
+    "hasAsync": false,
+    "fnLen": 0,
+    "names": false,
+    "isAsync": false,
+    "paramsStr": "",
+    "first": "function AwsDataBlob() {",
+    "filename": "lib/aws3.js",
+    "dirname": "C:\\Users\\sparksb\\dev\\bcs\\ra-ecosystem\\packages\\quick-net",
+    "fullfilename": "C:\\Users\\sparksb\\dev\\bcs\\ra-ecosystem\\packages\\quick-net\\lib\\aws3.js",
+    "fnName": "AwsDataBlob",
     "tier": 4
   },
   "upsertTable": {
@@ -643,6 +657,34 @@
     "fullfilename": "C:\\Users\\sparksb\\dev\\bcs\\ra-ecosystem\\packages\\quick-net\\lib\\ec2\\vpc.js",
     "fnName": "getSubnets"
   },
+  "useBastion": {
+    "arity": 3,
+    "hasAsync": true,
+    "tier": 1,
+    "names": true,
+    "fnLen": 3,
+    "isAsync": false,
+    "paramsStr": "argv, context, callback_",
+    "first": "function(argv, context, callback_) {",
+    "filename": "lib/ec2/agent/control.js",
+    "dirname": "C:\\Users\\sparksb\\dev\\bcs\\ra-ecosystem\\packages\\quick-net",
+    "fullfilename": "C:\\Users\\sparksb\\dev\\bcs\\ra-ecosystem\\packages\\quick-net\\lib\\ec2\\agent\\control.js",
+    "fnName": "useBastion"
+  },
+  "_useBastion_": {
+    "arity": 3,
+    "hasAsync": true,
+    "tier": 1,
+    "names": true,
+    "fnLen": 3,
+    "isAsync": false,
+    "paramsStr": "argv, context, callback_",
+    "first": "function(argv, context, callback_) {",
+    "filename": "lib/ec2/agent/control.js",
+    "dirname": "C:\\Users\\sparksb\\dev\\bcs\\ra-ecosystem\\packages\\quick-net",
+    "fullfilename": "C:\\Users\\sparksb\\dev\\bcs\\ra-ecosystem\\packages\\quick-net\\lib\\ec2\\agent\\control.js",
+    "fnName": "_useBastion_"
+  },
   "bitsToNetmask": {
     "arity": 1,
     "hasAsync": false,
@@ -797,6 +839,34 @@
     "fnName": "toCidr",
     "tier": 4
   },
+  "upsertInstance": {
+    "arity": 3,
+    "hasAsync": true,
+    "tier": 1,
+    "names": true,
+    "fnLen": 3,
+    "isAsync": false,
+    "paramsStr": "argv, context, callback_",
+    "first": "function(argv, context, callback_) {",
+    "filename": "lib/ec2/ec2.js",
+    "dirname": "C:\\Users\\sparksb\\dev\\bcs\\ra-ecosystem\\packages\\quick-net",
+    "fullfilename": "C:\\Users\\sparksb\\dev\\bcs\\ra-ecosystem\\packages\\quick-net\\lib\\ec2\\ec2.js",
+    "fnName": "upsertInstance"
+  },
+  "upstartInstances": {
+    "arity": 3,
+    "hasAsync": true,
+    "tier": 1,
+    "names": true,
+    "fnLen": 3,
+    "isAsync": false,
+    "paramsStr": "argv, context, callback_",
+    "first": "function(argv, context, callback_) {",
+    "filename": "lib/ec2/ec2.js",
+    "dirname": "C:\\Users\\sparksb\\dev\\bcs\\ra-ecosystem\\packages\\quick-net",
+    "fullfilename": "C:\\Users\\sparksb\\dev\\bcs\\ra-ecosystem\\packages\\quick-net\\lib\\ec2\\ec2.js",
+    "fnName": "upstartInstances"
+  },
   "getAmis": {
     "arity": 3,
     "hasAsync": true,
@@ -839,19 +909,19 @@
     "fullfilename": "C:\\Users\\sparksb\\dev\\bcs\\ra-ecosystem\\packages\\quick-net\\lib\\ec2\\ec2.js",
     "fnName": "getUbuntuLtsAmis"
   },
-  "upsertInstance": {
-    "arity": 3,
-    "hasAsync": true,
-    "tier": 1,
-    "names": true,
-    "fnLen": 3,
+  "deTag": {
+    "arity": 1,
+    "hasAsync": false,
+    "fnLen": 1,
+    "names": false,
     "isAsync": false,
-    "paramsStr": "argv, context, callback_",
-    "first": "function(argv, context, callback_) {",
-    "filename": "lib/ec2/ec2.js",
+    "paramsStr": "items, depth =0",
+    "first": "function(items, depth =0) {",
+    "filename": "lib/ec2/tags.js",
     "dirname": "C:\\Users\\sparksb\\dev\\bcs\\ra-ecosystem\\packages\\quick-net",
-    "fullfilename": "C:\\Users\\sparksb\\dev\\bcs\\ra-ecosystem\\packages\\quick-net\\lib\\ec2\\ec2.js",
-    "fnName": "upsertInstance"
+    "fullfilename": "C:\\Users\\sparksb\\dev\\bcs\\ra-ecosystem\\packages\\quick-net\\lib\\ec2\\tags.js",
+    "fnName": "deTag",
+    "tier": 4
   },
   "tag": {
     "arity": 3,

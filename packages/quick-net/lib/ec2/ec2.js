@@ -24,6 +24,7 @@ const libNginxConfig          = require('../nginx/config');
 const {mkS3path,
        safePathFqdn,
        addClip}               = qnutils;
+var   theCommandToRun         = '';
 
 const mod                     = ra.modSquad(module, 'quickNetEc2');
 const DIAG                    = sg.DIAG(module);
@@ -738,10 +739,11 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context, callback) {
       //   `${sshix} ${PrivateIpAddress} 'bootstrap-nonroot'`,
       // ]);
 
+      theCommandToRun = `bootstrap-other ${PrivateIpAddress}`;
       addClip([
         `#for ((;;)); do ${sshix} ${PrivateIpAddress} 'whoami'; export SUCCESS="$?"; echo "$SUCCESS"; if [[ $SUCCESS == 0 ]]; then break; fi; sleep 0.4; done`,
         `#${sshix} ${PrivateIpAddress} 'tail -F /var/log/cloud-init-output.log'`,
-        `bootstrap-other ${PrivateIpAddress}`,
+        theCommandToRun,
       ]);
 
       bootShellCommands = [...bootShellCommands,
@@ -828,9 +830,21 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context, callback) {
       }, next);
 
     }, function(my, next) {
-      // const agent                   = require('../lib/ec2/agent');
+      const agent                   = require('./agent/control');
 
-      return next();
+      const {PrivateIpAddress} = my.result.Instance;
+
+      var   bastionIp         = 'boost.cdr0.net';
+      var   targetPrivateIp   = PrivateIpAddress;
+
+      // `bootstrap-other ${PrivateIpAddress}`,
+      var   theCommand = theCommandToRun;
+
+      sg.debugLog(`Complete the bootstrap `, {bastionIp, targetPrivateIp, theCommand});
+      return agent.spawnit({bastionIp, targetPrivateIp, theCommand}, {}, function(err, data) {
+
+        return next();
+      });
     }]);
   });
 }}));

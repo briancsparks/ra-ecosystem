@@ -31,6 +31,7 @@
   },
   "dependencies": {
     "@kubernetes/client-node": "^0.10.2",
+    "@sg0/sg-cache-redis": "^1.0.3",
     "@sg0/sg-smart-value": "^1.0.7",
     "aws-sdk": "^2.382.0",
     "clipboardy": "^2.1.0",

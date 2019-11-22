@@ -31,6 +31,8 @@ var   dispatcher    = dispatch;
 
 // ----------------------------------------------------------------------------------------------------------------------------
 exports.main = function(argv_, user_sys_argv_ ={}, start) {
+  console.log(`cli.js-main`, {argv:argv_});
+
   if (sg.isnt(argv_))                                                         { return exports.main(sg.ARGV() ||{}, user_sys_argv_, start); }
   if (!start)                                                                 { return; }
   // if ((argv_._command || (argv_._ && argv_._[0]) || '').startsWith('rai_'))   { return; }
@@ -40,7 +42,7 @@ exports.main = function(argv_, user_sys_argv_ ={}, start) {
 
   return exports.platform_entrypoint(event, context, function(err, response, ...rest) {
     var {httpCode, ...data} = response;
-    // console.log(`cli-entrypoint-main-cb`, sg.inspect({err, httpCode, ...logSmData({data, rest})}));
+    console.log(`cli-entrypoint-main-cb`, sg.inspect({err, httpCode, ...logSmData({data, rest})}));
 
     process.stdout.write(sg.safeJSONStringify([err, {httpCode, ...data}]));
   });
