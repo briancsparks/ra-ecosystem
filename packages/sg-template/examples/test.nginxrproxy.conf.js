@@ -46,4 +46,6 @@ const template = function(argv_, context = {}) {
   return t;
 };
 
-console.log(template().stringify());
+if (require.main === module) {
+  console.log(template().stringify());
+}

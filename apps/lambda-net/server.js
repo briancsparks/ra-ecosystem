@@ -84,9 +84,11 @@ const server = http.createServer((req, res) => {
   });
 });
 
-server.listen(port, '127.0.0.1', () => {
-  console.log(`listening on ${port}`);
-});
+if (require.main === module) {
+  server.listen(port, '127.0.0.1', () => {
+    console.log(`listening on ${port}`);
+  });
+}
 
 
 

@@ -3,7 +3,7 @@ const sg                      = require('sg-clihelp');
 const AWS                     = require('aws-sdk');
 
 const ARGV  = sg.ARGV();
-sg.elog(`ARGV`, {ARGV});
+// sg.elog(`ARGV`, {ARGV});
 
 if (require.main === module) {
   sg.runTopAsync(main);

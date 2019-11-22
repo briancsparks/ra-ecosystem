@@ -1,4 +1,5 @@
 if (process.env.SG_VVVERBOSE) console[process.env.SG_LOAD_STREAM || 'log'](`Loading ${__filename}`);
+/* eslint-disable valid-jsdoc */
 
 const ra                      = require('run-anywhere').v2;
 const sg                      = ra.get3rdPartyLib('sg-flow');

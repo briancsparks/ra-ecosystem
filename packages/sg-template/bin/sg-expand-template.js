@@ -43,7 +43,9 @@ const main = function() {
   const expanded = sg.generate(sg.merge({...ARGV, filename, output}));
 };
 
-main();
+if (require.main === module) {
+  main();
+}
 
 // -------------------------------------------------------------------------------------
 //  Helper Functions

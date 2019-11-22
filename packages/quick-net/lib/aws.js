@@ -16,6 +16,7 @@ const sts                     = new AWS.STS(config);
 
 exports.defs                  = {...awsDefs.options, options:awsDefs.options};
 
+// ----------------------------------------------------------------------------------------------------------------------------
 const awsService = function(name, options) {
   const config  = new AWS.Config(sg.merge(config_, options));
   const service = new AWS[name](config);
@@ -23,6 +24,7 @@ const awsService = function(name, options) {
   return service;
 };
 
+// ----------------------------------------------------------------------------------------------------------------------------
 const awsFns = function(service, names_, options1, abort) {
   const names = _.isString(names_) ? names_.split(',') : names_;
 
@@ -119,6 +121,7 @@ const awsFns = function(service, names_, options1, abort) {
   return result;
 };
 
+// ----------------------------------------------------------------------------------------------------------------------------
 const awsFilters = function(kvs) {
   return {
     Filters: sg.reduce(_.keys(kvs), [], (m, key) => {
@@ -129,6 +132,7 @@ const awsFilters = function(kvs) {
   };
 };
 
+// ----------------------------------------------------------------------------------------------------------------------------
 const awsFilter = function(kvs) {
   return {
     Filter: _.map(_.keys(kvs), (key) => {
@@ -137,6 +141,7 @@ const awsFilter = function(kvs) {
   };
 };
 
+// ----------------------------------------------------------------------------------------------------------------------------
 const isId = function(type, str) {
   if (sg.isnt(str))                     { return false; }
   if (!str.startsWith(type+'-'))        { return false; }
@@ -149,10 +154,12 @@ const isId = function(type, str) {
   return hex.match(/^[0-9a-zA-Z]+$/);
 };
 
+// ----------------------------------------------------------------------------------------------------------------------------
 const isVpcId = function(str) {
   return isId('vpc', str);
 };
 
+// ----------------------------------------------------------------------------------------------------------------------------
 const isAwsProp = function(key, obj) {
   if (sg.isnt(key))     { return false; }
 
@@ -164,11 +171,13 @@ const isAwsProp = function(key, obj) {
   return key[0].match(/[A-Z]/);
 };
 
+// ----------------------------------------------------------------------------------------------------------------------------
 const awsKey = function(key, obj) {
   if (!isAwsProp(key, obj))   { return; }
   return key;
 };
 
+// ----------------------------------------------------------------------------------------------------------------------------
 const AwsFilterObject = function(obj, ...rest) {
   const result = sg.reduce(obj, {}, (m,v,k) => {
     if (sg.isnt(k))     { return m; }
@@ -188,11 +197,13 @@ const AwsFilterObject = function(obj, ...rest) {
   return result;
 };
 
+// ----------------------------------------------------------------------------------------------------------------------------
 const getCallerAccount = async function() {
   const identity = await sts.getCallerIdentity({}).promise();
   return identity.Account;
 };
 
+// ----------------------------------------------------------------------------------------------------------------------------
 const getCallerArn = async function() {
   const identity = await sts.getCallerIdentity({}).promise();
   return identity.Arn;
@@ -210,3 +221,6 @@ exports.awsKey            = awsKey;
 exports.AWS               = AWS;
 exports.getCallerArn      = getCallerArn;
 exports.getCallerAccount  = getCallerAccount;
+
+// sg.re_export(module.exports, require('./aws2'));
+

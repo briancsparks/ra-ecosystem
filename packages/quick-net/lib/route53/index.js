@@ -62,7 +62,6 @@ mod.async({deleteTxtRecord: async function(argv, context) {
   return await manageRecord({Action:'DELETE', Type:'TXT', ...argv}, context);
 }});
 
-// =============================================================================================
 DIAG.usage({ aliases: { manageRecord: { args: {
   private_        : 'private',
   fireAndForget   : 'ff',
@@ -73,6 +72,7 @@ DIAG.usage({ aliases: { manageRecord: { args: {
 DIAG.activeDevelopment(`--debug`);
 // DIAG.activeName = 'manageRecord';
 
+// =============================================================================================
 manageRecord =
 mod.async(DIAG.async({manageRecord: async function(argv, context) {
   const diag    = DIAG.diagnostic({argv, context});
@@ -156,6 +156,7 @@ function changeBatch(Action, Type, subdomain, domain, ip, Comment, ttl_) {
   });
 }
 
+// =================================================================================================
 function crackFqdn(argv) {
   var {subdomain,domain,fqdn,...rest}    = argv;
 

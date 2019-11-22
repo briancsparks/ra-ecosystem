@@ -69,7 +69,7 @@ if (process.argv[1].indexOf('run-anywhere') >= 0 && process.argv[2].toLowerCase(
   skipMain = true;
 }
 
-if (!skipMain) {
+if (require.main === module) {
   main();
 }
 

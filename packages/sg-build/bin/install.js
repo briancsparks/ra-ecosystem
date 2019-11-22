@@ -18,7 +18,7 @@ const glob                    = require('glob');
 
 const ARGV                    = sg.ARGV();
 
-console.error({a:process.argv, ARGV, __filename});
+// console.error({a:process.argv, ARGV, __filename});
 
 
 // -------------------------------------------------------------------------------------
@@ -60,7 +60,7 @@ const install = function(argv) {
 
 exports.install   = install;
 
-if (process.argv[1] === __filename || process.argv[1].endsWith('install')) {
+if (require.main === module) {
   install(ARGV);
 }
 

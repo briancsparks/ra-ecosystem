@@ -1,6 +1,8 @@
 /* eslint-disable valid-jsdoc */
 'use strict';
 
+const sg                      = require('sg0');
+
 module.exports.smartValue   = smartValue;
 module.exports.smartKey     = smartKey;
 module.exports.smartObject  = smartObject;
@@ -8,6 +10,8 @@ module.exports.parseParams  = parseParams;
 module.exports.smartNumber  = smartNumber;
 
 module.exports.arrayParam   = arrayParam;
+
+sg.re_export(module, require('./logging'));
 
 /**
  * Returns true if `value` is NaN, false otherwise.

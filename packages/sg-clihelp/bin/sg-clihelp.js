@@ -26,4 +26,4 @@ Includes the following:
 
 `;
 
-console.log(msg);
+// console.log(msg);

@@ -279,22 +279,6 @@ function parseS3Path(s3filepath) {
   return {Bucket,Key};
 }
 
-// // ----------------------------------------------------------------------------------------------------
-// // findBucketKeyAndPath is better
-// function getBucketAndKey(argv) {
-//   dg.tbd(`diagctx`, `getBucketAndKey`, '', {argv});
-
-//   var   s3filepath          = argv.s3path || argv.s3filepath || argv.path || argv.s3 || argv.filename || argv.name;
-//   var   {Bucket,Key}        = parseS3Path(s3filepath);
-
-//   Bucket  = argv.Bucket     || Bucket;
-//   Key     = argv.Key        || Key;
-
-//   dg.tbd(`diagctx`, `getBucketAndKey2`, '', {argv, Bucket,Key});
-//   return {Bucket,Key};
-// }
-
-
 // ----------------------------------------------------------------------------------------------------
 function findBucketKeyAndPath(argv) {
 
@@ -314,12 +298,6 @@ function s3ExpiringTransferPath(fname, secs) {
   return `${expiry}/${fname}`;
 }
 
-// function s3ify(path) {
-//   if (path.toLowerCase().startsWith('s3://'))     { return path; }
-
-//   return `s3://${path}`;
-// }
-
 // ----------------------------------------------------------------------------------------------------
 function getBody(argv, context) {
   if (argv.__meta__ && argv.__meta__.body) {
@@ -328,12 +306,14 @@ function getBody(argv, context) {
   return;
 }
 
+// ----------------------------------------------------------------------------------------------------
 function stringify(x) {
   if (typeof x === 'string')  { return x; }
 
   return JSON.stringify(x);
 }
 
+// ----------------------------------------------------------------------------------------------------
 function mkKey(Body, clientId, sessionId, dataType) {
   var key = [];
 
@@ -345,6 +325,7 @@ function mkKey(Body, clientId, sessionId, dataType) {
   return key.join('/') + '.json';
 }
 
+// ----------------------------------------------------------------------------------------------------
 function hashBody(Body_) {
   var   shasum    = crypto.createHash('sha1');
 
@@ -359,6 +340,7 @@ function hashBody(Body_) {
 }
 
 
+// ----------------------------------------------------------------------------------------------------
 // TODO: use from quick-net-client
 function mkClientAndSessionIds(argv, Body) {
   var   sessionId = argv.sessionId  || Body.sessionId;
@@ -384,15 +366,18 @@ function mkClientAndSessionIds(argv, Body) {
   return {clientId, sessionId};
 }
 
+// ----------------------------------------------------------------------------------------------------
 const letters     = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
 const lettersLen  = letters.length;
 const alphabet    = letters + '0123456789';
 const alphaLen    = alphabet.length;
 
+// ----------------------------------------------------------------------------------------------------
 function randItem(max) {
   return alphabet[Math.floor(Math.random() * Math.floor(max))];
 }
 
+// ----------------------------------------------------------------------------------------------------
 const clientIdLen = 64;
 function mkClientId() {
   var id = randItem(lettersLen);
@@ -401,6 +386,7 @@ function mkClientId() {
   }
 }
 
+// ----------------------------------------------------------------------------------------------------
 function mkSessionTime() {
   const now = new Date();
   return '' +
@@ -413,6 +399,7 @@ function mkSessionTime() {
     pad(3, now.getUTCMilliseconds());
 }
 
+// ----------------------------------------------------------------------------------------------------
 function pad(len, x_, ch_) {
   var x   = ''+x_;
   var ch  = ch_ || '0';

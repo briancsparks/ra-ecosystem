@@ -47,96 +47,38 @@ const MimeBuilder             = MimeNode;
 const namespace               = ENV.lc('NAMESPACE') || 'quicknet';
 const s3path                  = mkS3path(namespace);
 
-/**
- * Gets a list of AMIs.
- *
- * @see https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/finding-an-ami.html
- *
- * @param {*} argv
- * @param {*} context
- * @param {*} callback
- * @returns
- */
-mod.xport({getAmis: function(argv, context, callback) {
+/*
 
-  // ra invoke packages\quick-net\lib\ec2\ec2.js getAmis  --owners=self
+    # Notes for installing cloud-watch agent
 
-  const ractx     = context.runAnywhere || {};
-  const { rax }   = ractx.quickNetEc2__getAmis;
+    NOTE: these instructions do not include the fact that the agent expects
+    answers from the operator at install time.  There is an input file format
+    you can use, but it is not here.
 
-  return rax.iwrap(function(abort) {
-    const { describeImages } = libAws.awsFns(ec2, 'describeImages', rax.opts({}), abort);
 
-    const Owners            = rax.arg(argv, 'Owners,owners', {array:true});
-    const ExecutableUsers   = rax.arg(argv, 'ExecutableUsers,users', {array:true});
-    const Filters           = rax.arg(argv, 'Filters');
-    const osVersion         = rax.arg(argv, 'osVersion,os-version');
-    const ImageIds          = rax.arg(argv, 'ImageIds,images', {array:true});
-    const latest            = rax.arg(argv, 'latest');
+    # https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/QuickStartEC2Instance.html
+    sudo apt-get update
+    curl https://s3.amazonaws.com/aws-cloudwatch/downloads/latest/awslogs-agent-setup.py -O
+    sudo python ./awslogs-agent-setup.py --region us-east-1
 
-    const params = sg.smartExtend({Owners, ExecutableUsers, Filters, ImageIds});
-    return describeImages(params, rax.opts({}), function(err, data, ...rest) {
-      var   result = data;
+    #!/bin/bash
+    curl https://s3.amazonaws.com/aws-cloudwatch/downloads/latest/awslogs-agent-setup.py -O
+    chmod +x ./awslogs-agent-setup.py
+    sudo python ./awslogs-agent-setup.py -n -r us-east-1 -c s3://aws-s3-bucket1/my-config-file
 
-      if (latest) {
-        result = _.last(_.sortBy(data.Images || [], 'CreationDate'));
-      }
+    # Output
+    #------------------------------------------------------
+    #- Configuration file successfully saved at: /var/awslogs/etc/awslogs.conf
+    #- You can begin accessing new log events after a few moments at https://console.aws.amazon.com/cloudwatch/home?region=us-east-1#logs:
+    #- You can use 'sudo service awslogs start|stop|status|restart' to control the daemon.
+    #- To see diagnostic information for the CloudWatch Logs Agent, see /var/log/awslogs.log
+    #- You can rerun interactive setup using 'sudo python ./awslogs-agent-setup.py --region us-east-1 --only-generate-config'
+    #------------------------------------------------------
 
-      return callback(err, qm(result, {osVersion}), ...rest);
-    });
-  });
-}});
+*/
 
-/**
- * Returns a list of Amazon Linux AMIs.
- */
-mod.xport({getAmazonLinuxAmis: function(argv, context, callback) {
 
-  // ra invoke packages\quick-net\lib\ec2\ec2.js getAmazonLinuxAmis --v2 --latest
 
-  const ractx     = context.runAnywhere || {};
-  const { rax }   = ractx.quickNetEc2__getAmazonLinuxAmis;
-
-  return rax.iwrap(function(abort, calling) {
-    const { getAmis } = rax.loads('getAmis', rax.opts({}), abort);
-
-    const ecs               = rax.arg(argv, 'ecs');
-    const v2                = rax.arg(argv, 'v2');
-    const name              = (v2 ?
-                                  (ecs ? 'amzn2-ami-ecs-hvm-2.0.20190127-x86_64-ebs'
-                                       : 'amzn2-ami-hvm-2.0.????????-x86_64-gp2')
-                                  : 'amzn-ami-hvm-????.??.?.????????-x86_64-gp2');
-    const Owners            = 'amazon';
-    const filters           = awsFilters({name:[name],state:['available']});
-    const latest            = rax.arg(argv, 'latest');
-
-    return getAmis(rax.opts({Owners, ...filters, latest}), rax.opts({}), function(err, data) {
-      return callback(err, data);
-    });
-  });
-}});
-
-/**
- * Returns a list of Ubuntu LTS AMIs.
- */
-mod.xport({getUbuntuLtsAmis: function(argv, context, callback) {
-
-  // ra invoke packages\quick-net\lib\ec2\ec2.js getUbuntuLtsAmis --latest
-
-  const ractx     = context.runAnywhere || {};
-  const { rax }   = ractx.quickNetEc2__getUbuntuLtsAmis;
-
-  return rax.iwrap(function(abort, calling) {
-    const { getAmis } = rax.loads('getAmis', rax.opts({}), abort);
-
-    const osVersion         = rax.arg(argv, 'osVersion,os-version')   || 'xenial';
-    const Owners            = ['099720109477'];
-    const filters           = awsFilters({name:[`ubuntu/images/hvm-ssd/ubuntu-${osVersion}-16.04-amd64-server-????????`],state:['available']});
-    const latest            = rax.arg(argv, 'latest');
-
-    return getAmis(rax.opts({Owners, ...filters, osVersion, latest}), rax.opts({}), callback);
-  });
-}});
 
 // =======================================================================================================
 // upsertInstance
@@ -885,6 +827,10 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context, callback) {
         });
       }, next);
 
+    }, function(my, next) {
+      // const agent                   = require('../lib/ec2/agent');
+
+      return next();
     }]);
   });
 }}));
@@ -1230,6 +1176,98 @@ function fixUserDataScript(shellscript_, options_) {
 
   return shellscript;
 }
+
+/**
+ * Gets a list of AMIs.
+ *
+ * @see https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/finding-an-ami.html
+ *
+ * @param {*} argv
+ * @param {*} context
+ * @param {*} callback
+ * @returns
+ */
+mod.xport({getAmis: function(argv, context, callback) {
+
+  // ra invoke packages\quick-net\lib\ec2\ec2.js getAmis  --owners=self
+
+  const ractx     = context.runAnywhere || {};
+  const { rax }   = ractx.quickNetEc2__getAmis;
+
+  return rax.iwrap(function(abort) {
+    const { describeImages } = libAws.awsFns(ec2, 'describeImages', rax.opts({}), abort);
+
+    const Owners            = rax.arg(argv, 'Owners,owners', {array:true});
+    const ExecutableUsers   = rax.arg(argv, 'ExecutableUsers,users', {array:true});
+    const Filters           = rax.arg(argv, 'Filters');
+    const osVersion         = rax.arg(argv, 'osVersion,os-version');
+    const ImageIds          = rax.arg(argv, 'ImageIds,images', {array:true});
+    const latest            = rax.arg(argv, 'latest');
+
+    const params = sg.smartExtend({Owners, ExecutableUsers, Filters, ImageIds});
+    return describeImages(params, rax.opts({}), function(err, data, ...rest) {
+      var   result = data;
+
+      if (latest) {
+        result = _.last(_.sortBy(data.Images || [], 'CreationDate'));
+      }
+
+      return callback(err, qm(result, {osVersion}), ...rest);
+    });
+  });
+}});
+
+/**
+ * Returns a list of Amazon Linux AMIs.
+ */
+mod.xport({getAmazonLinuxAmis: function(argv, context, callback) {
+
+  // ra invoke packages\quick-net\lib\ec2\ec2.js getAmazonLinuxAmis --v2 --latest
+
+  const ractx     = context.runAnywhere || {};
+  const { rax }   = ractx.quickNetEc2__getAmazonLinuxAmis;
+
+  return rax.iwrap(function(abort, calling) {
+    const { getAmis } = rax.loads('getAmis', rax.opts({}), abort);
+
+    const ecs               = rax.arg(argv, 'ecs');
+    const v2                = rax.arg(argv, 'v2');
+    const name              = (v2 ?
+                                  (ecs ? 'amzn2-ami-ecs-hvm-2.0.20190127-x86_64-ebs'
+                                       : 'amzn2-ami-hvm-2.0.????????-x86_64-gp2')
+                                  : 'amzn-ami-hvm-????.??.?.????????-x86_64-gp2');
+    const Owners            = 'amazon';
+    const filters           = awsFilters({name:[name],state:['available']});
+    const latest            = rax.arg(argv, 'latest');
+
+    return getAmis(rax.opts({Owners, ...filters, latest}), rax.opts({}), function(err, data) {
+      return callback(err, data);
+    });
+  });
+}});
+
+/**
+ * Returns a list of Ubuntu LTS AMIs.
+ */
+mod.xport({getUbuntuLtsAmis: function(argv, context, callback) {
+
+  // ra invoke packages\quick-net\lib\ec2\ec2.js getUbuntuLtsAmis --latest
+
+  const ractx     = context.runAnywhere || {};
+  const { rax }   = ractx.quickNetEc2__getUbuntuLtsAmis;
+
+  return rax.iwrap(function(abort, calling) {
+    const { getAmis } = rax.loads('getAmis', rax.opts({}), abort);
+
+    const osVersion         = rax.arg(argv, 'osVersion,os-version')   || 'xenial';
+    const Owners            = ['099720109477'];
+    const filters           = awsFilters({name:[`ubuntu/images/hvm-ssd/ubuntu-${osVersion}-16.04-amd64-server-????????`],state:['available']});
+    const latest            = rax.arg(argv, 'latest');
+
+    return getAmis(rax.opts({Owners, ...filters, osVersion, latest}), rax.opts({}), callback);
+  });
+}});
+
 
 
 // -----------------------------------------------------------------

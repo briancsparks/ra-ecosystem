@@ -1,5 +1,5 @@
-/* eslint-disable valid-jsdoc */
 if (process.env.SG_VVVERBOSE) console[process.env.SG_LOAD_STREAM || 'log'](`Loading ${__filename}`);
+/* eslint-disable valid-jsdoc */
 
 /**
  * @file
