@@ -65,12 +65,6 @@ function getCache(key, options, expensiveOp, callback) {
     return redis.SET(key, data, function(err, result) {           // ===========================================      This is where data gets put into redis
       diag.v(`Stored key: (${key}) in cache`, smlog({data, err, result}));
 
-      // // Now, set the TTL on the key, so it doesnt stick around forever
-      // redis.EXPIRE(key, ttl, function(err, result) {
-      //   // Report the results, but do not block
-      //   diag.v(`Stored key: (${key}) in cache`, {err, result});
-      // });
-
       return storeCacheCallback(err, result);
     });
   }

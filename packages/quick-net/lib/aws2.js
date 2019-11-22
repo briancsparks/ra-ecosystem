@@ -31,8 +31,7 @@ function awsService(argv, context, callback) {
   // dg.d(`Getting awsService ${serviceName}`, {argv});
   // dg.v(`Getting awsService ${serviceName}`, {argv});
 
-  var   ttl = 60 * 60;      /* 60 min */
-  // var   ttl = 10 * 60;   /* 10 min */
+  var   ttl = 20 * 60;      /* 20 min */
   // var   ttl = 3;         /* 3 sec */
 
   const key = `jsaws:${serviceName}:${command}`;
