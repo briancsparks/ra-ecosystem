@@ -19,7 +19,7 @@ const redisUtils                = require('./v2/redis/redis-util');
 const { promisify }             = require('util');
 
 const platform_entrypoint_aws_lambda = require('../platform/entrypoint/aws-lambda');
-const platform_host_aws_lambda  = require('../platform/host/aws-lambda');
+const platform_host_aws_lambda  = require('../platform/service-platform/aws-lambda');
 
 dbUtils                         = _.extend({}, dbUtils, require('./v2/db/crud'));
 

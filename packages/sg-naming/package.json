@@ -1,11 +1,1 @@
-{
-  "name": "@sg0/sg-naming",
-  "version": "1.0.3",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "author": "Brian C Sparks <briancsparks@gmail.com>",
-  "license": "MIT"
-}
+{"name":"@sg0/sg-naming","version":"1.0.3","description":"","main":"index.js","scripts":{"test":"echo \"Error: no test specified\" && exit 1"},"author":"Brian C Sparks <briancsparks@gmail.com>","license":"MIT","dependencies":{}}

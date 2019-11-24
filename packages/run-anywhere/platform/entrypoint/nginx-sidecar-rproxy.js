@@ -29,34 +29,34 @@ const ENV                       = sg.ENV();
 var   handlerFns    = [];
 var   dispatcher    = dispatch;
 
-// ----------------------------------------------------------------------------------------------------------------------------
-exports.startServer = function(port_) {
-  const port                    = ENV.at('SIDECAR_PORT') || port_ || 3009;
+// // ----------------------------------------------------------------------------------------------------------------------------
+// exports.startServer = function(port_) {
+//   const port                    = ENV.at('SIDECAR_PORT') || port_ || 3009;
 
-  const server = http.createServer((req, res) => {
-    console.log(`Handling: ${req.url}...`);
+//   const server = http.createServer((req, res) => {
+//     console.log(`Handling: ${req.url}...`);
 
-    return  utils.contextify(req, res, function(err, event, context) {
+//     return  utils.contextify(req, res, function(err, event, context) {
 
-      return exports.platform_entrypoint(event, context, function(err, {httpCode, ...data}) {
-        console.log(`handled ${req.url}`, err, httpCode, data);
+//       return exports.platform_entrypoint(event, context, function(err, {httpCode, ...data}) {
+//         console.log(`handled ${req.url}`, err, httpCode, data);
 
-        // TODO: Put in right format for rpxi if requested
-        var   contentType = 'application/json';
+//         // TODO: Put in right format for rpxi if requested
+//         var   contentType = 'application/json';
 
-        res.statusCode = httpCode;
-        res.setHeader('Content-Type', contentType);
-        res.end(sg.safeJSONStringify2(data));
+//         res.statusCode = httpCode;
+//         res.setHeader('Content-Type', contentType);
+//         res.end(sg.safeJSONStringify2(data));
 
-      });
-    });
-  });
+//       });
+//     });
+//   });
 
-  server.listen(port, '127.0.0.1', () => {
-    console.log(`listening on ${port}`);
-  });
+//   server.listen(port, '127.0.0.1', () => {
+//     console.log(`listening on ${port}`);
+//   });
 
-};
+// };
 
 
 // ----------------------------------------------------------------------------------------------------------------------------

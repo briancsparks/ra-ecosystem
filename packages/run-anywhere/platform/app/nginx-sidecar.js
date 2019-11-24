@@ -1,5 +1,6 @@
 
 const sg                      = require('sg-argv');
+const hostInstance            = require('../host/instance');
 const entrypoint              = require('../entrypoint/nginx-sidecar-rproxy');
 const host                    = require('../service-platform/req-res-instance');
 const checkMw                 = require('../middleware/check-config');
@@ -67,8 +68,9 @@ function main(ARGV, user_sys_argv_ ={}) {
       });
     });
 
-    var port  = ARGV.port;
-    entrypoint.startServer(port);
+    var port      = ARGV.port;
+    var hostname  = '127.0.0.1';
+    hostInstance.startServer({port, hostname});
 
 
 

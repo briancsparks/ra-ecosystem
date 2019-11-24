@@ -25,11 +25,6 @@ const logApiV                   = mkLogApiV('host', 'reqresinst');
 var   handlerFns    = [];
 var   dispatcher    = dispatch;
 
-// const logApiCalls   = !!process.env.SG_LOG_RA_HOST_API;
-
-// TODO: Be able to invoke any RA function from all the entrypoint/host combinations.
-// TODO: Add a cli entrypoint
-
 // ------------------------------------------------------------------------------------------------------------------------------
 // Handler for the function of being the host
 exports.reqresinst_handler = exports.platform_host_reqresinst_handler = function(event, context_, callback) {
