@@ -1,1 +1,16 @@
-{"name":"sg-http","version":"1.0.14","description":"HTTP helpers","author":"Brian C Sparks <briancsparks@gmail.com>","homepage":"https://github.com/briancsparks/ra-ecosystem#readme","license":"MIT","main":"index.js","repository":{"type":"git","url":"git+https://github.com/briancsparks/ra-ecosystem.git"},"bugs":{"url":"https://github.com/briancsparks/ra-ecosystem/issues"},"dependencies":{}}
+{
+  "name": "sg-http",
+  "version": "1.0.14",
+  "description": "HTTP helpers",
+  "author": "Brian C Sparks <briancsparks@gmail.com>",
+  "homepage": "https://github.com/briancsparks/ra-ecosystem#readme",
+  "license": "MIT",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/briancsparks/ra-ecosystem.git"
+  },
+  "bugs": {
+    "url": "https://github.com/briancsparks/ra-ecosystem/issues"
+  }
+}

@@ -1,1 +1,26 @@
-{"name":"sg-diag","version":"1.0.57","description":"Diagnostics","author":"Brian C Sparks <briancsparks@gmail.com>","homepage":"https://github.com/briancsparks/ra-ecosystem#readme","main":"index.js","scripts":{"test":"echo \"Error: no test specified\" && exit 1"},"repository":{"type":"git","url":"git+https://github.com/briancsparks/ra-ecosystem.git"},"license":"MIT","dependencies":{"ajv":"^6.10.2","chalk":"^2.4.2","minimist":"^1.2.0","quick-merge":"file:C:\\Users\\sparksb\\dev\\bcs\\ra-ecosystem\\packages\\quick-merge","sg-bits":"file:C:\\Users\\sparksb\\dev\\bcs\\ra-ecosystem\\packages\\sg-bits","sg-env":"file:C:\\Users\\sparksb\\dev\\bcs\\ra-ecosystem\\packages\\sg-env","sg0":"file:C:\\Users\\sparksb\\dev\\bcs\\ra-ecosystem\\packages\\sg0","socket.io-client":"^2.2.0"}}
+{
+  "name": "sg-diag",
+  "version": "1.0.57",
+  "description": "Diagnostics",
+  "author": "Brian C Sparks <briancsparks@gmail.com>",
+  "homepage": "https://github.com/briancsparks/ra-ecosystem#readme",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/briancsparks/ra-ecosystem.git"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "ajv": "^6.10.2",
+    "chalk": "^2.4.2",
+    "minimist": "^1.2.0",
+    "quick-merge": "^1.0.19",
+    "sg-bits": "^1.0.25",
+    "sg-env": "^1.0.12",
+    "sg0": "^1.0.42",
+    "socket.io-client": "^2.2.0"
+  }
+}

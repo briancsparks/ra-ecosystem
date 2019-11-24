@@ -1,1 +1,21 @@
-{"name":"sg-clihelp","version":"1.0.72","description":"Utilities for writing cli apps","main":"index.js","bin":{"sg-clihelp":"bin/sg-clihelp.js"},"scripts":{"test":"echo \"Error: no test specified\" && exit 1"},"author":"Brian C Sparks <briancsparks@gmail.com>","license":"MIT","dependencies":{"glob":"^7.1.6","sg-argv":"file:C:\\Users\\sparksb\\dev\\bcs\\ra-ecosystem\\packages\\sg-argv","sg-env":"file:C:\\Users\\sparksb\\dev\\bcs\\ra-ecosystem\\packages\\sg-env","sg-exec":"file:C:\\Users\\sparksb\\dev\\bcs\\ra-ecosystem\\packages\\sg-exec","shelljs":"^0.8.3"}}
+{
+  "name": "sg-clihelp",
+  "version": "1.0.72",
+  "description": "Utilities for writing cli apps",
+  "main": "index.js",
+  "bin": {
+    "sg-clihelp": "bin/sg-clihelp.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Brian C Sparks <briancsparks@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "glob": "^7.1.6",
+    "sg-argv": "^1.0.73",
+    "sg-env": "^1.0.12",
+    "sg-exec": "^1.0.68",
+    "shelljs": "^0.8.3"
+  }
+}

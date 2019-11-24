@@ -1,1 +1,47 @@
-{"name":"run-anywhere","version":"1.0.130","description":"Write your Node.js functions in the run-anywhere format, and run them anywhere (CLI, AWS Lambda, etc.)","main":"ra.js","bin":{"ra":"bin.js","ra3":"bin3.js"},"scripts":{"test":"echo \"Error: no test specified\" && exit 1"},"repository":{"type":"git","url":"git+https://github.com/briancsparks/ra-ecosystem.git"},"author":"Brian C Sparks <briancsparks@gmail.com>","license":"MIT","bugs":{"url":"https://github.com/briancsparks/ra-ecosystem/issues"},"homepage":"https://github.com/briancsparks/ra-ecosystem/tree/master/packages/run-anywhere#readme","dependencies":{"@sg0/sg-smart-value":"file:C:\\Users\\sparksb\\dev\\bcs\\ra-ecosystem\\packages\\sg-smart-value","aws-serverless-express":"^3.3.5","difflet":"^1.0.1","exit-on-epipe":"^1.0.1","express":"^4.16.4","glob":"^7.1.6","hard-rejection":"^1.0.0","lodash":"^4.17.13","loud-rejection":"^1.6.0","mongodb":"^3.1.10","quick-merge":"file:C:\\Users\\sparksb\\dev\\bcs\\ra-ecosystem\\packages\\quick-merge","redis":"^2.8.0","sg-argv":"file:C:\\Users\\sparksb\\dev\\bcs\\ra-ecosystem\\packages\\sg-argv","sg-config":"file:C:\\Users\\sparksb\\dev\\bcs\\ra-ecosystem\\packages\\sg-config","sg-env":"file:C:\\Users\\sparksb\\dev\\bcs\\ra-ecosystem\\packages\\sg-env","sg-flow":"file:C:\\Users\\sparksb\\dev\\bcs\\ra-ecosystem\\packages\\sg-flow","sg0":"file:C:\\Users\\sparksb\\dev\\bcs\\ra-ecosystem\\packages\\sg0","sgsg":"^0.9.54","sprintf-js":"^1.1.2"},"devDependencies":{"ava":"^1.0.1"}}
+{
+  "name": "run-anywhere",
+  "version": "1.0.130",
+  "description": "Write your Node.js functions in the run-anywhere format, and run them anywhere (CLI, AWS Lambda, etc.)",
+  "main": "ra.js",
+  "bin": {
+    "ra": "bin.js",
+    "ra3": "bin3.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/briancsparks/ra-ecosystem.git"
+  },
+  "author": "Brian C Sparks <briancsparks@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/briancsparks/ra-ecosystem/issues"
+  },
+  "homepage": "https://github.com/briancsparks/ra-ecosystem/tree/master/packages/run-anywhere#readme",
+  "dependencies": {
+    "@sg0/sg-smart-value": "^1.0.7",
+    "aws-serverless-express": "^3.3.5",
+    "difflet": "^1.0.1",
+    "exit-on-epipe": "^1.0.1",
+    "express": "^4.16.4",
+    "glob": "^7.1.6",
+    "hard-rejection": "^1.0.0",
+    "lodash": "^4.17.13",
+    "loud-rejection": "^1.6.0",
+    "mongodb": "^3.1.10",
+    "quick-merge": "^1.0.19",
+    "redis": "^2.8.0",
+    "sg-argv": "^1.0.73",
+    "sg-config": "^1.0.84",
+    "sg-env": "^1.0.12",
+    "sg-flow": "^1.0.66",
+    "sg0": "^1.0.42",
+    "sgsg": "^0.9.54",
+    "sprintf-js": "^1.1.2"
+  },
+  "devDependencies": {
+    "ava": "^1.0.1"
+  }
+}

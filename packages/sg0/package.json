@@ -1,1 +1,24 @@
-{"name":"sg0","version":"1.0.42","description":"All the little functions that make functional Node.JS easier.","main":"index.js","scripts":{"test":"echo \"Error: no test specified\" && exit 1"},"keywords":[],"repository":{"type":"git","url":"git+https://github.com/briancsparks/ra-ecosystem.git"},"author":"Brian C Sparks <briancsparks@gmail.com>","license":"MIT","bugs":{"url":"https://github.com/briancsparks/ra-ecosystem/issues"},"homepage":"https://github.com/briancsparks/ra-ecosystem/tree/master/packages/sg0#readme","dependencies":{"json-stringify-safe":"^5.0.1","lodash":"^4.17.13"}}
+{
+  "name": "sg0",
+  "version": "1.0.42",
+  "description": "All the little functions that make functional Node.JS easier.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/briancsparks/ra-ecosystem.git"
+  },
+  "author": "Brian C Sparks <briancsparks@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/briancsparks/ra-ecosystem/issues"
+  },
+  "homepage": "https://github.com/briancsparks/ra-ecosystem/tree/master/packages/sg0#readme",
+  "dependencies": {
+    "json-stringify-safe": "^5.0.1",
+    "lodash": "^4.17.13"
+  }
+}

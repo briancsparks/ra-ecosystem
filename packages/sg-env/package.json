@@ -1,1 +1,14 @@
-{"name":"sg-env","version":"1.0.12","description":"","main":"index.js","scripts":{"test":"echo \"Error: no test specified\" && exit 1"},"author":"Brian C Sparks <briancsparks@gmail.com>","license":"MIT","dependencies":{"@sg0/sg-smart-value":"file:C:\\Users\\sparksb\\dev\\bcs\\ra-ecosystem\\packages\\sg-smart-value"}}
+{
+  "name": "sg-env",
+  "version": "1.0.12",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Brian C Sparks <briancsparks@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "@sg0/sg-smart-value": "^1.0.7"
+  }
+}

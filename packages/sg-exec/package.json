@@ -1,1 +1,20 @@
-{"name":"sg-exec","version":"1.0.68","description":"Help to spawn and run executables","main":"index.js","scripts":{"test":"echo \"Error: no test specified\" && exit 1"},"author":"Brian C Sparks <briancsparks@gmail.com>","license":"MIT","dependencies":{"execa":"^1.0.0","get-stream":"^4.1.0","noop-stream":"^0.1.0","quick-merge":"file:C:\\Users\\sparksb\\dev\\bcs\\ra-ecosystem\\packages\\quick-merge","sg-argv":"file:C:\\Users\\sparksb\\dev\\bcs\\ra-ecosystem\\packages\\sg-argv","sg0":"file:C:\\Users\\sparksb\\dev\\bcs\\ra-ecosystem\\packages\\sg0","shelljs":"^0.8.3"}}
+{
+  "name": "sg-exec",
+  "version": "1.0.68",
+  "description": "Help to spawn and run executables",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Brian C Sparks <briancsparks@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "execa": "^1.0.0",
+    "get-stream": "^4.1.0",
+    "noop-stream": "^0.1.0",
+    "quick-merge": "^1.0.19",
+    "sg-argv": "^1.0.73",
+    "sg0": "^1.0.42",
+    "shelljs": "^0.8.3"
+  }
+}

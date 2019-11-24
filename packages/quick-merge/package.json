@@ -1,1 +1,16 @@
-{"name":"quick-merge","version":"1.0.19","description":"","main":"index.js","scripts":{"test":"ava","watch":"ava --watch","coverage":"nyc ava"},"author":"Brian C Sparks <briancsparks@gmail.com>","license":"MIT","devDependencies":{"ava":"^0.25.0"},"dependencies":{}}
+{
+  "name": "quick-merge",
+  "version": "1.0.19",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "ava",
+    "watch": "ava --watch",
+    "coverage": "nyc ava"
+  },
+  "author": "Brian C Sparks <briancsparks@gmail.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "ava": "^0.25.0"
+  }
+}
