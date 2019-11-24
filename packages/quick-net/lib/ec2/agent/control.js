@@ -12,10 +12,12 @@ var   sg0                     = ra.get3rdPartyLib('sg-argv');
 var   sg                      = sg0.merge(sg0, require('sg-diag'));
 const quickMerge              = require('quick-merge');
 var   Client                  = require('ssh2').Client;
+const qnutils                 = require('../../../lib/utils');
 var   convention              = require('../../conventions');
 const mod                     = ra.modSquad(module, 'quickNetEc2');
 var   DIAG                    = sg.DIAG(module);
 
+const {addClip}               = qnutils;
 const qm                      = quickMerge.quickMergeImmutable;
 const {stitch}                = quickMerge;
 const dg                      = DIAG.dg;
@@ -38,7 +40,7 @@ DIAG.usefulCliArgs({
 // The last one wins. Comment out what you dont want.
 DIAG.activeDevelopment(`--bastion-ip=bastion.cdr0.net --server-name=webtier --debug`);
 DIAG.activeDevelopment(`--bastion-ip=bastion.cdr0.net --server-name=db`);
-DIAG.activeName = 'useBastion';
+// DIAG.activeName = 'useBastion';
 
 
 
@@ -144,7 +146,7 @@ module.exports.ra_active_fn_name    = DIAG.activeName;
 module.exports._rawUseBastionPtr_   = _rawUseBastionPtr_;
 
 // if (require.main === module) {
-//   var   bastionIp         = 'boost.cdr0.net';
+//   var   bastionIp         = 'bastion.cdr0.net';
 //   // var   targetPrivateIp   = '10.13.54.167';
 
 //   return _rawUseBastionPtr_({bastionIp /*, targetPrivateIp*/, ...sg.ARGV()}, {}, function(...rest) {
@@ -169,7 +171,7 @@ module.exports.spawnit = function(argv_, context, callback) {
 
   const bastionIp = 'bastion.cdr0.net';
 
-  const sshArgs = [
+  var sshArgs = [
     '-A',   /* agent forwarding */
     ['-o', "StrictHostKeyChecking no"],
     ['-o', "UserKnownHostsFile=/dev/null"],
@@ -182,16 +184,25 @@ module.exports.spawnit = function(argv_, context, callback) {
   ];
   console.log(`other`, {L:`127.0.0.1:${argv.bastionSshTunnel}:${argv.targetPrivateIp}:22`, targetPrivateIp: argv.targetPrivateIp});
 
-  console.log('ssh', stitch(sshArgs));
+  sshArgs = stitch(sshArgs);
+
+  console.log('ssh', sshArgs);
+
+  addClip([
+    `# theCommand: ${argv.theCommand}`,
+    `#ssh ${sshArgs.map(arg => `"${arg}"`)}`,
+  ]);
 
   const ssh = spawn('ssh', stitch(sshArgs));
 
   ssh.stdout.on('data', (data) => {
-    process.stdout.write(`stdout: ${data}`);
+    // process.stdout.write(`stdout: ${data}`);
+    process.stdout.write(data);
   });
 
   ssh.stderr.on('data', (data) => {
-    process.stderr.write(`stderr: ${data}`);
+    // process.stderr.write(`stderr: ${data}`);
+    process.stderr.write(data);
   });
 
   // ssh.stdout.on('data', (data) => {

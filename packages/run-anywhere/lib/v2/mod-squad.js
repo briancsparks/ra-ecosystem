@@ -84,6 +84,10 @@ const ModSquad = function(otherModule, otherModuleName = 'mod') {
               console.error(`Found error: `, {code, errno});
             }
 
+            if (ractx.endMessage && ractx.endMessage.length > 0) {
+              sg.debugLog(`NOTES: ${ractx.endMessage}`);
+            }
+
             return callback_(err, data, ...rest);
           };
           // -----
@@ -992,7 +996,7 @@ function upsertRaContextForX(context, modname, fnName) {
   // if (getRaContext(context))          { return getRaContext(context); }
 
   const fullFnName          = `${modname}__${fnName}`;
-  var   ractx               = context.runAnywhere = context.runAnywhere || {current: {}};
+  var   ractx               = context.runAnywhere = context.runAnywhere || {current: {}, endMessage: ''};
 
   ractx[fullFnName]          = {};
   ractx.current.modname     = modname;

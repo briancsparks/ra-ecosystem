@@ -1,6 +1,8 @@
 
-const emit                    = require('..').emit;
+const sgEmit                  = require('..');
 const test                    = require('ava');
+
+const [emit,close] = sgEmit.redisEmit();
 
 test('emites', t => {
   const a         = {a:'foo', b:'bar', d:{e:'all'}};

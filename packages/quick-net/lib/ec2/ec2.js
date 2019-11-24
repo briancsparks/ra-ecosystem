@@ -87,22 +87,18 @@ const s3path                  = mkS3path(namespace);
 DIAG.usage({ aliases: { upsertInstance: { args: {
 }}}});
 
+const instanceBaseOpts = `--distro=ubuntu --classB=13 --az=d  --Terminate`;
 DIAG.usefulCliArgs({
-  webtier : [`--distro=ubuntu --classB=13 --key=quicknetprj_demo`,
-             `--type=t3.micro --az=d      --INSTALL_WEBTIER --INSTALL_CLIENTS --INSTALL_OPS  --Terminate`].join(' '),
-  webtierX : [`--distro=ubuntu --classB=13 --iam=quicknetprj-webtier-instance-role --sgs=web  --subnet=webtier --key=quicknetprj_demo`,
-             `--type=t3.micro --az=d      --INSTALL_WEBTIER --INSTALL_CLIENTS --INSTALL_OPS  --Terminate`].join(' '),
-  admin   : [`--distro=ubuntu --classB=13 --key=HQ`,
-             `--type=t3.nano  --az=d      --INSTALL_ADMIN   --INSTALL_CLIENTS --INSTALL_USER --Terminate`].join(' '),
-  adminX  : [`--distro=ubuntu --classB=13 --iam=quicknetprj-admin-instance-role  --sgs=admin --subnet=admin   --key=HQ`,
-            `--type=t3.nano  --az=d      --INSTALL_ADMIN   --INSTALL_CLIENTS --INSTALL_USER --Terminate`].join(' '),
-  worker  : [`--distro=ubuntu --classB=13 --iam=quicknetprj-worker-instance-role  --sgs=worker --subnet=worker   --key=quicknetprj_demo`,
-             `--type=t3.micro --az=d      --INSTALL_WORKER   --INSTALL_CLIENTS --Terminate`].join(' '),
+  webtier       : [instanceBaseOpts, `--key=quicknetprj_demo --type=t3.micro  --INSTALL_WEBTIER     --INSTALL_CLIENTS --INSTALL_OPS`].join(' '),
+  admin         : [instanceBaseOpts, `--key=HQ                --type=t3.nano  --INSTALL_ADMIN       --INSTALL_CLIENTS --INSTALL_USER`].join(' '),
+  worker        : [instanceBaseOpts, `--key=quicknetprj_demo --type=t3.micro  --INSTALL_WORKER      --INSTALL_CLIENTS`].join(' '),
+  workstation   : [instanceBaseOpts, `--key=quicknetprj_demo --type=t3.micro  --INSTALL_WORKSTATION --INSTALL_CLIENTS --INSTALL_OPS`].join(' '),
+  workstationb  : [instanceBaseOpts, `--key=sparksb          --type=t3.micro --INSTALL_WORKSTATION --INSTALL_CLIENTS --INSTALL_OPS`].join(' '),
 });
 
 // The last one wins. Comment out what you dont want.
 DIAG.activeDevelopment(`--useful=webtier --debug`);
-// DIAG.activeName = 'upsertInstance';
+DIAG.activeName = 'upsertInstance';
 
 /**
  * Upsert an instance.
@@ -147,7 +143,16 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context, callback) {
 
 
     var   argv                  = {...argv_};
+
     // INSALL_ meta packages
+    if (argv.INSTALL_WORKSTATION) {
+      // TODO: want nginx, do not want certs
+      argv.INSTALL_WEBTIER = argv.INSTALL_DOCKER_CHEAT = argv.INSTALL_KUBERNETES = argv.INSTALL_CLIENTS = true;
+
+      // _WEBTIER implies a lot. Indicate that we do not want all the extras
+      argv.INSTALL_WEBTIER_EXTRA_NO = true;
+    }
+
     argv.INSTALL_MONGO_CLIENTS  = argv.INSTALL_CLIENTS  || argv.INSTALL_MONGO_CLIENTS   || true;
     argv.INSTALL_REDIS_CLIENTS  = argv.INSTALL_CLIENTS  || argv.INSTALL_REDIS_CLIENTS   || true;
     argv.INSTALL_OPS            = argv.INSTALL_USER     || argv.INSTALL_WORKSTATION     || argv.INSTALL_OPS;
@@ -189,7 +194,7 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context, callback) {
 
     if (argv.INSTALL_WORKER)           { roles.push('worker'); }
     if (argv.INSTALL_ADMIN)            { roles.push('admin'); }
-    if (argv.INSTALL_WORKSTATION)      { roles.push('workstation'); }
+    if (argv.INSTALL_WORKSTATION)      { roles.push('workstation'); InstanceInitiatedShutdownBehavior = null; }
 
 
     const namespace = process.env.NAMESPACE || process.env.NS || 'quicknet';
@@ -348,6 +353,28 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context, callback) {
 
     }, function(my, next) {
 
+      // See other stuff for cloud-init
+      //
+      // https://cloudinit.readthedocs.io/en/latest/topics/modules.html
+      //
+      //
+      // cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
+      //   fqdn: 'xyz.com',
+      //   hostname: 'booya-123',
+      //   rsyslog: [
+      //   ],
+      //   scripts: {
+      //     "per-boot": [
+      //     ],
+      //     "per-instance": [
+      //     ],
+      //     "per-once": [
+      //     ],
+      //     vendor: [
+      //     ],
+      //   },
+      // });
+
       // Install all the stuff we install for every instance
       cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
         package_update: true,
@@ -373,6 +400,48 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context, callback) {
         ],
       });
 
+      // Workstation utils
+      if (userdataOpts.INSTALL_WORKSTATION) {
+        cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
+          packages: ['build-essential', 'golang-go', 'redis-server'],
+
+          goPpa: {
+            source: `ppa:longsleep/golang-backports`
+          },
+          runcmd: [
+            // `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`,
+            `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -o rustup; sh rustup`,
+            `echo "" >> /home/ubuntu/readme.md`,
+            `echo "install rust:" >> /home/ubuntu/readme.md`,
+            `echo "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -o rustup; sh rustup" >> /home/ubuntu/readme.md`,
+          ],
+        });
+
+        // TODO: See also:
+        // https://medium.com/@patdhlk/how-to-install-go-1-9-1-on-ubuntu-16-04-ee64c073cd79   (GO)
+        //
+        // LLVM C++17 on 16.04
+        // https://askubuntu.com/questions/1113974/using-c17-with-clang-on-ubuntu-16-04
+        //
+        // or:
+        //
+        // apt-get install clang-format clang-tidy clang-tools clang clangd libc++-dev libc++1 libc++abi-dev libc++abi1 libclang-dev libclang1 liblldb-dev libllvm-ocaml-dev libomp-dev libomp5 lld lldb llvm-dev llvm-runtime llvm python-clang
+        //
+        // wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key|sudo apt-key add -
+        // # Fingerprint: 6084 F3CF 814B 57C1 CF12 EFD5 15CF 4D18 AF4F 7421
+        //
+        // deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial main
+        // deb-src http://apt.llvm.org/xenial/ llvm-toolchain-xenial main
+        // # 8
+        // deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-8 main
+        // deb-src http://apt.llvm.org/xenial/ llvm-toolchain-xenial-8 main
+        // # 9
+        // deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-9 main
+        // deb-src http://apt.llvm.org/xenial/ llvm-toolchain-xenial-9 main
+
+        roles.push('workstation');
+      }
+
       // Install docker?
       if (userdataOpts.INSTALL_DOCKER) {
         cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
@@ -385,7 +454,19 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context, callback) {
                 source: `deb https://download.docker.com/linux/ubuntu ${osVersion} stable`
               }
             }
-          }
+          },
+        });
+
+        roles.push('docker');
+      }
+
+      // Install Docker from a download script
+      if (userdataOpts.INSTALL_DOCKER_CHEAT) {
+        cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
+          runcmd: [
+            `curl -fsSL https://get.docker.com -o get-docker.sh; sh get-docker.sh`,
+            `usermod -aG docker ubuntu`,
+          ],
         });
 
         roles.push('docker');
@@ -493,11 +574,20 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context, callback) {
 
       // Install tools for dev-ops?
       if (!userdataOpts.INSTALL_AWSCLI_NO) {
+        userdataOpts.INSTALL_PIP = true;
+
         cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
-          packages: ['python-pip'],
+          // packages: ['python-pip'],
           runcmd: [
             "pip install --upgrade awscli",
           ],
+        });
+      }
+
+      // Python-pip
+      if (userdataOpts.INSTALL_PIP) {
+        cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
+          packages: ['python-pip'],
         });
       }
 
@@ -546,6 +636,18 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context, callback) {
       if (cloudInitData['cloud-config']) {
         let yaml = jsyaml.safeDump(cloudInitData['cloud-config'], {lineWidth: 512});
 
+        // addClip([
+        //   `Cloud-config size: ${yaml.length}`,
+        //   yaml,
+        // ]);
+
+        sg.debugLog(`Cloud-config size`, {size: yaml.length});
+        if (yaml.length > 16384) {
+          ractx.endMessage = ractx.endMessage + `Cloud-config size is too big: ${yaml.length}`;
+
+          return callback('ETOOBIG');
+        }
+
         mimeArchive.appendChild(new MimeBuilder('text/cloud-config')
           .setContent(yaml)
           .setHeader('content-transfer-encoding', 'quoted-printable')                 /*  MUST use quoted-printable, so the lib does not use 'flowable' */
@@ -564,7 +666,7 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context, callback) {
 
       var instanceName;
 
-      var Tags  = [];
+      var Tags  = [{Key: 'realm', Value: 'quicknet'}];
 
       // Tag with `uniqueName`
       if (uniqueName) {
@@ -636,7 +738,8 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context, callback) {
         }, next);
 
       }, function(next) {
-        if (!userdataOpts.INSTALL_WEBTIER)    { return next(); }
+        if (!userdataOpts.INSTALL_WEBTIER)                { return next(); }
+        if (userdataOpts.INSTALL_WEBTIER_EXTRA_NO)        { return next(); }
 
         const {PrivateIpAddress} = my.result.Instance;
 
@@ -676,7 +779,8 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context, callback) {
         });
 
       }, function(next) {
-        if (!userdataOpts.INSTALL_WEBTIER)    { return next(); }
+        if (!userdataOpts.INSTALL_WEBTIER)                { return next(); }
+        if (userdataOpts.INSTALL_WEBTIER_EXTRA_NO)        { return next(); }
 
         const {PrivateIpAddress} = my.result.Instance;
 
@@ -720,24 +824,6 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context, callback) {
       // Pre bootstrap-nonroot script
 
       const {PrivateIpAddress} = my.result.Instance;
-
-      // addClip([
-      //   `#${sshix} ${PrivateIpAddress} 'bootstrap-nonroot'`,
-      //   // `for ((;;)); do ${sshix} ${PrivateIpAddress} 'tail -F /var/log/cloud-init-output.log'; export SUCCESS="$?"; ; sleep 0.4; done`
-
-      //   // Spin and wait for the instance to do the cloud-init thing. It will exit with fail code until the `whoami` command succeeds, then we sleep for a few
-      //   `for ((;;)); do ${sshix} ${PrivateIpAddress} 'whoami'; export SUCCESS="$?"; echo "$SUCCESS"; if [[ $SUCCESS == 0 ]]; then break; fi; sleep 0.4; done`,
-      //   `sleep 3`,
-
-      //   // Watch as cloud-init does its thing. The instance will reboot, kicking us out.
-      //   `${sshix} ${PrivateIpAddress} 'tail -F /var/log/cloud-init-output.log'`,
-      //   `sleep 1`,
-
-      //   // Spin again, waiting for it to reboot
-      //   `for ((;;)); do ${sshix} ${PrivateIpAddress} 'whoami'; export SUCCESS="$?"; echo "$SUCCESS"; if [[ $SUCCESS == 0 ]]; then break; fi; sleep 0.4; done`,
-      //   `sleep 3`,
-      //   `${sshix} ${PrivateIpAddress} 'bootstrap-nonroot'`,
-      // ]);
 
       theCommandToRun = `bootstrap-other ${PrivateIpAddress}`;
       addClip([
@@ -834,7 +920,7 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context, callback) {
 
       const {PrivateIpAddress} = my.result.Instance;
 
-      var   bastionIp         = 'boost.cdr0.net';
+      var   bastionIp         = 'bastion.cdr0.net';
       var   targetPrivateIp   = PrivateIpAddress;
 
       // `bootstrap-other ${PrivateIpAddress}`,
@@ -845,6 +931,10 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context, callback) {
 
         return next();
       });
+    }, function(my, next) {
+
+      sg.debugLog(`Commands: ${clipboardy.readSync()}`);
+      return next();
     }]);
   });
 }}));
@@ -993,10 +1083,14 @@ function getSubnetForInstance(...args) {
 
 function getSgsForInstance(argv) {
 
-  if (argv.INSTALL_WEBTIER)             { return ['web']; }
-  else if (argv.INSTALL_NAT)            { return ['access']; }
-  else if (argv.INSTALL_ADMIN)          { return ['admin']; }
+  // These are instance types, they come first
+  if (argv.INSTALL_ADMIN)          { return ['admin']; }
   else if (argv.INSTALL_MONGODB)        { return ['db']; }
+  else if (argv.INSTALL_WORKSTATION)    { return ['worker']; }
+
+  // These are features, they come second
+  else if (argv.INSTALL_WEBTIER)        { return ['web']; }
+  else if (argv.INSTALL_NAT)            { return ['access']; }
   else if (argv.INSTALL_WORKER)         { return ['worker']; }
 
   sg.logError(`ENOSGTYPE`, `Cannot determine instance security groups`, {argv});
@@ -1008,10 +1102,14 @@ function getIamTypeForInstance(...args) {
 
 function getTypeForInstance(argv) {
 
-  if (argv.INSTALL_WEBTIER)             { return 'webtier'; }
-  else if (argv.INSTALL_NAT)            { return 'access'; }
-  else if (argv.INSTALL_ADMIN)          { return 'admin'; }
+  // These are instance types, they come first
+  if (argv.INSTALL_ADMIN)          { return 'admin'; }
   else if (argv.INSTALL_MONGODB)        { return 'db'; }
+  else if (argv.INSTALL_WORKSTATION)    { return 'worker'; }
+
+  // These are features, they come second
+  else if (argv.INSTALL_WEBTIER)        { return 'webtier'; }
+  else if (argv.INSTALL_NAT)            { return 'access'; }
   else if (argv.INSTALL_WORKER)         { return 'worker'; }
 
   sg.logError(`ENOTYPE`, `Cannot determine instance type`, {argv});
@@ -1280,6 +1378,21 @@ mod.xport({getUbuntuLtsAmis: function(argv, context, callback) {
 
     return getAmis(rax.opts({Owners, ...filters, osVersion, latest}), rax.opts({}), callback);
   });
+}});
+
+/**
+ * Returns a list of Ubuntu LTS AMIs.
+ */
+mod.xport({getUbuntu18_04Amis: function(argv, context, callback) {
+
+  // ra invoke packages\quick-net\lib\ec2\ec2.js getUbuntu18_04Amis --latest
+
+  const osVersion         = 'bionic';
+  const Owners            = ['099720109477'];
+  const filters           = awsFilters({name:[`ubuntu/images/hvm-ssd/ubuntu-${osVersion}-18.04-amd64-server-????????`],state:['available']});
+  const latest            = argv.latest;
+
+  return module.exports.getAmis({Owners, ...filters, osVersion, latest}, context, callback);
 }});
 
 

@@ -34,6 +34,15 @@
     {
       "type": "node",
       "request": "launch",
+      "name": "Debug current file using quick-net,js",
+      "program": "${workspaceFolder}/packages/quick-net/bin/quick-net.js",
+      "args": ["upsertInstance", "--useful=workstationb"],
+      "cwd": "C:/Users/sparksb/dev/bcs/ra-ecosystem/apps/lambda-net",
+      "internalConsoleOptions": "openOnSessionStart",
+    },
+    {
+      "type": "node",
+      "request": "launch",
       "name": "Debug current file using run-anywhere/platform/app/workstation-cli.js",
       "program": "${workspaceFolder}/packages/run-anywhere/platform/app/workstation-cli.js",
       "args": ["${file}"],

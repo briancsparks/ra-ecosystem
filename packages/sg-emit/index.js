@@ -13,6 +13,7 @@ module.exports.redisEmit = function () {
   function emit(data) {
     numOutstanding += 1;
     redis.rpush(rkey, JSON.stringify(data), (err, receipt) => {
+      console.error(`redisemit rpush`, {err, receipt});
       numOutstanding -= 1;
     });
   }
@@ -21,11 +22,12 @@ module.exports.redisEmit = function () {
     if (numOutstanding > 0) {
       return setTimeout(closeEmit, 10);
     }
+    console.error(`redisemit close`);
     redis.quit();
   }
 };
 
-// Redis
+// Mongo
 module.exports.mongoEmit = function () {
   const MongoClient   = require('mongodb').MongoClient;
   var   client        = null;

@@ -8,7 +8,9 @@ Utilities to help write command-line apps.
 npm install sg-clihelp
 ```
 
-Then:
+Then, writing a short script or command-line app is easy.
+
+_The copy-and-paste version is below._
 
 ```javascript
 const sg          = require('sg-clihelp');      // Just for explanation, use require('sh-clihelp').all(), as below.
@@ -28,13 +30,13 @@ async function main() {
   const foo   = ARGV.foo;
   const bar   = ENV.at('BAR');
 
-  const confDir = path.join(os.homedir(), 'quxxdir'));
+  const confDir = path.join(os.homedir(), 'quxxdir');
 
   if (!test('-d', confDir)) {
     return sg.dieAsync(`Need ${confDir}`);
   }
 
-  const configFile = path.join(confDir, 'config.json'));
+  const configFile = path.join(confDir, 'config.json');
   if (!test('-f', configFile)) {
     return sg.dieAsync(`Need ${configFile}`);
   }
@@ -50,12 +52,12 @@ async function main() {
 }
 ```
 
-### Copy-and-Paste Header
+### Copy-and-Paste
 
-Here is what I always start with. Uncomment as needed.
+This is the version to start with. Uncomment as needed.
 
 ```javascript
-const {sg,fs,path,os,util,sh,die,dieAsync,grepLines,include,from,startupDone,runTopAsync,exec,execa,execz,exec_ez,find,grep,ls,mkdir,SgDir,test,tempdir,inspect} = require('sg-clihelp').all();
+const {sg,fs,path,os,util,sh,die,dieAsync,grepLines,include,from,startupDone,runTopAsync,exec,execa,execz,exec_ez,find,grep,ls,mkdir,SgDir,test,tempdir,inspect,glob} = require('sg-clihelp').all();
 
 //const tmp         = require('tmp');             // https://github.com/raszi/node-tmp
 //const crypto      = require('crypto');
@@ -67,7 +69,7 @@ const {sg,fs,path,os,util,sh,die,dieAsync,grepLines,include,from,startupDone,run
 const ARGV        = sg.ARGV();
 const ENV         = sg.ENV();
 
-// Do not be too eager if we are just being required
+// Make sure we are being invoked, not just being `required()`.
 if (require.main === module) {
   sg.runTopAsync(main);
 }
@@ -79,13 +81,13 @@ async function main() {
   const foo   = ARGV.foo;
   const bar   = ENV.at('BAR');
 
-  const confDir = path.join(os.homedir(), 'quxxdir'));
+  const confDir = path.join(os.homedir(), 'quxxdir');
 
   if (!test('-d', confDir)) {
     return sg.dieAsync(`Need ${confDir}`);
   }
 
-  const configFile = path.join(confDir, 'config.json'));
+  const configFile = path.join(confDir, 'config.json');
   if (!test('-f', configFile)) {
     return sg.dieAsync(`Need ${configFile}`);
   }

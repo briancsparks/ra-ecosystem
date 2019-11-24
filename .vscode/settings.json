@@ -19,7 +19,21 @@
     "terminal.ansiMagenta": "#A16A94",
     "terminal.ansiRed": "#DB2D20",
     "terminal.ansiWhite": "#A5A2A2",
-    "terminal.ansiYellow": "#FDED02"
+    "terminal.ansiYellow": "#FDED02",
+    "activityBar.background": "#0063cc",
+    "activityBar.activeBorder": "#ff60ad",
+    "activityBar.foreground": "#e7e7e7",
+    "activityBar.inactiveForeground": "#e7e7e799",
+    "activityBarBadge.background": "#ff60ad",
+    "activityBarBadge.foreground": "#15202b",
+    "titleBar.activeBackground": "#004a99",
+    "titleBar.inactiveBackground": "#004a9999",
+    "titleBar.activeForeground": "#e7e7e7",
+    "titleBar.inactiveForeground": "#e7e7e799",
+    "statusBar.background": "#004a99",
+    "statusBarItem.hoverBackground": "#0063cc",
+    "statusBar.foreground": "#e7e7e7"
   },
-  "cmake.configureOnOpen": false
+  "cmake.configureOnOpen": false,
+  "peacock.color": "#004a99"
 }

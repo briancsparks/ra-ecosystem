@@ -12,6 +12,7 @@
   "author": "Brian C Sparks <briancsparks@gmail.com>",
   "license": "MIT",
   "dependencies": {
+    "glob": "^7.1.6",
     "sg-argv": "^1.0.73",
     "sg-env": "^1.0.12",
     "sg-exec": "^1.0.68",

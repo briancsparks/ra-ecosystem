@@ -17,16 +17,21 @@ function mkConnection() {
       });
     }
 
-    var close = function(){};
+    var close = function(){ return --count; };
 
     // Get a connection
     if (count++ === 0) {
       close = function() {
-        redis.quit();
+        if (--count === 0) {
+          redis.quit();
+        }
+
+        //TODO: assert
+        return count;
       };
     }
 
-    return [redis, close];
+    return [redis, close, count];
   };
 }
 

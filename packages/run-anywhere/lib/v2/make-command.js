@@ -348,7 +348,7 @@ function findMod(mods = [], modFnMap={}, allMods=[], fnName) {            // COD
     try {
       require(modFilename);
     } catch(err) {
-      console.log(err);
+      console.log(err, modFilename);
     }
   }
 
