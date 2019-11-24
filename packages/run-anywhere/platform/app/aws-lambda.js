@@ -1,6 +1,6 @@
 
 const entrypoint              = require('../entrypoint/api-gateway');
-const host                    = require('../host/aws-lambda');
+const host                    = require('../service-platform/aws-lambda');
 
 // -------------------------------------------------------------------------------------
 // We need to export a function that AWS Lambda can call.

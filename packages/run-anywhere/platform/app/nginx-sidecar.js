@@ -1,7 +1,7 @@
 
 const sg                      = require('sg-argv');
 const entrypoint              = require('../entrypoint/nginx-sidecar-rproxy');
-const host                    = require('../host/req-res-instance');
+const host                    = require('../service-platform/req-res-instance');
 const checkMw                 = require('../middleware/check-config');
 const invokeMw                = require('../middleware/invoke-ra');
 const {
