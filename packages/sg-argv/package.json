@@ -1,6 +1,6 @@
 {
   "name": "sg-argv",
-  "version": "1.0.74",
+  "version": "1.0.75",
   "description": "Parse CLI Arguments for Easy Use in Javascript.",
   "main": "index.js",
   "scripts": {
