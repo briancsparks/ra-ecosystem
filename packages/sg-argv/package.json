@@ -1,6 +1,6 @@
 {
   "name": "sg-argv",
-  "version": "1.0.73",
+  "version": "1.0.74",
   "description": "Parameter parsing.",
   "main": "index.js",
   "scripts": {
@@ -18,7 +18,7 @@
   },
   "homepage": "https://github.com/briancsparks/ra-ecosystem/tree/master/packages/sg-argv#readme",
   "dependencies": {
-    "@sg0/sg-smart-value": "^1.0.7",
+    "@sg0/sg-smart-value": "^1.0.8",
     "minimist": "^1.2.0",
     "sg0": "^1.0.42"
   }
