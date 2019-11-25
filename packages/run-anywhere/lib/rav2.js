@@ -23,7 +23,7 @@ const { promisify }             = require('util');
 // const platform_host_aws_lambda  = require('../platform/service-platform/aws-lambda');
 
 dbUtils                         = _.extend({}, dbUtils, require('./v2/db/crud'));
-const qm                        = quickMerge.quickMergeImmutable;
+const qm                        = quickMerge.quickMerge;
 
 
 // -------------------------------------------------------------------------------------
@@ -72,19 +72,31 @@ module.exports.express = {
 };
 module.exports.paramsFromExpress = libExpress.paramsFromExpress;
 
-module.exports.entrypoints  = qm(require('../platform/entrypoint/api-gateway'));
+module.exports.entrypoints  = qm(
+  require('../platform/entrypoint/api-gateway'),
+  require('../platform/entrypoint/aws-lambda'),
+  require('../platform/entrypoint/cli'),
+  require('../platform/entrypoint/nginx-sidecar-rproxy'),
+);
+
+module.exports.hosts  =
+module.exports.svcplatforms  = qm(
+  require('../platform/service-platform/aws-lambda'),
+  require('../platform/service-platform/req-res-instance'),
+  require('../platform/service-platform/workstation'),
+);
 
 
-const platform_entrypoint_aws_lambda = require('../platform/entrypoint/aws-lambda');
-const platform_host_aws_lambda  = require('../platform/service-platform/aws-lambda');
+// const platform_entrypoint_aws_lambda = require('../platform/entrypoint/aws-lambda');
+// const platform_host_aws_lambda  = require('../platform/service-platform/aws-lambda');
 
-module.exports.entrypoints = {
-  aws_lambda        : platform_entrypoint_aws_lambda,
-};
+// module.exports.entrypoints = {
+//   aws_lambda        : platform_entrypoint_aws_lambda,
+// };
 
-module.exports.hosts = {
-  aws_lambda        : platform_host_aws_lambda,
-};
+// module.exports.hosts = {
+//   aws_lambda        : platform_host_aws_lambda,
+// };
 
 // -------------------------------------------------------------------------------------
 //  Helper functions

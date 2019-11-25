@@ -28,16 +28,19 @@ var   handlerFns    = [];
 var   dispatcher    = dispatch;
 
 exports.workstation   = {};
-exports.handler       = {};
+exports.handlers      = {};
+// exports.svcplatforms  = {handlers:{}};
 
 
 // ----------------------------------------------------------------------------------------------------------------------------
 // Lambda handler for the function of being the svcplatform
 const workstation_handler =
-exports.workstation.handler =
-exports.handler.workstation =
 exports.workstation_entrypoint =
 exports.platform_entrypoint =
+
+// exports.svcplatforms.handlers.workstation =
+exports.workstation.handler =
+exports.handlers.workstation =
 exports.platform_svcplatform_workstation_handler = function(event, context_, callback) {
   const startTime = new Date().getTime();
 
@@ -74,11 +77,13 @@ module.exports.workstation_handler = workstation_handler;
 
 
 // ----------------------------------------------------------------------------------------------------------------------------
+exports.workstation.setDispatcher =
 exports.setDispatcher = function(d) {
   dispatcher = d;
 };
 
 // ----------------------------------------------------------------------------------------------------------------------------
+exports.workstation.registerHandler =
 exports.registerHandler = function(selector, handler) {
   handlerFns.push(mkHandlerWrapper(selector, handler));
 };

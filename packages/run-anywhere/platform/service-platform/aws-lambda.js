@@ -13,16 +13,19 @@ const logApiV                   = mkLogApiV('svcplatform', 'awslambda');
 var   handlerFns    = [];
 var   dispatcher    = dispatch;
 
-exports.lambda    = {};
-exports.handler    = {};
+exports.lambda        = {};
+exports.handlers      = {};
+// exports.svcplatforms  = {handlers:{}};
 
 
 // ------------------------------------------------------------------------------------------------------------------------------
 // Lambda handler for the function of being the Service Platform
-exports.lambda.handler =
-exports.handler.lambda =
 exports.lambda_svcplatform =
 exports.platform_svcplatform =
+
+// exports.svcplatforms.handlers.lambda =
+exports.lambda.handler =
+exports.handlers.lambda =
 exports.platform_svcplatform_lambda_handler = function(event, context_, callback) {
   const startTime = new Date().getTime();
 
@@ -56,11 +59,13 @@ exports.platform_svcplatform_lambda_handler = function(event, context_, callback
 
 
 // ------------------------------------------------------------------------------------------------------------------------------
+exports.lambda.setDispatcher =
 exports.setDispatcher = function(d) {
   dispatcher = d;
 };
 
 // ------------------------------------------------------------------------------------------------------------------------------
+exports.lambda.registerHandler =
 exports.registerHandler = function(selector, handler) {
   handlerFns.push(mkHandlerWrapper(selector, handler));
 };

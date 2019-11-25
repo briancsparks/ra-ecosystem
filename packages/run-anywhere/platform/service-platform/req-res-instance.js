@@ -26,16 +26,19 @@ var   handlerFns    = [];
 var   dispatcher    = dispatch;
 
 exports.reqresinst    = {};
-exports.handler       = {};
+exports.handlers      = {};
+// exports.svcplatforms  = {handlers:{}};
 
 
 // ------------------------------------------------------------------------------------------------------------------------------
 // Handler for the function of being the svcplatform
-exports.reqresinst.handler =
-exports.handler.reqresinst =
 exports.reqresinst_entrypoint =
 exports.platform_entrypoint =
 exports.reqresinst_handler =
+
+// exports.svcplatforms.handlers.reqresinst =
+exports.reqresinst.handler =
+exports.handlers.reqresinst =
 exports.platform_svcplatform_reqresinst_handler = function(event, context_, callback) {
   const startTime = new Date().getTime();
 
@@ -74,11 +77,13 @@ function smEvent(event) {
 
 
 // ------------------------------------------------------------------------------------------------------------------------------
+exports.reqresinst.setDispatcher =
 exports.setDispatcher = function(d) {
   dispatcher = d;
 };
 
 // ------------------------------------------------------------------------------------------------------------------------------
+exports.reqresinst.registerHandler =
 exports.registerHandler = function(selector, handler) {
   handlerFns.push(mkHandlerWrapper(selector, handler));
 };
