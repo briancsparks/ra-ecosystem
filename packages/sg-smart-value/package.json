@@ -26,5 +26,6 @@
   "dependencies": {
     "minimist": "^1.2.0",
     "sg0": "^1.0.44"
-  }
+  },
+  "gitHead": "55c763905a0b5b6039ae9c1819860a00b918d958"
 }
