@@ -7,16 +7,23 @@ const {awsLambda}               = inbound;
 const {mkLogApi,
        mkLogApiV}               = require('../platform-utils');
 
-const logApi                    = mkLogApi('host', 'awslambda');
-const logApiV                   = mkLogApiV('host', 'awslambda');
+const logApi                    = mkLogApi('svcplatform', 'awslambda');
+const logApiV                   = mkLogApiV('svcplatform', 'awslambda');
 
 var   handlerFns    = [];
 var   dispatcher    = dispatch;
 
+exports.lambda    = {};
+exports.handler    = {};
+
 
 // ------------------------------------------------------------------------------------------------------------------------------
-// Lambda handler for the function of being the host
-exports.platform_host_lambda_handler = function(event, context_, callback) {
+// Lambda handler for the function of being the Service Platform
+exports.lambda.handler =
+exports.handler.lambda =
+exports.lambda_svcplatform =
+exports.platform_svcplatform =
+exports.platform_svcplatform_lambda_handler = function(event, context_, callback) {
   const startTime = new Date().getTime();
 
   // const event     = normalizeEvent(event_, context_);

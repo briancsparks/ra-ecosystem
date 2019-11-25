@@ -3,7 +3,7 @@ if (process.env.SG_VVVERBOSE) console[process.env.SG_LOAD_STREAM || 'log'](`Load
 /**
  * @file
  *
- * As a host, I will:
+ * As a svcplatform, I will:
  *
  * 1. Receive input from an entrypoint function.
  *    * Originally, the cli.js entrypoint.
@@ -21,15 +21,24 @@ const platform                  = require('../platform-utils');
 const {mkLogApi,
        mkLogApiV}               = platform;
 
-const logApi                    = mkLogApi('host', 'workstation');
-const logApiV                   = mkLogApiV('host', 'workstation');
+const logApi                    = mkLogApi('svcplatform', 'workstation');
+const logApiV                   = mkLogApiV('svcplatform', 'workstation');
 
 var   handlerFns    = [];
 var   dispatcher    = dispatch;
 
+exports.workstation   = {};
+exports.handler       = {};
+
+
 // ----------------------------------------------------------------------------------------------------------------------------
-// Lambda handler for the function of being the host
-const workstation_handler = exports.platform_host_workstation_handler = function(event, context_, callback) {
+// Lambda handler for the function of being the svcplatform
+const workstation_handler =
+exports.workstation.handler =
+exports.handler.workstation =
+exports.workstation_entrypoint =
+exports.platform_entrypoint =
+exports.platform_svcplatform_workstation_handler = function(event, context_, callback) {
   const startTime = new Date().getTime();
 
   // var   {ARGV, user_sys_argv, ...rest} = event;
@@ -42,7 +51,7 @@ const workstation_handler = exports.platform_host_workstation_handler = function
         const endTime = new Date().getTime();
 
         const fixedResponse = workstation.fixResponse(response);
-        // console.log(`host_workstation-dispatch: (${(endTime - startTime) * 1})`, {err, response, fixedResponse});
+        // console.log(`svcplatform_workstation-dispatch: (${(endTime - startTime) * 1})`, {err, response, fixedResponse});
 
         logApi(`workstation_handler: (${(endTime - startTime) * 1})`, {argv, err, response, fixedResponse});
 

@@ -24,14 +24,18 @@ const logApiV                   = mkLogApiV('entrypoint', 'apigateway');
 var   handlerFns    = [];
 var   dispatcher    = dispatch;
 
-exports.apigateway = {};
+exports.lambda_handler  = {};
+exports.handler         = {};
+exports.apigateway      = {};
 
 
 
 // ----------------------------------------------------------------------------------------------------------------------------
 // Lambda handler for the function of being the entrypoint
-exports.apigateway_lambda_handler =
 exports.apigateway.lambda_handler =
+exports.lambda_handler.apigateway =
+exports.apigateway.handler =
+exports.handler.apigateway =
 exports.platform_entrypoint_apigateway_lambda_handler = function(event, context, callback) {
   logApiV(`lambda_handler.params`, {event, context});
 

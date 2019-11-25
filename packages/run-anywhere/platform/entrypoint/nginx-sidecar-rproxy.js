@@ -23,50 +23,29 @@ const {mkLogApi,
 const logApi                    = mkLogApi('entrypoint', 'nginxsidecar');
 const logApiV                   = mkLogApiV('entrypoint', 'nginxsidecar');
 
+exports.handler       = {};
+exports.nginxsidecar  = {};
+
 
 const ENV                       = sg.ENV();
 
 var   handlerFns    = [];
 var   dispatcher    = dispatch;
 
-// // ----------------------------------------------------------------------------------------------------------------------------
-// exports.startServer = function(port_) {
-//   const port                    = ENV.at('SIDECAR_PORT') || port_ || 3009;
-
-//   const server = http.createServer((req, res) => {
-//     console.log(`Handling: ${req.url}...`);
-
-//     return  utils.contextify(req, res, function(err, event, context) {
-
-//       return exports.platform_entrypoint(event, context, function(err, {httpCode, ...data}) {
-//         console.log(`handled ${req.url}`, err, httpCode, data);
-
-//         // TODO: Put in right format for rpxi if requested
-//         var   contentType = 'application/json';
-
-//         res.statusCode = httpCode;
-//         res.setHeader('Content-Type', contentType);
-//         res.end(sg.safeJSONStringify2(data));
-
-//       });
-//     });
-//   });
-
-//   server.listen(port, '127.0.0.1', () => {
-//     console.log(`listening on ${port}`);
-//   });
-
-// };
-
 
 // ----------------------------------------------------------------------------------------------------------------------------
 // Handler for the function of being the entrypoint
-exports.nginx_sidecar_entrypoint = exports.platform_entrypoint = function(event, context, callback) {
-  logApiV(`nginx_sidecarproxy_handler.params`, {event, context});
+exports.nginxsidecar.handler =
+exports.handler.nginxsidecar =
+exports.nginxsidecar_entrypoint =
+exports.platform_entrypoint =
+exports.platform_entrypoint_nginxsidecar_handler =
+function(event, context, callback) {
+  logApiV(`nginxsidecarproxy_handler.params`, {event, context});
 
   return dispatcher(event, context, function(err, response) {
     // TODO: Put in right format for rpxi if requested
-    logApi(`nginx_sidecarproxy_handler.response`, {event, err, response});
+    logApi(`nginxsidecarproxy_handler.response`, {event, err, response});
     return callback(err, response);
   });
 };

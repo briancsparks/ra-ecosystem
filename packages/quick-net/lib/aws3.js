@@ -85,6 +85,14 @@ AwsDataBlob.prototype.normalize = function(item_) {
     });
   }
 
+  if (item.InstanceId) {
+    item.monitoring         = item.Monitoring           && item.Monitoring.State;
+    item.zone               = item.Placement            && item.Placement.AvailabilityZone;
+    item.state              = item.State                && item.State.Name;
+    item.iamInstanceProfile = item.IamInstanceProfile   && _.last(((item.IamInstanceProfile.Arn ||"").split('/') ||[]));
+    // item.sgName             = item.SecurityGroups
+  }
+
   return item;
 };
 

@@ -8,6 +8,7 @@ if (process.env.SG_VVVERBOSE) console[process.env.SG_LOAD_STREAM || 'log'](`Load
 const _                         = require('lodash');
 var   utils                     = require('./utils');
 const sg                        = utils.sgsg;
+const quickMerge                = require('quick-merge');
 const libExpress                = require('./express');
 const libMakeCommand            = require('./v2/make-command');
 const libModSquad               = require('./v2/mod-squad');
@@ -18,10 +19,11 @@ var   dbUtils                   = require('./v2/db/db-util');
 const redisUtils                = require('./v2/redis/redis-util');
 const { promisify }             = require('util');
 
-const platform_entrypoint_aws_lambda = require('../platform/entrypoint/aws-lambda');
-const platform_host_aws_lambda  = require('../platform/service-platform/aws-lambda');
+// const platform_entrypoint_aws_lambda = require('../platform/entrypoint/aws-lambda');
+// const platform_host_aws_lambda  = require('../platform/service-platform/aws-lambda');
 
 dbUtils                         = _.extend({}, dbUtils, require('./v2/db/crud'));
+const qm                        = quickMerge.quickMergeImmutable;
 
 
 // -------------------------------------------------------------------------------------
@@ -69,6 +71,12 @@ module.exports.express = {
   close:        expressHost.express_close,
 };
 module.exports.paramsFromExpress = libExpress.paramsFromExpress;
+
+module.exports.entrypoints  = qm(require('../platform/entrypoint/api-gateway'));
+
+
+const platform_entrypoint_aws_lambda = require('../platform/entrypoint/aws-lambda');
+const platform_host_aws_lambda  = require('../platform/service-platform/aws-lambda');
 
 module.exports.entrypoints = {
   aws_lambda        : platform_entrypoint_aws_lambda,

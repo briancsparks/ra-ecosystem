@@ -4,9 +4,9 @@ const libRedis  = require('redis');
 module.exports.mkConnection = mkConnection();
 
 var redis;
-function mkConnection() {
+var count = 0;
 
-  var count = 0;
+function mkConnection() {
 
   return function() {
     if (!redis) {

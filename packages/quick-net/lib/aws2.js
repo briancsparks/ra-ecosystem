@@ -20,12 +20,19 @@ const dg                      = DIAG.dg;
 
 module.exports.awsService     = awsService;
 
-awsService({serviceName:"EC2", command: 'describeInstances'}, {}, function(err, data, ...rest) {
-  dg.i(`describeInstances`, {err, data});
-});
+if (require.main === module) {
+  main();
+}
+
+
+const main = function() {
+  awsService({serviceName:"EC2", command: 'describeInstances'}, {}, function(err, data, ...rest) {
+    dg.i(`describeInstances`, {err, data});
+  });
+};
 
 function awsService(argv, context, callback) {
-  const {serviceName, command} = argv;
+  const {serviceName, command, ...rest} = argv;
 
   // dg.i(`Getting awsService ${serviceName}`, {argv});
   // dg.d(`Getting awsService ${serviceName}`, {argv});
@@ -34,12 +41,12 @@ function awsService(argv, context, callback) {
   var   ttl = 20 * 60;      /* 20 min */
   // var   ttl = 3;         /* 3 sec */
 
-  const key = `jsaws:${serviceName}:${command}`;
+  const key = `quicknet:awsApiCache:${serviceName}:${command}`;
   return getCache(key, {ttl}, util.callbackify(async function getFromAws() {
 
     // Expensive op to get from AWS
-    const service   = new AWS[serviceName]({region:'us-east-1'});
-    const res       = service[command]({}).promise();
+    const service   = new AWS[serviceName]({region:'us-east-1', paramValidation:false});
+    const res       = service[command](rest).promise();
 
     var   data      = await res;
     // data            = sg.safeJSONStringify(data);
@@ -53,14 +60,6 @@ function awsService(argv, context, callback) {
     return value;
 
   }), function(err, data) {
-    // console.log(`debug`, serviceName, command, data);
-
-    // const bob = new AwsDataBlob();
-    // bob.addResult(data);
-
-    // const value = bob.getData();
-
-    // console.log(`bob`, data);
     return callback(err, data);
   });
 }

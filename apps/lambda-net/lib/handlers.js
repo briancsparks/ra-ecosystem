@@ -12,11 +12,6 @@ const sg                      = sg0.merge(sg0, quickNet.get3rdPartyLib('sg-argv'
 
 const ENV                     = sg.ENV();
 
-// const {
-//   entrypoints,
-//   hosts
-// }                             = ra;
-
 module.exports.clientStartConfig = clientStartConfig;
 
 
@@ -41,31 +36,6 @@ module.exports.handle = function(argv_, context, callback) {
     sg.log(`Responding to /test request`, {_200});
     return callback(..._200);
 
-  // // ------------------ /upload
-  // // ------------------ /ingest
-
-  // } else if (context.event.path === '/upload') {
-  //   sg.log(`lam`, {qn: Object.keys(quickNet)});
-
-  //   return quickNet.putClientJsonToS3(argv_, context, function(err, data) {
-  //     if (err) {
-
-  //       if (err.httpCode && err.httpCode === 400) {
-  //         let _400 = sg._400({ok: false}, err);
-  //         sg.log(`Response from app`, {_400});
-  //         return callback(..._400);
-  //       }
-
-  //       return callback(err);
-  //     }
-
-  //     sg.log(`handler`, {data});
-
-  //     const _200 = sg._200({ok:true, ...data});
-  //     sg.log(`Response from app`, {_200});
-  //     return callback(..._200);
-  //   });
-
 
   // ------------------ /clientStart
 
@@ -75,10 +45,11 @@ module.exports.handle = function(argv_, context, callback) {
     const _200 = sg._200({ok:true, ...baseResponse});
     return callback(..._200);
 
-  } else {
 
-    // ------------------ /upload
-    // ------------------ /ingest
+  // ------------------ /upload
+  // ------------------ /ingest
+
+  } else {
 
     if (context.event.path === '/upload' || context.event.path === '/ingest') {
       sg.log(`lam`, {qn: Object.keys(quickNet)});

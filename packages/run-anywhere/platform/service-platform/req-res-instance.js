@@ -3,7 +3,7 @@ if (process.env.SG_VVVERBOSE) console[process.env.SG_LOAD_STREAM || 'log'](`Load
 /**
  * @file
  *
- * As a host, I will:
+ * As a svcplatform, I will:
  *
  * 1. Receive input from an entrypoint function.
  *    * Originally, the nginx-sidecar-rewrite entrypoint.
@@ -19,15 +19,24 @@ const {reqRes}                  = inbound;
 const {mkLogApi,
        mkLogApiV}               = require('../platform-utils');
 
-const logApi                    = mkLogApi('host', 'reqresinst');
-const logApiV                   = mkLogApiV('host', 'reqresinst');
+const logApi                    = mkLogApi('svcplatform', 'reqresinst');
+const logApiV                   = mkLogApiV('svcplatform', 'reqresinst');
 
 var   handlerFns    = [];
 var   dispatcher    = dispatch;
 
+exports.reqresinst    = {};
+exports.handler       = {};
+
+
 // ------------------------------------------------------------------------------------------------------------------------------
-// Handler for the function of being the host
-exports.reqresinst_handler = exports.platform_host_reqresinst_handler = function(event, context_, callback) {
+// Handler for the function of being the svcplatform
+exports.reqresinst.handler =
+exports.handler.reqresinst =
+exports.reqresinst_entrypoint =
+exports.platform_entrypoint =
+exports.reqresinst_handler =
+exports.platform_svcplatform_reqresinst_handler = function(event, context_, callback) {
   const startTime = new Date().getTime();
 
   logApiV(`reqresinst_handler.params`, {event, context:context_});
@@ -40,7 +49,7 @@ exports.reqresinst_handler = exports.platform_host_reqresinst_handler = function
       const endTime = new Date().getTime();
 
       const fixedResponse = reqRes.fixResponse(response);
-      // console.log(`host_reqResInstance-dispatch: (${(endTime - startTime) * 1})`, {err, response, fixedResponse});
+      // console.log(`svcplatform_reqResInstance-dispatch: (${(endTime - startTime) * 1})`, {err, response, fixedResponse});
 
       logApi(`reqresinst_handler: (${(endTime - startTime) * 1000})`, {argv, err, response, fixedResponse});
 
