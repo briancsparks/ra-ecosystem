@@ -1,6 +1,6 @@
 {
   "name": "run-anywhere",
-  "version": "1.0.132",
+  "version": "1.0.133",
   "description": "Write your Node.js functions in the run-anywhere format, and run them anywhere (CLI, AWS Lambda, etc.)",
   "main": "ra.js",
   "bin": {
