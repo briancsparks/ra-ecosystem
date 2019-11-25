@@ -1,6 +1,6 @@
 {
   "name": "sg-template",
-  "version": "1.0.83",
+  "version": "1.0.84",
   "description": "Templating the JavaScript way",
   "author": "Brian C Sparks <briancsparks@gmail.com>",
   "homepage": "https://github.com/briancsparks/ra-ecosystem#readme",
@@ -27,8 +27,8 @@
     "url": "https://github.com/briancsparks/ra-ecosystem/issues"
   },
   "dependencies": {
-    "sg-clihelp": "^1.0.75",
-    "sg0": "^1.0.42"
+    "sg-clihelp": "^1.0.76",
+    "sg0": "^1.0.43"
   },
   "gitHead": "65b13cf0165e685a77d66e5dc586d6210fee6ee2"
 }
