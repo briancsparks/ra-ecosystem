@@ -1,6 +1,6 @@
 {
   "name": "sg-argv",
-  "version": "1.0.75",
+  "version": "1.0.76",
   "description": "Parse CLI Arguments for Easy Use in Javascript.",
   "main": "index.js",
   "scripts": {
@@ -18,9 +18,9 @@
   },
   "homepage": "https://github.com/briancsparks/ra-ecosystem/tree/master/packages/sg-argv#readme",
   "dependencies": {
-    "@sg0/sg-smart-value": "^1.0.8",
+    "@sg0/sg-smart-value": "^1.0.9",
     "minimist": "^1.2.0",
-    "sg0": "^1.0.42"
+    "sg0": "^1.0.43"
   },
   "gitHead": "65b13cf0165e685a77d66e5dc586d6210fee6ee2"
 }
