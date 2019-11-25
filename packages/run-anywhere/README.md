@@ -148,18 +148,14 @@ If you use `invoke2`, Ra will parse the command-line arguments with the much imp
 module, which has much better capabilities.
 
 ```sh
-ra invoke sample/hello.js echo --no-bar --baz={"a":42} | underscore print
+ra invoke2 sample/hello.js echo --no-bar --baz={"a":42} | underscore print
 ```
 
 ```json
 { "hello": "world", "bar": false, "baz": { "a": 42} }
 ```
 
-This example uses the excellent `underscore-cli` npm project:
-
-```sh
-npm install -g underscore-cli
-```
+See [sg-argv](https://www.npmjs.com/package/sg-argv) for details on its full capabilities.
 
 ### The context Parameter
 
