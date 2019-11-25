@@ -1640,6 +1640,25 @@ sg.startsWithOneOf = function(str, arr) {
 };
 
 /**
+ * Pads the string.
+ *
+ * @param {*} len
+ * @param {*} x_
+ * @param {*} ch_
+ * @returns
+ */
+sg.pad = function(len, x_, ch_) {
+  var x   = ''+x_;
+  var ch  = ch_ || (typeof x_ === 'number') ? '0' : ' ';
+
+  while (x.length < len) {
+    x = ch + x;
+  }
+
+  return x;
+};
+
+/**
  * Just like filter, but returns both lists [items-that-were-true, items-that-were-false].
  *
  * @param {Array}     arr   - The array to split.

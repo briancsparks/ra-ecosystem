@@ -32,6 +32,10 @@ DIAG.usage({
   }
 });
 
+DIAG.usefulCliArgs({
+  lambdanet           : `--lambda-name=lambda-net --stage=dev --Bucket=quick-net`,
+});
+
 // The last one wins. Comment out what you dont want.
 DIAG.activeDevelopment(`--lambda-name=lambda-net --stage=dev --Bucket=quick-net`);
 DIAG.activeDevelopment(`--lambda-name=lambda-net --stage=dev --Bucket=quick-net --debug`);

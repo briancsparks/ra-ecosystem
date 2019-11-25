@@ -98,7 +98,7 @@ DIAG.usefulCliArgs({
 
 // The last one wins. Comment out what you dont want.
 DIAG.activeDevelopment(`--useful=webtier --debug`);
-DIAG.activeName = 'upsertInstance';
+// DIAG.activeName = 'upsertInstance';
 
 /**
  * Upsert an instance.

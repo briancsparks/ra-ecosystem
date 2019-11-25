@@ -33,6 +33,10 @@ DIAG.usage({
   }
 });
 
+DIAG.usefulCliArgs({
+  dev         : `--stage=dev --lambda-name=lambda-net --class-b=21 --sgs=wide`,
+});
+
 // The last one wins. Comment out what you dont want.
 DIAG.activeDevelopment(`--stage=dev --lambda-name=lambda-net --class-b=21 --sgs=wide`);
 DIAG.activeDevelopment(`--stage=dev --lambda-name=lambda-net --class-b=21 --sgs=wide --debug`);
