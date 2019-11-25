@@ -1,6 +1,6 @@
 {
   "name": "sg-diag",
-  "version": "1.0.59",
+  "version": "1.0.60",
   "description": "Diagnostics",
   "author": "Brian C Sparks <briancsparks@gmail.com>",
   "homepage": "https://github.com/briancsparks/ra-ecosystem#readme",
@@ -18,9 +18,9 @@
     "chalk": "^2.4.2",
     "minimist": "^1.2.0",
     "quick-merge": "^1.0.19",
-    "sg-bits": "^1.0.26",
-    "sg-env": "^1.0.14",
-    "sg0": "^1.0.43",
+    "sg-bits": "^1.0.27",
+    "sg-env": "^1.0.15",
+    "sg0": "^1.0.44",
     "socket.io-client": "^2.2.0"
   }
 }

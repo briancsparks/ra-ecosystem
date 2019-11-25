@@ -1,6 +1,6 @@
 {
   "name": "@sg0/quick-aws",
-  "version": "1.0.16",
+  "version": "1.0.17",
   "description": "> TODO: description",
   "author": "Brian C Sparks <briancsparks@gmail.com>",
   "homepage": "https://github.com/briancsparks/ra-ecosystem#readme",
@@ -28,7 +28,7 @@
   },
   "dependencies": {
     "aws-sdk": "^2.555.0",
-    "sg-clihelp": "^1.0.76"
+    "sg-clihelp": "^1.0.77"
   },
   "gitHead": "65b13cf0165e685a77d66e5dc586d6210fee6ee2"
 }
