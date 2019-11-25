@@ -29,5 +29,6 @@
   "dependencies": {
     "sg-clihelp": "^1.0.75",
     "sg0": "^1.0.42"
-  }
+  },
+  "gitHead": "65b13cf0165e685a77d66e5dc586d6210fee6ee2"
 }

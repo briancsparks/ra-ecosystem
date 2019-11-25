@@ -32,5 +32,6 @@
     "sg-exec": "^1.0.70",
     "sg-template": "^1.0.83",
     "sg0": "^1.0.42"
-  }
+  },
+  "gitHead": "65b13cf0165e685a77d66e5dc586d6210fee6ee2"
 }

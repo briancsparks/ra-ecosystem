@@ -21,5 +21,6 @@
     "@sg0/sg-smart-value": "^1.0.8",
     "minimist": "^1.2.0",
     "sg0": "^1.0.42"
-  }
+  },
+  "gitHead": "65b13cf0165e685a77d66e5dc586d6210fee6ee2"
 }
