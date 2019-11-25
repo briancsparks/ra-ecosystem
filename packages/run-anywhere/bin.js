@@ -215,12 +215,18 @@ commands.invoke2 = function() {
 
     // Machine output?
     if (machine) {
+
+      // TODO: This will not be machine-readable if rest > 1 element. Should output '[' and ']'
+      //       in the case of `rest` being multi-item.
+
       _.each(rest, (result) => {
         if (!_.isString(result)) {
-          process.stdout.write(JSON.stringify(result) + '\n');
+          // process.stdout.write(JSON.stringify(result) + '\n');
+          process.stdout.write(sg.safeJSONStringify(result, null, null) + '\n');
           return;
         }
 
+        // TODO: This should be quoted, to be machine-readable
         process.stdout.write(result + '\n');
       });
 
@@ -230,7 +236,7 @@ commands.invoke2 = function() {
     /* otherwise -- machine-ish */
     _.each(rest, (result) => {
       if (!_.isString(result)) {
-        process.stdout.write(JSON.stringify(result, null, 2) + '\n');
+        process.stdout.write(sg.safeJSONStringify(result, null, 2) + '\n');
         return;
       }
 

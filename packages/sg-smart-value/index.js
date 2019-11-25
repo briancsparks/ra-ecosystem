@@ -4,6 +4,7 @@
 const sg                      = require('sg0');
 
 module.exports.smartValue   = smartValue;
+module.exports.smartAttrs   = smartAttrs;
 module.exports.smartKey     = smartKey;
 module.exports.smartObject  = smartObject;
 module.exports.parseParams  = parseParams;
@@ -186,6 +187,15 @@ function smartValue(value, iq =999) {
   }
 
   return value;
+}
+
+/**
+ * Makes each attribute on obj the right type.
+ */
+function smartAttrs(obj, iq =999) {
+  return sg.reduce(obj, {}, function(m, value, key) {
+    return sg.kv(m, key, smartValue(value, iq));
+  });
 }
 
 function smartNumber(value, def =0) {

@@ -209,7 +209,7 @@ const ModSquad = function(otherModule, otherModuleName = 'mod') {
       }
 
       if (!fnName) {
-        if (process.argv[3] && otherModule.exports.asymc[process.argv[3]]) {
+        if (process.argv[3] && otherModule.exports.async[process.argv[3]]) {
           fnName = process.argv[3];
         }
       }

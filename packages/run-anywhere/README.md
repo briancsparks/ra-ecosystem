@@ -1,23 +1,23 @@
 
 # TODO
 
-- [x] Steal ModSquad from step-forward power
-- [ ] Steal all the other fns, too.
-- [x] Make lib/raV2.js, so users of lib can require('run-anywhere).v2;
-- [ ] Steal stuff from netlab-server: `lib/db/*.js`, esp `getXyzDb()`, and `getRedis()`
-- [ ] Steal anything that uses context.netlabContext, likee `netlabContextMw()`
-- [ ] Provide one function that can be the landing function for all calls from various AWS events, see `getHttpParams()` in netlab-server src/app/http-helpers.js
-- [ ] Use `loud-rejection` and/or `hard-rejection` properly
-- [ ] Should be able to stop using sgsg
-- [ ] Steal minimistify from step-forward
-- [ ] Use `../aws-lambda-test` as the test-project for ra on Lambda
-- [x] Get rid of test-apps
+* [x] Steal ModSquad from step-forward power
+* [ ] Steal all the other fns, too.
+* [x] Make lib/raV2.js, so users of lib can require('run-anywhere).v2;
+* [ ] Steal stuff from netlab-server: `lib/db/*.js`, esp `getXyzDb()`, and `getRedis()`
+* [ ] Steal anything that uses context.netlabContext, likee `netlabContextMw()`
+* [ ] Provide one function that can be the landing function for all calls from various AWS events, see `getHttpParams()` in netlab-server src/app/http-helpers.js
+* [ ] Use `loud-rejection` and/or `hard-rejection` properly
+* [ ] Should be able to stop using sgsg
+* [ ] Steal minimistify from step-forward
+* [ ] Use `../aws-lambda-test` as the test-project for ra on Lambda
+* [x] Get rid of test-apps
 
 ## AWS-Lambda-Test
 
-- Root lambda.js -- has exports.lamba = function(...) {...}, which is the only entry-point from AWS.
-  - Registers with `lib/v2/lambda-handler.js` all the handlers it needs for the various services.
-  - Forwards to ra function `lib/v2/lambda-handler.js`, which figures out what service it was from.
+* Root lambda.js -- has exports.lamba = function(...) {...}, which is the only entry-point from AWS.
+  * Registers with `lib/v2/lambda-handler.js` all the handlers it needs for the various services.
+  * Forwards to ra function `lib/v2/lambda-handler.js`, which figures out what service it was from.
 
 # Run-anywhere
 
@@ -100,13 +100,12 @@ your code work irrespective of the context under which it runs.
                       parameter (see below.)
 * ```callback```    - The typical Node.js callback parameter.
 
-
 ### CLI Usage
 
 Run-anywhere (Ra) has a command-line mode that allows you to invoke any Ra function from the command line.
 All parameters are parsed by an ```ARGV``` object from the sgsg project.
 
-# Details
+## Details2
 
 ### Overview
 
@@ -143,6 +142,19 @@ ra invoke sample/hello.js echo --bar --baz=quxx | underscore print
 { "hello": "world", "bar": true, "baz": "quxx" }
 ```
 
+### ARGV Improvements
+
+If you use `invoke2`, Ra will parse the command-line arguments with the much improved `sg-argv`
+module, which has much better capabilities.
+
+```sh
+ra invoke sample/hello.js echo --no-bar --baz={"a":42} | underscore print
+```
+
+```json
+{ "hello": "world", "bar": false, "baz": { "a": 42} }
+```
+
 This example uses the excellent `underscore-cli` npm project:
 
 ```sh
@@ -169,8 +181,7 @@ exports.foo = function(argv, context, callback) {
 
 ```
 
-
-# Depricated
+## Depricated
 
 You must use (argv, context, callback).
 
@@ -184,7 +195,7 @@ Generally speaking, your code will be best if you only use ```argv```, and ```ca
 * ```callback```    - The typical Node.js callback parameter.
 * ```context```     - The AWS Lambda ```context``` parameter, if this is an AWS Lambda invocation, or a
                       similar looking object otherwise.
-* ``` type```       - The type of invocation, like ```'AwsLambda'```, ```'Express'```, ```'Cli'```.
+* ```type```        - The type of invocation, like ```'AwsLambda'```, ```'Express'```, ```'Cli'```.
 * ```ARGV```        - An instance of the ARGV class. The ARGV class parses command-line parameters.
                       ```undefined``` if this is not an invocation from the CLI.
 * ```query```       - The URL query parameter, if this is an HTTP request, ```undefined``` otherwise.
@@ -192,5 +203,3 @@ Generally speaking, your code will be best if you only use ```argv```, and ```ca
 * ```awsEvent```    - The ```event``` parameter, if this is an AWS Lambda invocation.
 * ```awsContext```  - The ```context``` parameter, if this is an AWS Lambda invocation, ```undefined```
                       otherwise.
-
-

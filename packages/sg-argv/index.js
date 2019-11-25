@@ -11,6 +11,7 @@ if (process.env.SG_VVVERBOSE) console[process.env.SG_LOAD_STREAM || 'log'](`Load
 
 const sg                      = require('sg0');
 const { _ }                   = sg;
+const sgsv                    = require('@sg0/sg-smart-value');
 const fs                      = require('fs');
 const path                    = require('path');
 
@@ -52,32 +53,32 @@ sg._.each(sg, (v, k) => {
 
 //-----------------------------------------------------------------------------------------------------------------------------
 // No favors, No logging
-function ARGVplain(input = process.argv) {
-  return ARGV({noAuto:true, onlyCamelCase:true, noLog:true}, input);
+function ARGVplain(options ={}, input = process.argv) {
+  return ARGV({...options, noAuto:true, onlyCamelCase:true, noLog:true}, input);
 }
 
 //-----------------------------------------------------------------------------------------------------------------------------
 // No favors, Just data-centric
-function ARGVpod(input = process.argv) {
-  return ARGV({noAuto:true, pod:true}, input);
+function ARGVpod(options ={}, input = process.argv) {
+  return ARGV({...options, noAuto:true, pod:true}, input);
 }
 
 //-----------------------------------------------------------------------------------------------------------------------------
 // No favors, Just like command-line
-function ARGVasIs(input = process.argv) {
-  return ARGV({noAuto:true, noExtraCases:true, pod:true}, input);
+function ARGVasIs(options ={}, input = process.argv) {
+  return ARGV({...options, noAuto:true, noExtraCases:true, pod:true}, input);
 }
 
 //-----------------------------------------------------------------------------------------------------------------------------
 // No favors, Just data-centric, Make valid keys (snake-case)
-function ARGVnormal(input = process.argv) {
-  return ARGV({noAuto:true, noLog:true}, input);
+function ARGVnormal(options ={}, input = process.argv) {
+  return ARGV({...options, noAuto:true, noLog:true}, input);
 }
 
 //-----------------------------------------------------------------------------------------------------------------------------
 // No favors, Just data-centric, Make valid keys (camel-case)
-function ARGVsnakeCase(input = process.argv) {
-  return ARGV({noAuto:true, onlySnakeCase:true, noLog:true}, input);
+function ARGVsnakeCase(options ={}, input = process.argv) {
+  return ARGV({...options, noAuto:true, onlySnakeCase:true, noLog:true}, input);
 }
 
 //-----------------------------------------------------------------------------------------------------------------------------
@@ -125,7 +126,8 @@ function ARGV(options_ ={}, input = process.argv) {
   args    = preProcess(input.slice(2), argv, options);
 
   // Let `minimist` add what it does best
-  argv    = sg.smartExtend(argv, require('minimist')(args));
+  // argv    = sg.smartExtend(argv, require('minimist')(args));
+  argv    = sg.extend(argv, sgsv.smartAttrs(require('minimist')(args), 100));
 
   // Remember what keys the user specified (we potentially add more.)
   const userKeys = sg.keys(argv);
@@ -426,7 +428,7 @@ function arrayParam(i, _, args, argv, options ={}) {
     for (++i; i < args.length; ++i) {
       if (args[i].startsWith('--'))   { break; }
 
-      value.push(sg.smartValue(args[i]));
+      value.push(sgsv.smartValue(args[i], 100));
     }
 
     if (!options.noOriginalCase) {
