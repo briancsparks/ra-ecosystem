@@ -55,7 +55,7 @@ function decodeBodyObj(body_, event, context, {smaller}) {
 }
 
 // ------------------------------------------------------------------------------------------------------------------------------
-function argvify(query_, body_, headers_, extras, path_, method_, event_, context ={}, extraContext ={}) {
+function argvify(query_, body_, headers_, extras, path_, method_, stage_, event_, context ={}, extraContext ={}) {
   const event = {...(event_ ||{})};
 
   const query     = query_    || {};
@@ -64,6 +64,8 @@ function argvify(query_, body_, headers_, extras, path_, method_, event_, contex
 
   const path      = path_     || event.path         || '';
   const method    = method_   || event.httpMethod   || '';
+
+  const stage     = stage_    || event.requestContext && event.requestContext.stage   || '';
 
   // TODO: the headers that we know come from nginx need to be last so they are not overridden.
   const argvs     = {method, path, ...headers, ...(extras ||{}), ...body, ...query};
@@ -75,6 +77,7 @@ function argvify(query_, body_, headers_, extras, path_, method_, event_, contex
       body,
       path,
       method,
+      stage,
       headers,
 
       event   : event_
@@ -101,10 +104,10 @@ function argvify_smart(event, context, argv) {
     }
 
     // We have argv, but it isnt right, fix it
-    return argvify(/*query=*/null, /*body=*/null, /*headers=*/null, /*extras=*/null, /*path=*/null, /*method=*/null, sg.or(event, argv), sg.orObj(context));
+    return argvify(/*query=*/null, /*body=*/null, /*headers=*/null, /*extras=*/null, /*path=*/null, /*method=*/null, /*stage=*/null, sg.or(event, argv), sg.orObj(context));
   }
 
-  return argvify(/*query=*/null, /*body=*/null, /*headers=*/null, /*extras=*/null, /*path=*/null, /*method=*/null, sg.orObj(event), sg.orObj(context));
+  return argvify(/*query=*/null, /*body=*/null, /*headers=*/null, /*extras=*/null, /*path=*/null, /*method=*/null, /*stage=*/null, sg.orObj(event), sg.orObj(context));
 }
 
 // ------------------------------------------------------------------------------------------------------------------------------

@@ -52,7 +52,10 @@ function argvify(event, context_, callback =noop) {
   const headers = normalizeHeaders({});
   const event_  = {...event, argv:sg.argvPod(event.argv)};
 
-  [argv,context]      =  platform.argvify(query, /*body=*/{}, headers, /*extras=*/{}, path, method, event_, context_, {sys_argv});
+  // TODO: Figure out stage
+  const stage   = '';
+
+  [argv,context]      =  platform.argvify(query, /*body=*/{}, headers, /*extras=*/{}, path, method, stage, event_, context_, {sys_argv});
   callback(null, argv, context);
   return [argv, context];
 }

@@ -113,8 +113,8 @@ function contextify_reqRes(argv, context, ...rest) {
 }
 
 // ------------------------------------------------------------------------------------------------------------------------------
-function argvify(query_, body_, headers_, extras, path_, method_, event_, context) {
-  return platform.argvify(query_, body_, headers_, extras, path_, method_, event_, context);
+function argvify(query_, body_, headers_, extras, path_, method_, stage, event_, context) {
+  return platform.argvify(query_, body_, headers_, extras, path_, method_, stage, event_, context);
 }
 
 // ------------------------------------------------------------------------------------------------------------------------------

@@ -1,0 +1,302 @@
+
+
+{
+  "argv": {
+      "method": "",
+      "path": "/clientStart",
+      "Accept-Encoding": "gzip, deflate",
+      "Host": "rtt381jli3.execute-api.us-east-1.amazonaws.com",
+      "User-Agent": "node-superagent/4.1.0",
+      "X-Amzn-Trace-Id": "Root=1-5ddc9082-9195463c06653fd73821734a",
+      "X-Forwarded-For": "35.172.234.246",
+      "X-Forwarded-Port": "443",
+      "X-Forwarded-Proto": "https",
+      "proxy": "clientStart",
+      "lambdaVersion": "latest",
+      "stage": "latest",
+      "__meta__": {
+          "query": {},
+          "body": {},
+          "path": "/clientStart",
+          "method": "",
+          "headers": {
+              "Accept-Encoding": "gzip, deflate",
+              "Host": "rtt381jli3.execute-api.us-east-1.amazonaws.com",
+              "User-Agent": "node-superagent/4.1.0",
+              "X-Amzn-Trace-Id": "Root=1-5ddc9082-9195463c06653fd73821734a",
+              "X-Forwarded-For": "35.172.234.246",
+              "X-Forwarded-Port": "443",
+              "X-Forwarded-Proto": "https"
+          },
+          "event": {
+              "resource": "/{proxy+}",
+              "path": "/clientStart",
+              "httpMethod": "GET",
+              "headers": {
+                  "Accept-Encoding": "gzip, deflate",
+                  "Host": "rtt381jli3.execute-api.us-east-1.amazonaws.com",
+                  "User-Agent": "node-superagent/4.1.0",
+                  "X-Amzn-Trace-Id": "Root=1-5ddc9082-9195463c06653fd73821734a",
+                  "X-Forwarded-For": "35.172.234.246",
+                  "X-Forwarded-Port": "443",
+                  "X-Forwarded-Proto": "https"
+              },
+              "multiValueHeaders": {
+                  "Accept-Encoding": [
+                      "gzip, deflate"
+                  ],
+                  "Host": [
+                      "rtt381jli3.execute-api.us-east-1.amazonaws.com"
+                  ],
+                  "User-Agent": [
+                      "node-superagent/4.1.0"
+                  ],
+                  "X-Amzn-Trace-Id": [
+                      "Root=1-5ddc9082-9195463c06653fd73821734a"
+                  ],
+                  "X-Forwarded-For": [
+                      "35.172.234.246"
+                  ],
+                  "X-Forwarded-Port": [
+                      "443"
+                  ],
+                  "X-Forwarded-Proto": [
+                      "https"
+                  ]
+              },
+              "queryStringParameters": null,
+              "multiValueQueryStringParameters": null,
+              "pathParameters": {
+                  "proxy": "clientStart"
+              },
+              "stageVariables": {
+                  "lambdaVersion": "latest"
+              },
+              "requestContext": {
+                  "resourceId": "jk0j91",
+                  "resourcePath": "/{proxy+}",
+                  "httpMethod": "GET",
+                  "extendedRequestId": "DvuEYEOLIAMF-aQ=",
+                  "requestTime": "26/Nov/2019:02:40:02 +0000",
+                  "path": "/latest/clientStart",
+                  "accountId": "108906662218",
+                  "protocol": "HTTP/1.1",
+                  "stage": "latest",
+                  "domainPrefix": "rtt381jli3",
+                  "requestTimeEpoch": 1574736002314,
+                  "requestId": "26125a0c-efcf-4e4d-8e41-24d52d784236",
+                  "identity": {
+                      "cognitoIdentityPoolId": null,
+                      "accountId": null,
+                      "cognitoIdentityId": null,
+                      "caller": null,
+                      "sourceIp": "35.172.234.246",
+                      "principalOrgId": null,
+                      "accessKey": null,
+                      "cognitoAuthenticationType": null,
+                      "cognitoAuthenticationProvider": null,
+                      "userArn": null,
+                      "userAgent": "node-superagent/4.1.0",
+                      "user": null
+                  },
+                  "domainName": "rtt381jli3.execute-api.us-east-1.amazonaws.com",
+                  "apiId": "rtt381jli3"
+              },
+              "body": null,
+              "isBase64Encoded": false
+          }
+      }
+  },
+  "context": {
+      "callbackWaitsForEmptyEventLoop": true,
+      "functionVersion": "$LATEST",
+      "functionName": "lambda-net",
+      "memoryLimitInMB": "256",
+      "logGroupName": "/aws/lambda/lambda-net",
+      "logStreamName": "2019/11/26/[$LATEST]6304e4131b94429796c01031aca6c06e",
+      "invokedFunctionArn": "arn:aws:lambda:us-east-1:108906662218:function:lambda-net:latest",
+      "awsRequestId": "f045ea20-a0fd-45fc-bd43-155ea7ade393",
+      "event": {
+          "resource": "/{proxy+}",
+          "path": "/clientStart",
+          "httpMethod": "GET",
+          "headers": {
+              "Accept-Encoding": "gzip, deflate",
+              "Host": "rtt381jli3.execute-api.us-east-1.amazonaws.com",
+              "User-Agent": "node-superagent/4.1.0",
+              "X-Amzn-Trace-Id": "Root=1-5ddc9082-9195463c06653fd73821734a",
+              "X-Forwarded-For": "35.172.234.246",
+              "X-Forwarded-Port": "443",
+              "X-Forwarded-Proto": "https"
+          },
+          "multiValueHeaders": {
+              "Accept-Encoding": [
+                  "gzip, deflate"
+              ],
+              "Host": [
+                  "rtt381jli3.execute-api.us-east-1.amazonaws.com"
+              ],
+              "User-Agent": [
+                  "node-superagent/4.1.0"
+              ],
+              "X-Amzn-Trace-Id": [
+                  "Root=1-5ddc9082-9195463c06653fd73821734a"
+              ],
+              "X-Forwarded-For": [
+                  "35.172.234.246"
+              ],
+              "X-Forwarded-Port": [
+                  "443"
+              ],
+              "X-Forwarded-Proto": [
+                  "https"
+              ]
+          },
+          "queryStringParameters": null,
+          "multiValueQueryStringParameters": null,
+          "pathParameters": {
+              "proxy": "clientStart"
+          },
+          "stageVariables": {
+              "lambdaVersion": "latest"
+          },
+          "requestContext": {
+              "resourceId": "jk0j91",
+              "resourcePath": "/{proxy+}",
+              "httpMethod": "GET",
+              "extendedRequestId": "DvuEYEOLIAMF-aQ=",
+              "requestTime": "26/Nov/2019:02:40:02 +0000",
+              "path": "/latest/clientStart",
+              "accountId": "108906662218",
+              "protocol": "HTTP/1.1",
+              "stage": "latest",
+              "domainPrefix": "rtt381jli3",
+              "requestTimeEpoch": 1574736002314,
+              "requestId": "26125a0c-efcf-4e4d-8e41-24d52d784236",
+              "identity": {
+                  "cognitoIdentityPoolId": null,
+                  "accountId": null,
+                  "cognitoIdentityId": null,
+                  "caller": null,
+                  "sourceIp": "35.172.234.246",
+                  "principalOrgId": null,
+                  "accessKey": null,
+                  "cognitoAuthenticationType": null,
+                  "cognitoAuthenticationProvider": null,
+                  "userArn": null,
+                  "userAgent": "node-superagent/4.1.0",
+                  "user": null
+              },
+              "domainName": "rtt381jli3.execute-api.us-east-1.amazonaws.com",
+              "apiId": "rtt381jli3"
+          },
+          "body": null,
+          "isBase64Encoded": false
+      },
+      "argv": {
+          "method": "",
+          "path": "/clientStart",
+          "Accept-Encoding": "gzip, deflate",
+          "Host": "rtt381jli3.execute-api.us-east-1.amazonaws.com",
+          "User-Agent": "node-superagent/4.1.0",
+          "X-Amzn-Trace-Id": "Root=1-5ddc9082-9195463c06653fd73821734a",
+          "X-Forwarded-For": "35.172.234.246",
+          "X-Forwarded-Port": "443",
+          "X-Forwarded-Proto": "https",
+          "proxy": "clientStart",
+          "lambdaVersion": "latest",
+          "__meta__": {
+              "query": {},
+              "body": {},
+              "path": "/clientStart",
+              "method": "",
+              "headers": {
+                  "Accept-Encoding": "gzip, deflate",
+                  "Host": "rtt381jli3.execute-api.us-east-1.amazonaws.com",
+                  "User-Agent": "node-superagent/4.1.0",
+                  "X-Amzn-Trace-Id": "Root=1-5ddc9082-9195463c06653fd73821734a",
+                  "X-Forwarded-For": "35.172.234.246",
+                  "X-Forwarded-Port": "443",
+                  "X-Forwarded-Proto": "https"
+              },
+              "event": {
+                  "resource": "/{proxy+}",
+                  "path": "/clientStart",
+                  "httpMethod": "GET",
+                  "headers": {
+                      "Accept-Encoding": "gzip, deflate",
+                      "Host": "rtt381jli3.execute-api.us-east-1.amazonaws.com",
+                      "User-Agent": "node-superagent/4.1.0",
+                      "X-Amzn-Trace-Id": "Root=1-5ddc9082-9195463c06653fd73821734a",
+                      "X-Forwarded-For": "35.172.234.246",
+                      "X-Forwarded-Port": "443",
+                      "X-Forwarded-Proto": "https"
+                  },
+                  "multiValueHeaders": {
+                      "Accept-Encoding": [
+                          "gzip, deflate"
+                      ],
+                      "Host": [
+                          "rtt381jli3.execute-api.us-east-1.amazonaws.com"
+                      ],
+                      "User-Agent": [
+                          "node-superagent/4.1.0"
+                      ],
+                      "X-Amzn-Trace-Id": [
+                          "Root=1-5ddc9082-9195463c06653fd73821734a"
+                      ],
+                      "X-Forwarded-For": [
+                          "35.172.234.246"
+                      ],
+                      "X-Forwarded-Port": [
+                          "443"
+                      ],
+                      "X-Forwarded-Proto": [
+                          "https"
+                      ]
+                  },
+                  "queryStringParameters": null,
+                  "multiValueQueryStringParameters": null,
+                  "pathParameters": {
+                      "proxy": "clientStart"
+                  },
+                  "stageVariables": {
+                      "lambdaVersion": "latest"
+                  },
+                  "requestContext": {
+                      "resourceId": "jk0j91",
+                      "resourcePath": "/{proxy+}",
+                      "httpMethod": "GET",
+                      "extendedRequestId": "DvuEYEOLIAMF-aQ=",
+                      "requestTime": "26/Nov/2019:02:40:02 +0000",
+                      "path": "/latest/clientStart",
+                      "accountId": "108906662218",
+                      "protocol": "HTTP/1.1",
+                      "stage": "latest",
+                      "domainPrefix": "rtt381jli3",
+                      "requestTimeEpoch": 1574736002314,
+                      "requestId": "26125a0c-efcf-4e4d-8e41-24d52d784236",
+                      "identity": {
+                          "cognitoIdentityPoolId": null,
+                          "accountId": null,
+                          "cognitoIdentityId": null,
+                          "caller": null,
+                          "sourceIp": "35.172.234.246",
+                          "principalOrgId": null,
+                          "accessKey": null,
+                          "cognitoAuthenticationType": null,
+                          "cognitoAuthenticationProvider": null,
+                          "userArn": null,
+                          "userAgent": "node-superagent/4.1.0",
+                          "user": null
+                      },
+                      "domainName": "rtt381jli3.execute-api.us-east-1.amazonaws.com",
+                      "apiId": "rtt381jli3"
+                  },
+                  "body": null,
+                  "isBase64Encoded": false
+              }
+          }
+      }
+  }
+}

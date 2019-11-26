@@ -25,8 +25,11 @@ function argvify(event, context_, callback =noop) {
   const path    = url.pathname;
   const headers = normalizeHeaders(event.req.headers);
 
+  // TODO: Figure out stage
+  const stage   = '';
+
   if (!methodHasBody(method)) {
-    let [argv, context] =  platform.argvify(query, /*body=*/{}, headers, /*extras=*/{}, path, method, event, context_);
+    let [argv, context] =  platform.argvify(query, /*body=*/{}, headers, /*extras=*/{}, path, method, stage, event, context_);
 
     callback(null, argv, context);
     return [argv, context];
@@ -36,7 +39,7 @@ function argvify(event, context_, callback =noop) {
     const event_    = normalizeEvent({...event, body}, context_);
     const body_      = event_.body || body;
 
-    const [argv, context]      =  platform.argvify(query, body_, headers, /*extras=*/{}, path, method, event_, context_);
+    const [argv, context]      =  platform.argvify(query, body_, headers, /*extras=*/{}, path, method, stage, event_, context_);
     return callback(err, argv, context);
   });
 }

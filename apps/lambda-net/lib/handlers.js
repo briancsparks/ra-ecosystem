@@ -22,11 +22,11 @@ module.exports.handle = function(argv_, context, callback) {
   // then handle the final callback to the AWS service.
 
   // Dispatch it somewhere
-  sg.log(`LAMBDA_Net::params`, {argv_, context});
+  sg.log(`LAMBDA_Net::params`, {argv_, context});   // The ./example-request.json file was from this line
 
   // ------------------ /test
 
-  if (context.event.path === '/test') {
+  if (matchRoute('/test')) {
 
     var   query = argv_.__meta__.query;
     var   body  = argv_.__meta__.body;
@@ -39,7 +39,7 @@ module.exports.handle = function(argv_, context, callback) {
 
   // ------------------ /clientStart
 
-  } else if (context.event.path.toLowerCase() === '/clientstart') {
+  } else if (matchRoute('/clientstart')) {
     const baseResponse = clientStartConfig(argv_, context);
 
     const _200 = sg._200({ok:true, ...baseResponse});
@@ -51,7 +51,7 @@ module.exports.handle = function(argv_, context, callback) {
 
   } else {
 
-    if (context.event.path === '/upload' || context.event.path === '/ingest') {
+    if (matchRoute('/upload') || matchRoute('/ingest')) {
       sg.log(`lam`, {qn: Object.keys(quickNet)});
 
       var Bucket, FailBucket;
@@ -83,17 +83,45 @@ module.exports.handle = function(argv_, context, callback) {
 
 
   return callback(...sg._404());
+
+
+  // ==========================================================================================================================
+  function matchRoute(route) {
+    const path  = (argv_.path  || '').toLowerCase();
+    const stage = (argv_.stage || '').toLowerCase();
+
+    return (path === route) || (`/${stage}${path}` === route);
+  }
+
 };
+
+
+// var x= {
+//   "code":200,
+//   "ok":true,
+//   "baseRoute":"https://wazajfr8c2.execute-api.us-east-1.amazonaws.com/",
+//   "upstream":"https://wazajfr8c2.execute-api.us-east-1.amazonaws.com/latest",
+//   "upstreams": {
+//     "upload":"https://zero.NetlabOne.net/latest",
+//     "telemetry":"https://wazajfr8c2.execute-api.us-east-1.amazonaws.com/latest",
+//     "attrstream":"https://wazajfr8c2.execute-api.us-east-1.amazonaws.com/latest",
+//     "xapi":"https://zero.NetlabOne.net/latest"
+//   }
+// };
+
 
 function clientStartConfig(argv, context) {
   const baseResponse = {
     // "ok": true,
-    "upstreams": {
-      "telemetry": publicApiUrl('latest'),
-      "attrstream": publicApiUrl('latest')
-    },
     "preference": {},
-    "upstream": publicApiUrl('latest')
+    "baseRoute" : publicApiUrl(''),
+    "upstream"  : publicApiUrl('latest'),
+    "upstreams" : {
+      "upload"      : privateApiUrl("latest", "api"),
+      "telemetry"   : publicApiUrl('latest'),
+      "attrstream"  : publicApiUrl('latest'),
+      "xapi"        : privateApiUrl("latest", "api"),
+    },
   };
 
   return baseResponse;
@@ -101,6 +129,10 @@ function clientStartConfig(argv, context) {
 
 function publicApiUrl(stage, apigw_id ='rtt381jli3') {
   return `https://${apigw_id}.execute-api.us-east-1.amazonaws.com/${stage}`;
+}
+
+function privateApiUrl(stage, subnet ='api') {
+  return `https://${subnet}.NetlabStats.net/${stage}`;
 }
 
 

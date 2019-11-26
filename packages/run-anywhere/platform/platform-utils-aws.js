@@ -28,7 +28,10 @@ function argvify(event_, context_, callback =noop) {
 
   const extras    = {...(event.pathParameters ||{}), ...(event.stageVariables ||{})};
 
-  [argv, context] = platform.argvify(query, body, headers, extras, path, method, event, context_);
+  // TODO: Figure out stage
+  const stage   = '';
+
+  [argv, context] = platform.argvify(query, body, headers, extras, path, method, stage, event, context_);
 
   callback(null, argv, context);
   return [argv, context];
