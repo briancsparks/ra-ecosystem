@@ -1,6 +1,6 @@
 {
   "name": "@sg0/sg-smart-value",
-  "version": "1.0.11",
+  "version": "1.0.12",
   "description": "> TODO: description",
   "author": "Brian C Sparks <briancsparks@gmail.com>",
   "homepage": "https://github.com/briancsparks/ra-ecosystem#readme",
@@ -25,7 +25,7 @@
   },
   "dependencies": {
     "minimist": "^1.2.0",
-    "sg0": "^1.0.45"
+    "sg0": "^1.0.46"
   },
   "gitHead": "55c763905a0b5b6039ae9c1819860a00b918d958"
 }
