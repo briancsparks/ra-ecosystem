@@ -28,19 +28,20 @@ var   handlerFns    = [];
 var   dispatcher    = dispatch;
 
 exports.workstation   = {};
-exports.handlers      = {};
+// exports.handlers      = {};
 // exports.svcplatforms  = {handlers:{}};
+
+
 
 
 // ----------------------------------------------------------------------------------------------------------------------------
 // Lambda handler for the function of being the svcplatform
-const workstation_handler =
-exports.workstation_entrypoint =
-exports.platform_entrypoint =
-
+// const workstation_handler =
+// exports.workstation_entrypoint =
+// exports.platform_entrypoint =
 // exports.svcplatforms.handlers.workstation =
+// exports.handlers.workstation =
 exports.workstation.handler =
-exports.handlers.workstation =
 exports.platform_svcplatform_workstation_handler = function(event, context_, callback) {
   const startTime = new Date().getTime();
 
@@ -69,9 +70,9 @@ exports.platform_svcplatform_workstation_handler = function(event, context_, cal
   });
 };
 
-module.exports.workstation = {};
-module.exports.workstation.handler = workstation_handler;
-module.exports.workstation_handler = workstation_handler;
+// module.exports.workstation = {};
+// module.exports.workstation.handler = workstation_handler;
+// module.exports.workstation_handler = workstation_handler;
 
 
 

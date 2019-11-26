@@ -14,18 +14,19 @@ var   handlerFns    = [];
 var   dispatcher    = dispatch;
 
 exports.lambda        = {};
-exports.handlers      = {};
+// exports.handlers      = {};
 // exports.svcplatforms  = {handlers:{}};
+
+
 
 
 // ------------------------------------------------------------------------------------------------------------------------------
 // Lambda handler for the function of being the Service Platform
-exports.lambda_svcplatform =
-exports.platform_svcplatform =
-
+// exports.lambda_svcplatform =
+// exports.platform_svcplatform =
 // exports.svcplatforms.handlers.lambda =
+// exports.handlers.lambda =
 exports.lambda.handler =
-exports.handlers.lambda =
 exports.platform_svcplatform_lambda_handler = function(event, context_, callback) {
   const startTime = new Date().getTime();
 

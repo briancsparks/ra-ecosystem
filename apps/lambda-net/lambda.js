@@ -23,6 +23,13 @@ const {
 // We need to export a function that AWS Lambda can call - just re-export the one from RA.
 exports.handler = entrypoints.platform_entrypoint_apigateway_lambda_handler;
 
+exports.handler = function(event, context, callback) {
+  console.log(`exports.handler`, {event, context});
+
+  return entrypoints.platform_entrypoint_apigateway_lambda_handler(event, context, callback);
+  // return callback(null, {ok:true});
+};
+
 
 // -------------------------------------------------------------------------------------
 // Then, RAs entrypoint calls its dispatchers, so we register a handler -- the first fn
@@ -35,3 +42,6 @@ svcplatforms.lambda.setDispatcher(function(argv, context, callback) {
   return handle(argv, context, callback);
 });
 
+// if (process.env.RUN_SIDE_EFFECT_FREE_TESTS) {
+//   console.log({t:process.env.RUN_SIDE_EFFECT_FREE_TESTS});
+// }

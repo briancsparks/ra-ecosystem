@@ -24,18 +24,18 @@ const logApiV                   = mkLogApiV('entrypoint', 'apigateway');
 var   handlerFns    = [];
 var   dispatcher    = dispatch;
 
-exports.lambda_handler  = {};
-exports.handler         = {};
+// exports.lambda_handler  = {};
+// exports.handler         = {};
 exports.apigateway      = {};
 
 
 
 // ----------------------------------------------------------------------------------------------------------------------------
 // Lambda handler for the function of being the entrypoint
+// exports.lambda_handler.apigateway =
+// exports.handler.apigateway =
 exports.apigateway.lambda_handler =
-exports.lambda_handler.apigateway =
 exports.apigateway.handler =
-exports.handler.apigateway =
 exports.platform_entrypoint_apigateway_lambda_handler = function(event, context, callback) {
   logApiV(`lambda_handler.params`, {event, context});
 
@@ -81,14 +81,14 @@ function dispatch(event, context, callback) {
 }
 
 // ----------------------------------------------------------------------------------------------------------------------------
-exports.apigateway_setDispatcher =
+// exports.apigateway_setDispatcher =
 exports.apigateway.setDispatcher =
 exports.setDispatcher = function(d) {
   dispatcher = d;
 };
 
 // ----------------------------------------------------------------------------------------------------------------------------
-exports.apigateway_registerHandler =
+// exports.apigateway_registerHandler =
 exports.apigateway.registerHandler =
 exports.registerHandler = function(selector, handler) {
   handlerFns.push(mkHandlerWrapper(selector, handler));

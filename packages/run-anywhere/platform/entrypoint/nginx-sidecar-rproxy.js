@@ -27,6 +27,8 @@ exports.handler       = {};
 exports.nginxsidecar  = {};
 
 
+
+
 const ENV                       = sg.ENV();
 
 var   handlerFns    = [];
@@ -35,11 +37,11 @@ var   dispatcher    = dispatch;
 
 // ----------------------------------------------------------------------------------------------------------------------------
 // Handler for the function of being the entrypoint
+// exports.handler.nginxsidecar =
+// exports.nginxsidecar_entrypoint =
+// exports.platform_entrypoint =
+// exports.platform_entrypoint_nginxsidecar_handler =
 exports.nginxsidecar.handler =
-exports.handler.nginxsidecar =
-exports.nginxsidecar_entrypoint =
-exports.platform_entrypoint =
-exports.platform_entrypoint_nginxsidecar_handler =
 function(event, context, callback) {
   logApiV(`nginxsidecarproxy_handler.params`, {event, context});
 
@@ -91,11 +93,13 @@ function dispatch(event, context, callback) {
 }
 
 // ----------------------------------------------------------------------------------------------------------------------------
+exports.nginxsidecar.setDispatcher =
 exports.setDispatcher = function(d) {
   dispatcher = d;
 };
 
 // ----------------------------------------------------------------------------------------------------------------------------
+exports.nginxsidecar.registerHandler =
 exports.registerHandler = function(selector, handler) {
   handlerFns.push(mkHandlerWrapper(selector, handler));
 };

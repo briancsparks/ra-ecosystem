@@ -25,8 +25,11 @@ const getSubnets = 'getSubnets';
 
 // console.log({ra});
 
-const output =
-(function() {
+if (require.main === module) {
+  const output = main();
+}
+
+function main() {
   const mod = quickNet.getMod(getSubnets);
 
   const debug             = ARGV.debug;
@@ -94,5 +97,5 @@ const output =
     console.log(JSON.stringify(jsonData));
     return jsonData;
   });
-})();
+}
 

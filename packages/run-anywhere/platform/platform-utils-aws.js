@@ -15,8 +15,9 @@ module.exports.fixResponse_apiGatewayProxy = fixResponse_apiGatewayProxy;
 
 
 // ------------------------------------------------------------------------------------------------------------------------------
-function argvify(event_, context, callback =noop) {
-  const event     = normalizeEvent(event_, context);
+function argvify(event_, context_, callback =noop) {
+  var argv, context;
+  const event     = normalizeEvent(event_, context_);
 
   const query     = sg.extend(event.queryStringParameters, multiItemItems(event.multiValueQueryStringParameters));
   const body      = event.body;
@@ -27,7 +28,7 @@ function argvify(event_, context, callback =noop) {
 
   const extras    = {...(event.pathParameters ||{}), ...(event.stageVariables ||{})};
 
-  const argv      = platform.argvify(query, body, headers, extras, path, method, event, context);
+  [argv, context] = platform.argvify(query, body, headers, extras, path, method, event, context_);
 
   callback(null, argv, context);
   return [argv, context];

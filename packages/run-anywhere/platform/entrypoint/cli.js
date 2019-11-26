@@ -24,8 +24,10 @@ const {mkLogApi,
 const logApi                    = mkLogApi('entrypoint', 'cli');
 const logApiV                   = mkLogApiV('entrypoint', 'cli');
 
-exports.handler    = {};
+// exports.handler    = {};
 exports.cli        = {};
+exports.cli      = {};
+
 
 
 var   handlerFns    = [];
@@ -53,10 +55,10 @@ exports.main = function(argv_, user_sys_argv_ ={}, start) {
 
 // ----------------------------------------------------------------------------------------------------------------------------
 // Handler for the function of being the entrypoint
+// exports.handler.cli =
+// exports.cli_entrypoint =
+// exports.platform_entrypoint =
 exports.cli.handler =
-exports.handler.cli =
-exports.cli_entrypoint =
-exports.platform_entrypoint =
 exports.platform_entrypoint_cli_handler = function(event, context, callback) {
   logApiV(`cli_handler.params`, {event, context});
 
@@ -104,11 +106,13 @@ function dispatch(event, context, callback) {
 }
 
 // ----------------------------------------------------------------------------------------------------------------------------
+exports.cli.setDispatcher =
 exports.setDispatcher = function(d) {
   dispatcher = d;
 };
 
 // ----------------------------------------------------------------------------------------------------------------------------
+exports.cli.registerHandler =
 exports.registerHandler = function(selector, handler) {
   handlerFns.push(mkHandlerWrapper(selector, handler));
 };

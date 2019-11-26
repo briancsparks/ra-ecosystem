@@ -19,8 +19,11 @@ module.exports.main             = main;
 
 
 // ============================================================================================================================
-function main(argv_, user_sys_argv_ ={}) {
+function main(argv_, user_sys_argv_ ={}, callback) {
   if (sg.isnt(argv_))                       { return main(sg.ARGV() ||{}); }
+
+  var numTests = 0;
+  var numFails = 0;
 
   const glob_             = '**/*.js';
   const globIgnore_       = [
@@ -30,14 +33,20 @@ function main(argv_, user_sys_argv_ ={}) {
   const {fnName,ignore,globIgnore,user_sys_argv,argv,sys_argv,commands}
         = crackInvokeArgs(argv_, {...user_sys_argv_, glob: glob_, globIgnore: globIgnore_});
 
-  var params      = {reqFailFn};
+  process.env.RA_TEST_REQUIRE_ALL         = 1;
+  process.env.RUN_SIDE_EFFECT_FREE_TESTS  = 1;
+
+  var params      = {reqFailFn: requireFailedFn};
 
   return build_fnTable({...sys_argv, ...params}, function(err, fnTable) {
     console.log(`\ntest-require-all-cb ${err && __filename+'\n'}`, sg.inspect({err, fnTable: cleanTable(fnTable, 1)}));
+    if (callback) { return callback(err, {ok:(numFails === 0), numTests, numFails, }); }
   });
 
-  function reqFailFn(failFilename, reqFilename) {
+  function requireFailedFn(failFilename, reqFilename) {
+
     if (failFilename) {
+      numFails += 1;
       console.log(`Cannot require(${failFilename})\n\nuse to see:\n  node ${failFilename}\n----------------\n`);
       try {
         require(failFilename);
@@ -47,6 +56,7 @@ function main(argv_, user_sys_argv_ ={}) {
     }
 
     if (reqFilename) {
+      numTests += 1;
       console.log(`require(${reqFilename})`);
     }
   }}

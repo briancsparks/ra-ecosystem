@@ -27,7 +27,9 @@ function main(argv_) {
     const globIgnore = [__filename];
 
     // Invoke it ------ !
-    return fn({...argv}, {globIgnore});
+    return fn({...argv}, {globIgnore}, function(err, result) {
+      console.log(`${fnName} done.`, {err, result});
+    });
   });
 
 
