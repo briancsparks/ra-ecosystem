@@ -62,8 +62,8 @@ function argvify(query_, body_, headers_, extras, path_, method_, event_, contex
   const body      = body_     || {};
   const headers   = headers_  || {};
 
-  const path      = path_     || event.path     || '';
-  const method    = method_   || event.method   || '';
+  const path      = path_     || event.path         || '';
+  const method    = method_   || event.httpMethod   || '';
 
   // TODO: the headers that we know come from nginx need to be last so they are not overridden.
   const argvs     = {method, path, ...headers, ...(extras ||{}), ...body, ...query};

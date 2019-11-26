@@ -22,7 +22,7 @@ function argvify(event_, context_, callback =noop) {
   const query     = sg.extend(event.queryStringParameters, multiItemItems(event.multiValueQueryStringParameters));
   const body      = event.body;
   const path      = event.path;
-  const method    = event.method;
+  const method    = event.httpMethod;
 
   const headers   = sg.extend(event.headers, multiItemItems(event.multiValueHeaders));
 
