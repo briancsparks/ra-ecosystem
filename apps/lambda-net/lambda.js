@@ -15,18 +15,17 @@ const {handle}                = require('./lib/handlers');
 const {
   entrypoints,
   svcplatforms,
-  hosts
 }                             = ra;
 
 
 // ----------------------------------------------------------------------------------------
 // We need to export a function that AWS Lambda can call - just re-export the one from RA.
-exports.handler = entrypoints.platform_entrypoint_apigateway_lambda_handler;
+exports.handler = entrypoints.apigateway.handler;
 
 exports.handler = function(event, context, callback) {
   console.log(`exports.handler`, {event, context});
 
-  return entrypoints.platform_entrypoint_apigateway_lambda_handler(event, context, callback);
+  return entrypoints.apigateway.handler(event, context, callback);
   // return callback(null, {ok:true});
 };
 

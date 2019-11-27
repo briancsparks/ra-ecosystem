@@ -46,10 +46,10 @@ function decodeBodyObj(body_, event, context, {smaller}) {
     }
   }
 
-  // 'items' is the prefered key, but only use if not already present, but leave 'payload'
-  if (!('items' in body) && Array.isArray(body.payload)) {
-    body.items = body.payload;
-  }
+  // // 'items' is the prefered key, but only use if not already present, but leave 'payload'
+  // if (!('items' in body) && Array.isArray(body.payload)) {
+  //   body.items = body.payload;
+  // }
 
   return body;
 }

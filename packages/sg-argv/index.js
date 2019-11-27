@@ -28,7 +28,7 @@ sg.libs = {...(sg.libs || {}), fs, path};
 sg.ARGV           = ARGV;
 sg.argvGet        = argvGet;
 sg.argvPod        = argvPod;
-
+sg.syargv         = syargv;
 
 // You either want ARGV(), to have the full features, or:
 sg.ARGVnormal     = ARGVnormal;       // Most normal: no logging fns, all spellings of keys, no favors
@@ -489,6 +489,17 @@ function argvPod(argv) {
   return sg.reduceObj(argv, {}, (m,v,k) => {
     return (typeof v !== 'function') && (k !== '_');
   });
+}
+
+//-----------------------------------------------------------------------------------------------------------------------------
+function syargv(argv, name) {
+  if (argv.sys_argv) {
+    return argv.sys_argv[name];
+  }
+
+  if (sgsv.smartValue(process.env.ACTIVE_DEVELOPMENT)) {
+    return argv[`sysargv_${name}`];
+  }
 }
 
 //-----------------------------------------------------------------------------------------------------------------------------

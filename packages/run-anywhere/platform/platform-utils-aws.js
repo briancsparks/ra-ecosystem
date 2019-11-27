@@ -65,16 +65,17 @@ function decodeBody(event, context, smaller) {
   var body_ = body;
 
   if (isBase64Encoded) {
-    const buf   = new Buffer(body, 'base64');
-    body_       = buf.toString('ascii');
+    event.bodyEncoded   = event.body;
+    const buf           = new Buffer(body, 'base64');
+    body_               = buf.toString('ascii');
   }
 
-  body_ = decodeBodyObj(body_, event, context, {smaller});
+  event.bodyDecoded     = decodeBodyObj(body_, event, context, {smaller});
 
-  event.body              = body_;
-  event.isBase64Encoded   = false;
+  // event.body              = body_;
+  // event.isBase64Encoded   = false;
 
-  return body_;
+  return event.bodyDecoded;
 }
 
 // ------------------------------------------------------------------------------------------------------------------------------

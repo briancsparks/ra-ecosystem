@@ -48,7 +48,10 @@ const server = http.createServer((req, res) => {
 
     const fCargv  = {key: req.url, url: revUrl};
     console.log(`fetchingandcacheing`, fCargv);
-    return quickNet.fetchAndCache(fCargv, context, function(err, data) {
+
+    // TODO: See if 3 works.
+
+    return quickNet.fetchAndCache3(fCargv, context, function(err, data) {
       console.log(`fetchandcache`, err, data);
 
       if (!sg.ok(err, data)) {

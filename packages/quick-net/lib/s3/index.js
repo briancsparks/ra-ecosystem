@@ -130,11 +130,14 @@ DIAG.activeDevelopment(`--Bucket=quick-net-ingest-dump --debug`);
 // DIAG.activeName = 'putClientJsonToS3';
 
 mod.xport(DIAG.xport({putClientJsonToS3: function(argv, context, callback) {
+
   const diag    = DIAG.diagnostic({argv, context, callback});
 
-  var  {Bucket,Key}     = diag.args();
+  var  {Key}            = diag.args();
   var  Body             = getBody(argv, context)  || diag.args().Body;
-  Bucket                = Bucket                  || ENV.at('QUICKNET_INGEST_BUCKET');
+
+  var   Bucket          = sg.syargv(argv, 'Bucket')       || ENV.at('QUICKNET_INGEST_BUCKET');
+  var   FailBucket      = sg.syargv(argv, 'FailBucket')   || Bucket;
 
   // If the caller did not provide an AWS Key, we will need the clientId/sessionId
   // to generate it.

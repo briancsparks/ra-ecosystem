@@ -24,30 +24,72 @@ module.exports.getCache = getCache;
 
 
 //===========================================================================================================================
-function getCache(key, options, expensiveOp, callback) {
-  var [redis, close]  = localRedis.mkConnection();
-  var {ttl}           = options;
+function getCache(key, options, expensiveOp, last) {
+  const [onMiss, onHit, callback]   = crackLast(last);
+  var   [redis, close]              = localRedis.mkConnection();
+  var   {ttl}                       = options;
 
+  var theNewWay = options.theNewWay;
+  if (!theNewWay) {
+    return redis.GET(key, function(err, cacheData_) {       // ===========================================      This is where data was just read out of redis
+      var   cacheData = cacheData_;
+
+      if (err)  { return fin(err); }
+
+      if (sg.ok(err, cacheData_)) {
+        cacheData = sg.safeJSONParse(cacheData_) || cacheData_;
+        diag.v(`Retrieved key: (${key}) from cache`, smlog({err, cacheData}));
+        return fin(null, cacheData);
+      }
+      diag.v(`CacheMiss on key: (${key}) from cache`, {err, cacheData});
+
+      return expensiveOp(function(err, data) {
+        if (err)  { return fin(err); }
+
+        return storeCache(key, data, function(err, storeRectipt) {
+          if (err) { return fin(err); }
+          return fin(err, data, storeRectipt);
+        });
+      });
+    });
+  }
+
+  // New version that allows notification of hits and misses
   return redis.GET(key, function(err, cacheData_) {       // ===========================================      This is where data was just read out of redis
     var   cacheData = cacheData_;
 
     if (err)  { return fin(err); }
 
     if (sg.ok(err, cacheData_)) {
+      // Hit
       cacheData = sg.safeJSONParse(cacheData_) || cacheData_;
+
       diag.v(`Retrieved key: (${key}) from cache`, smlog({err, cacheData}));
-      return fin(null, cacheData);
-    }
-    diag.v(`CacheMiss on key: (${key}) from cache`, {err, cacheData});
+      return onHit(cacheData, function(err, newCacheData, storeIt) {
+        cacheData = sg.ok(err, newCacheData) ? newCacheData : cacheData;
 
-    return expensiveOp(function(err, data) {
-      if (err)  { return fin(err); }
-
-      return storeCache(key, data, function(err, storeRectipt) {
-        if (err) { return fin(err); }
-        return fin(err, data, storeRectipt);
+        return passItOn(cacheData, storeIt);
       });
+    }
+
+    diag.v(`CacheMiss on key: (${key}) from cache`, {err, cacheData});
+    return onMiss(function(err, newCacheData, skipStoringIt) {
+      if (err)  { return fin(err); }
+      cacheData = newCacheData;
+
+      return passItOn(cacheData, !skipStoringIt);
     });
+
+    function passItOn(newCacheData, storeIt) {
+      if (!storeIt) {
+        return fin(null, newCacheData);
+      }
+
+      return storeCache(key, newCacheData, function(err, storeRectipt) {
+        if (err) { return fin(err); }
+        return fin(err, newCacheData, storeRectipt);
+      });
+    }
   });
 
   //===========================================================================================================================
@@ -88,6 +130,24 @@ function getCache(key, options, expensiveOp, callback) {
       // Need to keep the connection open until we are done
       close();
     }
+  }
+
+  function crackLast(last) {
+    if (typeof last === 'function') {
+      return [defOnMiss, defOnHit, last];
+    } else {
+      return [last.onMiss || defOnMiss, last.onHit || defOnHit, last.callback];
+    }
+  }
+
+  function defOnMiss(callback) {
+    return expensiveOp(function(err, newCacheData, ...rest) {
+      return callback(err, newCacheData, ...rest);
+    });
+  }
+
+  function defOnHit(data, callback) {
+    return callback();
   }
 }
 

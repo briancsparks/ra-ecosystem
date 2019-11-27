@@ -6,17 +6,17 @@ const host                    = require('../service-platform/aws-lambda');
 // We need to export a function that AWS Lambda can call.
 //
 // The easiest thing to do is just to get the 'entrypoint' one from RA, and export it.
-exports.handler = entrypoint.platform_entrypoint_apigateway_lambda_handler;
+exports.handler = entrypoint.apigateway.handler;
 
 // However, you could handle the function call and call RAs entrypoint.
 // exports.handler = function(event, context, callback) {
-//   entrypoints.aws_lambda.platform_entrypoint_apigateway_lambda_handler(event, context, callback);
+//   entrypoints.aws_lambda.apigateway.handler(event, context, callback);
 // };
 
 // -------------------------------------------------------------------------------------
 // Then, RAs entrypoint calls its dispatchers, so we register a handler -- the first fn
 // returns true to say that the second fn should handle the request.
-entrypoint.registerHandler(() => true, host.platform_host_lambda_handler);
+entrypoint.registerHandler(() => true, host.lambda.handler);
 
 // -------------------------------------------------------------------------------------
 // Now we also have to register with RAs `host` module.
@@ -33,6 +33,13 @@ host.setDispatcher(function(argv, context, callback) {
   // const _200 = sg._200({ok:true, ...data});
   // return callback(..._200);
 
-  return callback();
+  return callback(argv, context);
 });
+
+if (require.main === module) {
+  const input = require('../inputs/orig-api-gateway.json');
+  return exports.handler(input.event, input.context, function(err, argv, context) {
+    console.log(err, argv, context);
+  });
+}
 

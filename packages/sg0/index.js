@@ -745,6 +745,13 @@ sg.objekt = function(x, def) {
 };
 var objekt = sg.objekt;
 
+sg.funktion = function(fn, def =function(){}) {
+  if (typeof fn === 'function') {
+    return fn;
+  }
+  return def;
+};
+
 /**
  *  Always returns an Object.
  *
@@ -1755,7 +1762,7 @@ sg.re_export = sg.exportify = function(modjule, lib) {
   if (sg.isnt(modjule) || sg.isnt(lib))                     { return; }
 
   for (const key in lib) {
-    modjule.exports[key] = lib;
+    modjule.exports[key] = lib[key];
   }
 
   return modjule;
@@ -1770,6 +1777,18 @@ sg.re_export = sg.exportify = function(modjule, lib) {
 sg.re_exporter = function(modjule) {
   return function(lib) {
     return sg.re_export(modjule, lib);
+  };
+};
+
+/**
+ * Returns an error-callback first function that just 'returns' `ENOTIMPL`
+ * in the `err` parameter.
+ *
+ * @returns
+ */
+sg.notImplemented = function() {
+  return function(...args) {
+    return sg.funktion(_.last(args))(`ENOTIMPL`);
   };
 };
 

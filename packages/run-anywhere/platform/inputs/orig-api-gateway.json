@@ -1,0 +1,88 @@
+{
+  "event": {
+    "resource": "/{proxy+}",
+    "path": "/clientStart",
+    "httpMethod": "GET",
+    "headers": {
+      "Accept-Encoding": "gzip, deflate",
+      "Host": "rtt381jli3.execute-api.us-east-1.amazonaws.com",
+      "User-Agent": "node-superagent/4.1.0",
+      "X-Amzn-Trace-Id": "Root=1-5ddd4a77-60750cd29dc3a4c2c5f74d44",
+      "X-Forwarded-For": "35.172.234.246",
+      "X-Forwarded-Port": "443",
+      "X-Forwarded-Proto": "https"
+    },
+    "multiValueHeaders": {
+      "Accept-Encoding": [
+        null
+      ],
+      "Host": [
+        null
+      ],
+      "User-Agent": [
+        null
+      ],
+      "X-Amzn-Trace-Id": [
+        null
+      ],
+      "X-Forwarded-For": [
+        null
+      ],
+      "X-Forwarded-Port": [
+        null
+      ],
+      "X-Forwarded-Proto": [
+        null
+      ]
+    },
+    "queryStringParameters": null,
+    "multiValueQueryStringParameters": null,
+    "pathParameters": {
+      "proxy": "clientStart"
+    },
+    "stageVariables": {
+      "lambdaVersion": "latest"
+    },
+    "requestContext": {
+      "resourceId": "jk0j91",
+      "resourcePath": "/{proxy+}",
+      "httpMethod": "GET",
+      "extendedRequestId": "DxiSsEESoAMF4gA=",
+      "requestTime": "26/Nov/2019:15:53:27 +0000",
+      "path": "/latest/clientStart",
+      "accountId": "108906662218",
+      "protocol": "HTTP/1.1",
+      "stage": "latest",
+      "domainPrefix": "rtt381jli3",
+      "requestTimeEpoch": 1574783607560,
+      "requestId": "e20aa88c-358e-4eef-8916-e4790fa7ac28",
+      "identity": [
+        null
+      ],
+      "domainName": "rtt381jli3.execute-api.us-east-1.amazonaws.com",
+      "apiId": "rtt381jli3"
+    },
+    "body": null,
+    "isBase64Encoded": false
+  },
+  "context": {
+    "callbackWaitsForEmptyEventLoop": "[Getter/Setter]",
+    "succeed": [
+      null
+    ],
+    "fail": [
+      null
+    ],
+    "done": [
+      null
+    ],
+    "functionVersion": "$LATEST",
+    "functionName": "lambda-net",
+    "memoryLimitInMB": "256",
+    "logGroupName": "/aws/lambda/lambda-net",
+    "logStreamName": "2019/11/26/[$LATEST]13c8675217aa46f9b012c3b32704a779",
+    "invokedFunctionArn": "arn:aws:lambda:us-east-1:108906662218:function:lambda-net:latest",
+    "awsRequestId": "b353d569-3a35-4552-a03b-2675f07a7320",
+    "getRemainingTimeInMillis": "[Function: getRemainingTimeInMillis]"
+  }
+}

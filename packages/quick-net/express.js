@@ -108,7 +108,9 @@ router.post('/notifyData',  notifyData);
 
 const apiMount    = '/latest';
 
-runExpressApp();
+if (require.main === module) {
+  runExpressApp();
+}
 
 function runExpressApp() {
   // setDQuiet(false);

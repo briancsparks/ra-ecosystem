@@ -59,8 +59,9 @@ module.exports.handle = function(argv_, context, callback) {
       Bucket      = Bucket        || ENV.at('LAMBDANET_INGEST_BUCKET')        || 'lambda-net-ingest';
       FailBucket  = FailBucket    || ENV.at('LAMBDANET_FAIL_INGEST_BUCKET')   || 'lambda-net-ingest-fail';
 
-      const argv = {...argv_, Bucket, FailBucket};
-      return quickNet.putClientJsonToS3(argv, context, function(err, data) {
+      const sys_argv = {Bucket, FailBucket};
+      // const argv = {...argv_, Bucket, FailBucket};
+      return quickNet.putClientJsonToS3({sys_argv, ...argv_}, context, function(err, data) {
 
         if (err) {
           if (err.httpCode && err.httpCode === 400) {

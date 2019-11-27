@@ -3,6 +3,8 @@
 
 const sg                      = require('sg0');
 
+sg.re_export(module, sg);
+
 module.exports.smartValue   = smartValue;
 module.exports.smartAttrs   = smartAttrs;
 module.exports.smartKey     = smartKey;
