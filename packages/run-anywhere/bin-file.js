@@ -41,7 +41,6 @@ function main(argv_) {
 
     // Do one file?
     if (fnName === 'one-file') {
-console.log(`looking for`, {argv});
       let filename  = argv._ && argv._[0];
       let mod       = safeRequire(filename);
 

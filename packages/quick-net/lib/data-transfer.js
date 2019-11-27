@@ -24,7 +24,13 @@ const request                 = require('superagent');
 const mod                     = ra.modSquad(module, 'dataTransfer');
 const ENV                     = sg.ENV();
 
-const {getCache}              = sgRedis;
+const {
+  getCache,
+  mkConnection,
+}                             = sgRedis;
+
+var   gredis;  /* to hold one copy, so we dont keep closing */
+var   grclose;
 
 
 // -------------------------------------------------------------------------------------
@@ -44,10 +50,15 @@ mod.xport({fetchAndCache3: function(argv, context, callback) {
 
   const { rax }           = (context.runAnywhere || {}).dataTransfer__fetchAndCache3;
   const quiet             = getQuiet(context);
-  const { redis, close }  = ENV.at('NO_REDIS') ? {redis:{}, close:noop} : redisUtils.getRedis(context);
+  // const { redis, close }  = ENV.at('NO_REDIS') ? {redis:{}, close:noop} : redisUtils.getRedis(context);
 
   var   key, url;
   return rax.iwrap(rax.mkLocalAbort(allDone), function(abort) {
+
+    // Make a first copy, so we do not keep closing
+    // if (!gredis) {
+    //   [gredis, grclose] = mkConnection();
+    // }
 
     key                     = rax.arg(argv, 'key');
     url                     = rax.arg(argv, 'url', {required:true});

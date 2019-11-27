@@ -7,7 +7,7 @@ const ENV                     = sg.ENV();
 const DIAG                    = sg.DIAG(module);
 const dg                      = DIAG.dg;
 
-module.exports.mkConnection = mkConnection();
+module.exports.mkConnection = mkmkConnection();
 
 var redisHost;
 var redisPort = 6379;
@@ -15,7 +15,7 @@ var redisPort = 6379;
 var redis;
 var count = 0;
 
-function mkConnection() {
+function mkmkConnection() {
 
   redisHost = ENV.host('redis');
   redisPort = ENV.port('redis')  || redisPort;
@@ -40,6 +40,7 @@ function mkConnection() {
       close = function() {
         if (--count === 0) {
           redis.quit();
+          redis = null;
         }
 
         //TODO: assert

@@ -20,8 +20,10 @@ const {
 const ENV                     = sg.ENV();
 
 
-const redisPort               = 6379;
-const redisHost               = 'redis';
+// const redisPort               = 6379;
+// const redisHost               = 'redis';
+const redisHost = ENV.host('redis');
+const redisPort = ENV.port('redis')  || redisPort;
 
 // -------------------------------------------------------------------------------------
 //  Functions

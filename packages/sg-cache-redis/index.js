@@ -20,8 +20,13 @@ const qm                      = quickMerge.quickMergeImmutable;
 // const ENV                     = sg.ENV();
 const diag                    = DIAG.dg;
 
-module.exports.getCache = getCache;
+module.exports.getCache       = getCache;
+module.exports.mkConnection   = mkConnection;
 
+function mkConnection() {
+  var   [redis, close]  = localRedis.mkConnection();
+  return [redis, close];
+}
 
 //===========================================================================================================================
 function getCache(key, options, expensiveOp, last) {
@@ -32,6 +37,7 @@ function getCache(key, options, expensiveOp, last) {
   var theNewWay = options.theNewWay;
   if (!theNewWay) {
     return redis.GET(key, function(err, cacheData_) {       // ===========================================      This is where data was just read out of redis
+
       var   cacheData = cacheData_;
 
       if (err)  { return fin(err); }
@@ -56,6 +62,7 @@ function getCache(key, options, expensiveOp, last) {
 
   // New version that allows notification of hits and misses
   return redis.GET(key, function(err, cacheData_) {       // ===========================================      This is where data was just read out of redis
+
     var   cacheData = cacheData_;
 
     if (err)  { return fin(err); }

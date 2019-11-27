@@ -4,9 +4,26 @@
     "label": "echo",
     "type": "shell",
     "command": "echo workspaceFolder: ${workspaceFolder} execPath: ${execPath}"
-  }, {
+  },
+  {
     "label": "test-require-all for project",
     "type": "shell",
     "command":["node ./packages/run-anywhere/bin3.js test-require-all"],
-  }]
-}
+  },
+  {
+    "label": "build layer (1)",
+    "type": "shell",
+    "options": {
+      "cwd": "${workspaceFolder}/apps/lambda-net"
+    },
+    "command":["node ${workspaceFolder}/./packages/quick-net/bin/quick-net.js buildLayer --useful=lambdanet"],
+  },
+  {
+    "label": "deploy lambda (2)",
+    "type": "shell",
+    "options": {
+      "cwd": "${workspaceFolder}/apps/lambda-net"
+    },
+    "command":["node ${workspaceFolder}/./packages/quick-net/bin/quick-net.js deployLambda --useful=dev"],
+  }
+]}
