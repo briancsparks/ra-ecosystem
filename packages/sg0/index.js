@@ -1792,6 +1792,25 @@ sg.notImplemented = function() {
   };
 };
 
+/**
+ * Get quick access to the Node.js system modules you always end up
+ * using.
+ *
+ * @returns
+ */
+sg.sysMods = function() {
+  const url = require('url');
+
+  return {
+    util,
+    url,
+    fs:     require('fs'),
+    os:     require('os'),
+    path:   require('path'),
+    libUrl: url,
+  };
+};
+
 // Export functions
 _.each(sg, function(fn, name) {
   exports[name] = sg[name];

@@ -23,7 +23,8 @@ const {
 exports.handler = entrypoints.apigateway.handler;
 
 exports.handler = function(event, context, callback) {
-  console.log(`exports.handler`, {event, context});
+  const data_length = event.data && event.data.length;
+  console.log(`exports.handler`, {event: {...event, data: data_length}, context});
 
   return entrypoints.apigateway.handler(event, context, callback);
   // return callback(null, {ok:true});
