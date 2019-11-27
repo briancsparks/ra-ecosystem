@@ -1,6 +1,6 @@
 {
   "name": "@sg0/sg-cache-redis",
-  "version": "1.0.14",
+  "version": "1.0.15",
   "description": "> TODO: description",
   "author": "Brian C Sparks <briancsparks@gmail.com>",
   "homepage": "https://github.com/briancsparks/ra-ecosystem#readme",
@@ -27,11 +27,11 @@
     "url": "https://github.com/briancsparks/ra-ecosystem/issues"
   },
   "dependencies": {
-    "@sg0/sg-smart-value": "^1.0.13",
+    "@sg0/sg-smart-value": "^1.0.14",
     "redis": "^2.8.0",
-    "sg-diag": "^1.0.63",
-    "sg-env": "^1.0.18",
-    "sg0": "^1.0.47"
+    "sg-diag": "^1.0.64",
+    "sg-env": "^1.0.19",
+    "sg0": "^1.0.48"
   },
   "gitHead": "55c763905a0b5b6039ae9c1819860a00b918d958"
 }
