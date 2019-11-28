@@ -16,6 +16,7 @@ const sg                        = require('sg0');
 const _                         = require('lodash');
 const inbound                   = require('../platform-utils-inbound');
 const ARGVUtils                 = require('../platform-utils-ARGV');
+const {cleanLog}                = require('../platform-utils');
 const {workstation}             = inbound;
 const platform                  = require('../platform-utils');
 const {mkLogApi,

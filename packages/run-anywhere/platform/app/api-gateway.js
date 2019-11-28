@@ -1,6 +1,7 @@
 
 const entrypoint              = require('../entrypoint/api-gateway');
 const host                    = require('../service-platform/aws-lambda');
+const {cleanLog}              = require('../platform-utils');
 
 // -------------------------------------------------------------------------------------
 // We need to export a function that AWS Lambda can call.
@@ -27,7 +28,7 @@ host.setDispatcher(function(argv, context, callback) {
 
   // TODO: Dispatch it somewhere
   // [[Fake it for now]]
-  console.log(`QUICK_Net::params (${__filename})`, {argv, context});
+  console.log(`QUICK_Net::params (${__filename})`, cleanLog({argv, context}));
 
   // Could do something like this, if you use sg-http
   // const _200 = sg._200({ok:true, ...data});
@@ -39,7 +40,7 @@ host.setDispatcher(function(argv, context, callback) {
 if (require.main === module) {
   const input = require('../inputs/orig-api-gateway.json');
   return exports.handler(input.event, input.context, function(err, argv, context) {
-    console.log(err, argv, context);
+    console.log(err, cleanLog({argv, context}));
   });
 }
 

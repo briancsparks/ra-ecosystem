@@ -15,6 +15,7 @@ if (process.env.SG_VVVERBOSE) console[process.env.SG_LOAD_STREAM || 'log'](`Load
 const sg                        = require('sg0');
 const _                         = require('lodash');
 const inbound                   = require('../platform-utils-inbound');
+const {cleanLog}                = require('../platform-utils');
 const {reqRes}                  = inbound;
 const {mkLogApi,
        mkLogApiV}               = require('../platform-utils');

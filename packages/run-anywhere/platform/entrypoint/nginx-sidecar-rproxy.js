@@ -16,6 +16,7 @@ const _                         = require('lodash');
 const http                      = require('http');
 const utils                     = require('./utils-req-res');
 const outbound                  = require('../platform-utils-outbound');
+const {cleanLog}                = require('../platform-utils');
 const {nginxRpxi}               = outbound;
 const {mkLogApi,
        mkLogApiV}               = require('../platform-utils');

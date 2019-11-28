@@ -31,6 +31,7 @@ module.exports.mkLogApi         = mkLogApi;
 module.exports.mkLogApiV        = mkLogApiV;
 module.exports.asErr            = asErr;
 module.exports.noop             = noop;
+module.exports.cleanLog         = cleanLog;
 
 
 // ------------------------------------------------------------------------------------------------------------------------------
@@ -201,6 +202,89 @@ function asErr(obj) {
   }
 
   return null;
+}
+
+// ------------------------------------------------------------------------------------------------------------------------------
+function cleanLog({argv, event, context, ...rest}) {
+  var argv2     = {}, event2    = {}, context2    = {};
+  var replArgv  = {}, replEvent = {}, replContext = {};     /* replicas */
+
+  if (!sg.isnt(event)) {
+    event2 = {...event};
+
+    // event.body
+    if (event.body) {
+      event2 = {...event2, body: shortenJsonPayload(event2.body)};
+    }
+  }
+
+  if (!sg.isnt(argv)) {
+    argv2 = {...argv};
+
+    // argv.payload
+    if (argv.payload) {
+      argv2 = {...argv2, payload: shortenJsonPayload(argv2.payload)};
+    }
+
+    // argv.items
+    if (argv.items) {
+      argv2 = {...argv2, items: shortenJsonPayload(argv2.items)};
+    }
+  }
+
+  return {...rest, argv: argv2, event: event2, context: context2};
+}
+
+function shortenJsonPayload(json) {
+  // If its a string, just truncate it
+  if (typeof json === 'string') {
+    if (json.length > 128) {
+      return json.substring(0, 128);
+    }
+
+    return json;
+  }
+
+  if (Array.isArray(json)) {
+    return shortenArray(json);
+  }
+
+  if (sg.isObject(json)) {
+    return shortenObject(json);
+  }
+
+  return json;
+}
+
+function shortenObject(json) {
+  var attempt = sg.safeJSONStringify(json);
+  if (attempt.length <= 256) {
+    return json;
+  }
+
+  return attempt.substr(0, 128) +'...';
+}
+
+function shortenArray(json) {
+  var attempt = sg.safeJSONStringify(json);
+  if (attempt.length <= 256) {
+    return json;
+  }
+
+  attempt = sg.safeJSONStringify(json[0]);
+  if (attempt.length < 80) {
+    return [json[0], `...and ${json.length - 1} more`];
+  }
+
+  return [`${json.length} items`];
+}
+
+function crackArgs({argv, argv_, event, event_, context, context_, ...rest}) {
+  var cleanArgv     = argv        || argv_;
+  var cleanEvent    = event       || event_;
+  var cleanContext  = context     || context_;
+
+  return {...rest, argv: cleanArgv, event: cleanEvent, context: cleanContext};
 }
 
 

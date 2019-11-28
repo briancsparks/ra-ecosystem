@@ -5,6 +5,7 @@ const entrypoint              = require('../entrypoint/nginx-sidecar-rproxy');
 const host                    = require('../service-platform/req-res-instance');
 const checkMw                 = require('../middleware/check-config');
 const invokeMw                = require('../middleware/invoke-ra');
+const {cleanLog}              = require('../platform-utils');
 const {
   logSmData,
   smArgv,
@@ -53,7 +54,7 @@ function main(ARGV, user_sys_argv_ ={}) {
 
       // TODO: Dispatch it somewhere
       // [[Fake it for now]]
-      // console.log(`QUICK_Net::params (${__filename})`, {argv, context});
+      // console.log(`QUICK_Net::params (${__filename})`, cleanLog({argv, context}));
 
       // Could do something like this, if you use sg-http
       // const _200 = sg._200({ok:true, ...data});

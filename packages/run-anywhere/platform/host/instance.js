@@ -17,6 +17,7 @@ const sg                        = sg0.merge(sg0, require('sg-env'));
 const _                         = require('lodash');
 const http                      = require('http');
 const utils                     = require('../entrypoint/utils-req-res');
+const {cleanLog}                = require('../platform-utils');
 const {mkLogApi,
        mkLogApiV}               = require('../platform-utils');
 

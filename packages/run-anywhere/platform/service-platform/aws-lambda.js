@@ -3,6 +3,7 @@ const sg                        = require('sg0');
 const _                         = require('lodash');
 const utils                     = require('./utils');
 const inbound                   = require('../platform-utils-inbound');
+const {cleanLog}                = require('../platform-utils');
 const {awsLambda}               = inbound;
 const {mkLogApi,
        mkLogApiV}               = require('../platform-utils');

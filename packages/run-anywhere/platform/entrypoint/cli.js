@@ -17,6 +17,7 @@ const libUrl                    = require('url');
 const {logSmData}               = require('../../lib/v3/utils');
 const {extractSysArgv}          = require('../../lib/v3/invoke');
 const outbound                  = require('../platform-utils-outbound');
+const {cleanLog}                = require('../platform-utils');
 const {cli}                     = outbound;
 const {mkLogApi,
        mkLogApiV}               = require('../platform-utils');

@@ -7,6 +7,7 @@
  */
 const sg                      = require('sg-env');
 const {assertArgvContext}     = require('../utils');
+const {cleanLog}              = require('../platform-utils');
 
 const ENV                     = sg.ENV();
 

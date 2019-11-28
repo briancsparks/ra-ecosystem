@@ -17,6 +17,7 @@ const outbound                  = require('../platform-utils-outbound');
 const {apiGatewayProxy}         = outbound;
 const {mkLogApi,
        mkLogApiV}               = require('../platform-utils');
+const {cleanLog}                = require('../platform-utils');
 
 const logApi                    = mkLogApi('entrypoint', 'apigateway');
 const logApiV                   = mkLogApiV('entrypoint', 'apigateway');

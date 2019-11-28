@@ -13,6 +13,7 @@ const {
   build_fnTableSmart,
 }                             = require('../../lib/v3/invoke');
 const {assertArgvContext}     = require('../utils');
+const {cleanLog}              = require('../platform-utils');
 
 module.exports.mkInvokeRa     = mkInvokeRa;
 module.exports.mkInvokeRaV2   = mkInvokeRaV2;

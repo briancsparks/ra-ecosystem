@@ -4,6 +4,7 @@ const host                    = require('../service-platform/workstation');
 const checkMw                 = require('../middleware/check-config');
 const invokeMw                = require('../middleware/invoke-ra');
 const {logSmData}             = require('../../lib/v3/utils');
+const {cleanLog}              = require('../platform-utils');
 
 const {mkInvokeRa}            = invokeMw;
 const {mkDetector}            = checkMw;
