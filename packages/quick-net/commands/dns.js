@@ -23,7 +23,7 @@ DIAG.usefulCliArgs({
 });
 
 // The last one wins. Comment out what you dont want.
-DIAG.activeDevelopment(``);
+DIAG.activeDevelopment(`--debug`);
 // DIAG.activeName = 'checkDns';
 
 
