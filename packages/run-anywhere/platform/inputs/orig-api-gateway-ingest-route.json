@@ -1,68 +1,4 @@
-if (process.env.SG_VVVERBOSE) console[process.env.SG_LOAD_STREAM || 'log'](`Loading ${__filename}`);
-
-/**
- * @file
- *
- */
-const ra                      = require('run-anywhere').v2;
-
-// const quickNet                = require('quick-net');
-// const sg0                     = ra.get3rdPartyLib('sg-flow');
-// const sg                      = sg0.merge(sg0, quickNet.get3rdPartyLib('sg-argv'), require('sg-config'), require('sg-http'));
-
-const {handle}                = require('./lib/handlers');
-
-const {
-  entrypoints,
-  svcplatforms,
-}                             = ra;
-const {cleanLog}              = entrypoints;
-
-
-// ----------------------------------------------------------------------------------------
-// We need to export a function that AWS Lambda can call - just re-export the one from RA.
-exports.handler = entrypoints.apigateway.handler;
-
-// exports.handler = function(event, context, callback) {
-//   // const data_length = event.data && event.data.length;
-//   // console.log(`exports.handler`, {event: {...event, data: data_length}, context});
-
-//   // console.log(`exports.handler-lambda.js`, cleanLog({event, context}));
-
-//   return entrypoints.apigateway.handler(event, context, callback);
-//   // return callback(null, {ok:true});
-// };
-
-
-// -------------------------------------------------------------------------------------
-// Then, RAs entrypoint calls its dispatchers, so we register a handler -- the first fn
-// returns true to say that the second fn should handle the request.
-entrypoints.apigateway.registerHandler(() => true, function(event, context, callback) {
-
-  const body_length = event.body && event.body.length;
-  // console.log(`Pre-svcplatforms.lambda.handler`, {event: {...event, body: body_length}, context});
-
-  svcplatforms.lambda.handler(event, context, function(err, data, ...rest) {
-    // console.log(`Post-svcplatforms.lambda.handler`, {err, data});
-    callback(err, data, ...rest);
-  });
-});
-
-// -------------------------------------------------------------------------------------
-// Now we also have to register with RAs `host` module.
-svcplatforms.lambda.setDispatcher(function(argv, context, callback) {
-
-  // console.log(`Pre-svcplatforms.dispatcher`, {argv, context});
-
-  return handle(argv, context, callback);
-});
-
-
-// if (process.env.RUN_SIDE_EFFECT_FREE_TESTS) {
-//   console.log({t:process.env.RUN_SIDE_EFFECT_FREE_TESTS});
-// }
-
-const sampleEventContext = {
+{
   "event": {
       "resource": "/{proxy+}",
       "path": "/ingest",
@@ -164,12 +100,4 @@ const sampleEventContext = {
       "invokedFunctionArn": "arn:aws:lambda:us-east-1:108906662218:function:lambda-net:latest",
       "awsRequestId": "6168c69c-8f3e-4c33-a885-d441fb77b2c4"
   }
-};
-
-
-
-if (require.main === module) {
-  exports.handler(sampleEventContext.event, sampleEventContext.context, function(err, data) {
-    console.log(`passlam`, {err, data});
-  });
 }

@@ -14,6 +14,7 @@ const logApiV                   = mkLogApiV('svcplatform', 'awslambda');
 var   handlerFns    = [];
 var   dispatcher    = dispatch;
 
+exports.cleanLog      = cleanLog;
 exports.lambda        = {};
 // exports.handlers      = {};
 // exports.svcplatforms  = {handlers:{}};

@@ -1,0 +1,22 @@
+{
+  "context": {
+    "callbackWaitsForEmptyEventLoop": "[Getter/Setter]",
+    "succeed": [
+      null
+    ],
+    "fail": [
+      null
+    ],
+    "done": [
+      null
+    ],
+    "functionVersion": "$LATEST",
+    "functionName": "lambda-net",
+    "memoryLimitInMB": "256",
+    "logGroupName": "/aws/lambda/lambda-net",
+    "logStreamName": "2019/11/26/[$LATEST]13c8675217aa46f9b012c3b32704a779",
+    "invokedFunctionArn": "arn:aws:lambda:us-east-1:108906662218:function:lambda-net:latest",
+    "awsRequestId": "b353d569-3a35-4552-a03b-2675f07a7320",
+    "getRemainingTimeInMillis": "[Function: getRemainingTimeInMillis]"
+  }
+}

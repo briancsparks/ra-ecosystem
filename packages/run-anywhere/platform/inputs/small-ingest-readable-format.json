@@ -1,0 +1,1085 @@
+{
+  "uploadedBy": "SPARKSB3-20191128100614826",
+  "dataType": "attrstream",
+  "clientId": "SPARKSB3",
+  "sessionId": "SPARKSB3-20191128100614826",
+  "tick0": 1574935584838,
+  "payload": [
+    [
+      {
+        "who": "snmp",
+        "when": 416,
+        "type": "printer",
+        "id": "192.168.1.5",
+        "key": "CID",
+        "value": "HPIJVIPAV2"
+      },
+      {
+        "who": "snmp",
+        "when": 416,
+        "type": "printer",
+        "id": "192.168.1.5",
+        "key": "CLS",
+        "value": "PRINTER"
+      },
+      {
+        "who": "snmp",
+        "when": 416,
+        "type": "printer",
+        "id": "192.168.1.5",
+        "key": "CMD",
+        "value": "PCL3GUI,PCL3,PJL,JPEG,PCLM,URF,DW-PCL,802.11,802.3,DESKJET,DYN"
+      },
+      {
+        "who": "snmp",
+        "when": 416,
+        "type": "printer",
+        "id": "192.168.1.5",
+        "key": "DES",
+        "value": "CN579A"
+      },
+      {
+        "who": "snmp",
+        "when": 416,
+        "type": "printer",
+        "id": "192.168.1.5",
+        "key": "LEDMDIS",
+        "value": "USB#FF#CC#00,USB#07#01#02"
+      },
+      {
+        "who": "snmp",
+        "when": 416,
+        "type": "printer",
+        "id": "192.168.1.5",
+        "key": "MDL",
+        "value": "Officejet Pro 8600"
+      },
+      {
+        "who": "snmp",
+        "when": 416,
+        "type": "printer",
+        "id": "192.168.1.5",
+        "key": "MFG",
+        "value": "HP"
+      },
+      {
+        "who": "snmp",
+        "when": 416,
+        "type": "printer",
+        "id": "192.168.1.5",
+        "key": "S",
+        "value": "038080C484201021005a00800004518005a4418001e4618001e4118005a"
+      },
+      {
+        "who": "snmp",
+        "when": 416,
+        "type": "printer",
+        "id": "192.168.1.5",
+        "key": "SN",
+        "value": "CN2BQB4GX505KD"
+      },
+      {
+        "who": "snmp",
+        "when": 416,
+        "type": "printer",
+        "id": "192.168.1.5",
+        "key": "Z",
+        "value": "0102,0500000900000100000100000100000b,0600,0700000000000000000000,0b000000000000000000009a40000000009a2f000000009a2f000000009a43,0c0,0e00000000000000000000,0f00000000000000000000,10000002000008000008000008000008,110,12000,150,17000000000000000000000000000000,181"
+      }
+    ],
+    [
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "127.0.0.0/8",
+        "key": "ip",
+        "value": "127.0.0.1"
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "127.0.0.0/8",
+        "key": "ipNum",
+        "value": 2130706433
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "127.0.0.0/8",
+        "key": "cidr",
+        "value": "127.0.0.0/8"
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "127.0.0.0/8",
+        "key": "flags",
+        "value": "00000015"
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "127.0.0.0/8",
+        "key": "hu_bcast",
+        "value": "00000000"
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "127.0.0.0/8",
+        "key": "bcast",
+        "value": 0
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "127.0.0.0/8",
+        "key": "hu_netmask",
+        "value": "ff000000"
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "127.0.0.0/8",
+        "key": "netmask",
+        "value": 4278190080
+      }
+    ],
+    [
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "127.0.0.0/8",
+        "key": "ip",
+        "value": "127.0.0.1"
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "127.0.0.0/8",
+        "key": "ipNum",
+        "value": 2130706433
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "127.0.0.0/8",
+        "key": "cidr",
+        "value": "127.0.0.0/8"
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "127.0.0.0/8",
+        "key": "flags",
+        "value": "00000015"
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "127.0.0.0/8",
+        "key": "hu_bcast",
+        "value": "00000000"
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "127.0.0.0/8",
+        "key": "bcast",
+        "value": 0
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "127.0.0.0/8",
+        "key": "hu_netmask",
+        "value": "ff000000"
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "127.0.0.0/8",
+        "key": "netmask",
+        "value": 4278190080
+      }
+    ],
+    [
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "15.1.192.0/22",
+        "key": "ip",
+        "value": "15.1.193.212"
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "15.1.192.0/22",
+        "key": "ipNum",
+        "value": 251773396
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "15.1.192.0/22",
+        "key": "cidr",
+        "value": "15.1.192.0/22"
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "15.1.192.0/22",
+        "key": "flags",
+        "value": "00000012"
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "15.1.192.0/22",
+        "key": "hu_bcast",
+        "value": "ffffffff"
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "15.1.192.0/22",
+        "key": "bcast",
+        "value": 4294967295
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "15.1.192.0/22",
+        "key": "hu_netmask",
+        "value": "fffffc00"
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "15.1.192.0/22",
+        "key": "netmask",
+        "value": 4294966272
+      }
+    ],
+    [
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "172.28.109.96/28",
+        "key": "ip",
+        "value": "172.28.109.97"
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "172.28.109.96/28",
+        "key": "ipNum",
+        "value": 2887544161
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "172.28.109.96/28",
+        "key": "cidr",
+        "value": "172.28.109.96/28"
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "172.28.109.96/28",
+        "key": "flags",
+        "value": "00000013"
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "172.28.109.96/28",
+        "key": "hu_bcast",
+        "value": "ffffffff"
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "172.28.109.96/28",
+        "key": "bcast",
+        "value": 4294967295
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "172.28.109.96/28",
+        "key": "hu_netmask",
+        "value": "fffffff0"
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "172.28.109.96/28",
+        "key": "netmask",
+        "value": 4294967280
+      }
+    ],
+    [
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "10.0.75.0/24",
+        "key": "ip",
+        "value": "10.0.75.1"
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "10.0.75.0/24",
+        "key": "ipNum",
+        "value": 167791361
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "10.0.75.0/24",
+        "key": "cidr",
+        "value": "10.0.75.0/24"
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "10.0.75.0/24",
+        "key": "flags",
+        "value": "00000013"
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "10.0.75.0/24",
+        "key": "hu_bcast",
+        "value": "ffffffff"
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "10.0.75.0/24",
+        "key": "bcast",
+        "value": 4294967295
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "10.0.75.0/24",
+        "key": "hu_netmask",
+        "value": "ffffff00"
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "10.0.75.0/24",
+        "key": "netmask",
+        "value": 4294967040
+      }
+    ],
+    [
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "172.18.208.0/20",
+        "key": "ip",
+        "value": "172.18.208.1"
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "172.18.208.0/20",
+        "key": "ipNum",
+        "value": 2886914049
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "172.18.208.0/20",
+        "key": "cidr",
+        "value": "172.18.208.0/20"
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "172.18.208.0/20",
+        "key": "flags",
+        "value": "00000013"
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "172.18.208.0/20",
+        "key": "hu_bcast",
+        "value": "ffffffff"
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "172.18.208.0/20",
+        "key": "bcast",
+        "value": 4294967295
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "172.18.208.0/20",
+        "key": "hu_netmask",
+        "value": "fffff000"
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "172.18.208.0/20",
+        "key": "netmask",
+        "value": 4294963200
+      }
+    ],
+    [
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "192.168.80.0/24",
+        "key": "ip",
+        "value": "192.168.80.1"
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "192.168.80.0/24",
+        "key": "ipNum",
+        "value": 3232256001
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "192.168.80.0/24",
+        "key": "cidr",
+        "value": "192.168.80.0/24"
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "192.168.80.0/24",
+        "key": "flags",
+        "value": "00000013"
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "192.168.80.0/24",
+        "key": "hu_bcast",
+        "value": "ffffffff"
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "192.168.80.0/24",
+        "key": "bcast",
+        "value": 4294967295
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "192.168.80.0/24",
+        "key": "hu_netmask",
+        "value": "ffffff00"
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "192.168.80.0/24",
+        "key": "netmask",
+        "value": 4294967040
+      }
+    ],
+    [
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "192.168.31.0/24",
+        "key": "ip",
+        "value": "192.168.31.1"
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "192.168.31.0/24",
+        "key": "ipNum",
+        "value": 3232243457
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "192.168.31.0/24",
+        "key": "cidr",
+        "value": "192.168.31.0/24"
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "192.168.31.0/24",
+        "key": "flags",
+        "value": "00000013"
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "192.168.31.0/24",
+        "key": "hu_bcast",
+        "value": "ffffffff"
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "192.168.31.0/24",
+        "key": "bcast",
+        "value": 4294967295
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "192.168.31.0/24",
+        "key": "hu_netmask",
+        "value": "ffffff00"
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "192.168.31.0/24",
+        "key": "netmask",
+        "value": 4294967040
+      }
+    ],
+    [
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "192.168.56.0/24",
+        "key": "ip",
+        "value": "192.168.56.1"
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "192.168.56.0/24",
+        "key": "ipNum",
+        "value": 3232249857
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "192.168.56.0/24",
+        "key": "cidr",
+        "value": "192.168.56.0/24"
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "192.168.56.0/24",
+        "key": "flags",
+        "value": "00000013"
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "192.168.56.0/24",
+        "key": "hu_bcast",
+        "value": "ffffffff"
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "192.168.56.0/24",
+        "key": "bcast",
+        "value": 4294967295
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "192.168.56.0/24",
+        "key": "hu_netmask",
+        "value": "ffffff00"
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "192.168.56.0/24",
+        "key": "netmask",
+        "value": 4294967040
+      }
+    ],
+    [
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "192.168.1.0/24",
+        "key": "ip",
+        "value": "192.168.1.3"
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "192.168.1.0/24",
+        "key": "ipNum",
+        "value": 3232235779
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "192.168.1.0/24",
+        "key": "cidr",
+        "value": "192.168.1.0/24"
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "192.168.1.0/24",
+        "key": "flags",
+        "value": "00000013"
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "192.168.1.0/24",
+        "key": "hu_bcast",
+        "value": "ffffffff"
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "192.168.1.0/24",
+        "key": "bcast",
+        "value": 4294967295
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "192.168.1.0/24",
+        "key": "hu_netmask",
+        "value": "ffffff00"
+      },
+      {
+        "who": "interface_t",
+        "when": 0,
+        "type": "interface",
+        "id": "192.168.1.0/24",
+        "key": "netmask",
+        "value": 4294967040
+      }
+    ],
+    [
+      {
+        "who": "snmp",
+        "when": 0,
+        "type": "fd",
+        "id": "184",
+        "key": "socket",
+        "value": "10.0.75.0/24__snmp"
+      },
+      {
+        "who": "snmp",
+        "when": 0,
+        "type": "fd",
+        "id": "184",
+        "key": "iface_name",
+        "value": "10.0.75.0/24"
+      }
+    ],
+    [
+      {
+        "who": "snmp",
+        "when": 0,
+        "type": "fd",
+        "id": "188",
+        "key": "socket",
+        "value": "172.18.208.0/20__snmp"
+      },
+      {
+        "who": "snmp",
+        "when": 0,
+        "type": "fd",
+        "id": "188",
+        "key": "iface_name",
+        "value": "172.18.208.0/20"
+      }
+    ],
+    [
+      {
+        "who": "snmp",
+        "when": 0,
+        "type": "fd",
+        "id": "192",
+        "key": "socket",
+        "value": "172.28.109.96/28__snmp"
+      },
+      {
+        "who": "snmp",
+        "when": 0,
+        "type": "fd",
+        "id": "192",
+        "key": "iface_name",
+        "value": "172.28.109.96/28"
+      }
+    ],
+    [
+      {
+        "who": "snmp",
+        "when": 0,
+        "type": "fd",
+        "id": "196",
+        "key": "socket",
+        "value": "192.168.1.0/24__snmp"
+      },
+      {
+        "who": "snmp",
+        "when": 0,
+        "type": "fd",
+        "id": "196",
+        "key": "iface_name",
+        "value": "192.168.1.0/24"
+      }
+    ],
+    [
+      {
+        "who": "snmp",
+        "when": 0,
+        "type": "fd",
+        "id": "200",
+        "key": "socket",
+        "value": "192.168.31.0/24__snmp"
+      },
+      {
+        "who": "snmp",
+        "when": 0,
+        "type": "fd",
+        "id": "200",
+        "key": "iface_name",
+        "value": "192.168.31.0/24"
+      }
+    ],
+    [
+      {
+        "who": "snmp",
+        "when": 0,
+        "type": "fd",
+        "id": "204",
+        "key": "socket",
+        "value": "192.168.56.0/24__snmp"
+      },
+      {
+        "who": "snmp",
+        "when": 0,
+        "type": "fd",
+        "id": "204",
+        "key": "iface_name",
+        "value": "192.168.56.0/24"
+      }
+    ],
+    [
+      {
+        "who": "snmp",
+        "when": 0,
+        "type": "fd",
+        "id": "208",
+        "key": "socket",
+        "value": "192.168.80.0/24__snmp"
+      },
+      {
+        "who": "snmp",
+        "when": 0,
+        "type": "fd",
+        "id": "208",
+        "key": "iface_name",
+        "value": "192.168.80.0/24"
+      }
+    ],
+    [
+      {
+        "who": "snmp_blaster",
+        "when": 0,
+        "type": "fd",
+        "id": "212",
+        "key": "socket",
+        "value": "10.0.75.0/24__snmp_blaster"
+      },
+      {
+        "who": "snmp_blaster",
+        "when": 0,
+        "type": "fd",
+        "id": "212",
+        "key": "iface_name",
+        "value": "10.0.75.0/24"
+      }
+    ],
+    [
+      {
+        "who": "snmp_blaster",
+        "when": 0,
+        "type": "fd",
+        "id": "216",
+        "key": "socket",
+        "value": "172.18.208.0/20__snmp_blaster"
+      },
+      {
+        "who": "snmp_blaster",
+        "when": 0,
+        "type": "fd",
+        "id": "216",
+        "key": "iface_name",
+        "value": "172.18.208.0/20"
+      }
+    ],
+    [
+      {
+        "who": "snmp_blaster",
+        "when": 0,
+        "type": "fd",
+        "id": "220",
+        "key": "socket",
+        "value": "172.28.109.96/28__snmp_blaster"
+      },
+      {
+        "who": "snmp_blaster",
+        "when": 0,
+        "type": "fd",
+        "id": "220",
+        "key": "iface_name",
+        "value": "172.28.109.96/28"
+      }
+    ],
+    [
+      {
+        "who": "snmp_blaster",
+        "when": 0,
+        "type": "fd",
+        "id": "224",
+        "key": "socket",
+        "value": "192.168.1.0/24__snmp_blaster"
+      },
+      {
+        "who": "snmp_blaster",
+        "when": 0,
+        "type": "fd",
+        "id": "224",
+        "key": "iface_name",
+        "value": "192.168.1.0/24"
+      }
+    ],
+    [
+      {
+        "who": "snmp_blaster",
+        "when": 0,
+        "type": "fd",
+        "id": "228",
+        "key": "socket",
+        "value": "192.168.31.0/24__snmp_blaster"
+      },
+      {
+        "who": "snmp_blaster",
+        "when": 0,
+        "type": "fd",
+        "id": "228",
+        "key": "iface_name",
+        "value": "192.168.31.0/24"
+      }
+    ],
+    [
+      {
+        "who": "snmp_blaster",
+        "when": 0,
+        "type": "fd",
+        "id": "232",
+        "key": "socket",
+        "value": "192.168.56.0/24__snmp_blaster"
+      },
+      {
+        "who": "snmp_blaster",
+        "when": 0,
+        "type": "fd",
+        "id": "232",
+        "key": "iface_name",
+        "value": "192.168.56.0/24"
+      }
+    ],
+    [
+      {
+        "who": "snmp_blaster",
+        "when": 0,
+        "type": "fd",
+        "id": "236",
+        "key": "socket",
+        "value": "192.168.80.0/24__snmp_blaster"
+      },
+      {
+        "who": "snmp_blaster",
+        "when": 0,
+        "type": "fd",
+        "id": "236",
+        "key": "iface_name",
+        "value": "192.168.80.0/24"
+      }
+    ],
+    [
+      {
+        "who": "snmp_blaster",
+        "when": 581,
+        "type": "printer",
+        "id": "192.168.1.5",
+        "key": "CID",
+        "value": "HPIJVIPAV2"
+      },
+      {
+        "who": "snmp_blaster",
+        "when": 581,
+        "type": "printer",
+        "id": "192.168.1.5",
+        "key": "CLS",
+        "value": "PRINTER"
+      },
+      {
+        "who": "snmp_blaster",
+        "when": 581,
+        "type": "printer",
+        "id": "192.168.1.5",
+        "key": "CMD",
+        "value": "PCL3GUI,PCL3,PJL,JPEG,PCLM,URF,DW-PCL,802.11,802.3,DESKJET,DYN"
+      },
+      {
+        "who": "snmp_blaster",
+        "when": 581,
+        "type": "printer",
+        "id": "192.168.1.5",
+        "key": "DES",
+        "value": "CN579A"
+      },
+      {
+        "who": "snmp_blaster",
+        "when": 581,
+        "type": "printer",
+        "id": "192.168.1.5",
+        "key": "LEDMDIS",
+        "value": "USB#FF#CC#00,USB#07#01#02"
+      },
+      {
+        "who": "snmp_blaster",
+        "when": 581,
+        "type": "printer",
+        "id": "192.168.1.5",
+        "key": "MDL",
+        "value": "Officejet Pro 8600"
+      },
+      {
+        "who": "snmp_blaster",
+        "when": 581,
+        "type": "printer",
+        "id": "192.168.1.5",
+        "key": "MFG",
+        "value": "HP"
+      },
+      {
+        "who": "snmp_blaster",
+        "when": 581,
+        "type": "printer",
+        "id": "192.168.1.5",
+        "key": "S",
+        "value": "038080C484201021005a00800004518005a4418001e4618001e4118005a"
+      },
+      {
+        "who": "snmp_blaster",
+        "when": 581,
+        "type": "printer",
+        "id": "192.168.1.5",
+        "key": "SN",
+        "value": "CN2BQB4GX505KD"
+      },
+      {
+        "who": "snmp_blaster",
+        "when": 581,
+        "type": "printer",
+        "id": "192.168.1.5",
+        "key": "Z",
+        "value": "0102,0500000900000100000100000100000b,0600,0700000000000000000000,0b000000000000000000009a40000000009a2f000000009a2f000000009a43,0c0,0e00000000000000000000,0f00000000000000000000,10000002000008000008000008000008,110,12000,150,17000000000000000000000000000000,181"
+      }
+    ]
+  ]
+}

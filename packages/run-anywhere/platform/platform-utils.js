@@ -60,7 +60,7 @@ function argvify(query_, body_, headers_, extras, path_, method_, stage_, event_
   const event = {...(event_ ||{})};
 
   const query     = query_    || {};
-  const body      = body_     || {};
+  const body      = destringify(body_     || {});
   const headers   = headers_  || {};
 
   const path      = path_     || event.path         || '';
@@ -86,6 +86,14 @@ function argvify(query_, body_, headers_, extras, path_, method_, stage_, event_
   };
 
   return [argv, {...context, ...extraContext}];
+}
+
+function destringify(body) {
+  if (typeof body !== 'string') {
+    return body;
+  }
+
+  return sg.safeJSONParse(body);
 }
 
 // ------------------------------------------------------------------------------------------------------------------------------

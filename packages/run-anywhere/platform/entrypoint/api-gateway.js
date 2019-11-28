@@ -27,6 +27,7 @@ var   dispatcher    = dispatch;
 
 // exports.lambda_handler  = {};
 // exports.handler         = {};
+exports.cleanLog        = cleanLog;
 exports.apigateway      = {};
 
 

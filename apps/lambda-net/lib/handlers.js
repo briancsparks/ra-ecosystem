@@ -10,19 +10,21 @@ const quickNet                = require('quick-net');
 const sg0                     = ra.get3rdPartyLib('sg-flow');
 const sg                      = sg0.merge(sg0, quickNet.get3rdPartyLib('sg-argv'), quickNet.get3rdPartyLib('sg-env'), require('sg-config'), require('sg-http'));
 
+const {cleanLog}              = ra.entrypoints;
+
 const ENV                     = sg.ENV();
 
 module.exports.clientStartConfig = clientStartConfig;
 
 
 module.exports.handle = function(argv_, context, callback) {
-  sg.log(`LAMBDA_Net.Dispatcher.start`, {argv_, context});
+  // sg.log(`LAMBDA_Net.Dispatcher.start`, cleanLog({argv_, context}));
 
   // So, this is it! We are now handling the event/request. We have to dispatch it, and
   // then handle the final callback to the AWS service.
 
   // Dispatch it somewhere
-  sg.log(`LAMBDA_Net::params`, {argv_, context});   // The ./example-request.json file was from this line
+  // sg.log(`LAMBDA_Net::params`, cleanLog({argv_, context}));   // The ./example-request.json file was from this line
 
   // ------------------ /test
 
@@ -52,7 +54,7 @@ module.exports.handle = function(argv_, context, callback) {
   } else {
 
     if (matchRoute('/upload') || matchRoute('/ingest')) {
-      sg.log(`lam`, {qn: Object.keys(quickNet)});
+      // sg.log(`lam`, {qn: Object.keys(quickNet)});
 
       var Bucket, FailBucket;
 
