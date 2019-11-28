@@ -1272,6 +1272,14 @@
     universal-user-agent "^3.0.0"
     url-template "^2.0.8"
 
+"@sg0/sg-smart-value@^1.0.14":
+  version "1.0.14"
+  resolved "https://registry.yarnpkg.com/@sg0/sg-smart-value/-/sg-smart-value-1.0.14.tgz#7948b2f6252e992715ef475394746b10f3825493"
+  integrity sha512-2HuA6YlIhj0ruA+eAB7awR+nikBga1V43UWUmZRh4QQ80J2Ziz1YVgLJ26oBtkIEN/yoKgKiOJDgmZFOzMW+uw==
+  dependencies:
+    minimist "^1.2.0"
+    sg0 "^1.0.48"
+
 "@sindresorhus/is@^0.14.0":
   version "0.14.0"
   resolved "https://registry.yarnpkg.com/@sindresorhus/is/-/is-0.14.0.tgz#9fb3a3cf3132328151f353de4632e01e52102bea"
@@ -8509,12 +8517,41 @@ setprototypeof@1.1.1:
   resolved "https://registry.yarnpkg.com/setprototypeof/-/setprototypeof-1.1.1.tgz#7e95acb24aa92f5885e0abef5ba131330d4ae683"
   integrity sha512-JvdAWfbXeIGaZ9cILp38HntZSFSo3mWg6xGcJJsd+d4aRMOqauag1C63dJfDw7OaMYwEbHMOxEZ1lqVRYP2OAw==
 
+sg-bits@^1.0.31:
+  version "1.0.31"
+  resolved "https://registry.yarnpkg.com/sg-bits/-/sg-bits-1.0.31.tgz#ca6fef3b7028395b0653d6d4eef2312e0ffa272c"
+  integrity sha512-9fgs2HZtfbCAl2S3Gt8LB0XUoWoBszKU0pr+QwrRJDNW3jCrCrbCx1YWedYny7o9SpjPZnSbp1b011pvrvFAeA==
+  dependencies:
+    quick-merge "^1.0.19"
+    sg0 "^1.0.48"
+
+sg-diag@^1.0.64:
+  version "1.0.64"
+  resolved "https://registry.yarnpkg.com/sg-diag/-/sg-diag-1.0.64.tgz#87eacfc5c7d1100107b2be6ce6be8526904c0727"
+  integrity sha512-MPIUw/FlKXi7ZapEPT3jnBEzSOE8KrxnskOp7lORg6SyRItgeQpP2nDnhkHV+qYL7SfuM63Aw5q9OcZhM36IrA==
+  dependencies:
+    ajv "^6.10.2"
+    chalk "^2.4.2"
+    minimist "^1.2.0"
+    quick-merge "^1.0.19"
+    sg-bits "^1.0.31"
+    sg-env "^1.0.19"
+    sg0 "^1.0.48"
+    socket.io-client "^2.2.0"
+
 sg-echo@^1.0.33:
   version "1.0.33"
   resolved "https://registry.yarnpkg.com/sg-echo/-/sg-echo-1.0.33.tgz#1c6dbaa4f6d645be7cd0efbfc840b643468e4179"
   integrity sha512-SPhYaN8dIra8jGM6skcXNj7DP5C15RPnUWFkJZoVRvuLjbuGlfY7kUarutsYG9arxtAqTSWuL1El0yeglSkjdQ==
   dependencies:
     sg0 "^1.0.24"
+
+sg-env@^1.0.19:
+  version "1.0.19"
+  resolved "https://registry.yarnpkg.com/sg-env/-/sg-env-1.0.19.tgz#3a5032413f4f10b809d3e1156eee39e3344ef38e"
+  integrity sha512-EDH+8TSD4PX6k5P4lLC7+8xs4mfkYxNR+WfeTX6b0mF31faraVo3QKWNnLedoa4eNEEsMdepKIR/7fwzSf6y3A==
+  dependencies:
+    "@sg0/sg-smart-value" "^1.0.14"
 
 sg-flow@^0.9.11:
   version "0.9.15"
@@ -8524,12 +8561,28 @@ sg-flow@^0.9.11:
     lodash "^4.17.11"
     sg0 "^0.9.14"
 
+sg-flow@^1.0.73:
+  version "1.0.73"
+  resolved "https://registry.yarnpkg.com/sg-flow/-/sg-flow-1.0.73.tgz#962f739e0a66313b298519ee171a1fdfdc72116e"
+  integrity sha512-AStoGNd+YQZtMcTAsinn1TX4k1wgmAr/hJAPfs+RAgQXgOOtNKdwNJvH+pq6Iy/bqBgn1IzWd/IKn/x3PKxrvA==
+  dependencies:
+    lodash "^4.17.13"
+    sg-diag "^1.0.64"
+
 sg0@^0.9.14:
   version "0.9.14"
   resolved "https://registry.yarnpkg.com/sg0/-/sg0-0.9.14.tgz#4ae6c47f13d9984d6e9116552615e1523f8667c8"
   integrity sha512-zWX6fVsQrcZoHTjpji4MfKfGNwnr+HcMNcTOrHkVBX6fi1IlZracVwyYXS6V8Jo+NpTKojqxVVr3noLYFUi6EA==
   dependencies:
     lodash "^4.17.11"
+
+sg0@^1.0.48:
+  version "1.0.48"
+  resolved "https://registry.yarnpkg.com/sg0/-/sg0-1.0.48.tgz#188d30fb97672ca246480ca6f0f081c852a7d145"
+  integrity sha512-BUt60nFDCcithTzOivH0HJEJB1qJJ7IN/1BiR/fVKD+sthKZPSWUqtQ3IBs61FEIS7KVuH6WLmI1qF+rk1gA7w==
+  dependencies:
+    json-stringify-safe "^5.0.1"
+    lodash "^4.17.13"
 
 sgsg@^0.9.54:
   version "0.9.56"

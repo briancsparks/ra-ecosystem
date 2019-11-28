@@ -29,8 +29,8 @@
       "request": "launch",
       "name": "Debug current file with Run-Anywhere",
       "program": "${workspaceFolder}/packages/run-anywhere/bin.js",
-      "args": ["invoke", "${file}"],
-      "cwd": "C:/Users/sparksb/dev/bcs/ra-ecosystem/apps/lambda-net",
+      "args": ["invoke2", "${file}", "deleteARecord"],
+      "cwd": "${workspaceFolder}/packages/quick-net",
       "internalConsoleOptions": "openOnSessionStart",
     },
     {
