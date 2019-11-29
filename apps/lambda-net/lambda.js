@@ -5,12 +5,15 @@ if (process.env.SG_VVVERBOSE) console[process.env.SG_LOAD_STREAM || 'log'](`Load
  *
  */
 const ra                      = require('run-anywhere').v2;
-
-// const quickNet                = require('quick-net');
-// const sg0                     = ra.get3rdPartyLib('sg-flow');
-// const sg                      = sg0.merge(sg0, quickNet.get3rdPartyLib('sg-argv'), require('sg-config'), require('sg-http'));
+const quickNet                = require('quick-net');
+const sg0                     = ra.get3rdPartyLib('sg-flow');
+const sg                      = sg0.merge(sg0, quickNet.get3rdPartyLib('sg-argv'), require('sg-env'));
+const {_}                     = sg;
 
 const {handle}                = require('./lib/handlers');
+const params                  = require('./lib/params');
+
+const ENV                     = sg.ENV();
 
 const {
   entrypoints,
@@ -19,19 +22,55 @@ const {
 const {cleanLog}              = entrypoints;
 
 
+
 // ----------------------------------------------------------------------------------------
 // We need to export a function that AWS Lambda can call - just re-export the one from RA.
-exports.handler = entrypoints.apigateway.handler;
+// exports.handler = entrypoints.apigateway.handler;
 
-// exports.handler = function(event, context, callback) {
-//   // const data_length = event.data && event.data.length;
-//   // console.log(`exports.handler`, {event: {...event, data: data_length}, context});
+exports.handler = function(event, context, callback) {
+  // console.log(`exports.handler-lambda.js`, cleanLog({event, context}));
+  var result;
 
-//   // console.log(`exports.handler-lambda.js`, cleanLog({event, context}));
+  const last = _.after(last_, 2);
 
-//   return entrypoints.apigateway.handler(event, context, callback);
-//   // return callback(null, {ok:true});
-// };
+  const saveRaw = function() {
+    const argv      = event.queryStringParameters;
+    const sys_argv  = params.getRawBucketInfo();
+    quickNet.putClientJsonToS3({sys_argv, ...argv}, context, function(err, data) {
+      // Dont care about results, but the request is waiting
+      return last();
+    });
+  };
+
+  var should = ENV.at('LAMBDANET_SHOULD_RAW_UPLOAD') || false;
+  if (should) {
+    if (matchRoute('/upload') || matchRoute('/ingest')) {
+      return saveRaw();
+    }
+  }
+
+  /* otherwise */
+  last();
+
+  // Do the real processing
+  return entrypoints.apigateway.handler(event, context, function(...args) {
+    result = args;
+    return last();
+  });
+
+
+  // ==========================================================================================================================
+  function last_() {
+    return callback(...result);
+  }
+
+  function matchRoute(route) {
+    const path  = (event.path  || '').toLowerCase();
+    const stage = (event.requestContext.stage || '').toLowerCase();
+
+    return (path === route) || (`/${stage}${path}` === route);
+  }
+};
 
 
 // -------------------------------------------------------------------------------------

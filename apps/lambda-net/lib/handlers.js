@@ -9,6 +9,7 @@ const ra                      = require('run-anywhere').v2;
 const quickNet                = require('quick-net');
 const sg0                     = ra.get3rdPartyLib('sg-flow');
 const sg                      = sg0.merge(sg0, quickNet.get3rdPartyLib('sg-argv'), quickNet.get3rdPartyLib('sg-env'), require('sg-config'), require('sg-http'));
+const params                  = require('./params');
 
 const {cleanLog}              = ra.entrypoints;
 
@@ -56,13 +57,14 @@ module.exports.handle = function(argv_, context, callback) {
     if (matchRoute('/upload') || matchRoute('/ingest')) {
       // sg.log(`lam`, {qn: Object.keys(quickNet)});
 
-      var Bucket, FailBucket;
+      // var Bucket, FailBucket;
 
-      Bucket      = Bucket        || ENV.at('LAMBDANET_INGEST_BUCKET')        || 'lambda-net-ingest';
-      FailBucket  = FailBucket    || ENV.at('LAMBDANET_FAIL_INGEST_BUCKET')   || 'lambda-net-ingest-fail';
+      // Bucket      = Bucket        || ENV.at('LAMBDANET_INGEST_BUCKET')        || 'lambda-net-ingest';
+      // FailBucket  = FailBucket    || ENV.at('LAMBDANET_FAIL_INGEST_BUCKET')   || 'lambda-net-ingest-fail';
 
-      const sys_argv = {Bucket, FailBucket};
-      // const argv = {...argv_, Bucket, FailBucket};
+      // const sys_argv = {Bucket, FailBucket};
+
+      const sys_argv = params.BucketInfo();
       return quickNet.putClientJsonToS3({sys_argv, ...argv_}, context, function(err, data) {
 
         if (err) {
