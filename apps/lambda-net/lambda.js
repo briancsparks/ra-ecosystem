@@ -31,26 +31,33 @@ exports.handler = function(event, context, callback) {
   // console.log(`exports.handler-lambda.js`, cleanLog({event, context}));
   var result;
 
-  const last = _.after(last_, 2);
+  const last = _.after(2, last_);
 
   const saveRaw = function() {
-    const argv      = event.queryStringParameters;
+    const Body      = {...event};
+    const argv      = {...event.queryStringParameters, Body};
     const sys_argv  = params.getRawBucketInfo();
     quickNet.putClientJsonToS3({sys_argv, ...argv}, context, function(err, data) {
       // Dont care about results, but the request is waiting
+      console.log(`saveRaw`, sg.inspect({err, data}));
       return last();
     });
   };
 
-  var should = ENV.at('LAMBDANET_SHOULD_RAW_UPLOAD') || false;
+  var should, did;
+
+  should = should || ENV.at('LAMBDANET_SHOULD_RAW_UPLOAD');
+  should = sg.isnt(should) ? true : should;
   if (should) {
     if (matchRoute('/upload') || matchRoute('/ingest')) {
-      return saveRaw();
+      did = true;
+      saveRaw();
     }
   }
 
-  /* otherwise */
-  last();
+  if (!did) {
+    last();
+  }
 
   // Do the real processing
   return entrypoints.apigateway.handler(event, context, function(...args) {

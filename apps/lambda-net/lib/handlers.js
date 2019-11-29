@@ -57,14 +57,7 @@ module.exports.handle = function(argv_, context, callback) {
     if (matchRoute('/upload') || matchRoute('/ingest')) {
       // sg.log(`lam`, {qn: Object.keys(quickNet)});
 
-      // var Bucket, FailBucket;
-
-      // Bucket      = Bucket        || ENV.at('LAMBDANET_INGEST_BUCKET')        || 'lambda-net-ingest';
-      // FailBucket  = FailBucket    || ENV.at('LAMBDANET_FAIL_INGEST_BUCKET')   || 'lambda-net-ingest-fail';
-
-      // const sys_argv = {Bucket, FailBucket};
-
-      const sys_argv = params.BucketInfo();
+      const sys_argv = params.getBucketInfo();
       return quickNet.putClientJsonToS3({sys_argv, ...argv_}, context, function(err, data) {
 
         if (err) {
