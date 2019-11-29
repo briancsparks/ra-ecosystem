@@ -93,7 +93,7 @@ DIAG.usefulCliArgs({
   admin         : [instanceBaseOpts, `--key=HQ                --type=t3.nano  --INSTALL_ADMIN       --INSTALL_CLIENTS --INSTALL_USER`].join(' '),
   worker        : [instanceBaseOpts, `--key=quicknetprj_demo --type=t3.micro  --INSTALL_WORKER      --INSTALL_CLIENTS`].join(' '),
   workstation   : [instanceBaseOpts, `--key=quicknetprj_demo --type=t3.micro  --INSTALL_WORKSTATION --INSTALL_CLIENTS --INSTALL_OPS`].join(' '),
-  workstationb  : [instanceBaseOpts, `--key=sparksb          --type=t3.micro --INSTALL_WORKSTATION --INSTALL_CLIENTS --INSTALL_OPS`].join(' '),
+  workstationb  : [instanceBaseOpts, `--key=sparksb          --type=t3.micro  --INSTALL_WORKSTATION --INSTALL_CLIENTS --INSTALL_OPS`].join(' '),
 });
 
 // The last one wins. Comment out what you dont want.
@@ -183,6 +183,7 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context, callback) {
     const cloudInitData         = rax.arg(argv, 'cloudInit,ci')                   || {};
     const roleKeys              = rax.arg(argv, 'roleKeys');
     const iamName               = rax.arg(argv, 'iamName,iam')    || `quicknetprj-${getIamTypeForInstance(argv)}-instance-role`;
+    var   fqdns                 = rax.arg(argv, 'fqdns,fqdn', {array:true});
 
     // What can be done with ModifyInstanceAttribute
     const SourceDestCheck                       = !!rax.arg(argv, 'SourceDestCheck');
@@ -745,10 +746,11 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context, callback) {
 
         // --location=/clientstart --upstream=clients --upstream-service=10.1.2.3:3001
         const ngArgs = {
+          fqdns,
           reloadServer        : false,
           type                : 'qnwebtier',
           rpxiPort            : 3009,
-          fqdns               : 'api.cdr0.net'.split(','),
+          // fqdns               : 'api.cdr0.net'.split(','),
           // sidecar             : '/clientstart,3009',
           // upstream            : 'clients',
           // upstream_service    : '10.1.2.3:3001',

@@ -22,7 +22,7 @@ const getAllRecords           = util.promisify(libEnumRecords.getAllRecords);
 const mod                     = ra.modSquad(module, 'quickNetRoute53');
 const DIAG                    = sg.DIAG(module);
 const ENV                     = sg.ENV();
-// const ARGV                    = sg.ARGV();
+const ARGV                    = sg.ARGV();
 
 const dg                      = DIAG.dg;
 
@@ -47,10 +47,16 @@ mod.async(DIAG.async({resetDnsToCurrent: async function(argv, context) {
   var [instances, records] = [normalizeItems(await P_instances).Instances, await P_records];
   var doneInstances = instances.map(x => false);
 
+  var domainZoneId;
+
   var deletes = [];
   var changes = [];
-  var upserts = [];
   records.forEach(({ResourceRecordSet, HostedZoneId}) => {
+
+    if (ResourceRecordSet.Name && ResourceRecordSet.Name.toLowerCase().endsWith(`${argv.domain}.`)) {
+      domainZoneId = HostedZoneId;
+    }
+
     if (ResourceRecordSet.Type === 'A') {
 
       var rrHandled = false;
@@ -87,6 +93,10 @@ mod.async(DIAG.async({resetDnsToCurrent: async function(argv, context) {
   _.each(instances, (instance, index) => {
     if (!doneInstances[index] && instance.tag_qn_fqdns) {
       console.log(`Fixing DNS: Found instance with a claim for FQDN ${instance.tag_qn_fqdns}, but no Route 53 entry ${instance.id}(${instance.state})`);
+      if (instance.state === 'running') {
+        const ResourceRecordSet = {Name: instance.tag_qn_fqdns, ResourceRecords: [{Value:instance.PublicIpAddress}], TTL:300, Type: "A"};
+        changes.push([{ResourceRecordSet, HostedZoneId: domainZoneId}, instance.PublicIpAddress]);
+      }
     }
   });
 
@@ -99,7 +109,7 @@ mod.async(DIAG.async({resetDnsToCurrent: async function(argv, context) {
 
     // console.log(`Fixing DNS`, sg.inspect({ChangeBatch, HostedZoneId}));
     var {ChangeInfo} = await route53.changeResourceRecordSets({HostedZoneId, ChangeBatch}).promise();
-    console.log(`Fixing DNS - Delete`, {ChangeBatch, HostedZoneId, ChangeInfo});
+    // console.log(`Fixing DNS - Delete`, {ChangeBatch, HostedZoneId, ChangeInfo});
 
     report.push({delete:{ResourceRecordSet : rrs.ResourceRecordSet}});
   });
@@ -113,7 +123,7 @@ mod.async(DIAG.async({resetDnsToCurrent: async function(argv, context) {
 
     // console.log(`Fixing DNS`, sg.inspect({ChangeBatch, HostedZoneId}));
     var {ChangeInfo} = await route53.changeResourceRecordSets({HostedZoneId, ChangeBatch}).promise();
-    console.log(`Fixing DNS - Upsert`, {ChangeBatch, HostedZoneId, ChangeInfo});
+    // console.log(`Fixing DNS - Upsert`, {ChangeBatch, HostedZoneId, ChangeInfo});
 
     report.push({upsert:{ResourceRecordSet : rrs.ResourceRecordSet}});
   });
@@ -125,7 +135,8 @@ mod.async(DIAG.async({resetDnsToCurrent: async function(argv, context) {
 module.exports.ra_active_fn_name = DIAG.activeName;
 
 if (require.main === module) {
-  module.exports.resetDnsToCurrent({domain: 'cdr0.net'}, {}, function(err, data) {
+  const {domain ='cdr0.net'}    = ARGV;
+  module.exports.resetDnsToCurrent({domain}, {}, function(err, data) {
     console.log(`reset-to-current-state`, sg.inspect({err, data}));
   });
 }

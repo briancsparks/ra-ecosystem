@@ -11,6 +11,14 @@
     "command":["node ./packages/run-anywhere/bin3.js test-require-all"],
   },
   {
+    "label": "Fix FQDNS",
+    "type": "shell",
+    "options": {
+      "cwd": "${workspaceFolder}/apps/lambda-net"
+    },
+    "command":["node ${workspaceFolder}/./packages/quick-net/lib/route53/reset-to-current-state.js --domain=cdr0.net"],
+  },
+  {
     "label": "build layer (1)",
     "type": "shell",
     "options": {
