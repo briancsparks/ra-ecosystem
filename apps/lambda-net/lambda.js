@@ -28,6 +28,7 @@ const {cleanLog}              = entrypoints;
 // exports.handler = entrypoints.apigateway.handler;
 
 exports.handler = function(event, context, callback) {
+  console.log(`${__filename} handling ${event.path}`);
   // console.log(`exports.handler-lambda.js`, cleanLog({event, context}));
   var result;
 
