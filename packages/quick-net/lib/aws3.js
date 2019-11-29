@@ -3,6 +3,18 @@
 /**
  * Parse AWS objects.
  *
+ * For instances, adds: {
+ *  tags: { ... },                     // Normal JS objects with kv pairs that are easy to use in JS
+ *  tag_qn_roles= ":access:bastion:",
+ *  tag_qn_roles__access = true,
+ *  tag_qn_roles__bastion = true
+ *  instanceId
+ *  id
+ *  monitoring
+ *  zone
+ *  state
+ *  iamInstanceProfile
+ * }
  *
  */
 
@@ -18,15 +30,25 @@ const qm                      = quickMerge.quickMergeImmutable;
 // const ENV                     = sg.ENV();
 // const dg                      = DIAG.dg;
 
-module.exports.AwsDataBlob = AwsDataBlob;
-
+module.exports.AwsDataBlob      = AwsDataBlob;
+module.exports.normalizeItems   = normalizeItems;
 
 //-----------------------------------------------------------------------------------------------------------------------------
-function AwsDataBlob() {
-  if (!(this instanceof AwsDataBlob))   { return new AwsDataBlob();  }
+function normalizeItems(items) {
+  const blob = new AwsDataBlob(items);
+  return blob.getData();
+}
+
+//-----------------------------------------------------------------------------------------------------------------------------
+function AwsDataBlob(blob) {
+  if (!(this instanceof AwsDataBlob))   { return new AwsDataBlob(blob);  }
   var self = this;
 
   self.data = {};
+
+  if (blob) {
+    self.addResult(blob);
+  }
 }
 
 //-----------------------------------------------------------------------------------------------------------------------------
@@ -48,6 +70,9 @@ AwsDataBlob.prototype.addResult = function(blob) {
   if (blob.Reservations) {
     return outerParse(blob);
   }
+
+  // TODO: This is not right (using firstKey). The blob is not guaranteed only to
+  // have one key
 
   var key     = sg.firstKey(blob);
   var value   = blob[key];
@@ -86,6 +111,8 @@ AwsDataBlob.prototype.normalize = function(item_) {
   }
 
   if (item.InstanceId) {
+    item.instanceId         = item.InstanceId;
+    item.id                 = item.InstanceId;
     item.monitoring         = item.Monitoring           && item.Monitoring.State;
     item.zone               = item.Placement            && item.Placement.AvailabilityZone;
     item.state              = item.State                && item.State.Name;
@@ -104,7 +131,7 @@ function mkTagMap(v) {
 
   const arr = sg.compact(v.Value.split(':'));
   result = sg.reduce(arr, result, (m,v) => {
-    return sg.kv(m, `tag_${key}__${v}`, true);
+    return sg.kv(m, `tag_${key}__${v}`.replace(/[^a-zA-Z0-9_]/g, '_'), true);
   });
 
   return result;

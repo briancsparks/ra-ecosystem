@@ -18,7 +18,7 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "Debug current file using run-anywhere.bin_file",
+      "name": "Debug current file using run-anywhere.bin_file and ra_active_fn_name",
       "program": "${workspaceFolder}/packages/run-anywhere/bin-file.js",
       "args": ["one-file", "${file}"],
       "cwd": "C:/Users/sparksb/dev/bcs/ra-ecosystem/apps/lambda-net",
