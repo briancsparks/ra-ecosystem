@@ -29,6 +29,7 @@ sg.ARGV           = ARGV;
 sg.argvGet        = argvGet;
 sg.argvPod        = argvPod;
 sg.syargv         = syargv;
+sg.origCliArgs    = origCliArgs;
 
 // You either want ARGV(), to have the full features, or:
 sg.ARGVnormal     = ARGVnormal;       // Most normal: no logging fns, all spellings of keys, no favors
@@ -104,6 +105,8 @@ function ARGV(options_ ={}, input = process.argv) {
   var options   = options_ || {};
   var args      = [];
   var argv      = {};
+
+  argv.__asis = JSON.stringify(input);
 
   if (options.noExtraCases) {
     options.noSnakeCase     = true;
@@ -500,6 +503,14 @@ function syargv(argv, name) {
   if (sgsv.smartValue(process.env.ACTIVE_DEVELOPMENT)) {
     return argv[`sysargv_${name}`];
   }
+}
+
+function origCliArgs(argv) {
+  var result = sg.reduce(sg.safeJSONParse(argv.__asis), '', (str, v) => {
+    return str + ' ' + v;
+  });
+
+  return result;
 }
 
 //-----------------------------------------------------------------------------------------------------------------------------

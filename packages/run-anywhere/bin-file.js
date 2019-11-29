@@ -3,6 +3,7 @@ const sg                      = require('sg-argv');
 const path                    = require('path');
 const libInvoke               = require('./lib/v3/invoke');
 const libGlob                 = require('glob');
+const {origCliArgs}           = sg;
 
 const ARGV                    = sg.ARGV();
 
@@ -28,6 +29,7 @@ function main(argv_) {
 
     // Invoke it ------ !
     return fn({...argv}, {globIgnore}, function(err, data) {
+      console.log(`node ${__filename} ${origCliArgs(argv_)}`);
       console.log(`binfilemain`, {err, data});
     });
   });
