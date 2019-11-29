@@ -90,27 +90,35 @@ mod.async(DIAG.async({resetDnsToCurrent: async function(argv, context) {
     }
   });
 
+  var report = [];
+
   // Delete?
   deletes.map(async (rrs) => {
     var HostedZoneId = rrs.HostedZoneId;
     var ChangeBatch = {Changes:[{Action:"DELETE", ResourceRecordSet : rrs.ResourceRecordSet}]};
 
-    console.log(`fixmddf`, sg.inspect({ChangeBatch, HostedZoneId}));
+    // console.log(`Fixing DNS`, sg.inspect({ChangeBatch, HostedZoneId}));
     var {ChangeInfo} = await route53.changeResourceRecordSets({HostedZoneId, ChangeBatch}).promise();
-    console.log(`fixmddf`, {ChangeBatch, HostedZoneId, ChangeInfo});
+    console.log(`Fixing DNS - Delete`, {ChangeBatch, HostedZoneId, ChangeInfo});
+
+    report.push({delete:{ResourceRecordSet : rrs.ResourceRecordSet}});
   });
 
-  // var ChangeBatch = {Changes:[{Action:"DELETE",ResourceRecordSet: deletes.map(x => {
-  //   HostedZoneId=x.HostedZoneId;
-  //   return x.ResourceRecordSet;
-  // })[0]}]};
+  // Update?
+  changes.map(async ([rrs, ip]) => {
+    var HostedZoneId      = rrs.HostedZoneId;
+    var ResourceRecordSet = rrs.ResourceRecordSet;
+    ResourceRecordSet.ResourceRecords[0].Value = ip;
+    var ChangeBatch = {Changes:[{Action:"UPSERT", ResourceRecordSet}]};
 
+    // console.log(`Fixing DNS`, sg.inspect({ChangeBatch, HostedZoneId}));
+    var {ChangeInfo} = await route53.changeResourceRecordSets({HostedZoneId, ChangeBatch}).promise();
+    console.log(`Fixing DNS - Upsert`, {ChangeBatch, HostedZoneId, ChangeInfo});
 
-  // console.log(`fixdone`, {deletes, changes, upserts});
-  // return {deletes, changes, upserts};
-  return {a:42};
+    report.push({upsert:{ResourceRecordSet : rrs.ResourceRecordSet}});
+  });
 
-  // return await manageRecord({Action:'UPSERT', Type:'A', ...argv}, context);
+  return report;
 }}));
 
 
