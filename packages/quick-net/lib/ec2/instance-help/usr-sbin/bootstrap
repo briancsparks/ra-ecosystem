@@ -18,6 +18,8 @@ echo "Bootstrap script"
 # pull_s3 qn-redis
 # pull_s3 qn-mongo
 
+# -----------------------------------------------------------------------------------------------------------------------------
+# Scripts
 FILES="$(aws s3api list-objects --bucket ${NAMESPACE_LC} --prefix quick-net/deploy/${INSTANCE_ID}/usr-sbin | jq -r '.Contents[].Key')"
 
 for f in $FILES; do
@@ -27,6 +29,8 @@ for f in $FILES; do
 done
 
 
+# -----------------------------------------------------------------------------------------------------------------------------
+# Data file (like certs)
 FILES="$(aws s3api list-objects --bucket ${NAMESPACE_LC} --prefix quick-net/deploy/${INSTANCE_ID}/files | jq -r '.Contents[].Key')"
 
 for f in $FILES; do
@@ -35,9 +39,31 @@ for f in $FILES; do
 
 done
 
-echo "Install clients:" > /home/ubuntu/readme.md
+# -----------------------------------------------------------------------------------------------------------------------------
+# etcd
+install-etcd
+
+
+# -----------------------------------------------------------------------------------------------------------------------------
+# Other
+echo "Install clients:" >> /home/ubuntu/readme.md
 echo "sudo apt-get install -y redis-tools mongodb-clients" >> /home/ubuntu/readme.md
 echo "" >> /home/ubuntu/readme.md
 
 chown ubuntu:ubuntu /home/ubuntu/readme.md
+
+# Turn quicknet-installed into JSON
+curl -sSL 'http://169.254.169.254/latest/dynamic/instance-identity/document' > /home/ubuntu/quicknetinstdata.json
+(
+  echo "[";
+  cat /home/ubuntu/quicknet-installed;
+  echo -n '"instanceIdentity": ';
+  cat /home/ubuntu/quicknetinstdata.json;
+  echo "]";
+)               > /home/ubuntu/quicknet-installed.json
+
+rm /home/ubuntu/quicknet-installed
+
+chown ubuntu:ubuntu /home/ubuntu/quicknet-installed.json
+chown ubuntu:ubuntu /home/ubuntu/quicknetinstdata.json
 

@@ -710,6 +710,23 @@ sg.keyMirrorR = function(x, sep) {
 };
 
 /**
+ * Add to a keyMirror.
+ *
+ * @param {*} km
+ * @param {*} k
+ * @returns
+ */
+sg.addKeyToKeyMirror = function(km, k, ...rest) {
+  var result = sg.kv(km, k, k);
+  if (rest.length > 0) {
+    let [k2, ...rest2] = rest;
+    result = sg.addKeyToKeyMirror(result, k2, ...rest2);
+  }
+  return result;
+};
+sg.addKm = sg.addKeyToKeyMirror;
+
+/**
  *  Is the parameter strictly an Object (and not an Array, or Date, or ...).
  */
 var isObject = sg.isObject = function(x) {

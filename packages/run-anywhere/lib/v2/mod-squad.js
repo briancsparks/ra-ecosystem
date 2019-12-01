@@ -855,7 +855,7 @@ const FuncRa = function(argv, context, callback, origCallback, ractx, options_ =
       if (!sg.isnt(value)) {
 
         // If the caller needs an array, arrayify it
-        if (options.array && !_.isArray(value)) {
+        if ((options.array || options.keyMirror) && !_.isArray(value)) {
           if (_.isString(value)) {
             value = (''+value).split(',');
           } else {
@@ -864,7 +864,16 @@ const FuncRa = function(argv, context, callback, origCallback, ractx, options_ =
           }
         }
 
-        // Store it
+        // If the caller needs a key mirror
+        if (options.keyMirror) {
+          value = sg.keyMirror(value);
+        }
+
+        if (options.addToArgv) {
+          argv[defName] = value;
+        }
+
+          // Store it
         self.args.push({names, options, value});
       }
 

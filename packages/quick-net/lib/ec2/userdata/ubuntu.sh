@@ -1,8 +1,12 @@
 #!/bin/bash -ex
 
 ## Get instanceId
-export INSTANCE_ID="$(curl -sSL 'http://169.254.169.254/latest/dynamic/instance-identity/document' | jq -r '.instanceId')"
+curl -sSL 'http://169.254.169.254/latest/dynamic/instance-identity/document' > /tmp/quicknetinstdata.json
+export INSTANCE_ID="$(cat /tmp/quicknetinstdata.json | jq -r '.instanceId')"
 echo "INSTANCE_ID=\"${INSTANCE_ID}\"" >> /etc/environment
+
+export PRIVATE_IP="$(cat /tmp/quicknetinstdata.json | jq -r '.privateIp')"
+echo "PRIVATE_IP=\"${PRIVATE_IP}\"" >> /etc/environment
 
 NODE_UTILS=""
 

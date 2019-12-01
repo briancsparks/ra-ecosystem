@@ -17,23 +17,24 @@ const az                      = ARGV._get('az,zone')            || 'c';
 
 
 // Do not be too eager if we are just being required
-if (ARGV._userKeys().filter(k => k !== '_').length > 0) {
-  var   params = {
-    distro        : 'ubuntu',
-    sgs           : ['admin'],
-    subnet        : `admin-zone${az.toUpperCase()}`,
-    InstanceType  : 't3.medium',
-    az
-  };
+if (require.main === module) {
+  if (ARGV._userKeys().filter(k => k !== '_').length > 0) {
+    var   params = {
+      distro        : 'ubuntu',
+      sgs           : ['admin'],
+      subnet        : `admin-zone${az.toUpperCase()}`,
+      InstanceType  : 't3.medium',
+      az
+    };
 
-  params.userdata_opts = {INSTALL_DOCKER:true, INSTALL_OPS:true, INSTALL_AGENTS:true, INSTALL_KUBERNETES:true, INSTALL_MONGO_CLIENTS:true};
+    params.userdata_opts = {INSTALL_DOCKER:true, INSTALL_OPS:true, INSTALL_AGENTS:true, INSTALL_KUBERNETES:true, INSTALL_MONGO_CLIENTS:true};
 
-  params = moreShellScript(params);
-  sg.elog(`params`, {params});
+    params = moreShellScript(params);
+    sg.elog(`params`, {params});
 
-  ra.command(ARGV._plus(params), {quickNet}, 'upsertInstance', {__filename});
+    ra.command(ARGV._plus(params), {quickNet}, 'upsertInstance', {__filename});
+  }
 }
-
 
 
 
