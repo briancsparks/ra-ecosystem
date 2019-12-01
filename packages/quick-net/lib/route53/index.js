@@ -159,6 +159,7 @@ mod.async(DIAG.async({manageRecord: async function(argv, context) {
 
   var hz, ChangeInfo, result ={};
 
+  console.error(`manageRecord(${Action},${Type})`, {subdomain,domain,fqdn,ip,ttl,comment,private_,fireAndForget,noAwaitWait});
   diag.i(`manageRecord(${Action},${Type})`, {subdomain,domain,fqdn,ip,ttl,comment,private_,fireAndForget,noAwaitWait});
   try {
     const {HostedZones} = hz = await route53.listHostedZonesByName({DNSName: domain}).promise();
@@ -205,7 +206,7 @@ mod.async(DIAG.async({manageRecord: async function(argv, context) {
 
   } catch(err) {
     console.error(err);
-    console.log(`Continuing`);
+    console.log(`Continuing----------------------------------`);
   }
 
   return result;
