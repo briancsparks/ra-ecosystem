@@ -46,7 +46,7 @@ function mergeIpDelta(record, PublicIpAddress) {
 }
 
 function mergeRrs(a, b) {
-  const ResourceRecords     = a.ResourceRecordSet.ResourceRecords || b.ResourceRecordSet.ResourceRecords;
+  const ResourceRecords     = b.ResourceRecordSet.ResourceRecords || a.ResourceRecordSet.ResourceRecords;
   const ResourceRecordSet   = { ...a.ResourceRecordSet,
     ...b.ResourceRecordSet,
     ResourceRecords
@@ -83,57 +83,158 @@ DIAG.activeName = 'resetDnsToCurrent';
 
 mod.async(DIAG.async({resetDnsToCurrent: async function(argv, context) {
   const diag    = DIAG.diagnostic({argv, context});
-  var instances, records;
+  const domain  = argv.domain;
+
+  var instances;
+  var P_instances;
 
   if (!argv.json) {
     // Get the request for instance list going
-    const P_instances = ec2.describeInstances({}).promise();
-    const P_records   = getAllRecords(argv, context);
-
-    // Wait for both
-    [instances, records] = [normalizeItems(await P_instances).Instances, await P_records];
-    console.log(sg.safeJSONStringify({records, instances}, null, null));
+    P_instances = ec2.describeInstances({}).promise();
   } else {
-    [instances, records] = [argv.json.instances, argv.json.records];
+    instances = argv.json.instances;
   }
 
-  var compoundRecords     = records.map(record => ({record, Name:record.ResourceRecordSet.Name, Type:record.ResourceRecordSet.Type, ips: recordSetIps(record)}));
-  var ipInstances         = _.groupBy(instances.filter(instance => instance.PublicIpAddress), 'PublicIpAddress');
+  var ipInstances;
+  var fqdnInstances;
+  var fqdnDotInstances;
 
-  var fqdnInstances       = _.groupBy(instances.filter(instance => instance.tag_qn_fqdns),    'tag_qn_fqdns');
-  var fqdnDotInstances    = sg.reduce(fqdnInstances, {}, (m,v,k) => (sg.kv(m, k+'.', v)));                                /* add the dot */
+  const initialSync = async function() {
+    instances = instances || normalizeItems(await P_instances).Instances;
+
+    ipInstances         = _.groupBy(instances.filter(instance => instance.PublicIpAddress), 'PublicIpAddress');
+    fqdnInstances       = _.groupBy(instances.filter(instance => instance.tag_qn_fqdns),    'tag_qn_fqdns');
+    fqdnDotInstances    = sg.reduce(fqdnInstances, {}, (m,v,k) => (sg.kv(m, k+'.', v)));                                /* add the dot */
+  };
 
   var seenInstances = {};
+  const mapper = function(compoundRecord) {
+    if (compoundRecord.Type !== 'A')                                            { return; }
+    if (!compoundRecord.Name.toLowerCase().endsWith(argv.domain +'.'))          { return; }
 
-  var changes = compoundRecords.map(compoundRecord => {
     var instance = assocInstance(fqdnDotInstances, compoundRecord.Name);
-    if (instance && instance.PublicIpAddress && !compoundRecord.ips[instance.PublicIpAddress]) {
-      // We have an instance with the record's fqdn, but the IPs dont match - change it
-      const delta   = mkIpDelta(instance.PublicIpAddress);
-      const action  = mkAction(compoundRecord.record.HostedZoneId, delta);
-      seenInstances[instance.InstanceId] = instance.InstanceId;
-      // console.log(compoundRecord.Type, compoundRecord.Name, delta, action, instance.InstanceId);
-      return JSON.stringify(delta);
-    }
 
-    if (instance && instance.state !== 'running') {
-      seenInstances[instance.InstanceId] = instance.InstanceId;
-      // console.log(compoundRecord.Type, compoundRecord.Name, 'DELETE', instance.InstanceId);
+    if (!instance) {
       return 'DELETE';
     }
+
+    if (instance.PublicIpAddress && !compoundRecord.ips[instance.PublicIpAddress]) {
+      const delta   = mkIpDelta(instance.PublicIpAddress);     /* We have an instance with the record's fqdn, but the IPs dont match - change it */
+      // return handled(JSON.stringify(delta));
+      return handled(delta);
+    }
+
+    if (instance.state !== 'running') {
+      return handled('DELETE');
+    }
+
+    function handled(result) {
+      seenInstances[instance.InstanceId] = instance.InstanceId;
+      return result;
+    }
+  };
+
+  var resultA = await changeDns(argv, context, initialSync, mapper, function({HostedZoneId, ChangeBatch}) {
+    _.each(ipInstances, instance => {
+      console.log(`instance with ip`, instance[0].InstanceId, instance[0].PublicIpAddress, instance[0].tag_qn_fqdns, argv.domain);
+      if (instance[0].InstanceId in seenInstances)    { return; }
+      if (!instance[0].tag_qn_fqdns)                  { return; }
+      let fqdn = instance[0].tag_qn_fqdns;
+      if (!fqdn.endsWith(argv.domain))                { return; }
+
+      console.log(`unhandled instance with ip`, instance[0].InstanceId, instance[0].PublicIpAddress, instance[0].tag_qn_fqdns);
+
+      var ResourceRecordSet = {
+        Name: instance[0].tag_qn_fqdns +'.',
+        Type: 'A',
+        TTL: 30,
+        ResourceRecords: [ { Value: instance[0].PublicIpAddress } ]
+      };
+
+      let theChange = {
+        Action: "UPSERT",
+        ResourceRecordSet,
+      };
+
+      // console.log(`${i} qm(`, sg.inspect({existing: compoundRecords[i], change, theChange}));
+      ChangeBatch.Changes.push(theChange);
+    });
+
+    return ChangeBatch;
   });
 
-  _.each(ipInstances, instance => {
-    console.log(`instance with ip`, instance[0].InstanceId);
-    if (instance[0].InstanceId in seenInstances)   { return; }
-    console.log(`unhandled instance with ip`, instance[0].InstanceId);
-  });
+  return resultA;
 
-
-  var i = 10;
-
-
+  // ==========================================================================================================================
+  // var changes = compoundRecords.map(compoundRecord => {
+  // });
 }}));
+
+
+// ----------------------------------------------------------------------------------------------------------------------------
+async function changeDns(argv, context, initialSync, mapper, callback) {
+  var records;
+
+  if (!argv.json) {
+    const P_records   = getAllRecords(argv, context);
+    [records]         = [await P_records];
+  } else {
+    [records]     = [argv.json.records];
+  }
+
+  var HostedZoneId        = records.reduce((m, record) => (m || record.ResourceRecordSet.Name.endsWith(argv.domain +'.') && record.HostedZoneId), null);
+  var compoundRecords     = records.map(record => ({record, Name:record.ResourceRecordSet.Name, Type:record.ResourceRecordSet.Type, ips: recordSetIps(record)}));
+
+  if (initialSync) {
+    await initialSync();
+  }
+
+  var changes = compoundRecords.map(compoundRecord => {
+    // TODO: call mapper
+    return mapper(compoundRecord);
+  });
+
+  console.log(`changes`, {changes});
+
+  var ChangeBatch = {Changes:[]};
+
+  _.each(changes, (change, i) => {
+    if (!change) { return; }
+
+    if (typeof change === 'string') {
+      let theChange = {
+        Action: change,
+        ResourceRecordSet: compoundRecords[i].record.ResourceRecordSet,
+      };
+
+      // console.log(`${i} `, sg.inspect({change, compoundRecord: compoundRecords[i], theChange}));
+      ChangeBatch.Changes.push(theChange);
+      return;
+    }
+
+    var ResourceRecordSet = mergeRrs(compoundRecords[i].record, change);
+    let theChange = {
+      Action: "UPSERT",
+      ResourceRecordSet,
+    };
+
+    // console.log(`${i} qm(`, sg.inspect({existing: compoundRecords[i], change, theChange}));
+    ChangeBatch.Changes.push(theChange);
+  });
+
+  ChangeBatch = callback({HostedZoneId, ChangeBatch});
+  console.log(`changeResourceRecordSets`, sg.inspect({HostedZoneId, ChangeBatch}));
+
+
+  // var HostedZoneId = rrs.HostedZoneId;
+  // var ChangeBatch = {Changes:[{Action:"DELETE", ResourceRecordSet : rrs.ResourceRecordSet}]};
+
+  // console.log(`Fixing DNS`, sg.inspect({ChangeBatch, HostedZoneId}));
+  var {ChangeInfo} = await route53.changeResourceRecordSets({HostedZoneId, ChangeBatch}).promise();
+  console.log(`changeResourceRecordSets`, sg.inspect({HostedZoneId, ChangeBatch, ChangeInfo}));
+
+  return {HostedZoneId, ChangeBatch, ChangeInfo};
+}
 
 // =============================================================================================
 mod.async(DIAG.async({resetDnsToCurrentX: async function(argv, context) {
@@ -235,14 +336,17 @@ mod.async(DIAG.async({resetDnsToCurrentX: async function(argv, context) {
 module.exports.ra_active_fn_name = DIAG.activeName;
 
 if (require.main === module) {
-  const {domain ='cdr0.net'}    = ARGV;
-  const json = getSample3();
-  // const bast = JSON.parse(JSON.stringify(json.records[3]));
-  // bast.ResourceRecords = [];
-  // json.records.push(qm(bast, {ResourceRecords:[{Value:'1.2.3.4'}]}));
-  module.exports.resetDnsToCurrent({domain, json}, {}, function(err, data) {
-    console.log(`reset-to-current-state`, sg.inspect({err, data}));
-  });
+  (async function() {
+    const {domain ='cdr0.net'}    = ARGV;
+    // const json = getSample3();
+    const json = null;
+    // const bast = JSON.parse(JSON.stringify(json.records[3]));
+    // bast.ResourceRecords = [];
+    // json.records.push(qm(bast, {ResourceRecords:[{Value:'1.2.3.4'}]}));
+    module.exports.resetDnsToCurrent({domain, json}, {}, function(err, data) {
+      console.log(`reset-to-current-state`, sg.inspect({err, data}));
+    });
+  })();
 }
 
 function getSample1() {

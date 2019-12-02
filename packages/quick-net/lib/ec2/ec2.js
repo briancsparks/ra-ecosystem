@@ -396,6 +396,10 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context, callback) {
       //   },
       // });
 
+      // Other stuff to install
+      //   Anaconda Linux: https://repo.anaconda.com/archive/Anaconda3-2019.10-Linux-x86_64.sh
+      //     See readme
+
       // Install all the stuff we install for every instance
       cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
         package_update: true,
