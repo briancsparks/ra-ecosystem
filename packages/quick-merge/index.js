@@ -313,8 +313,14 @@ exports.quickMerge = exports.qm = function(a, b, ...rest) {
   return result;
 };
 
-exports.quickMergeResolve = exports.qmResolve = function(a, b) {
-  return quickMerge(basicPlusResolveMerges, a, b);
+exports.quickMergeResolve = exports.qmResolve = function(a, b, ...rest) {
+  var result = quickMerge(basicPlusResolveMerges, a, b);
+
+  if (rest.length > 0) {
+    return quickMerge(basicPlusResolveMerges, result, ...rest);
+  }
+
+  return result;
 };
 
 

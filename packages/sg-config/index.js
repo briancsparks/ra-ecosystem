@@ -43,7 +43,11 @@ sg.config = function(...args) {
  * @param {*} file
  */
 sg.configuration = function(...args) {
-  return new Configuration(...args);
+  var configuration = new Configuration(...args);
+
+  return function(key, callback) {
+    return configuration.value(key, callback);
+  };
 };
 
 _.each(sg, (v,k) => {
@@ -60,18 +64,27 @@ function Config(...configs) {
   return qmResolve(...configs);
 }
 
-function Configuration(dir, name) {
-  var fileJson = {};
+function Configuration(...args) {
+  if (!(this instanceof Configuration))   { return new Configuration(...args); }
+  var self      = this;
+  var rootName  = args[0];
 
-  try {
-    fileJson = require(path.join(dir, name)+'.json');
-  } catch(error) {
-    fileJson = {};
+  self.rootTable = {};
+
+  // Read the root table
+  readRootTable(...args);
+
+  self.value = function(key, callback) {
+    const ENV_KEY = `config_${rootName}_${key}`.toUpperCase();
+    return callback(null, process.env[ENV_KEY]);
+  };
+
+  function readRootTable(...args) {
+    var [argv, ...rest] = args[0];
   }
 
-  return function(key) {
-    return fileJson[key] || process.env[key];
-  };
+  function readRootTableFromName(name) {
+  }
 }
 
 

@@ -75,8 +75,8 @@ module.exports.DIAG = function(mod) {
   };
 
   self.usage = function(data ={}) {
-    // self.bits.setJson({fns: data});   // TODO: 'fns' is one of the mis-matches with the quasi-multi-level JSON built from sg-bits
-    self.bits.setJson(data);
+    // self.bits.setPieces({fns: data});   // TODO: 'fns' is one of the mis-matches with the quasi-multi-level JSON built from sg-bits
+    self.bits.setPieces(data);
   };
 
   self.activeDevelopment = function(devCliArgs) {
@@ -113,7 +113,7 @@ module.exports.DIAG = function(mod) {
   };
 
   self.loadData = async function(fnName) {
-    const mainjson    = await self.bits.loadJson()     || {};
+    const mainjson    = await self.bits.loadPieces()     || {};
     return mainjson;
   };
 
@@ -124,12 +124,12 @@ module.exports.DIAG = function(mod) {
       return '';
     }
 
-    return self.bits.getData(fnName || self.getCurrFnName(), 'devCliArgs') || '';
+    return self.bits.getPiecesData(fnName || self.getCurrFnName(), 'devCliArgs') || '';
   };
 
   self.getAliases = function() {
     const currFnName  = self.getCurrFnName()    || '';
-    const mainjson    = self.bits.getJson()     || {};
+    const mainjson    = self.bits.getPieces()     || {};
 
     const argSpec     = ((mainjson.aliases || {})[currFnName] ||{}).args || {};   // TODO: 'fns' is one of the mis-matches with the quasi-multi-level JSON built from sg-bits
     return argSpec;
@@ -137,7 +137,7 @@ module.exports.DIAG = function(mod) {
 
   self.getSchema = function() {
     const currFnName  = self.getCurrFnName()    || '';
-    const mainjson    = self.bits.getJson()     || {};
+    const mainjson    = self.bits.getPieces()     || {};
 
     const schema      = ((mainjson.validations || {})[currFnName] ||{}).args || {};   // TODO: maybe 'validations' is one of the mis-matches with the quasi-multi-level JSON built from sg-bits
     return schema;
@@ -233,7 +233,7 @@ module.exports.DIAG = function(mod) {
 
       if (argv.useful) {
         // TODO: else, lookup usefulCliArgs from argv, and replace
-        const usefulCliArgs   = self.bits.getData(fnName || self.getCurrFnName(), 'usefulCliArgs');
+        const usefulCliArgs   = self.bits.getPiecesData(fnName || self.getCurrFnName(), 'usefulCliArgs');
         const cliArgs         = mkArgv(usefulCliArgs[argv.useful]);
         argv                  = sg.merge(cliArgs ||{}, argv ||{});
       }

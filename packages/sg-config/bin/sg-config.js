@@ -34,7 +34,8 @@ async function sg_config_link_with_file() {
   workspace = await readPkg({cwd: workdir, normalize:false});
 
   if (!workspace.workspaces) {
-    workspace = await pkgUp('..');
+    // workspace = await pkgUp('..');
+    workspace = await pkgUp(workdir);
     workdir = dirOf(workspace);
     workspace = await readPkg({cwd: workdir, normalize:false});
   }
