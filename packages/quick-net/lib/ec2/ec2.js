@@ -1089,6 +1089,7 @@ console.log(`launch`, [my.result.fqdns]);
         domain = domain.join('.');
 
         const params = {subdomain, domain, ip: PublicIpAddress, fireAndForget: true};
+        console.log(`setarecord`, params);
         // return setARecord(params, {}, function(err, data) {
         //   sg.debugLog(`set A record ${subdomain}.${domain} (${PublicIpAddress})`, {params, err, data});
           return next();

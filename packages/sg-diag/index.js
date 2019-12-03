@@ -83,12 +83,12 @@ module.exports.DIAG = function(mod) {
     // TODO: these args should not be applied unless this specific function is the one
     //       being actively developed.
     if (ENV.at('ACTIVE_DEVELOPMENT')) {
-      self.bits.setData(null, {devCliArgs});
+      self.bits.setDataPieces(null, {devCliArgs});
     }
   };
 
   self.usefulCliArgs = function(usefulCliArgs) {
-    self.bits.setData(null, {usefulCliArgs});
+    self.bits.setDataPieces(null, {usefulCliArgs});
     return usefulCliArgs;
   };
 

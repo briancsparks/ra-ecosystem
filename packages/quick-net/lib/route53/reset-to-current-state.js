@@ -118,10 +118,13 @@ mod.async(DIAG.async({resetDnsToCurrent: async function(argv, context) {
       return 'DELETE';
     }
 
-    if (instance.PublicIpAddress && !compoundRecord.ips[instance.PublicIpAddress]) {
-      const delta   = mkIpDelta(instance.PublicIpAddress);     /* We have an instance with the record's fqdn, but the IPs dont match - change it */
-      // return handled(JSON.stringify(delta));
-      return handled(delta);
+    if (instance.PublicIpAddress) {
+      if (!compoundRecord.ips[instance.PublicIpAddress]) {
+        // console.log(`iprec`, sg.inspect({instance, compoundRecord, ip: instance.PublicIpAddress, ips: compoundRecord.ips}));
+        const delta   = mkIpDelta(instance.PublicIpAddress);     /* We have an instance with the record's fqdn, but the IPs dont match - change it */
+        return handled(delta);
+      }
+      return handled();
     }
 
     if (instance.state !== 'running') {
@@ -136,13 +139,13 @@ mod.async(DIAG.async({resetDnsToCurrent: async function(argv, context) {
 
   var resultA = await changeDns(argv, context, initialSync, mapper, function({HostedZoneId, ChangeBatch}) {
     _.each(ipInstances, instance => {
-      console.log(`instance with ip`, instance[0].InstanceId, instance[0].PublicIpAddress, instance[0].tag_qn_fqdns, argv.domain);
+      // console.log(`instance with ip`, instance[0].InstanceId, instance[0].PublicIpAddress, instance[0].tag_qn_fqdns, argv.domain);
       if (instance[0].InstanceId in seenInstances)    { return; }
       if (!instance[0].tag_qn_fqdns)                  { return; }
       let fqdn = instance[0].tag_qn_fqdns;
       if (!fqdn.endsWith(argv.domain))                { return; }
 
-      console.log(`unhandled instance with ip`, instance[0].InstanceId, instance[0].PublicIpAddress, instance[0].tag_qn_fqdns);
+      // console.log(`unhandled instance with ip`, instance[0].InstanceId, instance[0].PublicIpAddress, instance[0].tag_qn_fqdns);
 
       var ResourceRecordSet = {
         Name: instance[0].tag_qn_fqdns +'.',
@@ -194,7 +197,7 @@ async function changeDns(argv, context, initialSync, mapper, callback) {
     return mapper(compoundRecord);
   });
 
-  console.log(`changes`, {changes});
+  // console.log(`changes`, {changes});
 
   var ChangeBatch = {Changes:[]};
 
@@ -223,15 +226,16 @@ async function changeDns(argv, context, initialSync, mapper, callback) {
   });
 
   ChangeBatch = callback({HostedZoneId, ChangeBatch});
-  console.log(`changeResourceRecordSets`, sg.inspect({HostedZoneId, ChangeBatch}));
+  // console.log(`changeResourceRecordSets`, sg.inspect({HostedZoneId, ChangeBatch}));
 
 
   // var HostedZoneId = rrs.HostedZoneId;
   // var ChangeBatch = {Changes:[{Action:"DELETE", ResourceRecordSet : rrs.ResourceRecordSet}]};
 
   // console.log(`Fixing DNS`, sg.inspect({ChangeBatch, HostedZoneId}));
+  // var ChangeInfo = {};
   var {ChangeInfo} = await route53.changeResourceRecordSets({HostedZoneId, ChangeBatch}).promise();
-  console.log(`changeResourceRecordSets`, sg.inspect({HostedZoneId, ChangeBatch, ChangeInfo}));
+  // console.log(`changeResourceRecordSets`, sg.inspect({HostedZoneId, ChangeBatch, ChangeInfo}));
 
   return {HostedZoneId, ChangeBatch, ChangeInfo};
 }
