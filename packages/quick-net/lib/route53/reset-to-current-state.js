@@ -228,14 +228,20 @@ async function changeDns(argv, context, initialSync, mapper, callback) {
   ChangeBatch = callback({HostedZoneId, ChangeBatch});
   // console.log(`changeResourceRecordSets`, sg.inspect({HostedZoneId, ChangeBatch}));
 
+  // Finally, make the change
+  var ChangeInfo, rest;
+  if (ChangeBatch.Changes.length > 0) {
+    if (!argv.dry_run) {
+      ({ChangeInfo, ...rest} = await route53.changeResourceRecordSets({HostedZoneId, ChangeBatch}).promise());
+      dg.i(`To wait for the change to propigate:\n\n  aws route53 wait resource-record-sets-changed --id ${(ChangeInfo ||{}).Id}\n`);
+    }
+  } else {
+    dg.i(`No changes need to be made`);
+  }
 
-  // var HostedZoneId = rrs.HostedZoneId;
-  // var ChangeBatch = {Changes:[{Action:"DELETE", ResourceRecordSet : rrs.ResourceRecordSet}]};
-
-  // console.log(`Fixing DNS`, sg.inspect({ChangeBatch, HostedZoneId}));
-  // var ChangeInfo = {};
-  var {ChangeInfo} = await route53.changeResourceRecordSets({HostedZoneId, ChangeBatch}).promise();
-  // console.log(`changeResourceRecordSets`, sg.inspect({HostedZoneId, ChangeBatch, ChangeInfo}));
+  if (argv.verbose) {
+    console.error(`changeResourceRecordSets`, sg.inspect({rest, HostedZoneId, ChangeBatch, ChangeInfo}));
+  }
 
   return {HostedZoneId, ChangeBatch, ChangeInfo};
 }
@@ -341,13 +347,13 @@ module.exports.ra_active_fn_name = DIAG.activeName;
 
 if (require.main === module) {
   (async function() {
-    const {domain ='cdr0.net'}    = ARGV;
+    const {domain ='cdr0.net', ...rest}    = ARGV;
     // const json = getSample3();
     const json = null;
     // const bast = JSON.parse(JSON.stringify(json.records[3]));
     // bast.ResourceRecords = [];
     // json.records.push(qm(bast, {ResourceRecords:[{Value:'1.2.3.4'}]}));
-    module.exports.resetDnsToCurrent({domain, json}, {}, function(err, data) {
+    module.exports.resetDnsToCurrent({domain, json, ...rest}, {}, function(err, data) {
       console.log(`reset-to-current-state`, sg.inspect({err, data}));
     });
   })();
