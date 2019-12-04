@@ -32,8 +32,8 @@ function recordSetIps(record) {
   return sg.keyMirror(record.ResourceRecordSet.ResourceRecords.map(rs => rs.Value));
 }
 
-function assocInstance(fqdnInstances, rsName) {
-  var instances = fqdnInstances[rsName];
+function assocInstance(fqdnDotInstances, rsName) {
+  var instances = fqdnDotInstances[rsName];
   if (instances && instances.length > 0) {
     return  instances[0];
   }
@@ -112,6 +112,7 @@ mod.async(DIAG.async({resetDnsToCurrent: async function(argv, context) {
     if (compoundRecord.Type !== 'A')                                            { return; }
     if (!compoundRecord.Name.toLowerCase().endsWith(argv.domain +'.'))          { return; }
 
+    // TODO: Should find all instances, and get all their IPs
     var instance = assocInstance(fqdnDotInstances, compoundRecord.Name);
 
     if (!instance) {
@@ -193,7 +194,6 @@ async function changeDns(argv, context, initialSync, mapper, callback) {
   }
 
   var changes = compoundRecords.map(compoundRecord => {
-    // TODO: call mapper
     return mapper(compoundRecord);
   });
 

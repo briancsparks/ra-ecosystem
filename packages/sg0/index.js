@@ -10,7 +10,7 @@ var util                      = require('util');
 
 var isnt, xsnt, anyIsnt, is;
 
-var   sg = {_:_, libs:{util}};
+var   sg = {_:_, libs:{util}, x:{}};
 
 /**
  * Creates an Error object.
@@ -868,7 +868,7 @@ is = exports.is = function(x) {
 /**
  * Returns x, unless it `isnt()`, in that case it returns `def`.
  *
- * A log like doing `x || def`, but `def` is only chosen if `isnt(x)`,
+ * A lot like doing `x || def`, but `def` is only chosen if `isnt(x)`,
  * not for zero or '' or etc. Like when you have untrusted input.
  *
  * @param {*} x
@@ -885,7 +885,7 @@ exports.or = function(x, ...rest) {
 /**
  * Returns x, unless it `isnt()`, in that case it returns `{}`.
  *
- * A log like doing `x || {}`, but `{}` is only chosen if `isnt(x)`,
+ * A lot like doing `x || {}`, but `{}` is only chosen if `isnt(x)`,
  * not for zero or '' or etc. Like when you have untrusted input.
  *
  * But you can pass in a second param, which becomes the default.
@@ -1827,6 +1827,43 @@ sg.sysMods = function() {
     libUrl: url,
   };
 };
+
+/**
+ *  Merge objects.
+ */
+sg.mergeSg = function() {
+  var result = {fn:{}, async:{}, $x_args:{}};
+
+  const wantKeys = Object.keys(result);
+  var args_x = sg.reduce(arguments, {}, function(m, arg) {
+    for (let i0 = 0; i0 < wantKeys.length; ++i0) {
+      const wantKey = wantKeys[i0];
+      m[wantKey] = m[wantKey] ||{};
+
+      const xkeys = Object.keys(arg[wantKey] ||{});
+      for (let i = 0; i < xkeys.length; ++i) {
+        let xkey = xkeys[i];
+        let xval = arg[wantKey][xkey];
+        m[wantKey][xkey] = _.extend({}, m[wantKey][xkey] ||{}, xval);
+      }
+    }
+
+    return m;
+  });
+
+  var args = sg.reduce(arguments, [], function(m, arg) {
+    return sg.ap(m, sg.reduce(arg, {}, function(m, value, key) {
+      return sg.kv(m, key, value);
+    }));
+  });
+
+  result = _.extend({}, ...args, args_x);
+
+  // console.log(sg.inspect(result));
+  return result;
+};
+
+// sg.mergeSg({f1:'A', fn:{clean: {one:'axclean' }, fast: {one:'axfast' } }}, {f2:'B', fn:{clean: {two: 'bxclean'}, fast: {five:'bxfast' }}});
 
 // Export functions
 _.each(sg, function(fn, name) {
