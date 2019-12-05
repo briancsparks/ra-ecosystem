@@ -57,7 +57,7 @@ exports.handler = function(event, context, callback) {
   }
 
   if (!did) {
-    last();
+    last();         /* Need to call last, because saveRaw did not do it. */
   }
 
   // Do the real processing

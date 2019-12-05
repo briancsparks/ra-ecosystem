@@ -55,11 +55,11 @@ chown ubuntu:ubuntu /home/ubuntu/readme.md
 # Turn quicknet-installed into JSON
 curl -sSL 'http://169.254.169.254/latest/dynamic/instance-identity/document' > /home/ubuntu/quicknetinstdata.json
 (
-  echo "[";
+  echo "{";
   cat /home/ubuntu/quicknet-installed;
   echo -n '"instanceIdentity": ';
   cat /home/ubuntu/quicknetinstdata.json;
-  echo "]";
+  echo "}";
 )               > /home/ubuntu/quicknet-installed.json
 
 rm /home/ubuntu/quicknet-installed

@@ -99,13 +99,17 @@ subnets.d = subnets.D;
 DIAG.usage({ aliases: { upsertInstance: { args: {
 }}}});
 
-const instanceBaseOpts = `--distro=ubuntu --classB=13 --az=d  --Terminate --typeNum=2 --debug`;
+const instanceBaseOpts = `--distro=ubuntu --classB=13 --az=d  --typeNum=2 --debug`;
+const instanceOptsTerm = `--distro=ubuntu --classB=13 --az=d  --Terminate --typeNum=2 --debug`;
 DIAG.usefulCliArgs({
-  webtier       : [instanceBaseOpts, `--key=quicknetprj_demo --type=t3.micro --PrivateIpAddressX 10.13.48.10 --INSTALL_WEBTIER     --INSTALL_CLIENTS --INSTALL_OPS`].join(' '),                  // 10.13.48.0/24
-  admin         : [instanceBaseOpts, `--key=HQ                --type=t3.nano --PrivateIpAddressX 10.13.51.4  --INSTALL_ADMIN       --INSTALL_CLIENTS --INSTALL_USER`].join(' '),                 // 10.13.51.0/24
-  worker        : [instanceBaseOpts, `--key=quicknetprj_demo --type=t3.micro --PrivateIpAddressX 10.13.0.16  --INSTALL_WORKER      --INSTALL_CLIENTS`].join(' '),                                 // 10.13.0.0/20
-  workstation   : [instanceBaseOpts, `--key=quicknetprj_demo --type=t3.micro --PrivateIpAddressX 10.13.0.32  --INSTALL_WORKSTATION --INSTALL_CLIENTS --INSTALL_OPS`].join(' '),                   // 10.13.0.0/20
-  workstationb  : [instanceBaseOpts, `--key=sparksb          --type=t3.micro --PrivateIpAddressX 10.13.0.32  --INSTALL_WORKSTATION --INSTALL_CLIENTS --INSTALL_OPS`].join(' '),                   // 10.13.0.0/20
+  db            : [instanceBaseOpts, `--key=quicknetprj_demo --type=t3.micro --PrivateIpAddressX 10.13.54.8  --INSTALL_MONGODB     --INSTALL_CLIENTS --INSTALL_OPS`].join(' '),                  // 10.13.48.0/24
+  util          : [instanceBaseOpts, `--key=quicknetprj_demo --type=t3.micro --PrivateIpAddressX 10.13.54.8  --INSTALL_WEBTIER     --INSTALL_CLIENTS --INSTALL_OPS`].join(' '),                  // 10.13.48.0/24
+  admin         : [instanceBaseOpts, `--key=HQ               --type=t3.nano  --PrivateIpAddressX 10.13.51.4  --INSTALL_ADMIN       --INSTALL_CLIENTS --INSTALL_USER`].join(' '),                 // 10.13.51.0/24
+
+  webtier       : [instanceOptsTerm, `--key=quicknetprj_demo --type=t3.micro --PrivateIpAddressX 10.13.48.10 --INSTALL_WEBTIER     --INSTALL_CLIENTS --INSTALL_OPS`].join(' '),                  // 10.13.48.0/24
+  worker        : [instanceOptsTerm, `--key=quicknetprj_demo --type=t3.micro --PrivateIpAddressX 10.13.0.16  --INSTALL_WORKER      --INSTALL_CLIENTS`].join(' '),                                 // 10.13.0.0/20
+  workstation   : [instanceOptsTerm, `--key=quicknetprj_demo --type=t3.micro --PrivateIpAddressX 10.13.0.32  --INSTALL_WORKSTATION --INSTALL_CLIENTS --INSTALL_OPS`].join(' '),                   // 10.13.0.0/20
+  workstationb  : [instanceOptsTerm, `--key=sparksb          --type=t3.micro --PrivateIpAddressX 10.13.0.32  --INSTALL_WORKSTATION --INSTALL_CLIENTS --INSTALL_OPS`].join(' '),                   // 10.13.0.0/20
 });
 
 // The last one wins. Comment out what you dont want.
@@ -507,7 +511,7 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context, callback) {
           runcmd: [
             `curl -fsSL https://get.docker.com -o get-docker.sh; sh get-docker.sh`,
             `usermod -aG docker ubuntu`,
-            `echo '"INSTALL_DOCKER_CHEAT": true,' >> /home/ubuntu/quicknet-installed`,
+            `echo '"INSTALL_DOCKER": true,' >> /home/ubuntu/quicknet-installed`,
           ],
         });
 
@@ -895,7 +899,7 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context, callback) {
       // -------------------------------------------------------------------------------------------------------
       // Put stuff on S3 for the instance
 
-      const utilFiles     = 'bootstrap,bootstrap-nonroot,bootstrap-other,untar-from-s3,cmd-from-s3,sshix,qn-hosts,qn-redis,qn-mongo,get-certs-from-s3,get-client-certs-from-s3,install-etcd'.split(',');
+      const utilFiles     = 'bootstrap,bootstrap-nonroot,bootstrap-other,untar-from-s3,cmd-from-s3,sshix,qn-hosts,qn-redis,qn-mongo,get-certs-from-s3,get-client-certs-from-s3,qn-install-etcd'.split(',');
       const homeFiles     = '.vimrc,.profile,.bashrc,.bash_aliases'.split(',');
       const s3deployPath  = s3path('deploy', InstanceId);
 

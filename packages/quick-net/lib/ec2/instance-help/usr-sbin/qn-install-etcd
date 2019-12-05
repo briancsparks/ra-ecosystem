@@ -1,0 +1,76 @@
+#!/bin/bash -e
+
+# https://github.com/etcd-io/etcd/releases
+
+ETCD_VER=v3.3.18
+
+# choose either URL
+GOOGLE_URL=https://storage.googleapis.com/etcd
+GITHUB_URL=https://github.com/etcd-io/etcd/releases/download
+DOWNLOAD_URL=${GITHUB_URL}
+
+# # If we are running as root, we do not need sudo, otherwise use it
+# [[ $(id -u) != 0 ]] && export SUDO="sudo"
+
+rm -f /usr/src/etcd-${ETCD_VER}-linux-amd64.tar.gz
+rm -rf /usr/src/etcd && mkdir -p /usr/src/etcd
+
+curl -L ${DOWNLOAD_URL}/${ETCD_VER}/etcd-${ETCD_VER}-linux-amd64.tar.gz -o /usr/src/etcd-${ETCD_VER}-linux-amd64.tar.gz
+tar xzvf /usr/src/etcd-${ETCD_VER}-linux-amd64.tar.gz -C /usr/src/etcd --strip-components=1
+rm -f /usr/src/etcd-${ETCD_VER}-linux-amd64.tar.gz
+
+/usr/src/etcd/etcd --version
+/usr/src/etcd/etcdctl --version
+
+chmod a+x /usr/src/etcd/etcd       && cp /usr/src/etcd/etcd       /usr/bin
+chmod a+x /usr/src/etcd/etcdctl    && cp /usr/src/etcd/etcdctl    /usr/bin
+
+echo '"INSTALL_ETCD": true,' >> /home/ubuntu/quicknet-installed
+
+
+
+# Mostly from https://devopscube.com/setup-etcd-cluster-linux/
+mkdir -p /etc/etcd /var/lib/etcd
+groupadd -f -g 1501 etcd
+useradd -c "etcd user" -d /var/lib/etcd -s /bin/false -g etcd -u 1501 etcd
+chown -R etcd:etcd /var/lib/etcd
+
+ETCD_HOST_IP=$(ip addr show ens5 | grep "inet\b" | awk '{print $2}' | cut -d/ -f1)
+ETCD_NAME=$(hostname -s)
+
+cat << EOF > /lib/systemd/system/etcd.service
+[Unit]
+Description=etcd service
+Documentation=https://github.com/coreos/etcd
+
+[Service]
+User=etcd
+Type=notify
+ExecStart=/usr/bin/etcd \\
+ --name ${ETCD_NAME} \\
+ --data-dir /var/lib/etcd \\
+ --initial-advertise-peer-urls http://${ETCD_HOST_IP}:2380 \\
+ --listen-peer-urls http://${ETCD_HOST_IP}:2380 \\
+ --listen-client-urls http://${ETCD_HOST_IP}:2379,http://127.0.0.1:2379 \\
+ --advertise-client-urls http://${ETCD_HOST_IP}:2379 \\
+ --initial-cluster-token etcd-cluster-1 \\
+ --initial-cluster ${ETCD_NAME}=http://${ETCD_HOST_IP}:2380 \\
+ --initial-cluster-state new \\
+ --heartbeat-interval 1000 \\
+ --election-timeout 5000
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# Enable and start service
+systemctl daemon-reload
+systemctl enable etcd
+systemctl start etcd.service
+systemctl status -l etcd.service
+
+# Check
+etcdctl cluster-health
+etcdctl  member list

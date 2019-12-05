@@ -883,6 +883,13 @@ sgsPlus = [() => ({
   },{
     /*GroupId*/
     IpProtocol:   'tcp',
+    CidrIp:       '10.0.0.0/0',
+    FromPort:     2379,
+    ToPort:       2380,
+    Description:  'etcd'
+  },{
+    /*GroupId*/
+    IpProtocol:   'tcp',
     CidrIp:       '10.0.0.0/8',
     FromPort:     80,
     ToPort:       80,
@@ -912,6 +919,13 @@ sgsPlus = [() => ({
     FromPort:     0,
     ToPort:       65535,
     Description:  'All TCP from the data center so we can NAT them'
+  },{
+    /*GroupId*/
+    IpProtocol:   'tcp',
+    CidrIp:       '10.0.0.0/0',
+    FromPort:     2379,
+    ToPort:       2380,
+    Description:  'etcd'
   }]
 }), () => ({
   GroupName:    'devOps',      // <------------------------------------------------------- devOps
@@ -930,6 +944,13 @@ sgsPlus = [() => ({
     FromPort:     443,
     ToPort:       443,
     Description:  'SSH over HTTPS from my house'
+  },{
+    /*GroupId*/
+    IpProtocol:   'tcp',
+    CidrIp:       '10.0.0.0/0',
+    FromPort:     2379,
+    ToPort:       2380,
+    Description:  'etcd'
   }]
 }), () => ({
   GroupName:    'db',      // <------------------------------------------------------- db
@@ -948,6 +969,13 @@ sgsPlus = [() => ({
     FromPort:     28017,
     ToPort:       28017,
     Description:  'HTTP db access'
+  },{
+    /*GroupId*/
+    IpProtocol:   'tcp',
+    CidrIp:       '10.0.0.0/0',
+    FromPort:     2379,
+    ToPort:       2380,
+    Description:  'etcd'
   },{
     ingressGroupId: getSecurityGroupId('admin'),
     IpProtocol:   'tcp',
@@ -985,6 +1013,13 @@ sgsPlus = [() => ({
     ToPort:       11211,
     Description:  'All memcached access'
   },{
+    /*GroupId*/
+    IpProtocol:   'tcp',
+    CidrIp:       '10.0.0.0/0',
+    FromPort:     2379,
+    ToPort:       2380,
+    Description:  'etcd'
+  },{
     ingressGroupId: getSecurityGroupId('admin'),
     IpProtocol:   'tcp',
     FromPort:     22,
@@ -1021,6 +1056,13 @@ sgsPlus = [() => ({
     ToPort:       443,
     Description:  'All HTTPS'
   },{
+    /*GroupId*/
+    IpProtocol:   'tcp',
+    CidrIp:       '10.0.0.0/0',
+    FromPort:     2379,
+    ToPort:       2380,
+    Description:  'etcd'
+  },{
     ingressGroupId: getSecurityGroupId('admin'),
     IpProtocol:   'tcp',
     FromPort:     22,
@@ -1050,6 +1092,13 @@ sgsPlus = [() => ({
     ToPort:       9999,
     Description:  'All HTTP'
   },{
+    /*GroupId*/
+    IpProtocol:   'tcp',
+    CidrIp:       '10.0.0.0/0',
+    FromPort:     2379,
+    ToPort:       2380,
+    Description:  'etcd'
+  },{
     ingressGroupId: getSecurityGroupId('admin'),
     IpProtocol:   'tcp',
     FromPort:     22,
@@ -1078,6 +1127,13 @@ sgsPlus = [() => ({
     FromPort:     7000,
     ToPort:       9999,
     Description:  'All HTTP'
+  },{
+    /*GroupId*/
+    IpProtocol:   'tcp',
+    CidrIp:       '10.0.0.0/0',
+    FromPort:     2379,
+    ToPort:       2380,
+    Description:  'etcd'
   },{
     ingressGroupId: getSecurityGroupId('admin'),
     IpProtocol:   'tcp',
