@@ -8,7 +8,7 @@ die() {
   exit 11
 }
 
-[[ $# < 1 ]]                                                        && die 'Usage: cmd-from-s3 <s3-path>'
+[[ $# < 1 ]]                                                        && die 'Usage: qn-cmd-from-s3 <s3-path>'
 
 # If we are running as root, we do not need sudo, otherwise use it
 [[ $(id -u) != 0 ]] && export SUDO="sudo"
@@ -17,7 +17,7 @@ die() {
 
 # Make the temp dir
 mkdir -p "${tdir}"
-test -d "${tdir}"                                                   || die "cmd-from-s3 cannot create temp dir at $tdir"
+test -d "${tdir}"                                                   || die "qn-cmd-from-s3 cannot create temp dir at $tdir"
 
 # Copy it down from S3
 aws s3 cp $1 "$tdir/command"

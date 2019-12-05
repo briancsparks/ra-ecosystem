@@ -1,8 +1,8 @@
 #!/bin/bash -ex
 
-test -f ${HOME}/bootstrap-nonroot-run && exit 0
+test -f ${HOME}/qn-bootstrap-nonroot-run && exit 0
 
-cmd-from-s3 "s3://${NAMESPACE_LC}/quick-net/deploy/${INSTANCE_ID}/boot-shell-commands"
+qn-cmd-from-s3 "s3://${NAMESPACE_LC}/quick-net/deploy/${INSTANCE_ID}/boot-shell-commands"
 
 # We like github
 ssh-keyscan github.com              >> ~/.ssh/known_hosts
@@ -63,7 +63,7 @@ fi
 
 
 
-echo "true" > ${HOME}/bootstrap-nonroot-run
+echo "true" > ${HOME}/qn-bootstrap-nonroot-run
 
 
 

@@ -79,5 +79,5 @@ sleep 3
 echo "========================================================================================"
 echo "Do the non-root bootstrap"
 echo "========================================================================================"
-sshix ${PrivateIpAddress} 'bootstrap-nonroot'
+sshix ${PrivateIpAddress} 'qn-bootstrap-nonroot'
 

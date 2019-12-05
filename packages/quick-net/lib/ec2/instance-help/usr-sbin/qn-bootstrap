@@ -8,11 +8,11 @@ echo "Bootstrap script"
 # }
 
 # # TODO: do a loop like below, but must be in sibling dir like 'files' below.
-# pull_s3 bootstrap-nonroot
-# pull_s3 untar-from-s3
-# pull_s3 cmd-from-s3
-# pull_s3 get-certs-from-s3
-# pull_s3 get-client-certs-from-s3
+# pull_s3 qn-bootstrap-nonroot
+# pull_s3 qn-untar-from-s3
+# pull_s3 qn-cmd-from-s3
+# pull_s3 qn-get-certs-from-s3
+# pull_s3 qn-get-client-certs-from-s3
 # pull_s3 sshix
 # pull_s3 qn-hosts
 # pull_s3 qn-redis
@@ -35,13 +35,13 @@ FILES="$(aws s3api list-objects --bucket ${NAMESPACE_LC} --prefix quick-net/depl
 
 for f in $FILES; do
 
-  untar-from-s3 "s3://${NAMESPACE_LC}/$f"
+  qn-untar-from-s3 "s3://${NAMESPACE_LC}/$f"
 
 done
 
 # -----------------------------------------------------------------------------------------------------------------------------
 # etcd
-install-etcd
+qn-install-etcd
 
 
 # -----------------------------------------------------------------------------------------------------------------------------

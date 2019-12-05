@@ -118,18 +118,18 @@ mod.xport(DIAG.xport({saveNginxConfigTarballToS3: function(argv, context, callba
     return streamToS3({Body: pack, s3path:s3deployPath, ContentType: 'application/x-tar'}, context, function(err, data) {
       diag.v(`Upload nginx config tarball`, {cwd, s3deployPath, err, data});
 
-      // const clip = sshcmd('ubuntu@bastionIp', sshcmd('webtierIp', `untar-from-s3 ${s3deployPath}`));
+      // const clip = sshcmd('ubuntu@bastionIp', sshcmd('webtierIp', `qn-untar-from-s3 ${s3deployPath}`));
       // const bastionIp   = '`instance-by-role qn:roles bastion PublicIpAddress`';
       // const webtierIp   = '`instance-by-role qn:roles webtier PrivateIpAddress`';
-      // const clip        = sshcmd(`ubuntu@${bastionIp}`, '"'+sshcmd(`${webtierIp}`, `'untar-from-s3 ${s3deployPath}'`)+'"');
+      // const clip        = sshcmd(`ubuntu@${bastionIp}`, '"'+sshcmd(`${webtierIp}`, `'qn-untar-from-s3 ${s3deployPath}'`)+'"');
 
       // // clipboardy.writeSync(clip);
       // clipboardy.writeSync([
       //   clipboardy.readSync(),
-      //   `#qnsshixx webtier 'untar-from-s3 ${s3deployPath}'`
+      //   `#qnsshixx webtier 'qn-untar-from-s3 ${s3deployPath}'`
       // ].join('\n'));
 
-      addClip([`#qnsshixx webtier 'untar-from-s3 ${s3deployPath}'`]);
+      addClip([`#qnsshixx webtier 'qn-untar-from-s3 ${s3deployPath}'`]);
 
       return callback(err, data);
     });
@@ -817,7 +817,7 @@ if (https && fqdn !== 'localhost') {
                   ssl_certificate_key           ${ssl_certificate_key};`];
 
                   addClip([
-                    `#qnsshixx webtier 'get-certs-from-s3 s3://quicknet/quick-net/secrets/certs/${fqdnPathName}.tar'`,
+                    `#qnsshixx webtier 'qn-get-certs-from-s3 s3://quicknet/quick-net/secrets/certs/${fqdnPathName}.tar'`,
                     `##qnsshixx webtier 'sudo chmod -R a+rx /etc/nginx/certs/${fqdnPathName}/'`,
                   ]);
 }
@@ -850,7 +850,7 @@ if (client) {
                   ssl_verify_client           optional;`];
 
                   addClip([
-                    `#qnsshixx webtier 'get-client-certs-from-s3 s3://quicknet/quick-net/secrets/certs-client/${fqdnPathName}-root-client-ca.crt'`
+                    `#qnsshixx webtier 'qn-get-client-certs-from-s3 s3://quicknet/quick-net/secrets/certs-client/${fqdnPathName}-root-client-ca.crt'`
                   ]);
 
 }

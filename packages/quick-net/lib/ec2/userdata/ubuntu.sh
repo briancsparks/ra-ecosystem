@@ -163,5 +163,5 @@ if [[ -n $INSTALL_NAT ]]; then
 fi
 #ZZZZ INSTALL_NAT
 
-aws s3 cp "s3://quicknet/quick-net/deploy/${INSTANCE_ID}/usr-sbin/bootstrap" /tmp
-bash -ex /tmp/bootstrap
+aws s3 cp "s3://quicknet/quick-net/deploy/${INSTANCE_ID}/usr-sbin/qn-bootstrap" /tmp
+bash -ex /tmp/qn-bootstrap

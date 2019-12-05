@@ -2,6 +2,8 @@
 
 # https://github.com/etcd-io/etcd/releases
 
+die() { echo "$@"; exit 1; }
+
 ETCD_VER=v3.3.18
 
 # choose either URL
@@ -9,8 +11,8 @@ GOOGLE_URL=https://storage.googleapis.com/etcd
 GITHUB_URL=https://github.com/etcd-io/etcd/releases/download
 DOWNLOAD_URL=${GITHUB_URL}
 
-# # If we are running as root, we do not need sudo, otherwise use it
-# [[ $(id -u) != 0 ]] && export SUDO="sudo"
+# If we are running as root, error
+[[ $(id -u) != 0 ]] && die "Must run as root."
 
 rm -f /usr/src/etcd-${ETCD_VER}-linux-amd64.tar.gz
 rm -rf /usr/src/etcd && mkdir -p /usr/src/etcd
@@ -19,11 +21,11 @@ curl -L ${DOWNLOAD_URL}/${ETCD_VER}/etcd-${ETCD_VER}-linux-amd64.tar.gz -o /usr/
 tar xzvf /usr/src/etcd-${ETCD_VER}-linux-amd64.tar.gz -C /usr/src/etcd --strip-components=1
 rm -f /usr/src/etcd-${ETCD_VER}-linux-amd64.tar.gz
 
-/usr/src/etcd/etcd --version
-/usr/src/etcd/etcdctl --version
-
 chmod a+x /usr/src/etcd/etcd       && cp /usr/src/etcd/etcd       /usr/bin
 chmod a+x /usr/src/etcd/etcdctl    && cp /usr/src/etcd/etcdctl    /usr/bin
+
+/usr/bin/etcd --version
+/usr/bin/etcdctl --version
 
 echo '"INSTALL_ETCD": true,' >> /home/ubuntu/quicknet-installed
 

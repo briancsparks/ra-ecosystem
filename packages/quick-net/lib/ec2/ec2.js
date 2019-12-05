@@ -106,7 +106,7 @@ DIAG.usefulCliArgs({
   util          : [instanceBaseOpts, `--key=quicknetprj_demo --type=t3.micro --PrivateIpAddressX 10.13.54.8  --INSTALL_WEBTIER     --INSTALL_CLIENTS --INSTALL_OPS`].join(' '),                  // 10.13.48.0/24
   admin         : [instanceBaseOpts, `--key=HQ               --type=t3.nano  --PrivateIpAddressX 10.13.51.4  --INSTALL_ADMIN       --INSTALL_CLIENTS --INSTALL_USER`].join(' '),                 // 10.13.51.0/24
 
-  webtier       : [instanceOptsTerm, `--key=quicknetprj_demo --type=t3.micro --PrivateIpAddressX 10.13.48.10 --INSTALL_WEBTIER     --INSTALL_CLIENTS --INSTALL_OPS`].join(' '),                  // 10.13.48.0/24
+  webtier       : [instanceOptsTerm, `--key=quicknetprj_demo --type=t3.nano  --PrivateIpAddressX 10.13.48.10 --INSTALL_WEBTIER     --INSTALL_CLIENTS --INSTALL_OPS`].join(' '),                  // 10.13.48.0/24
   worker        : [instanceOptsTerm, `--key=quicknetprj_demo --type=t3.micro --PrivateIpAddressX 10.13.0.16  --INSTALL_WORKER      --INSTALL_CLIENTS`].join(' '),                                 // 10.13.0.0/20
   workstation   : [instanceOptsTerm, `--key=quicknetprj_demo --type=t3.micro --PrivateIpAddressX 10.13.0.32  --INSTALL_WORKSTATION --INSTALL_CLIENTS --INSTALL_OPS`].join(' '),                   // 10.13.0.0/20
   workstationb  : [instanceOptsTerm, `--key=sparksb          --type=t3.micro --PrivateIpAddressX 10.13.0.32  --INSTALL_WORKSTATION --INSTALL_CLIENTS --INSTALL_OPS`].join(' '),                   // 10.13.0.0/20
@@ -409,7 +409,7 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context, callback) {
         package_update: true,
         package_upgrade: true,
         // packages: ['ntp', 'tree', 'htop', 'zip', 'unzip', 'nodejs', 'yarn', 'jq'],
-        packages: ['ntp', 'tree', 'htop', 'zip', 'unzip', 'nodejs', 'jq', 'silversearcher-ag'],
+        packages: ['ntp', 'tree', 'htop', 'zip', 'unzip', 'nodejs', 'jq', 'silversearcher-ag', 'redis-server'],
         hostname,
         apt:      {
           preserve_sources_list: true,
@@ -441,7 +441,7 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context, callback) {
       // Workstation utils
       if (userdataOpts.INSTALL_WORKSTATION) {
         cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
-          packages: ['build-essential', 'golang-go', 'redis-server'],
+          packages: ['build-essential', 'golang-go'],
 
           goPpa: {
             source: `ppa:longsleep/golang-backports`
@@ -642,7 +642,7 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context, callback) {
       // See https://devopscube.com/setup-etcd-cluster-linux/
       //
       // etcd on Docker:
-      //   in bootstrap-nonroot
+      //   in qn-bootstrap-nonroot
 
       // Install stuff for NAT instances?
       if (userdataOpts.INSTALL_NAT) {
@@ -899,7 +899,7 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context, callback) {
       // -------------------------------------------------------------------------------------------------------
       // Put stuff on S3 for the instance
 
-      const utilFiles     = 'bootstrap,bootstrap-nonroot,bootstrap-other,untar-from-s3,cmd-from-s3,sshix,qn-hosts,qn-redis,qn-mongo,get-certs-from-s3,get-client-certs-from-s3,qn-install-etcd'.split(',');
+      const utilFiles     = 'qn-bootstrap,qn-bootstrap-nonroot,qn-bootstrap-other,qn-untar-from-s3,qn-cmd-from-s3,sshix,qn-hosts,qn-redis,qn-mongo,qn-get-certs-from-s3,qn-get-client-certs-from-s3,qn-install-etcd'.split(',');
       const homeFiles     = '.vimrc,.profile,.bashrc,.bash_aliases'.split(',');
       const s3deployPath  = s3path('deploy', InstanceId);
 
@@ -951,10 +951,10 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context, callback) {
             sg.debugLog(`Upload nginx config tarball`, {err0, cwd, s3packPath, err, data});
 
             bootShellCommands = [...bootShellCommands,
-              `get-certs-from-s3 s3://quicknet/quick-net/secrets/certs/${fqdnPath}.tar`,
+              `qn-get-certs-from-s3 s3://quicknet/quick-net/secrets/certs/${fqdnPath}.tar`,
               `sudo chmod -R a+rx /etc/nginx/certs/${fqdnPath}/`,
-              `get-client-certs-from-s3 s3://quicknet/quick-net/secrets/certs-client/${fqdnPath}-root-client-ca.crt`,
-              `untar-from-s3 ${s3NginxConfTar}`,
+              `qn-get-client-certs-from-s3 s3://quicknet/quick-net/secrets/certs-client/${fqdnPath}-root-client-ca.crt`,
+              `qn-untar-from-s3 ${s3NginxConfTar}`,
             ];
 
             return next();
@@ -989,10 +989,10 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context, callback) {
             sg.debugLog(`Upload nginx config tarball`, {err0, cwd, s3packPath, err, data});
 
             bootShellCommands = [...bootShellCommands,
-              `get-certs-from-s3 s3://quicknet/quick-net/secrets/certs/${fqdnPath}.tar`,
+              `qn-get-certs-from-s3 s3://quicknet/quick-net/secrets/certs/${fqdnPath}.tar`,
               `sudo chmod -R a+rx /etc/nginx/certs/${fqdnPath}/`,
-              `get-client-certs-from-s3 s3://quicknet/quick-net/secrets/certs-client/${fqdnPath}-root-client-ca.crt`,
-              `untar-from-s3 ${s3NginxConfTar}`,
+              `qn-get-client-certs-from-s3 s3://quicknet/quick-net/secrets/certs-client/${fqdnPath}-root-client-ca.crt`,
+              `qn-untar-from-s3 ${s3NginxConfTar}`,
             ];
 
             return next();
@@ -1004,11 +1004,11 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context, callback) {
     }, function(my, next) {
 
       // -------------------------------------------------------------------------------------------------------
-      // Pre bootstrap-nonroot script
+      // Pre qn-bootstrap-nonroot script
 
       const {PrivateIpAddress} = my.result.Instance;
 
-      theCommandToRun = `bootstrap-other ${PrivateIpAddress}`;
+      theCommandToRun = `qn-bootstrap-other ${PrivateIpAddress}`;
       addClip([
         `#for ((;;)); do ${sshix} ${PrivateIpAddress} 'whoami'; export SUCCESS="$?"; echo "$SUCCESS"; if [[ $SUCCESS == 0 ]]; then break; fi; sleep 0.4; done`,
         `#${sshix} ${PrivateIpAddress} 'tail -F /var/log/cloud-init-output.log'`,
@@ -1108,7 +1108,7 @@ console.log(`launch`, [my.result.fqdns]);
       var   bastionIp         = 'bastion.cdr0.net';
       var   targetPrivateIp   = PrivateIpAddress;
 
-      // `bootstrap-other ${PrivateIpAddress}`,
+      // `qn-bootstrap-other ${PrivateIpAddress}`,
       var   theCommand = theCommandToRun;
 
       sg.debugLog(`Complete the bootstrap `, {bastionIp, targetPrivateIp, theCommand});

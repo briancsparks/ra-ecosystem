@@ -8,7 +8,7 @@ die() {
   exit 11
 }
 
-[[ $# < 1 ]]                                                        && die 'Usage: untar-from-s3 <s3-path>'
+[[ $# < 1 ]]                                                        && die 'Usage: qn-untar-from-s3 <s3-path>'
 
 # If we are running as root, we do not need sudo, otherwise use it
 [[ $(id -u) != 0 ]] && SUDO="sudo"
@@ -25,21 +25,21 @@ set -e
 
 # Make the temp dir
 mkdir -p "${tdir}"
-test -d "${tdir}"                                                   || die "untar-from-s3 cannot create temp dir at $tdir"
+test -d "${tdir}"                                                   || die "qn-untar-from-s3 cannot create temp dir at $tdir"
 
 # Copy it down from S3, get the `manifest.json` file
 aws s3 cp $S3_PATH "$tdir/it.tar"
 
 set +e
 tar -xO -f "$tdir/it.tar" manifest.json > "$tdir/manifest.json"
-# test -f "$tdir/manifest.json"                                       || die "untar-from-s3 did not find  $tdir/manifest.json"
+# test -f "$tdir/manifest.json"                                       || die "qn-untar-from-s3 did not find  $tdir/manifest.json"
 set -e
 
 # Get the workdir (the root to which the tar is to be extracted)
 [[ -n "$workdir" ]] || workdir="$(cat "$tdir/manifest.json" | jq -r '.cwd')"
 
 mkdir -p $workdir
-test -d $workdir                                                    || die "untar-from-s3 cannot find workdir $workdir"
+test -d $workdir                                                    || die "qn-untar-from-s3 cannot find workdir $workdir"
 
 # Untar it, skip the `manifest.json` file
 (cd $workdir && \
