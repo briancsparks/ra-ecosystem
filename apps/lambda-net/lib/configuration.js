@@ -4,7 +4,7 @@ const sg                      = require('sg-config');
 var theConfiguration;
 var data;
 
-module.exports.getConfiguration = function(domains_, callback) {
+module.exports.getConfiguration = function(domains_, callback =function(){}) {
   var count = 0;
 
   if (domains_) {

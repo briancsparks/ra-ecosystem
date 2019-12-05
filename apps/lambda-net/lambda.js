@@ -22,7 +22,7 @@ const {
 }                             = ra;
 const {cleanLog}              = entrypoints;
 
-getConfiguration('api__cdr0__net');
+getConfiguration('api__cdr0__net', function(){});
 
 
 // ----------------------------------------------------------------------------------------
