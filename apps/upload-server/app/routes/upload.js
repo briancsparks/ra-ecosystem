@@ -23,7 +23,8 @@ const {
   initialReqParams,
   _400, _200
 }                             = quickNet.libHttp;
-const config                  = sgConfig.configuration(process.env.HOME, 'upload_endpoint');
+// const config                  = sgConfig.configuration(process.env.HOME, 'upload_endpoint');
+const config                  = {};
 
 
 // -------------------------------------------------------------------------------------

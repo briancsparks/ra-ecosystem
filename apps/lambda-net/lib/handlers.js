@@ -9,7 +9,7 @@ const ra                      = require('run-anywhere').v2;
 const quickNet                = require('quick-net');
 const sg0                     = ra.get3rdPartyLib('sg-flow');
 const sg                      = sg0.merge(sg0, quickNet.get3rdPartyLib('sg-argv'), quickNet.get3rdPartyLib('sg-env'), require('sg-config'), require('sg-http'));
-const {getConfiguration}      = require('./lib/configuration');
+const {getConfiguration}      = require('./configuration');
 const params                  = require('./params');
 
 const {cleanLog}              = ra.entrypoints;
