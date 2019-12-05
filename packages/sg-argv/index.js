@@ -496,6 +496,10 @@ function argvPod(argv) {
 
 //-----------------------------------------------------------------------------------------------------------------------------
 function syargv(argv, name) {
+  if (argv.$$$$) {
+    return argv.$$$$[name];
+  }
+
   if (argv.sys_argv) {
     return argv.sys_argv[name];
   }

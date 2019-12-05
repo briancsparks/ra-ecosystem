@@ -10,6 +10,7 @@ const sg0                     = ra.get3rdPartyLib('sg-flow');
 const sg                      = sg0.merge(sg0, quickNet.get3rdPartyLib('sg-argv'), require('sg-env'));
 const {_}                     = sg;
 
+const {getConfiguration}      = require('./lib/configuration');
 const {handle}                = require('./lib/handlers');
 const params                  = require('./lib/params');
 
@@ -21,6 +22,7 @@ const {
 }                             = ra;
 const {cleanLog}              = entrypoints;
 
+getConfiguration('api__cdr0__net');
 
 
 // ----------------------------------------------------------------------------------------
@@ -37,8 +39,8 @@ exports.handler = function(event, context, callback) {
   const saveRaw = function() {
     const Body      = {...event};
     const argv      = {...event.queryStringParameters, Body};
-    const sys_argv  = params.getRawBucketInfo();
-    quickNet.putClientJsonToS3({sys_argv, ...argv}, context, function(err, data) {
+    const $$$$  = params.getRawBucketInfo();
+    quickNet.putClientJsonToS3({$$$$, ...argv}, context, function(err, data) {
       // Dont care about results, but the request is waiting
       console.log(`saveRaw`, sg.inspect({err, data}));
       return last();

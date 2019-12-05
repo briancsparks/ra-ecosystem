@@ -9,6 +9,7 @@ const ra                      = require('run-anywhere').v2;
 const quickNet                = require('quick-net');
 const sg0                     = ra.get3rdPartyLib('sg-flow');
 const sg                      = sg0.merge(sg0, quickNet.get3rdPartyLib('sg-argv'), quickNet.get3rdPartyLib('sg-env'), require('sg-config'), require('sg-http'));
+const {getConfiguration}      = require('./lib/configuration');
 const params                  = require('./params');
 
 const {cleanLog}              = ra.entrypoints;
@@ -27,60 +28,71 @@ module.exports.handle = function(argv_, context, callback) {
   // Dispatch it somewhere
   // sg.log(`LAMBDA_Net::params`, cleanLog({argv_, context}));   // The ./example-request.json file was from this line
 
-  // ------------------ /test
+  return getConfiguration(null, function(err, configuration) {
 
-  if (matchRoute('/test')) {
+    // ------------------ /test
 
-    var   query = argv_.__meta__.query;
-    var   body  = argv_.__meta__.body;
-    var   data  = {argv_, query, body, event: context.event};
+    if (matchRoute('/test')) {
 
-    const _200 = sg._200({ok:true, ...data});
-    sg.log(`Responding to /test request`, {_200});
-    return callback(..._200);
+      var   query = argv_.__meta__.query;
+      var   body  = argv_.__meta__.body;
+      var   data  = {argv_, query, body, event: context.event};
 
-
-  // ------------------ /clientStart
-
-  } else if (matchRoute('/clientstart')) {
-    const baseResponse = clientStartConfig(argv_, context);
-
-    const _200 = sg._200({ok:true, ...baseResponse});
-    return callback(..._200);
+      const _200 = sg._200({ok:true, ...data});
+      sg.log(`Responding to /test request`, {_200});
+      return callback(..._200);
 
 
-  // ------------------ /upload
-  // ------------------ /ingest
+    // ------------------ /clientStart
 
-  } else {
+    } else if (matchRoute('/clientstart')) {
+      var baseResponse;
+      if (sg.ok(err, configuration)) {
+        baseResponse = configuration.value('clientStart');
+        if (baseResponse) {
+          return callback(...sg._200({ok:true, ...baseResponse}));
+        }
+      }
 
-    if (matchRoute('/upload') || matchRoute('/ingest')) {
-      // sg.log(`lam`, {qn: Object.keys(quickNet)});
+      baseResponse = clientStartConfig(argv_, context);
 
-      const sys_argv = params.getBucketInfo();
-      return quickNet.putClientJsonToS3({sys_argv, ...argv_}, context, function(err, data) {
+      const _200 = sg._200({ok:true, ...baseResponse});
+      return callback(..._200);
 
-        if (err) {
-          if (err.httpCode && err.httpCode === 400) {
-            let _400 = sg._400({ok: false}, err);
-            sg.log(`Response from app`, {_400});
-            return callback(..._400);
+
+    // ------------------ /upload
+    // ------------------ /ingest
+
+    } else {
+
+      if (matchRoute('/upload') || matchRoute('/ingest')) {
+        // sg.log(`lam`, {qn: Object.keys(quickNet)});
+
+        const $$$$ = params.getBucketInfo(null, configuration, 'ingest');
+        return quickNet.putClientJsonToS3({$$$$, ...argv_}, context, function(err, data) {
+
+          if (err) {
+            if (err.httpCode && err.httpCode === 400) {
+              let _400 = sg._400({ok: false}, err);
+              sg.log(`Response from app`, {_400});
+              return callback(..._400);
+            }
+
+            return callback(err);
           }
 
-          return callback(err);
-        }
+          sg.log(`handler`, {data});
 
-        sg.log(`handler`, {data});
-
-        const _200 = sg._200({ok:true, ...data});
-        sg.log(`Response from app`, {_200});
-        return callback(..._200);
-      });
+          const _200 = sg._200({ok:true, ...data});
+          sg.log(`Response from app`, {_200});
+          return callback(..._200);
+        });
+      }
     }
-  }
 
 
-  return callback(...sg._404());
+    return callback(...sg._404());
+  });
 
 
   // ==========================================================================================================================

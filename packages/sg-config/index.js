@@ -77,10 +77,10 @@ function Config(...configs) {
 function Configuration(...args) {
   if (!(this instanceof Configuration))   { return new Configuration(...args); }
   var self      = this;
-  var rootName  = args[0];
 
   self.rootTable  = getRootTable(...args);                                                                  // { racerX: {id: 'racerX'} }
   self.rootKeys   = Object.keys(self.rootTable);                                                            // [ 'racerX' ]
+  var rootName    = self.rootKeys[0];
 
   self.load = function(moreArgs =[], callback) {
     // TODO: do not reload
@@ -112,14 +112,46 @@ function Configuration(...args) {
   };
 
   // Get a value (after wait for load())
-  self.value = function(key, callback) {
+  self.value = function(key_) {
+    var key = key_;
+    var result;
+
+    if (Array.isArray(key)) {
+      result = sg.deref(self.rootTable, key);
+      if (result) {
+        return result;
+      }
+
+      result = sg.deref(self.rootTable, [rootName, ...key]);
+      if (result) {
+        return result;
+      }
+
+      key = key.join('.');
+    }
+
+    result = sg.deref(self.rootTable, [rootName, key]);
+    if (result) {
+      return result;
+    }
+
+    result = sg.deref(self.rootTable, key);
+    if (result) {
+      return result;
+    }
+
+    result = sg.deref(self.rootTable, `${rootName}.${key}`);
+    if (result) {
+      return result;
+    }
+
     const ENV_KEY = `config_${rootName}_${key}`.toUpperCase();
-    return callback(null, process.env[ENV_KEY]);
+    return process.env[ENV_KEY];
   };
 
   function getRootTable(...args) {
     const argsObjects = args.reduce((m, arg) => [...m, (typeof arg === 'string' ? {[arg]:{}} : arg)], []);    // [{ racerX: {} }]
-    const topKeys   = argsObjects.reduce((m, arg) => ({...m, ...sg.keyMirror(arg)}), {});                     // { racerX: 'racerX' }
+    const topKeys     = argsObjects.reduce((m, arg) => ({...m, ...sg.keyMirror(arg)}), {});                   // { racerX: 'racerX' }
 
     return sg.reduce(topKeys, {}, (m0, v, k) => {
       m0[k] = {...(m0[k] ||{}), id:k};
@@ -133,8 +165,15 @@ function Configuration(...args) {
   }
 }
 
-// var c = Configuration('api__cdr0__net');
-// c.load('api__coder00zero__net', function(err, data) {
-//   // console.error(c.rootTable);
-//   console.log(JSON.stringify({data: err || data, rootTable: c.rootTable}));
-// });
+if (require.main === module) {
+  // var c = Configuration(['lambdanet.api__cdr0__net', 'booya']);
+  // c.load('api__coder00zero__net', function(err, data) {
+  //   console.error(c.rootTable);
+  //   console.log(JSON.stringify({data: err || data, rootTable: c.rootTable}));
+
+  //   // console.error(c.value(['lambdanet.api__cdr0__net', 'clientStart']));
+  //   // console.error(c.value(['clientStart']));
+  //   // console.error(c.value('clientStart'));
+  //   // console.error(c.value(['s3', 'bucket', 'ingest', 'FailBucket']));
+  // });
+}

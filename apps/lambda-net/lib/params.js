@@ -4,23 +4,34 @@ const ENV                     = sg.ENV();
 
 
 // ----------------------------------------------------------------------------------------------------------------------------
-module.exports.getBucketInfo = function(x) {
-  var Bucket          = getBucket(x);
-  var FailBucket      = getFailBucket(x);
+module.exports.getBucketInfo = function(x, ...args) {
+
+  var Bucket          = getBucket(x, ...args);
+  var FailBucket      = getFailBucket(x, ...args);
 
   return {Bucket, FailBucket};
 };
 
 // ----------------------------------------------------------------------------------------------------------------------------
 const getBucket =
-module.exports.getBucket = function(x) {
-  return _getBucket(x, 'LAMBDANET_INGEST_BUCKET', 'lambda-net-ingest');
+module.exports.getBucket = function(x, configuration, name) {
+  var v = configuration.value(['s3', 'bucket', name, 'Bucket']);
+  if (v) {
+    return v;
+  }
+
+  return _getBucket(x, `LAMBDANET_${name}_BUCKET`.toUpperCase(), `lambda-net-${name}`);
 };
 
 // ----------------------------------------------------------------------------------------------------------------------------
 const getFailBucket =
-module.exports.getFailBucket = function(x) {
-  return _getFailBucket(x, 'LAMBDANET_FAIL_INGEST_BUCKET', 'lambda-net-ingest-fail');
+module.exports.getFailBucket = function(x, configuration, name) {
+  var v = configuration.value(['s3', 'bucket', name, 'FailBucket']);
+  if (v) {
+    return v;
+  }
+
+  return _getFailBucket(x, `LAMBDANET_FAIL_${name}_BUCKET`.toUpperCase(), `lambda-net-${name}-fail`);
 };
 
 // ----------------------------------------------------------------------------------------------------------------------------
