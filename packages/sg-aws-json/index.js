@@ -18,11 +18,10 @@
  *
  */
 
-const sg0                     = require('sg-diag');
-const sg                      = sg0.merge(sg0);
+const sg                      = require('sg0');
 const {_}                     = sg;
 const quickMerge              = require('quick-merge');
-const DIAG                    = sg0.DIAG(module);
+// const DIAG                    = sg.DIAG(module);
 
 const qm                      = quickMerge.quickMergeImmutable;
 

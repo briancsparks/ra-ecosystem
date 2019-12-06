@@ -64,7 +64,7 @@ mod.xport({fetchAndCache3: function(argv, context, callback) {
     url                     = rax.arg(argv, 'url', {required:true});
 
     var options = {
-      theNewWay : true,
+      // theNewWay : true,
       ttl       : 1 * 60 * 60, /* one hour */
     };
 

@@ -24,13 +24,6 @@ function mkmkConnection() {
   dg.w_if(sg.isnt(redisPort),   `WNOREDISPORT_INENV`);
 
   return function() {
-    // if (!redis) {
-    //   redis = libRedis.createClient(redisPort, redisHost);
-
-    //   redis.on('error', function(err) {
-    //     console.log("Error " + err);
-    //   });
-    // }
     redis = getLibRedis(redisPort, redisHost);
 
     var close = function(){ return --count; };
@@ -66,7 +59,7 @@ function mkmkConnection() {
       return redis;
     }
 
-
+    // TODO: Backup should be to use localhost
 
     // We do not have an available redis server.
     const myRedis   = libRedis.createClient(6379, '127.0.0.1');
@@ -77,7 +70,7 @@ function mkmkConnection() {
         m[key] = function(...args) {
           const callback = sg._.last(args);
           if (typeof callback === 'function') {
-            return callback('ENOREDIS');
+            return callback('ENOIMPL');
           }
         };
       }

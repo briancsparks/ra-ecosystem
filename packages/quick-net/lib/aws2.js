@@ -11,7 +11,7 @@ const {AwsDataBlob}           = require('./aws3');
 const DIAG                    = sg0.DIAG(module);
 
 // const sgRedis                 = {};   // TODO: wrong
-const {getCache}              = sgRedis;
+const {getCache0}             = sgRedis;
 const qm                      = quickMerge.quickMergeImmutable;
 
 // const ARGV                    = sg.ARGV();
@@ -42,7 +42,7 @@ function awsService(argv, context, callback) {
   // var   ttl = 3;         /* 3 sec */
 
   const key = `quicknet:awsApiCache:${serviceName}:${command}`;
-  return getCache(key, {ttl}, util.callbackify(async function getFromAws() {
+  return getCache0(key, {ttl}, util.callbackify(async function getFromAws() {
 
     // Expensive op to get from AWS
     const service   = new AWS[serviceName]({region:'us-east-1', paramValidation:false});

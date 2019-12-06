@@ -23,6 +23,7 @@ const diag                    = DIAG.dg;
 module.exports.getCache       = getCache;
 module.exports.mkConnection   = mkConnection;
 
+//===========================================================================================================================
 function mkConnection() {
   var   [redis, close]  = localRedis.mkConnection();
   return [redis, close];
@@ -30,6 +31,11 @@ function mkConnection() {
 
 //===========================================================================================================================
 function getCache(key, options, expensiveOp, last) {
+  return getCache0(key, {...options, theNewWay:true}, expensiveOp, last);
+}
+
+//===========================================================================================================================
+function getCache0(key, options, expensiveOp, last) {
   const [onMiss, onHit, callback]   = crackLast(last);
   var   [redis, close]              = localRedis.mkConnection();
   var   {ttl}                       = options;

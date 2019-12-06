@@ -1,0 +1,26 @@
+{
+  "name": "@sg0/sg-aws-json",
+  "version": "1.0.0",
+  "description": "Work with AWS' json like a real Javascript dev.",
+  "author": "Brian C Sparks <brian.c.sparks@hp.com>",
+  "homepage": "https://github.com/briancsparks/ra-ecosystem#readme",
+  "license": "MIT",
+  "main": "index.js",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/briancsparks/ra-ecosystem.git"
+  },
+  "scripts": {
+    "test": "echo \"Error: run tests from root\" && exit 1"
+  },
+  "bugs": {
+    "url": "https://github.com/briancsparks/ra-ecosystem/issues"
+  },
+  "dependencies": {
+    "quick-merge": "^1.0.20",
+    "sg0": "^1.0.50"
+  }
+}
