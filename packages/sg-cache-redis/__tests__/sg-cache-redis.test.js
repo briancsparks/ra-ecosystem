@@ -1,7 +1,12 @@
 'use strict';
 
-const sgCacheRedis = require('..');
+var   {getCache}              = require('..');
+const test                    = require('ava');
 
-describe('sg-cache-redis', () => {
-    it('needs tests');
+getCache = ()=>null;
+
+test('quickAws does nothing', t => {
+  const result  = getCache();
+  t.is(result, null);
 });
+

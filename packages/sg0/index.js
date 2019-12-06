@@ -90,7 +90,7 @@ sg.smartExtend = function() {
 /**
  *  Merge objects.
  */
-sg.merge = function() {
+sg.mergeL0 = sg.merge = function() {
   var args = sg.reduce(arguments, [], function(m, arg) {
     return sg.ap(m, sg.reduce(arg, {}, function(m, value, key) {
       return sg.kv(m, key, value);
@@ -100,6 +100,38 @@ sg.merge = function() {
   args.unshift({});
   return _.extend.apply(_, args);
 };
+
+/**
+ *  Merge objects.
+ */
+sg.mergeL1 = function() {
+  var allL1Keys = sg.reduce(arguments, {}, (m, arg) => {
+    return {...m, ...sg.keyMirror(arg)};
+  });
+  allL1Keys = Object.keys(allL1Keys);
+
+  var result = sg.reduce(allL1Keys, {}, (m0,k) => {
+    return sg.reduce(arguments, m0, (m, arg) => {
+      return {...m, [k]: {...m[k], ...arg[k]}};
+    });
+  });
+
+  return result;
+};
+
+// console.log(sg.mergeL1(
+//   {one: {a: '0.1'},                  three: {q: '2.3'}, x: {foo:44}},
+//   {one: {b: '1.1'}, two: {b: '1.2'}, three: {z: '2.3'}, x: {foo:43}},
+//   {                 two: {c: '2.2'}, three: {c: '2.3'}, x: {foo:42}}
+// ));
+//
+// =>
+// {
+//   one:   { a: '0.1', b: '1.1' },
+//   three: {                     c: '2.3',  q: '2.3', z: '2.3' },
+//   x:     {                                                   foo: 42 },
+//   two:   {           b: '1.2', c: '2.2' }
+// }
 
 /**
  * Pulls the item out of the object and returns it.
@@ -1199,12 +1231,12 @@ sg.augmentAllWith = function(aug, all) {
 /**
  * Returns obj[key].
  *
+ * sg.choose('debug', ['prod', {prod:{res:42},debug:{msg:'leak info!'}}]) --> sg.choose('debug', {prod:{res:42},debug:{msg:'leak info!',res:42}}) --> {msg:'leak info!',res:42}
+ *
  * sg.choose('a', {a:42}) --> 42
  * sg.choose('a.b', {a:{b:42}}) --> 42
- * sg.choose('x.z', ['key', {key:{z:42},x:{w:'dubya'}}]) --> sg.choose('x.key.z', {key:{z:42},x:{w:'dubya',z:42}}) --> 42
+ * sg.choose('x.z', ['key', {key:{z:42},x:{w:'dubya'}}]) --> sg.choose('x.z', {key:{z:42},x:{w:'dubya',z:42}}) --> 42
  * sg.choose('x.z', [{z:42},{x:{w:'dubya'}}]) --> sg.choose('x.z', {x:{w:'dubya',z:42}}) --> 42
- *
- * sg.choose('debug', ['prod', {prod:{res:42},debug:{msg:'leak info!'}}]) --> sg.choose('debug', {prod:{res:42},debug:{msg:'leak info!',res:42}}) --> {msg:'leak info!',res:42}
  *
  * @param {*} key
  * @param {*} obj
@@ -1501,8 +1533,18 @@ sg.scrunch = function(arr) {
   return arr.filter(x => !sg.isnt(x));
 };
 
+/**
+ * Just like _.pluck, but puts {} where _.pluck would put undefined.
+ *
+ * @param {*} arr
+ * @returns
+ */
+sg.pluck = function(arr, name) {
+  return _.toArray(arr).map(x => x[name] || {});
+};
+
 // From https://github.com/lodash/lodash/wiki/Migrating
-sg.pluck        = _.map;
+sg._pluck        = _.map;
 sg.head         = _.take;
 sg.last         = _.takeRight;
 sg.initial      = _.dropRight;
@@ -1864,6 +1906,27 @@ sg.mergeSg = function() {
 };
 
 // sg.mergeSg({f1:'A', fn:{clean: {one:'axclean' }, fast: {one:'axfast' } }}, {f2:'B', fn:{clean: {two: 'bxclean'}, fast: {five:'bxfast' }}});
+
+/**
+ *  Merge objects.
+ */
+sg.mergeSg2 = function() {
+  var result = {fn:{}, async:{}, $x_args:{}};
+  var args   = _.toArray(arguments);
+
+  result = sg.reduce(Object.keys(result), {}, (m,k) => {
+    var level0 = sg.pluck(args, k);
+    m[k] = sg.mergeL1(...level0);
+    return m;
+  });
+
+  result = sg.merge(...args, result);
+
+  // console.log(sg.inspect(result));
+  return result;
+};
+
+// sg.mergeSg2({f1:'A', fn:{clean: {one:'axclean' }, fast: {one:'axfast' } }}, {f2:'B', fn:{clean: {two: 'bxclean'}, fast: {five:'bxfast' }}});
 
 // Export functions
 _.each(sg, function(fn, name) {

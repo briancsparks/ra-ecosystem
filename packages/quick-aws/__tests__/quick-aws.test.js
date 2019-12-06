@@ -1,7 +1,9 @@
 'use strict';
 
-const quickAws = require('..');
+const {quickAws}              = require('..');
+const test                    = require('ava');
 
-describe('quick-aws', () => {
-    it('needs tests');
+test('quickAws does nothing', t => {
+  const result  = quickAws();
+  t.is(result, undefined);
 });

@@ -7,5 +7,5 @@ test('works', t => {
   // const result    = echo(a);
   const result    = a;
 
-  t.deepEqual(result, [{a:'foo', b:'bar', d:{e:'all'}}]);
+  t.deepEqual(result, {a:'foo', b:'bar', d:{e:'all'}});
 });

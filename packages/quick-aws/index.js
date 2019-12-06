@@ -1,6 +1,6 @@
 'use strict';
 
-module.exports = quickAws;
+module.exports.quickAws = quickAws;
 
 function quickAws() {
     // TODO

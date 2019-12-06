@@ -8,13 +8,13 @@ test('emites', t => {
   const a         = {a:'foo', b:'bar', d:{e:'all'}};
   const result    = emit(a);
 
-  t.deepEqual(result, [{a:'foo', b:'bar', d:{e:'all'}}]);
+  t.deepEqual(result, undefined);
 });
 
 test('emites scalar', t => {
   const a         = 42;
   const result    = emit(a);
 
-  t.deepEqual(result, [42]);
+  t.deepEqual(result, undefined);
 });
 

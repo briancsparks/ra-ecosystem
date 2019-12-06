@@ -52,7 +52,6 @@ test('The right exports', t=> {
   t.true('dbUtils' in ra.v2);
   t.true('redisUtils' in ra.v2);
   t.true('express' in ra.v2);       /* ??? */
-  t.true('getExpressApp' in ra.v2);
 
   // TODO: Add the rest
   t.true('isDebug' in ra.v2.utils);
