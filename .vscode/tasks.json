@@ -6,9 +6,14 @@
     "command": "echo workspaceFolder: ${workspaceFolder} execPath: ${execPath}"
   },
   {
-    "label": "test-require-all for project",
+    "label": "test (1) : test-require-all for project",
     "type": "shell",
     "command":["node ./packages/run-anywhere/bin3.js test-require-all"],
+  },
+  {
+    "label": "test (2) : ava all",
+    "type": "shell",
+    "command":["ava"],
   },
   {
     "label": "Fix FQDNS for cdr0.net",
