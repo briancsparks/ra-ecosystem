@@ -1,6 +1,6 @@
 {
   "name": "sg-env",
-  "version": "1.0.22",
+  "version": "1.0.23",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -9,7 +9,7 @@
   "author": "Brian C Sparks <briancsparks@gmail.com>",
   "license": "MIT",
   "dependencies": {
-    "@sg0/sg-smart-value": "^1.0.17"
+    "@sg0/sg-smart-value": "^1.0.18"
   },
   "gitHead": "55c763905a0b5b6039ae9c1819860a00b918d958"
 }

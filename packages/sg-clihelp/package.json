@@ -1,6 +1,6 @@
 {
   "name": "sg-clihelp",
-  "version": "1.0.85",
+  "version": "1.0.86",
   "description": "Utilities for writing cli apps",
   "main": "index.js",
   "bin": {
@@ -13,9 +13,9 @@
   "license": "MIT",
   "dependencies": {
     "glob": "^7.1.6",
-    "sg-argv": "^1.0.85",
-    "sg-env": "^1.0.22",
-    "sg-exec": "^1.0.80",
+    "sg-argv": "^1.0.86",
+    "sg-env": "^1.0.23",
+    "sg-exec": "^1.0.81",
     "shelljs": "^0.8.3"
   },
   "gitHead": "55c763905a0b5b6039ae9c1819860a00b918d958"

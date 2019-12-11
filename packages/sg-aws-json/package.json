@@ -1,6 +1,6 @@
 {
   "name": "@sg0/sg-aws-json",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Work with AWS' json like a real Javascript dev.",
   "author": "Brian C Sparks <brian.c.sparks@hp.com>",
   "homepage": "https://github.com/briancsparks/ra-ecosystem#readme",
@@ -21,6 +21,6 @@
   },
   "dependencies": {
     "quick-merge": "^1.0.20",
-    "sg0": "^1.0.51"
+    "sg0": "^1.0.52"
   }
 }
