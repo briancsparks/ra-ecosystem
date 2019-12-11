@@ -1463,6 +1463,19 @@ sg.reduceObj = function(obj, initial, ...rest) {
 };
 
 /**
+ * Replace keys.
+ *
+ * @param {*} obj
+ * @param {*} replacements
+ * @returns
+ */
+sg.replaceKeys = function(obj, replacements) {
+  return sg.reduceObj(obj, {}, (m,v,k) => {
+    return [replacements[k], v];
+  });
+};
+
+/**
  * Acts just like reduce, but stops calling fn once a single real value is produced.
  *
  * @param {*} collection       - The Object or Array to reduce

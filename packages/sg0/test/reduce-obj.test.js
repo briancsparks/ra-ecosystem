@@ -25,4 +25,13 @@ test('sg.reduceObj rename a key', t => {
 });
 
 
+test('sg.replaceKeys rename a key', t => {
+  const newKeys = {num:'number'};
+
+  const result  = sg.replaceKeys(start, newKeys);
+
+  t.deepEqual(result, {str: 'one', number: 2, obj: {objstr:'five'}, arr: [1,2,"3"]});
+});
+
+
 
