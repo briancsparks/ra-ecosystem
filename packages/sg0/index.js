@@ -1313,6 +1313,7 @@ sg.reduce = function(collection, initial, fn) {
  * * [value]      -- A one-element Array means to re-use the k. ( return {...m, [k]: value})
  * * [key, value] -- A two-element Array means to interpret as [key,value]. ( return {...m, [key]: value})
  *   * key can be null to re-use k, like [value].
+ *     * return [newKey, value];   where newKey is either the new string key, or null to keep the original. (like: {newKey = k; if (something) {newkey = null}; return [newKey, value]; })
  * * Otherwise array.length > 2 -- Each item is evaluated individually
  *   * String   - A key-mirror. ['a', 'b', 'c'] -> {a:'a', b:'b', c:'c'}
  *   * Array 0  - Placeholder, so [[], 'b', 'c'] -> {a:'a', b:'b', c:'c'}, not {[b]:c}
@@ -1361,18 +1362,20 @@ sg.reduceObj = function(obj, initial, ...rest) {
     // They returned null... Just means 'unchanged'
     if (res === null)             { return m; }
 
-    // They just returned, without returning any data... Just means to eithe keep the current k/v, or skip
+    // They just returned, without returning any data... Just means to either keep the current k/v, or skip
     if (_.isUndefined(res)) {
       if (options.undefIsSkip)          { return m; }
       else if (options.undefIsKeep)     { return {...m, [k]:v}; }
       else                              { return m; }
     }
 
-    // true is reuse k/v; false is unchanged -- use like filter, or like map, or like ignore
+    // likeMap puts callback_s result in item[k]
     if (options.likeMap) {
-      if (res === true)             { return {...m, [k]:res}; }
-      if (res === false)            { return {...m, [k]:res}; }
-    } else if (options.likeIgnore) {
+      return {...m, [k]:res};
+    }
+
+    // true/false is like one of ignore,filter
+    if (options.likeIgnore) {
       if (res === true)             { return m; }
       if (res === false)            { return {...m, [k]:v}; }
     } else /* like filter - the default */ {
@@ -1398,7 +1401,7 @@ sg.reduceObj = function(obj, initial, ...rest) {
       }
 
       // ['key', {value}], ['key', 'value'], ['key', value] -- value can be any type
-      if (res.length === 2 && (_.isString(res[0]) || res[0] === null)) {
+      if (res.length === 2 && (_.isString(res[0]) || isnt(res[0]))) {
         return {...m, [keyOr(res[0])]: res[1]};
       }
 
@@ -1449,7 +1452,7 @@ sg.reduceObj = function(obj, initial, ...rest) {
     return {...m, [k]:res};
 
     function keyOr(x) {
-      if (x === null) {
+      if (isnt(x)) {
         return k;
       }
 
