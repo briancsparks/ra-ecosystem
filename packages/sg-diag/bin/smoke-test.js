@@ -1,4 +1,8 @@
 
+
+// Use `export DEBUG='*'` before starting to see all socket-io traffic
+// MUST not exit too soon, or messages are not delivered
+
 const ra                      = require('run-anywhere').v2;
 ra.get3rdPartyLib('loud-rejection/register');
 
@@ -22,12 +26,13 @@ DIAG.usage({
 });
 
 // The last one wins. Comment out what you dont want.
-DIAG.activeDevelopment(`--stage=dev --name=smoke-net`);
-// DIAG.activeDevelopment(`--stage=dev --name=smoke-net --debug`);
-// DIAG.activeName = 'smokeTest';
+// DIAG.activeDevelopment(`--stage=dev --name=smoke-net`);
+DIAG.activeDevelopment(`--stage=dev --name=smoke-net --debug --verbose`);
+DIAG.activeName = 'smokeTest';
 
-mod.xport(DIAG.xport({smokeTest: async function(argv, context, callback) {
-  const diag                  = DIAG.diagnostic({argv, context, callback});
+mod.xport(DIAG.xport({smokeTest: async function(argv, context_, callback) {
+  const {diag, ...context}    = context_;
+  // const diag                  = DIAG.diagnostic({argv, context, callback});
 
   const {
     stage,smokeName
@@ -40,13 +45,16 @@ mod.xport(DIAG.xport({smokeTest: async function(argv, context, callback) {
 
   sg.bigBanner('green', `BANNER`);
 
-  diag.i(`smokeTest-i`, {args: {stage, smokeName, packageDir}});
-  diag.d(`smokeTest-d`, {args: {stage, smokeName, packageDir}});
-  diag.v(`smokeTest-v`, {args: {stage, smokeName, packageDir}});
-  diag.w(`smokeTest-w`, {args: {stage, smokeName, packageDir}});
-  diag.e(`smokeTest-e`, {args: {stage, smokeName, packageDir}});
+  diag.i(`smokeTest-i msg`, {args: {stage, smokeName, packageDir}});
+  diag.d(`smokeTest-d msg`, {args: {stage, smokeName, packageDir}});
+  diag.v(`smokeTest-v msg`, {args: {stage, smokeName, packageDir}});
+  diag.w(`smokeTest-w msg`, {args: {stage, smokeName, packageDir}});
+  diag.e(`ESOMEERROR`, `smokeTest-e msg`, {args: {stage, smokeName, packageDir}});
 
-  // DIAG.close();
-  return callback(null, {ok:true});
+  return sg.setTimeout(5000, function() {
+    diag.close();
+    DIAG.close();
+    return callback(null, {ok:true});
+  });
 }}));
 

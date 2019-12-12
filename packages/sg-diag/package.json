@@ -21,6 +21,7 @@
     "sg-bits": "^1.0.36",
     "sg-env": "^1.0.24",
     "sg0": "^1.0.53",
+    "socket.io": "^2.3.0",
     "socket.io-client": "^2.2.0"
   },
   "gitHead": "55c763905a0b5b6039ae9c1819860a00b918d958"

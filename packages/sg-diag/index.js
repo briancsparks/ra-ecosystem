@@ -72,6 +72,9 @@ module.exports.DIAG = function(mod) {
     if (self.diag) {
       self.diag.close();
     }
+    if (self.dg) {
+      self.dg.close();
+    }
   };
 
   self.usage = function(data ={}) {
@@ -174,18 +177,20 @@ module.exports.DIAG = function(mod) {
       self.initDiagnostic(diag);
 
       diag.i_if(logApi, `--> ${fnName}:`, {argv});
-    };
-
-    const setupDiag2 = function(argv, context, callback) {
-      const logApi    = argv.log_api || process.env.SG_LOG_API;
-
-      var diag = sgDiagnostic.Diagnostic({argv, context, fnName, callback});
-      self.initDiagnostic(diag);
-
-      diag.i_if(logApi, `--> ${fnName}:`, {argv});
 
       return diag;
     };
+
+    // const setupDiag2 = function(argv, context, callback) {
+    //   const logApi    = argv.log_api || process.env.SG_LOG_API;
+
+    //   var diag = sgDiagnostic.Diagnostic({argv, context, fnName, callback});
+    //   self.initDiagnostic(diag);
+
+    //   diag.i_if(logApi, `--> ${fnName}:`, {argv});
+
+    //   return diag;
+    // };
 
     // Build an impostor to hand out -- this fn will be called, and needs to call the real fn
     // This is for when !isActuallyContinuationStyle
@@ -199,7 +204,7 @@ module.exports.DIAG = function(mod) {
       }
       // TODO: else, lookup usefulCliArgs from argv, and replace
 
-      setupDiag(argv, context, null);
+      const diag = setupDiag(argv, context, null);
 
       return new Promise(async (resolve, reject) => {
 
@@ -209,7 +214,7 @@ module.exports.DIAG = function(mod) {
           const mainJson = await self.loadData(fnName);
 
           // ========== Call the intercepted function ==========
-          const result = await intercepted(argv, context);
+          const result = await intercepted(argv, {diag, ...context});
 
           return callbackCCC(function callbackDDD() {
             return resolve(result);
@@ -238,7 +243,7 @@ module.exports.DIAG = function(mod) {
         argv                  = sg.merge(cliArgs ||{}, argv ||{});
       }
 
-      setupDiag(argv, context, callback);
+      const diag = setupDiag(argv, context, callback);
 
       return interceptCaller(argv, context, async function(callbackCCC) {
 
@@ -246,7 +251,7 @@ module.exports.DIAG = function(mod) {
         await self.loadData(fnName);
 
         // ========== Call the intercepted function ==========
-        return intercepted(argv, context, function(err, result) {
+        return intercepted(argv, {diag, ...context}, function(err, result) {
 
           return callbackCCC(function callbackDDD() {
             return callback(err, result);
