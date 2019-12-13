@@ -27,9 +27,9 @@ DIAG.activeDevelopment(`--debug`);
 // DIAG.activeName = 'checkDns';
 
 
-mod.async(DIAG.async({checkDns: async function(argv, context) {
-  const diag    = DIAG.diagnostic({argv, context});
+// mod.async(DIAG.async({checkDns: async function(argv, context) {
+//   const diag    = DIAG.diagnostic({argv, context});
 
-}}));
+// }}));
 
 

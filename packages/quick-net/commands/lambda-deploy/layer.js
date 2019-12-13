@@ -42,8 +42,8 @@ DIAG.activeDevelopment(`--lambda-name=lambda-net --stage=dev --Bucket=quick-net 
 DIAG.activeName = 'buildLayer';
 
 module.exports.main =
-mod.async(DIAG.async({buildLayer: async function(argv, context) {
-  const diag    = DIAG.diagnostic({argv, context});
+mod.async(DIAG.async({buildLayer: async function(argv, context_) {
+  const {diag, ...context}    = context_;
 
   const {stage,lambdaName,force}    = diag.args();
   var   {Bucket,AWS_PROFILE}        = diag.args();

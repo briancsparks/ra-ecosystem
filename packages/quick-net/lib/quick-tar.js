@@ -30,8 +30,8 @@ DIAG.usage({ aliases: { getTarStream: { args: {
 DIAG.activeDevelopment(`--debug`);
 // DIAG.activeName = 'getTarStream';
 
-mod.async(DIAG.async({getTarStream: async function(argv, context) {
-  const diag    = DIAG.diagnostic({argv, context});
+mod.async(DIAG.async({getTarStream: async function(argv, context_) {
+  const {diag, ...context}            = context_;
 
   const {tarRoot}               = diag.args();
   var   {debugOutFile,devNull}  = diag.args();

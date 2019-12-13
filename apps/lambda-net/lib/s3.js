@@ -15,8 +15,8 @@ DIAG.usage({aliases:{streamToS3:{}}});
 DIAG.activeDevelopment(`--Bucket=quick-net-ingest-dump`);
 DIAG.activeDevelopment(`--debug`);
 
-const streamToS3Obj = DIAG.xport({streamToS3: function(argv, context, callback) {
-  const diag    = DIAG.diagnostic({argv, context, callback});
+const streamToS3Obj = DIAG.xport({streamToS3: function(argv, context_, callback) {
+  const {diag, ...context}            = context_;
 
   var   {Body}                        = argv;
   var   {Bucket,Key,AWS_PROFILE}      = diag.args();
@@ -67,13 +67,16 @@ function stringify(x) {
   return JSON.stringify(x);
 }
 
+// =======================================================================================================
+// putToS3
+
 DIAG.usage({aliases:{putToS3:{}}});
 
 DIAG.activeDevelopment(`--Bucket=quick-net-ingest-dump`);
 DIAG.activeDevelopment(`--debug`);
 
-const putToS3Obj = DIAG.xport({putToS3: function(argv, context, callback) {
-  const diag    = DIAG.diagnostic({argv, context, callback});
+const putToS3Obj = DIAG.xport({putToS3: function(argv, context_, callback) {
+  const {diag, ...context}            = context_;
 
   var  {Bucket,Key,AWS_PROFILE}       = diag.args();
   var  Body                           = getBody(argv, context) || diag.args().Body;
@@ -110,6 +113,9 @@ const putToS3Obj = DIAG.xport({putToS3: function(argv, context, callback) {
 }});
 
 module.exports.putToS3 = putToS3Obj.putToS3;
+
+// =======================================================================================================
+// _putToS3_
 
 function _putToS3_({Body, Bucket, Key, diag}, callback) {
   var upload = S3.upload({Bucket, Key, Body}, {partSize: 6 * 1024 * 1024});

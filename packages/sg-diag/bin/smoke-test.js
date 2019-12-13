@@ -32,7 +32,6 @@ DIAG.activeName = 'smokeTest';
 
 mod.xport(DIAG.xport({smokeTest: async function(argv, context_, callback) {
   const {diag, ...context}    = context_;
-  // const diag                  = DIAG.diagnostic({argv, context, callback});
 
   const {
     stage,smokeName
@@ -52,7 +51,7 @@ mod.xport(DIAG.xport({smokeTest: async function(argv, context_, callback) {
   diag.e(`ESOMEERROR`, `smokeTest-e msg`, {args: {stage, smokeName, packageDir}});
 
   return sg.setTimeout(5000, function() {
-    diag.close();
+    // diag.close();
     DIAG.close();
     return callback(null, {ok:true});
   });

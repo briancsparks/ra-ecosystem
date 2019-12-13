@@ -50,8 +50,8 @@ DIAG.activeDevelopment(`--filename=${path.join(os.homedir(), '_aa-nginx-conf')} 
  * @param {*} callback
  * @returns
  */
-mod.xport(DIAG.xport({saveNginxConfigTarball: function(argv, context, callback) {
-  const diag        = DIAG.diagnostic({argv, context, callback});
+mod.xport(DIAG.xport({saveNginxConfigTarball: function(argv, context_, callback) {
+  const {diag, ...context}    = context_;
   var   {filename}  = diag.args();
 
   if (!(diag.haveArgs({filename})))                           { return diag.exit(); }
@@ -101,8 +101,8 @@ DIAG.activeDevelopment(`--type=qnwebtier --rpxi-port=3008 --skip-server --debug`
  * @param {*} callback
  * @returns
  */
-mod.xport(DIAG.xport({saveNginxConfigTarballToS3: function(argv, context, callback) {
-  const diag        = DIAG.diagnostic({argv, context, callback});
+mod.xport(DIAG.xport({saveNginxConfigTarballToS3: function(argv, context_, callback) {
+  const {diag, ...context}    = context_;
 
   const namespace   = ENV.lc('NAMESPACE') || 'quicknet';
 
@@ -160,8 +160,8 @@ DIAG.activeDevelopment(`--filename=${path.join(os.homedir(), '_aa-nginx-conf')} 
  * @param {*} callback
  * @returns
  */
-const getNginxConfigTarball = mod.xport(DIAG.xport({getNginxConfigTarball: function(argv, context, callback) {
-  const diag                      = DIAG.diagnostic({argv, context, callback});
+const getNginxConfigTarball = mod.xport(DIAG.xport({getNginxConfigTarball: function(argv, context_, callback) {
+  const {diag, ...context}    = context_;
   const {serverType ='general'}   = diag.args();
 
   if (!(diag.haveArgs({serverType})))                           { return diag.exit(); }
@@ -211,8 +211,8 @@ DIAG.activeDevelopment(`--debug`);
  * @param {*} callback
  * @returns
  */
-const getNginxQuicknetWebtierConfig = mod.xport(DIAG.xport({getNginxQuicknetWebtierConfig: function(argv, context, callback) {
-  const diag                        = DIAG.diagnostic({argv,context});
+const getNginxQuicknetWebtierConfig = mod.xport(DIAG.xport({getNginxQuicknetWebtierConfig: function(argv, context_, callback) {
+  const {diag, ...context}    = context_;
 
   const {distro ='ubuntu'}          = argv;
   const {reloadServer =false}       = diag.args();
@@ -313,8 +313,8 @@ DIAG.activeDevelopment(`--debug`);
  * @param {*} callback
  * @returns
  */
-const getNginxLocalAppServerConfig = mod.xport(DIAG.xport({getNginxLocalAppServerConfig: function(argv, context, callback) {
-  const diag                    = DIAG.diagnostic({argv,context});
+const getNginxLocalAppServerConfig = mod.xport(DIAG.xport({getNginxLocalAppServerConfig: function(argv, context_, callback) {
+  const {diag, ...context}    = context_;
 
   const {distro ='ubuntu'}      = argv;
   const {reloadServer =false}   = diag.args();
@@ -365,8 +365,8 @@ DIAG.activeDevelopment(`--debug`);
  * @param {*} callback
  * @returns
  */
-const getNginxUpstreamConfig = mod.xport(DIAG.xport({getNginxUpstreamConfig: function(argv, context, callback) {
-  const diag                          = DIAG.diagnostic({argv,context});
+const getNginxUpstreamConfig = mod.xport(DIAG.xport({getNginxUpstreamConfig: function(argv, context_, callback) {
+  const {diag, ...context}    = context_;
 
   const {distro ='ubuntu'}      = argv;
   const {reloadServer =false}   = diag.args();
@@ -431,8 +431,8 @@ DIAG.activeDevelopment(`--debug`);
  * @param {*} callback
  * @returns
  */
-const getNginxGeneralConfig = mod.xport(DIAG.xport({getNginxGeneralConfig: function(argv, context, callback) {
-  const diag                    = DIAG.diagnostic({argv,context});
+const getNginxGeneralConfig = mod.xport(DIAG.xport({getNginxGeneralConfig: function(argv, context_, callback) {
+  const {diag, ...context}    = context_;
 
   const {distro ='ubuntu'}      = argv;
   const {reloadServer =false}   = diag.args();
@@ -684,8 +684,11 @@ l=[...l,`
 // getUpstream
 DIAG.usage({ aliases: { getUpstream: { args: {}}}});
 
-function getUpstream(argv, context={}) {
-  const diag                          = DIAG.diagnostic({argv,context}, 'getUpstream');
+const getUpstream = DIAG.async({getUpstream: getUpstream_});
+
+function getUpstream_(argv, context_ ={}) {
+  const {diag, ...context}            = context_;
+  // const diag                          = DIAG.diagnostic({argv,context}, 'getUpstream');
   const {upstream}                    = argv; //diag.args();
   const {upstream_service}            = argv; //diag.args();
 
@@ -704,8 +707,11 @@ function getUpstream(argv, context={}) {
 // getServerConfig
 DIAG.usage({ aliases: { getServerConfig: { args: {}}}});
 
-function getServerConfig(argv, context={}) {
-  const diag                          = DIAG.diagnostic({argv,context}, 'getServerConfig');
+const getServerConfig = DIAG.async({getServerConfig: getServerConfig_});
+
+function getServerConfig_(argv, context_ ={}) {
+  const {diag, ...context}            = context_;
+  // const diag                          = DIAG.diagnostic({argv,context}, 'getServerConfig');
   const {https,client,serverNum}      = diag.args();
   const {location,upstream}           = diag.args();
   var   {default_server,root}         = diag.args();

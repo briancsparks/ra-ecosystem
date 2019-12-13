@@ -23,8 +23,8 @@ DIAG.activeDevelopment(`--debug`);
 /**
  * Happy, happy, happy.
  */
-mod.xport(DIAG.xport({callbackIfied: function(argv_, context, callback) {
-  const diag    = DIAG.diagnostic({argv_, context, callback});
+mod.xport(DIAG.xport({callbackIfied: function(argv_, context_, callback) {
+  const {diag, ...context}            = context_;
 
   const data = {};
   return callback(null, data);

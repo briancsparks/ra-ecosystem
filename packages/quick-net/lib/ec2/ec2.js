@@ -13,18 +13,27 @@ const path                    = require('path');
 const MimeNode                = require('emailjs-mime-builder').default;
 const jsyaml                  = require('js-yaml');
 const clipboardy              = require('clipboardy');
+const glob                    = require('glob');
 const awsDefs                 = require('../aws-defs');
 const libAws                  = require('../aws');
 const libVpc                  = require('./vpc');
 const libTags                 = require('./tags');
 const cloudInit               = require('../sh/cloud-init');
 const {setARecord}            = require('../route53');
-const {putShellScriptToS3}    = require('../s3');
+const libS3                   = require('../s3');
 const libNginxConfig          = require('../nginx/config');
 const {ipNumber,toIp}         = require('./cidr');
-const {mkS3path,
-       safePathFqdn,
-       addClip}               = qnutils;
+const {
+  putShellScriptToS3,
+  copyFileToS3,
+  parseS3Path,
+  streamToS3,
+}                             = libS3;
+const {
+  mkS3path,
+  safePathFqdn,
+  addClip
+}                             = qnutils;
 var   theCommandToRun         = '';
 
 const mod                     = ra.modSquad(module, 'quickNetEc2');
@@ -92,6 +101,8 @@ var subnets = {
 };
 subnets.d = subnets.D;
 
+if (require.main === module) {
+}
 
 // =======================================================================================================
 // upsertInstance
@@ -119,8 +130,8 @@ DIAG.activeDevelopment(`--useful=webtier --debug`);
 /**
  * Upsert an instance.
  */
-mod.xport(DIAG.xport({upsertInstance: function(argv_, context, callback) {
-  const diag    = DIAG.diagnostic({argv_, context, callback});
+mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
+  const {diag, ...context}    = context_;
 
   // TODO: Make sg.ENV be run-time changable so NO_REDIS can be turned on and off
 
@@ -899,25 +910,35 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context, callback) {
       // -------------------------------------------------------------------------------------------------------
       // Put stuff on S3 for the instance
 
-      const utilFiles     = 'qn-bootstrap,qn-bootstrap-nonroot,qn-bootstrap-other,qn-untar-from-s3,qn-cmd-from-s3,sshix,qn-hosts,qn-redis,qn-mongo,qn-get-certs-from-s3,qn-get-client-certs-from-s3,qn-install-etcd'.split(',');
-      const homeFiles     = '.vimrc,.profile,.bashrc,.bash_aliases'.split(',');
+      // const utilFiles     = 'qn-bootstrap,qn-bootstrap-nonroot,qn-bootstrap-other,qn-untar-from-s3,qn-cmd-from-s3,sshix,qn-hosts,qn-redis,qn-mongo,qn-get-certs-from-s3,qn-get-client-certs-from-s3,qn-install-etcd'.split(',');
+      // const homeFiles     = '.vimrc,.profile,.bashrc,.bash_aliases'.split(',');
       const s3deployPath  = s3path('deploy', InstanceId);
 
       return sg.__run2(next, [function(next) {
-        return sg.__eachll(utilFiles, function(filename, next) {
-          return copyFileToS3(path.join(__dirname, 'instance-help', 'usr-sbin', filename), `${s3deployPath}/usr-sbin`, function(err, data) {
-            sg.debugLog(`Uploaded ${filename} script`, {err, data});
-            return next();
-          });
-        }, next);
+        return glob(path.join(__dirname, 'instance-help', 'usr-sbin', '*'), {}, function(err, files) {
+          diag.d('/usr/sbin files', {err, files});
+
+          return sg.__eachll(files, function(filename, next) {
+            return copyFileToS3(filename, `${s3deployPath}/usr-sbin`, {diag}, function(err, data) {
+              diag.d(`Uploaded ${filename} script to ${s3deployPath}/usr-sbin`, {err, data});
+              return next();
+            });
+          }, next);
+        });
 
       }, function(next) {
-        return sg.__eachll(homeFiles, function(filename, next) {
-          return copyFileToS3(path.join(__dirname, 'instance-help', 'home', filename), `${s3deployPath}/home`, function(err, data) {
-            sg.debugLog(`Uploaded ${filename}`, {err, data});
-            return next();
-          });
-        }, next);
+
+        return glob(path.join(__dirname, 'instance-help', 'home', '*'), {}, function(err, files) {
+          diag.d('/home/home files', {err, files});
+
+          return sg.__eachll(files, function(filename, next) {
+            return copyFileToS3(filename, `${s3deployPath}/home`, {diag}, function(err, data) {
+              diag.d(`Uploaded ${filename} to ${s3deployPath}/home`, {err, data});
+              return next();
+            });
+          }, next);
+
+        });
 
       }, function(next) {
         if (!userdataOpts.INSTALL_WEBTIER)                { return next(); }
@@ -1153,8 +1174,8 @@ DIAG.activeDevelopment(clis.admin);
 /**
  * Upsert an instance.
  */
-mod.xport(DIAG.xport({upstartInstances: function(argv_, context, callback) {
-  const diag    = DIAG.diagnostic({argv_, context, callback});
+mod.xport(DIAG.xport({upstartInstances: function(argv_, context_, callback) {
+  const {diag, ...context}    = context_;
 
   const ractx     = context.runAnywhere || {};
   const { rax }   = ractx.quickNetEc2__upstartInstances;
@@ -1357,70 +1378,70 @@ function getIpForInstance(argv) {
  *   - Overall, add to ra/platform/{entrypoint,host}/x.js the ability to `ra invoke ...` for the 'rewrite' module
  */
 
+// // ----------------------------------------------------------------------------------------------------
+// var uniq = 0;
+// function streamThroughFileToS3(readStream, argv, callback) {
+//   const pathname = path.join(os.tmpdir(), `stream-through-file-to-s3-${uniq++}`);
+
+//   const out = fs.createWriteStream(pathname);
+//   readStream.pipe(out);
+//   out.on('close', function() {
+//     return _copyFileToS3_(pathname, argv, callback);
+//   });
+// }
+
+// // ----------------------------------------------------------------------------------------------------
+// function copyFileToS3(pathname, s3path, callback) {
+//   const filename = _.last(pathname.split(/[\\/]/));
+//   const {Bucket,Key} = parseS3Path(`${s3path}/${filename}`);
+
+//   if (!Bucket)    { sg.logError(`NoBucket`, `sending uplaod`, {Bucket,Key,pathname,s3path}); return callback(`NoBucket`); }
+//   if (!Key)       { sg.logError(`NoKey`,    `sending uplaod`, {Bucket,Key,pathname,s3path}); return callback(`NoKey`); }
+
+//   return _copyFileToS3_(pathname, {Bucket, Key}, function(err, data) {
+//     return callback(err, data);
+//   });
+// }
+
+// // ----------------------------------------------------------------------------------------------------
+// function _copyFileToS3_(pathname, argv, callback) {
+//   const Body = fs.createReadStream(pathname);
+
+//   return streamToS3(Body, argv, callback);
+// }
+
+// // ----------------------------------------------------------------------------------------------------
+// function streamToS3(Body, {Bucket, Key, ContentType ='text/plain'}, callback) {
+
+//   if (!Bucket)    { sg.logError(`NoBucket`, `sending uplaod`, {Bucket,Key}); return callback(`NoBucket`); }
+//   if (!Key)       { sg.logError(`NoKey`,    `sending uplaod`, {Bucket,Key}); return callback(`NoKey`); }
+//   if (!Body)      { sg.logError(`NoBody`,   `sending uplaod`, {Bucket,Key}); return callback(`NoBody`); }
+
+//   var upload = s3.upload({Bucket, Key, Body, ContentType}, {partSize: 6 * 1024 * 1024});
+
+//   upload.on('httpUploadProgress', (progress) => {
+//     sg.debugLog(`uploading file`, {progress});
+//   });
+
+//   upload.send(function(err, data) {
+//     if (!sg.ok(err, data))  { sg.logError(err, `sending upload`, {Bucket, Key}); return callback(err, data); }
+
+//     return callback(err, data);
+//   });
+// }
+
+// // ----------------------------------------------------------------------------------------------------
+// function parseS3Path(s3path) {
+//   const m = s3path.match(/s3:[/][/]([^/]+)[/](.*)/);
+//   if (!m) { return; }
+
+//   const Bucket = m[1];
+//   const Key = m[2];
+
+//   return {Bucket,Key};
+// }
+
 // ----------------------------------------------------------------------------------------------------
-var uniq = 0;
-function streamThroughFileToS3(readStream, argv, callback) {
-  const pathname = path.join(os.tmpdir(), `stream-through-file-to-s3-${uniq++}`);
-
-  const out = fs.createWriteStream(pathname);
-  readStream.pipe(out);
-  out.on('close', function() {
-    return _copyFileToS3_(pathname, argv, callback);
-  });
-}
-
-// ----------------------------------------------------------------------------------------------------
-function copyFileToS3(pathname, s3path, callback) {
-  const filename = _.last(pathname.split(/[\\/]/));
-  const {Bucket,Key} = parseS3Path(`${s3path}/${filename}`);
-
-  if (!Bucket)    { sg.logError(`NoBucket`, `sending uplaod`, {Bucket,Key,pathname,s3path}); return callback(`NoBucket`); }
-  if (!Key)       { sg.logError(`NoKey`,    `sending uplaod`, {Bucket,Key,pathname,s3path}); return callback(`NoKey`); }
-
-  return _copyFileToS3_(pathname, {Bucket, Key}, function(err, data) {
-    return callback(err, data);
-  });
-}
-
-// ----------------------------------------------------------------------------------------------------
-function _copyFileToS3_(pathname, argv, callback) {
-  const Body = fs.createReadStream(pathname);
-
-  return streamToS3(Body, argv, callback);
-}
-
-// ----------------------------------------------------------------------------------------------------
-function streamToS3(Body, {Bucket, Key, ContentType ='text/plain'}, callback) {
-
-  if (!Bucket)    { sg.logError(`NoBucket`, `sending uplaod`, {Bucket,Key}); return callback(`NoBucket`); }
-  if (!Key)       { sg.logError(`NoKey`,    `sending uplaod`, {Bucket,Key}); return callback(`NoKey`); }
-  if (!Body)      { sg.logError(`NoBody`,   `sending uplaod`, {Bucket,Key}); return callback(`NoBody`); }
-
-  var upload = s3.upload({Bucket, Key, Body, ContentType}, {partSize: 6 * 1024 * 1024});
-
-  upload.on('httpUploadProgress', (progress) => {
-    sg.debugLog(`uploading file`, {progress});
-  });
-
-  upload.send(function(err, data) {
-    if (!sg.ok(err, data))  { sg.logError(err, `sending upload`, {Bucket, Key}); return callback(err, data); }
-
-    return callback(err, data);
-  });
-}
-
-// ----------------------------------------------------------------------------------------------------
-function parseS3Path(s3path) {
-  const m = s3path.match(/s3:[/][/]([^/]+)[/](.*)/);
-  if (!m) { return; }
-
-  const Bucket = m[1];
-  const Key = m[2];
-
-  return {Bucket,Key};
-}
-
-  // ----------------------------------------------------------------------------------------------------
 function readJsonFile(filename_) {
   if (!filename_) {
     return; /* undefined */

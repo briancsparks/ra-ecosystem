@@ -43,6 +43,7 @@
     "exit-on-epipe": "^1.0.1",
     "fs-jetpack": "^2.2.2",
     "get-stream": "^4.1.0",
+    "glob": "^7.1.6",
     "hard-rejection": "^2.1.0",
     "http-proxy": "^1.17.0",
     "http-proxy-middleware": "^0.19.1",

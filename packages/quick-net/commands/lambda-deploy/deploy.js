@@ -43,8 +43,8 @@ DIAG.activeDevelopment(`--stage=dev --lambda-name=lambda-net --class-b=21 --sgs=
 DIAG.activeName = 'deployLambda';
 
 module.exports.main =
-mod.async(DIAG.async({deployLambda: async function(argv, context) {
-  const diag    = DIAG.diagnostic({argv, context});
+mod.async(DIAG.async({deployLambda: async function(argv, context_) {
+  const {diag, ...context}    = context_;
 
   const {stage,lambdaName,class_b}    = diag.args();
   var   {Bucket,AWS_PROFILE}          = diag.args();

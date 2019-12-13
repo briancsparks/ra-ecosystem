@@ -107,8 +107,8 @@ DIAG.activeDevelopment(`--domain=coder-zero.net`);
 DIAG.activeDevelopment(`--domain=coder-zero.net --debug`);
 // DIAG.activeName = 'listHostedZones';
 
-mod.async(DIAG.async({listHostedZones: async function(argv, context) {
-  const diag    = DIAG.diagnostic({argv, context});
+mod.async(DIAG.async({listHostedZones: async function(argv, context_) {
+  const {diag, ...context}            = context_;
   var {domain}  = crackFqdn(diag.args());
 
   if (!(diag.haveArgs({domain})))          { return diag.exit(); }
@@ -147,8 +147,8 @@ DIAG.activeDevelopment(`--debug`);
 
 // =============================================================================================
 manageRecord =
-mod.async(DIAG.async({manageRecord: async function(argv, context) {
-  const diag    = DIAG.diagnostic({argv, context});
+mod.async(DIAG.async({manageRecord: async function(argv, context_) {
+  const {diag, ...context}            = context_;
 
   var {Action,Type,subdomain,domain,fqdn,ip,ttl,
        comment,private_,fireAndForget,noAwaitWait,

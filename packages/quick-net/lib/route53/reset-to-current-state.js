@@ -81,8 +81,8 @@ DIAG.usage({ aliases: { resetDnsToCurrent: { args: {
 DIAG.activeDevelopment(`--domain=cdr0.net --debug`);
 DIAG.activeName = 'resetDnsToCurrent';
 
-mod.async(DIAG.async({resetDnsToCurrent: async function(argv, context) {
-  const diag    = DIAG.diagnostic({argv, context});
+mod.async(DIAG.async({resetDnsToCurrent: async function(argv, context_) {
+  const {diag, ...context}            = context_;
   const domain  = argv.domain;
 
   var instances;
@@ -247,8 +247,8 @@ async function changeDns(argv, context, initialSync, mapper, callback) {
 }
 
 // =============================================================================================
-mod.async(DIAG.async({resetDnsToCurrentX: async function(argv, context) {
-  const diag    = DIAG.diagnostic({argv, context});
+mod.async(DIAG.async({resetDnsToCurrentX: async function(argv, context_) {
+  const {diag, ...context}            = context_;
 
   // Get the request for instance list going
   const P_instances = ec2.describeInstances({}).promise();

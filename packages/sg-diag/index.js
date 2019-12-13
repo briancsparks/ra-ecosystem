@@ -216,6 +216,8 @@ module.exports.DIAG = function(mod) {
           // ========== Call the intercepted function ==========
           const result = await intercepted(argv, {diag, ...context});
 
+          diag.close();
+
           return callbackCCC(function callbackDDD() {
             return resolve(result);
           });
@@ -252,6 +254,8 @@ module.exports.DIAG = function(mod) {
 
         // ========== Call the intercepted function ==========
         return intercepted(argv, {diag, ...context}, function(err, result) {
+
+          diag.close();
 
           return callbackCCC(function callbackDDD() {
             return callback(err, result);
@@ -322,7 +326,19 @@ module.exports.DIAG = function(mod) {
     return diag;
   };
 
+  // Provide a version of the logging functions that can tolerate null-ish diag object
+  'tbd,i,d,v,w,e,id,iv'.split(',').forEach(name => {
+    self[name] = function(diagOrNot, ...rest) {
+      if (diagOrNot)                                    { diagOrNot[name](...rest); }
+    };
+
+    self[`${name}_if`] = function(diagOrNot, ...rest) {
+      if (diagOrNot)                                    { diagOrNot[`${name}_if`](...rest); }
+    };
+  });
+
   self.dg = new sgDiagnostic.Diagnostic();
+
 };
 
 // module.exports.DIAG = function(...args) {
