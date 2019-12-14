@@ -1,4 +1,4 @@
-#!/bin/bash -ex
+#!/bin/bash -e
 
 # Get my region
 MY_REGION="$(cat /home/ubuntu/quicknet-installed.json | jq -r '.instanceIdentity.region')"
