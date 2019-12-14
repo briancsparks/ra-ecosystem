@@ -1,0 +1,20 @@
+#!/bin/bash -ex
+
+# Create a docker bridge-type network, in case we need to talk to one or look at volumes
+docker network create localnet
+
+# Run each on that network, and expose their normal ports on the instances interface
+docker container run --network localnet --name localmongodb       -d -p 27017:27017   mongo:4.2-bionic
+docker container run --network localnet --name localmemcached     -d -p 11211:11211   memcached:latest
+docker container run --network localnet --name localredisserver   -d -p 6379:6379     redis:5-buster
+
+
+# ----- Add `db,mongo,memcached,redis` to my roles -----
+MY_ROLES="$(qn-awstag-get | jq -r '.Tags[] | select(.Key == "qn:roles") | .Value')"
+
+# Add so that we have `... :db:mongo:memcached:redis:`
+[[ -z $MY_ROLES ]] && MY_ROLES=":"
+MY_ROLES="${MY_ROLES}db:mongo:memcached:redis:"
+
+qn-awstag-set "qn:roles" $MY_ROLES
+

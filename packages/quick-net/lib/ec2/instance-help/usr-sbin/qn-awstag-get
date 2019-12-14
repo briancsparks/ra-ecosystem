@@ -1,0 +1,9 @@
+#!/bin/bash -ex
+
+# Get my region
+MY_REGION="$(cat /home/ubuntu/quicknet-installed.json | jq -r '.instanceIdentity.region')"
+
+# Get all the tags for the instance
+MY_TAGS="$(aws ec2 --region $MY_REGION describe-tags --filters Name=resource-id,Values="${INSTANCE_ID}")"
+
+echo $MY_TAGS

@@ -2,35 +2,19 @@
 
 echo "Bootstrap script"
 
-# pull_s3() {
-#   aws s3 cp "s3://${NAMESPACE_LC}/quick-net/deploy/${INSTANCE_ID}/usr-sbin/$1" /usr/sbin
-#   chmod 0755 "/usr/sbin/$1"
-# }
-
-# # TODO: do a loop like below, but must be in sibling dir like 'files' below.
-# pull_s3 qn-bootstrap-nonroot
-# pull_s3 qn-untar-from-s3
-# pull_s3 qn-cmd-from-s3
-# pull_s3 qn-get-certs-from-s3
-# pull_s3 qn-get-client-certs-from-s3
-# pull_s3 sshix
-# pull_s3 qn-hosts
-# pull_s3 qn-redis
-# pull_s3 qn-mongo
-
 # -----------------------------------------------------------------------------------------------------------------------------
 # Scripts
 FILES="$(aws s3api list-objects --bucket ${NAMESPACE_LC} --prefix quick-net/deploy/${INSTANCE_ID}/usr-sbin | jq -r '.Contents[].Key')"
 
 for f in $FILES; do
-  # pull_s3 "s3://${NAMESPACE_LC}/$f"
   aws s3 cp "s3://${NAMESPACE_LC}/$f" /usr/sbin
   chmod 0755 "/usr/sbin/$(basename $f)"
 done
 
 
+
 # -----------------------------------------------------------------------------------------------------------------------------
-# Data file (like certs)
+# Data files (like certs)
 FILES="$(aws s3api list-objects --bucket ${NAMESPACE_LC} --prefix quick-net/deploy/${INSTANCE_ID}/files | jq -r '.Contents[].Key')"
 
 for f in $FILES; do
@@ -39,13 +23,9 @@ for f in $FILES; do
 
 done
 
-# -----------------------------------------------------------------------------------------------------------------------------
-# etcd
-qn-install-etcd
-
 
 # -----------------------------------------------------------------------------------------------------------------------------
-# Other
+# Put info in the `ubuntu` user home folder
 echo "Install clients:" >> /home/ubuntu/readme.md
 echo "sudo apt-get install -y redis-tools mongodb-clients" >> /home/ubuntu/readme.md
 echo "" >> /home/ubuntu/readme.md
@@ -67,3 +47,7 @@ rm /home/ubuntu/quicknet-installed
 chown ubuntu:ubuntu /home/ubuntu/quicknet-installed.json
 chown ubuntu:ubuntu /home/ubuntu/quicknetinstdata.json
 
+
+# -----------------------------------------------------------------------------------------------------------------------------
+# etcd
+qn-install-etcd

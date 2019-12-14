@@ -1,0 +1,18 @@
+#!/bin/bash -e
+
+docker network create localnet
+docker container run --network localnet --name mongo -d -p 27017:27017 mongo:4.2-bionic
+
+# You can start second container to attach and query it
+# docker container run -it --network localnet --rm mongo    mongo --host mongo test
+
+
+# ----- Add `db,mongo` to my roles -----
+MY_ROLES="$(qn-awstag-get | jq -r '.Tags[] | select(.Key == "qn:roles") | .Value')"
+
+# Add so that we have `... :db:mongo:`
+[[ -z $MY_ROLES ]] && MY_ROLES=":"
+MY_ROLES="${MY_ROLES}db:mongo:"
+
+qn-awstag-set "qn:roles" $MY_ROLES
+

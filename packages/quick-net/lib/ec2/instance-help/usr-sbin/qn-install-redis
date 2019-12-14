@@ -1,0 +1,18 @@
+#!/bin/bash -e
+
+sudo apt-get install -y redis-server
+
+sudo sed -i -e 's/bind 127.0.0.1/bind 0.0.0.0/' /etc/redis/redis.conf &&
+    sudo service redis restart
+
+# ----- Add `redis` to my roles -----
+MY_ROLES="$(qn-awstag-get | jq -r '.Tags[] | select(.Key == "qn:roles") | .Value')"
+
+# Add so that we have `... :redis:`
+[[ -z $MY_ROLES ]] && MY_ROLES=":"
+MY_ROLES="${MY_ROLES}redis:"
+
+qn-awstag-set "qn:roles" $MY_ROLES
+
+
+

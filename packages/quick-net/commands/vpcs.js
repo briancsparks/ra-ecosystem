@@ -1002,6 +1002,20 @@ sgsPlus = [() => ({
     /*GroupId*/
     IpProtocol:   'tcp',
     CidrIp:       '10.0.0.0/8',
+    FromPort:     27017,
+    ToPort:       27017,
+    Description:  'All db access'
+  },{
+    /*GroupId*/
+    ingressGroupId: getSecurityGroupId('admin'),
+    IpProtocol:   'tcp',
+    FromPort:     28017,
+    ToPort:       28017,
+    Description:  'HTTP db access'
+  },{
+    /*GroupId*/
+    IpProtocol:   'tcp',
+    CidrIp:       '10.0.0.0/8',
     FromPort:     6379,
     ToPort:       6380,
     Description:  'All Redis access'

@@ -1,0 +1,12 @@
+#!/bin/bash -e
+
+# Caller must give right-format Key and Value
+MY_TAG_KEY="$1"
+MY_TAG_VALUE="$2"
+
+# Get my region
+MY_REGION="$(cat /home/ubuntu/quicknet-installed.json | jq -r '.instanceIdentity.region')"
+
+# Push the tag to AWS
+aws ec2 --region $MY_REGION create-tags --resources "${INSTANCE_ID}" --tags Key="${MY_TAG_KEY}",Value="${MY_TAG_VALUE}"
+

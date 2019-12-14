@@ -114,7 +114,7 @@ const instanceBaseOpts = `--distro=ubuntu --classB=13 --az=d  --typeNum=2 --debu
 const instanceOptsTerm = `--distro=ubuntu --classB=13 --az=d  --Terminate --typeNum=2 --debug`;
 DIAG.usefulCliArgs({
   db            : [instanceBaseOpts, `--key=quicknetprj_demo --type=t3.micro --PrivateIpAddressX 10.13.54.8  --INSTALL_MONGODB     --INSTALL_CLIENTS --INSTALL_OPS`].join(' '),                  // 10.13.48.0/24
-  util          : [instanceBaseOpts, `--key=quicknetprj_demo --type=t3.micro --PrivateIpAddressX 10.13.54.8  --INSTALL_WEBTIER     --INSTALL_CLIENTS --INSTALL_OPS`].join(' '),                  // 10.13.48.0/24
+  util          : [instanceBaseOpts, `--key=quicknetprj_demo --type=t3.micro --PrivateIpAddressX 10.13.54.8  --INSTALL_UTIL        --INSTALL_CLIENTS --INSTALL_OPS`].join(' '),                  // 10.13.48.0/24
   admin         : [instanceBaseOpts, `--key=HQ               --type=t3.nano  --PrivateIpAddressX 10.13.51.4  --INSTALL_ADMIN       --INSTALL_CLIENTS --INSTALL_USER`].join(' '),                 // 10.13.51.0/24
 
   webtier       : [instanceOptsTerm, `--key=quicknetprj_demo --type=t3.nano  --PrivateIpAddressX 10.13.48.10 --INSTALL_WEBTIER     --INSTALL_CLIENTS --INSTALL_OPS`].join(' '),                  // 10.13.48.0/24
@@ -174,7 +174,7 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
     // INSALL_ meta packages
     if (argv.INSTALL_WORKSTATION) {
       // TODO: want nginx, do not want certs
-      argv.INSTALL_WEBTIER = argv.INSTALL_DOCKER_CHEAT = argv.INSTALL_KUBERNETES = argv.INSTALL_CLIENTS = true;
+      argv.INSTALL_WEBTIER = argv.INSTALL_DOCKER = argv.INSTALL_KUBERNETES = argv.INSTALL_CLIENTS = true;
 
       // _WEBTIER implies a lot. Indicate that we do not want all the extras
       argv.INSTALL_WEBTIER_EXTRA_NO = true;
@@ -184,6 +184,8 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
     argv.INSTALL_REDIS_CLIENTS  = argv.INSTALL_CLIENTS  || argv.INSTALL_REDIS_CLIENTS   || true;
     argv.INSTALL_OPS            = argv.INSTALL_USER     || argv.INSTALL_WORKSTATION     || argv.INSTALL_OPS;
     argv.INSTALL_DOCKER         = argv.INSTALL_WORKER   || argv.INSTALL_DOCKER;
+
+    argv.INSTALL_DOCKER         = true;
 
     var   AllAwsParams          = sg.reduce(argv, {}, (m,v,k) => ( sg.kv(m, awsKey(k), v) || m ));
 
@@ -419,12 +421,15 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
       cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
         package_update: true,
         package_upgrade: true,
-        // packages: ['ntp', 'tree', 'htop', 'zip', 'unzip', 'nodejs', 'yarn', 'jq'],
-        packages: ['ntp', 'tree', 'htop', 'zip', 'unzip', 'nodejs', 'jq', 'silversearcher-ag', 'redis-server'],
+        // packages: ['ntp', 'tree', 'htop', 'zip', 'unzip', 'nodejs', 'yarn', 'redis-server', 'jq'],
+        packages: ['ntp', 'tree', 'htop', 'zip', 'unzip', 'nodejs', 'jq', 'silversearcher-ag', 'vim'],
         hostname,
         apt:      {
           preserve_sources_list: true,
           sources: {
+            vimPpa: {
+              source: `ppa:jonathonf/vim`
+            },
             "nodesource.list": {
               key: nodesource_com_key(),
               source: `deb https://deb.nodesource.com/node_12.x ${osVersion} main`
@@ -503,7 +508,8 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
             preserve_sources_list: true,
             sources: {
               "docker.list": {
-                key: docker_com_key(),
+                // key: docker_com_key(),
+                keyid: '9DC858229FC7DD38854AE2D88D81803C0EBFCD88',
                 source: `deb https://download.docker.com/linux/ubuntu ${osVersion} stable`
               }
             }
@@ -516,18 +522,18 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
         sg.addKm(roles, 'docker');
       }
 
-      // Install Docker from a download script
-      if (userdataOpts.INSTALL_DOCKER_CHEAT) {
-        cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
-          runcmd: [
-            `curl -fsSL https://get.docker.com -o get-docker.sh; sh get-docker.sh`,
-            `usermod -aG docker ubuntu`,
-            `echo '"INSTALL_DOCKER": true,' >> /home/ubuntu/quicknet-installed`,
-          ],
-        });
+      // // Install Docker from a download script
+      // if (userdataOpts.INSTALL_DOCKER_CHEAT) {
+      //   cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
+      //     runcmd: [
+      //       `curl -fsSL https://get.docker.com -o get-docker.sh; sh get-docker.sh`,
+      //       `usermod -aG docker ubuntu`,
+      //       `echo '"INSTALL_DOCKER": true,' >> /home/ubuntu/quicknet-installed`,
+      //     ],
+      //   });
 
-        sg.addKm(roles, 'docker');
-      }
+      //   sg.addKm(roles, 'docker');
+      // }
 
       // Install the web-tier?
       if (userdataOpts.INSTALL_WEBTIER) {
@@ -821,10 +827,26 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
           if (err && err.code === 'InvalidIPAddress.InUse') {
             argv.typeNum += 1;
 
+            // ----- Re-do the hostname -----
+
+            // TODO: Put 127.0.0.1 ${hostname} into /etc/hosts in one of the scripts that runs after cloud-init
+
+            // Remove old entry in /etc/hosts (before we re-generate our hostname)
+            cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
+              runcmd: [
+                `sed -i -e 's/127.0.0.1 ${hostname}//' /etc/hosts`,
+              ]
+            });
+
             hostname = getHostnameForInstance(argv);
             cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
               hostname,
+              runcmd: [
+                `echo 127.0.0.1 ${hostname} >> /etc/hosts`
+              ]
             });
+
+            // ----- re-generate the MIME -----
             redoMime();
 
             params.PrivateIpAddress = getIpForInstance(argv);
@@ -928,7 +950,7 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
 
       }, function(next) {
 
-        return glob(path.join(__dirname, 'instance-help', 'home', '*'), {}, function(err, files) {
+        return glob(path.join(__dirname, 'instance-help', 'home', '*'), {dot: true}, function(err, files) {
           diag.d('/home/home files', {err, files});
 
           return sg.__eachll(files, function(filename, next) {
@@ -937,7 +959,6 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
               return next();
             });
           }, next);
-
         });
 
       }, function(next) {
@@ -1290,8 +1311,9 @@ function getSubnetForInstance(...args) {
 function getSgsForInstance(argv) {
 
   // These are instance types, they come first
-  if (argv.INSTALL_ADMIN)          { return ['admin']; }
+  if (argv.INSTALL_ADMIN)               { return ['admin']; }
   else if (argv.INSTALL_MONGODB)        { return ['db']; }
+  else if (argv.INSTALL_UTIL)           { return ['util']; }
   else if (argv.INSTALL_WORKSTATION)    { return ['worker']; }
 
   // These are features, they come second
@@ -1309,8 +1331,9 @@ function getIamTypeForInstance(...args) {
 function getTypeForInstance(argv) {
 
   // These are instance types, they come first
-  if (argv.INSTALL_ADMIN)          { return 'admin'; }
+  if (argv.INSTALL_ADMIN)               { return 'admin'; }
   else if (argv.INSTALL_MONGODB)        { return 'db'; }
+  else if (argv.INSTALL_UTIL)           { return 'util'; }
   else if (argv.INSTALL_WORKSTATION)    { return 'worker'; }
 
   // These are features, they come second
@@ -1324,8 +1347,9 @@ function getTypeForInstance(argv) {
 function getXTypeForInstance(argv) {
 
   // These are instance types, they come first
-  if (argv.INSTALL_ADMIN)          { return 'admin'; }
+  if (argv.INSTALL_ADMIN)               { return 'admin'; }
   else if (argv.INSTALL_MONGODB)        { return 'db'; }
+  else if (argv.INSTALL_UTIL)           { return 'util'; }
   else if (argv.INSTALL_WORKSTATION)    { return 'workstation'; }
 
   // These are features, they come second
@@ -1343,6 +1367,7 @@ function getHostnameForInstance(argv) {
   // These are instance types, they come first
   if (argv.INSTALL_ADMIN)               { return `admin${num}`; }
   else if (argv.INSTALL_MONGODB)        { return `db${num}`; }
+  else if (argv.INSTALL_UTIL)           { return `util${num}`; }
   else if (argv.INSTALL_WORKSTATION)    { return `workstation${num}`; }
 
   // These are features, they come second

@@ -76,3 +76,14 @@ systemctl status -l etcd.service
 # Check
 etcdctl cluster-health
 etcdctl  member list
+
+
+# ----- Add `etcd` to my roles -----
+MY_ROLES="$(qn-awstag-get | jq -r '.Tags[] | select(.Key == "qn:roles") | .Value')"
+
+# Add so that we have `... :etcd:`
+[[ -z $MY_ROLES ]] && MY_ROLES=":"
+MY_ROLES="${MY_ROLES}etcd:"
+
+qn-awstag-set "qn:roles" $MY_ROLES
+
