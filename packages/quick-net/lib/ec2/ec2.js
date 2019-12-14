@@ -3,7 +3,7 @@ if (process.env.SG_VVVERBOSE) console[process.env.SG_LOAD_STREAM || 'log'](`Load
 
 const ra                      = require('run-anywhere').v2;
 const sg0                     = ra.get3rdPartyLib('sg-flow');
-const sg                      = sg0.merge(sg0, require('sg-env'), require('sg-diag'));
+const sg                      = sg0.merge(sg0, require('sg-env'), require('sg-diag'), require('@sg0/sg-aws-json'));
 const { _ }                   = sg;
 const { qm }                  = ra.get3rdPartyLib('quick-merge');
 const qnutils                 = require('../../lib/utils');
@@ -110,17 +110,18 @@ if (require.main === module) {
 DIAG.usage({ aliases: { upsertInstance: { args: {
 }}}});
 
-const instanceBaseOpts = `--distro=ubuntu --classB=13 --az=d  --typeNum=2 --debug`;
-const instanceOptsTerm = `--distro=ubuntu --classB=13 --az=d  --Terminate --typeNum=2 --debug`;
+const instanceBaseOpts2 = `--distro=ubuntu --classB=13 --az=d  --typeNum=2 --debug`;
+const instanceBaseOpts0 = `--distro=ubuntu --classB=13 --az=d  --typeNum=0 --debug`;
+const instanceOptsTerm2 = `--distro=ubuntu --classB=13 --az=d  --Terminate --typeNum=2 --debug`;
 DIAG.usefulCliArgs({
-  db            : [instanceBaseOpts, `--key=quicknetprj_demo --type=t3.micro --PrivateIpAddressX 10.13.54.8  --INSTALL_MONGODB     --INSTALL_CLIENTS --INSTALL_OPS`].join(' '),                  // 10.13.48.0/24
-  util          : [instanceBaseOpts, `--key=quicknetprj_demo --type=t3.micro --PrivateIpAddressX 10.13.54.8  --INSTALL_UTIL        --INSTALL_CLIENTS --INSTALL_OPS`].join(' '),                  // 10.13.48.0/24
-  admin         : [instanceBaseOpts, `--key=HQ               --type=t3.nano  --PrivateIpAddressX 10.13.51.4  --INSTALL_ADMIN       --INSTALL_CLIENTS --INSTALL_USER`].join(' '),                 // 10.13.51.0/24
+  db            : [instanceBaseOpts2, `--key=quicknetprj_demo --type=t3.micro --PrivateIpAddressX 10.13.54.8  --INSTALL_MONGODB     --INSTALL_CLIENTS --INSTALL_OPS`].join(' '),                  // 10.13.48.0/24
+  util          : [instanceBaseOpts0, `--key=quicknetprj_demo --type=t3.micro --PrivateIpAddressX 10.13.54.8  --INSTALL_UTIL        --INSTALL_CLIENTS --INSTALL_OPS`].join(' '),                  // 10.13.48.0/24
+  admin         : [instanceBaseOpts2, `--key=HQ               --type=t3.nano  --PrivateIpAddressX 10.13.51.4  --INSTALL_ADMIN       --INSTALL_CLIENTS --INSTALL_USER`].join(' '),                 // 10.13.51.0/24
 
-  webtier       : [instanceOptsTerm, `--key=quicknetprj_demo --type=t3.nano  --PrivateIpAddressX 10.13.48.10 --INSTALL_WEBTIER     --INSTALL_CLIENTS --INSTALL_OPS`].join(' '),                  // 10.13.48.0/24
-  worker        : [instanceOptsTerm, `--key=quicknetprj_demo --type=t3.micro --PrivateIpAddressX 10.13.0.16  --INSTALL_WORKER      --INSTALL_CLIENTS`].join(' '),                                 // 10.13.0.0/20
-  workstation   : [instanceOptsTerm, `--key=quicknetprj_demo --type=t3.micro --PrivateIpAddressX 10.13.0.32  --INSTALL_WORKSTATION --INSTALL_CLIENTS --INSTALL_OPS`].join(' '),                   // 10.13.0.0/20
-  workstationb  : [instanceOptsTerm, `--key=sparksb          --type=t3.micro --PrivateIpAddressX 10.13.0.32  --INSTALL_WORKSTATION --INSTALL_CLIENTS --INSTALL_OPS`].join(' '),                   // 10.13.0.0/20
+  webtier       : [instanceOptsTerm2, `--key=quicknetprj_demo --type=t3.nano  --PrivateIpAddressX 10.13.48.10 --INSTALL_WEBTIER     --INSTALL_CLIENTS --INSTALL_OPS`].join(' '),                  // 10.13.48.0/24
+  worker        : [instanceOptsTerm2, `--key=quicknetprj_demo --type=t3.micro --PrivateIpAddressX 10.13.0.16  --INSTALL_WORKER      --INSTALL_CLIENTS`].join(' '),                                 // 10.13.0.0/20
+  workstation   : [instanceOptsTerm2, `--key=quicknetprj_demo --type=t3.micro --PrivateIpAddressX 10.13.0.32  --INSTALL_WORKSTATION --INSTALL_CLIENTS --INSTALL_OPS`].join(' '),                   // 10.13.0.0/20
+  workstationb  : [instanceOptsTerm2, `--key=sparksb          --type=t3.micro --PrivateIpAddressX 10.13.0.32  --INSTALL_WORKSTATION --INSTALL_CLIENTS --INSTALL_OPS`].join(' '),                   // 10.13.0.0/20
 });
 
 // The last one wins. Comment out what you dont want.
@@ -1044,9 +1045,10 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
       ]);
 
       bootShellCommands = [...bootShellCommands,
-        'qn-hosts redis   10.13.54.167',
-        'qn-hosts db      10.13.54.167',
-        'qn-hosts mongo   10.13.54.167',
+        'qn-hosts redis   10.13.57.8',
+        'qn-hosts db      10.13.57.8',
+        'qn-hosts mongo   10.13.57.8',
+        'qn-hosts etcd    10.13.57.8',
         '',
         'echo "boot-shell-commands done"',
         ''
