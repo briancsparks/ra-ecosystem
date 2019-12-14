@@ -522,18 +522,6 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
         sg.addKm(roles, 'docker');
       }
 
-      // // Install Docker from a download script
-      // if (userdataOpts.INSTALL_DOCKER_CHEAT) {
-      //   cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
-      //     runcmd: [
-      //       `curl -fsSL https://get.docker.com -o get-docker.sh; sh get-docker.sh`,
-      //       `usermod -aG docker ubuntu`,
-      //       `echo '"INSTALL_DOCKER": true,' >> /home/ubuntu/quicknet-installed`,
-      //     ],
-      //   });
-
-      //   sg.addKm(roles, 'docker');
-      // }
 
       // Install the web-tier?
       if (userdataOpts.INSTALL_WEBTIER) {
@@ -556,25 +544,25 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
         sg.addKm(roles, 'webtier');
       }
 
-      // Install certbot?
-      if (userdataOpts.INSTALL_CERTBOT) {
-        cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
-          packages: ['certbot', 'python-certbot-nginx'],
-          apt:      {
-            preserve_sources_list: true,
-            sources: {
-              certbotPpa: {
-                source: `ppa:certbot/certbot`
-              }
-            }
-          },
-          runcmd: [
-            `echo '"INSTALL_CERTBOT": true,' >> /home/ubuntu/quicknet-installed`,
-          ],
-        });
+      // // Install certbot?
+      // if (userdataOpts.INSTALL_CERTBOT) {
+      //   cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
+      //     packages: ['certbot', 'python-certbot-nginx'],
+      //     apt:      {
+      //       preserve_sources_list: true,
+      //       sources: {
+      //         certbotPpa: {
+      //           source: `ppa:certbot/certbot`
+      //         }
+      //       }
+      //     },
+      //     runcmd: [
+      //       `echo '"INSTALL_CERTBOT": true,' >> /home/ubuntu/quicknet-installed`,
+      //     ],
+      //   });
 
-        sg.addKm(roles, 'certbot');
-      }
+      //   sg.addKm(roles, 'certbot');
+      // }
 
       // Add mongodb to apt for everyone -- only install (below) if install is requested, but we want to be able to install clients
       cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
@@ -710,10 +698,10 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
           // condition:  "test -f /var/run/reboot-required"
           condition:  true
         },
-        runcmd: [
-          "sed -i -e '$aAcceptEnv TENABLE_IO_KEY' /etc/ssh/sshd_config",
-          "sed -i -e '$aAcceptEnv CLOUDSTRIKE_ID' /etc/ssh/sshd_config",
-        ],
+        // runcmd: [
+        //   "sed -i -e '$aAcceptEnv TENABLE_IO_KEY' /etc/ssh/sshd_config",
+        //   "sed -i -e '$aAcceptEnv CLOUDSTRIKE_ID' /etc/ssh/sshd_config",
+        // ],
       });
 
       return next();
@@ -855,7 +843,7 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
             params.TagSpecifications  = [{ResourceType:'instance', Tags: [...Tags, ...(dependentTags ||[])]}];
 
             tries += 1;
-            if (tries <= 4) {
+            if (tries <= 12) {
               return sg.setTimeout(250, oneRun);
             }
 
@@ -932,8 +920,6 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
       // -------------------------------------------------------------------------------------------------------
       // Put stuff on S3 for the instance
 
-      // const utilFiles     = 'qn-bootstrap,qn-bootstrap-nonroot,qn-bootstrap-other,qn-untar-from-s3,qn-cmd-from-s3,sshix,qn-hosts,qn-redis,qn-mongo,qn-get-certs-from-s3,qn-get-client-certs-from-s3,qn-install-etcd'.split(',');
-      // const homeFiles     = '.vimrc,.profile,.bashrc,.bash_aliases'.split(',');
       const s3deployPath  = s3path('deploy', InstanceId);
 
       return sg.__run2(next, [function(next) {
@@ -1393,78 +1379,12 @@ function getIpForInstance(argv) {
 
 /*
  * TODO:
- *   - Move the below to lib/s3/...
  *   - Make it so the DIAG object has logging functions, so you do not have to always have a Diagnostic object instantiated for every fn
  *   - Make it so the _sg-bits.json files can be read loadSync, but slower.
  *     - For a given module, only one sg-bits object should be built, so any time _sg-bits.json is read, the loadSync fn would have it cached.
  *
- *   - nginx/config.js - add a saveNginxConfigTarballToS3
- *
  *   - Overall, add to ra/platform/{entrypoint,host}/x.js the ability to `ra invoke ...` for the 'rewrite' module
  */
-
-// // ----------------------------------------------------------------------------------------------------
-// var uniq = 0;
-// function streamThroughFileToS3(readStream, argv, callback) {
-//   const pathname = path.join(os.tmpdir(), `stream-through-file-to-s3-${uniq++}`);
-
-//   const out = fs.createWriteStream(pathname);
-//   readStream.pipe(out);
-//   out.on('close', function() {
-//     return _copyFileToS3_(pathname, argv, callback);
-//   });
-// }
-
-// // ----------------------------------------------------------------------------------------------------
-// function copyFileToS3(pathname, s3path, callback) {
-//   const filename = _.last(pathname.split(/[\\/]/));
-//   const {Bucket,Key} = parseS3Path(`${s3path}/${filename}`);
-
-//   if (!Bucket)    { sg.logError(`NoBucket`, `sending uplaod`, {Bucket,Key,pathname,s3path}); return callback(`NoBucket`); }
-//   if (!Key)       { sg.logError(`NoKey`,    `sending uplaod`, {Bucket,Key,pathname,s3path}); return callback(`NoKey`); }
-
-//   return _copyFileToS3_(pathname, {Bucket, Key}, function(err, data) {
-//     return callback(err, data);
-//   });
-// }
-
-// // ----------------------------------------------------------------------------------------------------
-// function _copyFileToS3_(pathname, argv, callback) {
-//   const Body = fs.createReadStream(pathname);
-
-//   return streamToS3(Body, argv, callback);
-// }
-
-// // ----------------------------------------------------------------------------------------------------
-// function streamToS3(Body, {Bucket, Key, ContentType ='text/plain'}, callback) {
-
-//   if (!Bucket)    { sg.logError(`NoBucket`, `sending uplaod`, {Bucket,Key}); return callback(`NoBucket`); }
-//   if (!Key)       { sg.logError(`NoKey`,    `sending uplaod`, {Bucket,Key}); return callback(`NoKey`); }
-//   if (!Body)      { sg.logError(`NoBody`,   `sending uplaod`, {Bucket,Key}); return callback(`NoBody`); }
-
-//   var upload = s3.upload({Bucket, Key, Body, ContentType}, {partSize: 6 * 1024 * 1024});
-
-//   upload.on('httpUploadProgress', (progress) => {
-//     sg.debugLog(`uploading file`, {progress});
-//   });
-
-//   upload.send(function(err, data) {
-//     if (!sg.ok(err, data))  { sg.logError(err, `sending upload`, {Bucket, Key}); return callback(err, data); }
-
-//     return callback(err, data);
-//   });
-// }
-
-// // ----------------------------------------------------------------------------------------------------
-// function parseS3Path(s3path) {
-//   const m = s3path.match(/s3:[/][/]([^/]+)[/](.*)/);
-//   if (!m) { return; }
-
-//   const Bucket = m[1];
-//   const Key = m[2];
-
-//   return {Bucket,Key};
-// }
 
 // ----------------------------------------------------------------------------------------------------
 function readJsonFile(filename_) {

@@ -1,4 +1,4 @@
-#!/bin/bash -ex
+#!/bin/bash -e
 
 ## Get instanceId
 curl -sSL 'http://169.254.169.254/latest/dynamic/instance-identity/document' > /tmp/quicknetinstdata.json
@@ -88,57 +88,6 @@ if [[ -n $INSTALL_DOCKER ]]; then
 fi
 #ZZZZ INSTALL_DOCKER
 
-
-#AAAA INSTALL_AGENTS
-## ----------------------------------------------------------------------------------------------
-# Install script to compliant-ify instance
-
-if [[ -n $INSTALL_AGENTS ]]; then
-
-cat >> /home/ubuntu/mk-compliant  <<'EOF'
-#!/bin/bash -ex
-
-group_name="mario-${AWS_ACCT_TYPE}"
-
-if [[ -n $TENABLE_IO_KEY ]]; then
-
-  mkdir -p ~/zz_packages && cd $_
-  curl -s -O "https://s3.amazonaws.com/mobilewebprint-deploy/buildout/packages/NessusAgent-6.10.7-ubuntu1110_amd64.deb"
-  sudo dpkg -i "$(find ./ -maxdepth 1 -type f | egrep 'NessusAgent.*\.deb$')"
-
-  sudo /opt/nessus_agent/sbin/nessuscli agent link --key="$TENABLE_IO_KEY" --host=cloud.tenable.com --port=443 --groups="$group_name" --name="${HOSTNAME}"
-  sleep 3
-  sudo service nessusagent start
-
-fi
-
-if [[ -n $CLOUDSTRIKE_ID ]]; then
-
-  if ! which aws; then
-    if ! which python-pip; then
-      sudo apt install -y python-pip
-      sudo -H pip install --upgrade pip
-    fi
-    sudo -H pip install awscli --upgrade
-  fi
-
-  mkdir -p ~/zz_packages && cd $_
-
-  aws s3 cp s3://netlab-${AWS_ACCT_TYPE}/buildout/debs/falcon-sensor_4.16.0-6109_amd64.deb ./
-  sudo dpkg -i falcon-sensor_4.16.0-6109_amd64.deb || true
-  sudo apt-get -f -y install
-
-  sudo /opt/CrowdStrike/falconctl -s --cid="${CLOUDSTRIKE_ID}"
-  sudo systemctl start falcon-sensor
-
-fi
-
-EOF
-
-  chmod +x "${the_home_dir}/mk-compliant"
-  chown -R "${the_user_name}":"${the_user_name}" "${the_home_dir}/mk-compliant"
-fi
-#ZZZZ INSTALL_AGENTS
 
 
 #AAAA INSTALL_NAT
