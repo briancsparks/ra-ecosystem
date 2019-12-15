@@ -294,6 +294,7 @@ function putJavascriptToS3(Body, params, callback) {
 
 // ----------------------------------------------------------------------------------------------------
 function parseS3Path(s3filepath) {
+
   const m = s3filepath.match(/s3:[/][/]([^/]+)[/](.*)/);
   if (!m) { return; }
 
@@ -311,7 +312,10 @@ function findBucketKeyAndPath(argv) {
   if (!Bucket || !Key) {
     let parsable  = argv.s3path || argv.s3filepath || argv.path || argv.s3 || argv.filename || argv.name;
     parsable      = parsable    || (Bucket && `s3://${Bucket}/${Key || ''}`);
-    ({Bucket,Key}       = parseS3Path(parsable));
+
+    if (parsable) {
+      ({Bucket,Key}       = parseS3Path(parsable));
+    }
   }
 
   return {Bucket, Key, s3filepath: `s3://${Bucket}${Key}`};

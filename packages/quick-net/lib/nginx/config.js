@@ -256,7 +256,7 @@ const getNginxQuicknetWebtierConfig = mod.xport(DIAG.xport({getNginxQuicknetWebt
 
       // The default server
       const defArgv = _.omit(argv, 'fqdns');
-      entry(pack, { ...entryDefs(argv), name: `conf.d/default.conf`},                  getServerConfig(defArgv),  skipSystem);
+      entry(pack, { ...entryDefs(argv), name: `conf.d/default.conf`},                  getServerConfig(defArgv, context),  skipSystem);
 
 
       // ----- Upstreams
@@ -281,7 +281,7 @@ const getNginxQuicknetWebtierConfig = mod.xport(DIAG.xport({getNginxQuicknetWebt
         config = {...config, client: true};
       }
 
-      var fqdnServerConfig = entry(pack, { ...entryDefs(argv), name: `conf.d/server-${fqdn}.conf`},          getServerConfig(config),   skipServers);
+      var fqdnServerConfig = entry(pack, { ...entryDefs(argv), name: `conf.d/server-${fqdn}.conf`},          getServerConfig(config, context),   skipServers);
       // diag.i(`Config for ${fqdns[0]}`, {fqdnServerConfig});
 
 
@@ -403,7 +403,7 @@ const getNginxUpstreamConfig = mod.xport(DIAG.xport({getNginxUpstreamConfig: fun
 
   _.each(fqdns, fqdn => {
     pack.entry({ ...entryDefs(argv), name: `conf.d/upstream-${upstream}.conf` },  getUpstream(argv));
-    pack.entry({ ...entryDefs(argv), name: `conf.d/server-${fqdn}.conf` },        getServerConfig(argv).content);
+    pack.entry({ ...entryDefs(argv), name: `conf.d/server-${fqdn}.conf` },        getServerConfig(argv, context).content);
   });
 
   pack.finalize();
@@ -469,7 +469,7 @@ const getNginxGeneralConfig = mod.xport(DIAG.xport({getNginxGeneralConfig: funct
 
   _.each(fqdns, fqdn => {
     pack.entry({ ...entryDefs(argv), name: `conf.d/upstream-${upstream}.conf` },  getUpstream(argv));
-    pack.entry({ ...entryDefs(argv), name: `conf.d/server-${fqdn}.conf` },        getServerConfig(argv).content);
+    pack.entry({ ...entryDefs(argv), name: `conf.d/server-${fqdn}.conf` },        getServerConfig(argv, context).content);
   });
 
   pack.finalize();
@@ -707,11 +707,11 @@ function getUpstream_(argv, context_ ={}) {
 // getServerConfig
 DIAG.usage({ aliases: { getServerConfig: { args: {}}}});
 
-const getServerConfig = DIAG.async({getServerConfig: getServerConfig_});
+// const getServerConfig = DIAG.async({getServerConfig: getServerConfig_}).getServerConfig;
 
-function getServerConfig_(argv, context_ ={}) {
-  const {diag, ...context}            = context_;
-  // const diag                          = DIAG.diagnostic({argv,context}, 'getServerConfig');
+function getServerConfig(argv, context ={}) {
+  // const {diag, ...context}            = context_;
+  const diag                          = DIAG.diagnostic({argv,context}, 'getServerConfig');
   const {https,client,serverNum}      = diag.args();
   const {location,upstream}           = diag.args();
   var   {default_server,root}         = diag.args();
@@ -744,7 +744,10 @@ function getServerConfig_(argv, context_ ={}) {
 
   // TODO: Ensure only one of: locations, location/upstream
 
-  return _getServerConfig_({...argv, default_server,fqdns,root}, context);
+  const result = _getServerConfig_({...argv, default_server,fqdns,root}, context);
+
+  diag.close();
+  return result;
 }
 
 // =======================================================================================================

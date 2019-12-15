@@ -39,11 +39,11 @@ function assocInstance(fqdnDotInstances, rsName) {
   }
 }
 
-function mergeIpDelta(record, PublicIpAddress) {
-  const ResourceRecordSet = {...record.ResourceRecordSet, ResourceRecords:[{Value: PublicIpAddress}]};
-  const delta = {...record, ResourceRecordSet};
-  return delta;
-}
+// function mergeIpDelta(record, PublicIpAddress) {
+//   const ResourceRecordSet = {...record.ResourceRecordSet, ResourceRecords:[{Value: PublicIpAddress}]};
+//   const delta = {...record, ResourceRecordSet};
+//   return delta;
+// }
 
 function mergeRrs(a, b) {
   const ResourceRecords     = b.ResourceRecordSet.ResourceRecords || a.ResourceRecordSet.ResourceRecords;
@@ -59,19 +59,19 @@ function mkIpDelta(ip) {
   return {ResourceRecordSet:{ResourceRecords:[{Value:ip}]}};
 }
 
-function mkAction(HostedZoneId, delta) {
-  var result = {
-    HostedZoneId,
-    ChangeBatch: {
-      Changes:[{
-        Action: "UPSERT",
-        delta
-      }]
-    }
-  };
+// function mkAction(HostedZoneId, delta) {
+//   var result = {
+//     HostedZoneId,
+//     ChangeBatch: {
+//       Changes:[{
+//         Action: "UPSERT",
+//         delta
+//       }]
+//     }
+//   };
 
-  return result;
-}
+//   return result;
+// }
 
 // =============================================================================================
 DIAG.usage({ aliases: { resetDnsToCurrent: { args: {

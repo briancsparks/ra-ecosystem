@@ -118,6 +118,32 @@ AwsDataBlob.prototype.normalize = function(item_) {
     item.state              = item.State                && item.State.Name;
     item.iamInstanceProfile = item.IamInstanceProfile   && _.last(((item.IamInstanceProfile.Arn ||"").split('/') ||[]));
     // item.sgName             = item.SecurityGroups
+
+  } else if (item.GroupId) {
+    item.groupId            = item.GroupId;
+    item.id                 = item.GroupId;
+
+  } else if (item.SubnetId && item.SubnetArn) {
+    item.subnetId           = item.SubnetId;
+    item.id                 = item.SubnetId;
+    item.public             = item.MapPublicIpOnLaunch;
+    item.state              = item.State;
+    // TODO: zoneLetter, first IP, last IP
+
+  } else if (item.TableId && item.TableArn) {     /* does not arrive as array */
+    item.tableId            = item.TableId;
+    item.id                 = item.TableId;
+    item.name               = item.TableName;
+    item.status             = item.TableStatus;
+
+  } else if (item.VpcEndpointId) {
+    item.vpcEndpointId      = item.VpcEndpointId;
+    item.id                 = item.VpcEndpointId;
+
+  } else if (item.VpcId) {
+    item.vpcId              = item.VpcId;
+    item.id                 = item.VpcId;
+    item.state              = item.State;
   }
 
   return item;
