@@ -1,6 +1,6 @@
 {
   "name": "run-anywhere",
-  "version": "1.0.152",
+  "version": "1.0.153",
   "description": "Write your Node.js functions in the run-anywhere format, and run them anywhere (CLI, AWS Lambda, etc.)",
   "main": "ra.js",
   "bin": {
@@ -36,7 +36,7 @@
     "sg-argv": "^1.0.87",
     "sg-config": "^1.0.99",
     "sg-env": "^1.0.24",
-    "sg-flow": "^1.0.78",
+    "sg-flow": "^1.0.79",
     "sg0": "^1.0.53",
     "sgsg": "^0.9.54",
     "sprintf-js": "^1.1.2"
