@@ -1,6 +1,6 @@
 {
   "name": "sg-http",
-  "version": "1.0.14",
+  "version": "1.0.15",
   "description": "HTTP helpers",
   "author": "Brian C Sparks <briancsparks@gmail.com>",
   "homepage": "https://github.com/briancsparks/ra-ecosystem#readme",
