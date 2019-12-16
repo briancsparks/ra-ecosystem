@@ -115,9 +115,9 @@ DIAG.usage({ aliases: { upsertInstance: { args: {
 }}}});
 
 const instanceBaseOpts2 = `--distro=ubuntu --classB=13 --az=d  --typeNum=2 --debug`;
-const instanceBaseOpts0 = `--distro=ubuntu --classB=13 --az=d  --typeNum=0 --debug`;
+const instanceBaseOpts0 = `--distro=ubuntu --classB=13 --az=d  --debug`;
 const instanceOptsTerm2 = `--distro=ubuntu --classB=13 --az=d  --Terminate --typeNum=2 --debug`;
-const instanceOptsTerm0 = `--distro=ubuntu --classB=13 --az=d  --Terminate --typeNum=0 --debug`;
+const instanceOptsTerm0 = `--distro=ubuntu --classB=13 --az=d  --Terminate --debug`;
 DIAG.usefulCliArgs({
   db            : [instanceBaseOpts2, `--key=quicknetprj_demo --type=t3.micro --PrivateIpAddressX 10.13.54.8  --INSTALL_MONGODB     --INSTALL_CLIENTS --INSTALL_OPS`].join(' '),                  // 10.13.48.0/24
   util          : [instanceBaseOpts0, `--key=quicknetprj_demo --type=t3.micro --PrivateIpAddressX 10.13.54.8  --INSTALL_UTIL        --INSTALL_CLIENTS --INSTALL_OPS`].join(' '),                  // 10.13.48.0/24
@@ -198,7 +198,8 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
     const uniqueName            = rax.arg(argv, 'uniqueName,unique', {required: sg.modes().production});
     var   ImageId               = rax.arg(argv, 'ImageId,image');
     var   roles                 = rax.arg(argv, 'roles,role', {required: sg.modes().production, keyMirror:true}) ||{};
-    var   typeNum               = rax.arg(argv, 'typeNum', {def:2, addToArgv:true});
+    var   userTypeNum           = rax.arg(argv, 'typeNum');
+    var   typeNum               = rax.arg(argv, 'typeNum', {def:0, addToArgv:true});
     const distro                = rax.arg(argv, 'distro', {required:true});
     var   osVersion             = rax.arg(argv, 'osVersion,os-version');
     const InstanceType          = rax.arg(argv, 'InstanceType,instanceType,instance,type', {required:true});
@@ -221,7 +222,7 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
     const iamName               = rax.arg(argv, 'iamName,iam')                    || `quicknetprj-${getIamTypeForInstance(argv)}-instance-role`;
     var   hostname              = rax.arg(argv, 'hostname')                       || getHostnameForInstance(argv);
     var   fqdns                 = rax.arg(argv, 'fqdns,fqdn', {array:true});
-    const PrivateIpAddress      = rax.arg(argv, 'privateIp,ip')                   || getIpForInstance(argv);
+    // const PrivateIpAddress      = rax.arg(argv, 'privateIp,ip')                   || getIpForInstance(argv);
 
     // What can be done with ModifyInstanceAttribute
     const SourceDestCheck                       = !!rax.arg(argv, 'SourceDestCheck');
@@ -296,13 +297,13 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
       var   P_records     = getAllRecords({domain: 'cdr0.net'}, context);
 
 
-      var [instances, amis, vpcs, secGroups, subnets, addresses, endpoints, tables, records] =
+      var [instances, ami, vpcs, secGroups, subnets, addresses, endpoints, tables, records] =
               [await P_instances, await P_amis, await P_vpcs, await P_secGroups, await P_subnets, await P_addresses, await P_endpoints, await P_table, await P_records];
 
       var   awsDataBlob = new sg.AwsDataBlob();
 
       awsDataBlob.addResult(instances);
-      awsDataBlob.addResult(amis);
+      awsDataBlob.addResult(ami);
       awsDataBlob.addResult(vpcs);
       awsDataBlob.addResult(secGroups);
       awsDataBlob.addResult(subnets);
@@ -315,35 +316,70 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
       var x = 109;
 
 
+      const wantedIp          = getIpForInstance(argv);
+      var   PrivateIpAddress  = wantedIp;
+      if (awsData.index.by.PrivateIpAddress[PrivateIpAddress]) {
+        if (!sg.isnt(userTypeNum))                                       { return rax.abort(); }   /* The user wanted a specific number, wont get it */
+
+        let typeNum;
+        for (typeNum = 1; typeNum < 32; typeNum += 1) {
+          PrivateIpAddress  = getIpForInstance({...argv, typeNum});
+          if (!awsData.index.by.PrivateIpAddress[PrivateIpAddress])      { break; }
+        }
+
+        if (typeNum !== 32) {
+          argv.typeNum = typeNum;
+        } else {
+          PrivateIpAddress = null;      /* let system decide... better than failing */
+          delete argv.typeNum;
+        }
+      }
+      hostname = getHostnameForInstance(argv);
+
+
+      x = 501;
+
+
+
+
+
       return rax.__run2({result:{}}, callback, [function(my, next, last) {
 
         // Itempotentcy -- use uniqueName so you can upsertInstance many times, and only launch once
         if (!uniqueName)  { return next(); }
 
         // They sent in a uniqueName. See if it already exists
-        return describeInstances(awsFilters({"tag:qn:uniqueName":[uniqueName]}), rax.opts({}), function(err, data) {
+        if (awsData.index.by.uniqueName[uniqueName]) {
+          my.result = {...my.result, Instance: awsData.index.by.uniqueName[uniqueName]};
+          return callback(null, my);
+        }
 
-          var   theInstance;
-          const count = sg.reduce(data.Reservations || [], 0, function(m0, reservations) {
-            return sg.reduce(reservations.Instances || [], m0, function(m, instance) {
-              const state = instance.State && instance.State.Name;
-              if (state !== 'shutting-down' && state !== 'terminated') {
-                theInstance = instance;
-                return m+1;
-              }
-              return m;
-            });
-          });
+        // The instance for uniqueName does not exist, continue on, and launch it.
+        return next();
 
-          // If we have an instance, return it
-          if (count > 0) {
-            my.result = {...my.result, Instance: theInstance};
-            return callback(null, my);
-          }
+        // return describeInstances(awsFilters({"tag:qn:uniqueName":[uniqueName]}), rax.opts({}), function(err, data) {
 
-          // The instance for uniqueName does not exist, continue on, and launch it.
-          return next();
-        });
+        //   var   theInstance;
+        //   const count = sg.reduce(data.Reservations || [], 0, function(m0, reservations) {
+        //     return sg.reduce(reservations.Instances || [], m0, function(m, instance) {
+        //       const state = instance.State && instance.State.Name;
+        //       if (state !== 'shutting-down' && state !== 'terminated') {
+        //         theInstance = instance;
+        //         return m+1;
+        //       }
+        //       return m;
+        //     });
+        //   });
+
+        //   // If we have an instance, return it
+        //   if (count > 0) {
+        //     my.result = {...my.result, Instance: theInstance};
+        //     return callback(null, my);
+        //   }
+
+        //   // The instance for uniqueName does not exist, continue on, and launch it.
+        //   return next();
+        // });
 
       }, function(my, next) {
 
@@ -353,12 +389,16 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
         // Did the caller pass one in?
         if (ImageId)  { return next(); }
 
-        // We have to go get the AMI ourselves
-        return getUbuntuLtsAmis({latest:true}, {}, function(err, data) {
-          ImageId     = data.ImageId;
-          osVersion   = osVersion || data.osVersion;
-          return next();
-        });
+        ImageId     = ami.ImageId;
+        osVersion   = ami.osVersion;
+        return next();
+
+        // // We have to go get the AMI ourselves
+        // return getUbuntuLtsAmis({latest:true}, {}, function(err, data) {
+        //   ImageId     = data.ImageId;
+        //   osVersion   = osVersion || data.osVersion;
+        //   return next();
+        // });
 
       }, function(my, next) {
 
@@ -888,7 +928,7 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
           params.IamInstanceProfile = {Name: iamName};
         }
 
-        var tries = 0;
+        // var tries = 0;
         if (PrivateIpAddress) {
           params.PrivateIpAddress = PrivateIpAddress;
         }
@@ -929,10 +969,10 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
               dependentTags  = [{Key:'Name', Value:hostname}];
               params.TagSpecifications  = [{ResourceType:'instance', Tags: [...Tags, ...(dependentTags ||[])]}];
 
-              tries += 1;
-              if (tries <= 12) {
-                return sg.setTimeout(250, oneRun);
-              }
+              // tries += 1;
+              // if (tries <= 12) {
+              //   return sg.setTimeout(250, oneRun);
+              // }
 
               // Let the system assign one. Better than failing.
               delete params.PrivateIpAddress;

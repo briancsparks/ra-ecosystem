@@ -52,7 +52,41 @@ function AwsDataBlob(blob) {
 
 //-----------------------------------------------------------------------------------------------------------------------------
 AwsDataBlob.prototype.getData = function() {
-  return this.data;
+  var   index = {
+    by : {
+      PublicIpAddress: {},
+      PrivateIpAddress: {},
+      realm: {},
+      vpc: {},
+      zone:{},
+      uniqueName:{},
+      name: {},
+      role:{},
+      fqdn: {},
+    }
+  };
+
+  this.data.Instances.forEach(instance => {
+    sg.setOn(index.by.PublicIpAddress,   [instance.PublicIpAddress],   instance);
+    sg.setOn(index.by.PrivateIpAddress,  [instance.PrivateIpAddress],  instance);
+
+    sg.setOna(index.by.realm,            [instance.tag_realm],         instance);
+    sg.setOna(index.by.vpc,              [instance.vpcId],             instance);
+    sg.setOna(index.by.zone,             [instance.zone],              instance);
+    sg.setOn(index.by.uniqueName,        [instance.tag_qn_uniquename], instance);
+    sg.setOn(index.by.name,              [instance.tag_name],          instance);
+
+    // many
+    sg.compact((instance.tag_qn_roles ||'').split(':')).forEach(role => {
+      sg.setOna(index.by.role, [role],  instance);
+    });
+
+    sg.compact((instance.tag_qn_fqdns ||'').split(',')).forEach(fqdn => {
+      sg.setOna(index.by.fqdn, [fqdn],  instance);
+    });
+  });
+
+  return {...this.data, index};
 };
 
 
@@ -113,6 +147,8 @@ AwsDataBlob.prototype.normalize = function(item_) {
   if (item.InstanceId) {
     item.instanceId         = item.InstanceId;
     item.id                 = item.InstanceId;
+    item.subnetId           = item.SubnetId;
+    item.vpcId              = item.VpcId;
     item.monitoring         = item.Monitoring           && item.Monitoring.State;
     item.zone               = item.Placement            && item.Placement.AvailabilityZone;
     item.state              = item.State                && item.State.Name;
