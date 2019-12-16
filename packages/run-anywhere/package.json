@@ -1,6 +1,6 @@
 {
   "name": "run-anywhere",
-  "version": "1.0.157",
+  "version": "1.0.158",
   "description": "Write your Node.js functions in the run-anywhere format, and run them anywhere (CLI, AWS Lambda, etc.)",
   "main": "ra.js",
   "bin": {
@@ -21,28 +21,28 @@
   },
   "homepage": "https://github.com/briancsparks/ra-ecosystem/tree/master/packages/run-anywhere#readme",
   "dependencies": {
-    "@sg0/sg-smart-value": "^1.0.22",
+    "@sg0/sg-smart-value": "^1.0.23",
     "aws-serverless-express": "^3.3.5",
     "difflet": "^1.0.1",
     "exit-on-epipe": "^1.0.1",
     "express": "^4.16.4",
     "glob": "^7.1.6",
-    "hard-rejection": "^1.0.0",
+    "hard-rejection": "^2.1.0",
     "lodash": "^4.17.13",
-    "loud-rejection": "^1.6.0",
+    "loud-rejection": "^2.2.0",
     "mongodb": "^3.1.10",
-    "quick-merge": "^1.0.23",
+    "quick-merge": "^1.0.24",
     "redis": "^2.8.0",
-    "sg-argv": "^1.0.90",
-    "sg-config": "^1.0.102",
-    "sg-env": "^1.0.27",
-    "sg-flow": "^1.0.83",
-    "sg0": "^1.0.56",
+    "sg-argv": "^1.0.91",
+    "sg-config": "^1.0.103",
+    "sg-env": "^1.0.28",
+    "sg-flow": "^1.0.84",
+    "sg0": "^1.0.57",
     "sgsg": "^0.9.54",
     "sprintf-js": "^1.1.2"
   },
   "devDependencies": {
-    "ava": "^1.0.1"
+    "ava": "^2.4.0"
   },
   "gitHead": "55c763905a0b5b6039ae9c1819860a00b918d958"
 }

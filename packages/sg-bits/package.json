@@ -1,6 +1,6 @@
 {
   "name": "sg-bits",
-  "version": "1.0.39",
+  "version": "1.0.40",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -9,8 +9,8 @@
   "author": "Brian C Sparks <briancsparks@gmail.com>",
   "license": "MIT",
   "dependencies": {
-    "quick-merge": "^1.0.23",
-    "sg0": "^1.0.56"
+    "quick-merge": "^1.0.24",
+    "sg0": "^1.0.57"
   },
   "gitHead": "55c763905a0b5b6039ae9c1819860a00b918d958"
 }

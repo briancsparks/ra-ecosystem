@@ -11,8 +11,8 @@
   "license": "MIT",
   "dependencies": {
     "claudia-api-builder": "^4.1.2",
-    "quick-net": "^1.0.180",
-    "run-anywhere": "^1.0.157",
-    "superb": "^3.0.0"
+    "quick-net": "^1.0.181",
+    "run-anywhere": "^1.0.158",
+    "superb": "^4.0.0"
   }
 }

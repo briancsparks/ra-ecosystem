@@ -23,9 +23,9 @@
   },
   "dependencies": {
     "express": "^4.16.4",
-    "run-anywhere": "^0.7.12",
-    "sg-argv": "^1.0.90",
+    "run-anywhere": "^1.0.158",
+    "sg-argv": "^1.0.91",
     "sg-echo": "^1.0.33",
-    "sg0": "^1.0.56"
+    "sg0": "^1.0.57"
   }
 }

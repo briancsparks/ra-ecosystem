@@ -2,7 +2,7 @@
   "description": "Run-Anywhere and friends monorepo.",
   "name": "root",
   "private": true,
-  "workspaces":[
+  "workspaces": [
     "packages/*",
     "apps/*"
   ],
