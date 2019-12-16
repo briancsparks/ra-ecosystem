@@ -1923,26 +1923,6 @@ sg.mergeSg = function() {
 
 // sg.mergeSg({f1:'A', fn:{clean: {one:'axclean' }, fast: {one:'axfast' } }}, {f2:'B', fn:{clean: {two: 'bxclean'}, fast: {five:'bxfast' }}});
 
-/**
- *  Merge objects.
- */
-sg.mergeSg2 = function() {
-  var result = {fn:{}, async:{}, $x_args:{}};
-  var args   = _.toArray(arguments);
-
-  result = sg.reduce(Object.keys(result), {}, (m,k) => {
-    var level0 = sg.pluck(args, k);
-    m[k] = sg.mergeL1(...level0);
-    return m;
-  });
-
-  result = sg.merge(...args, result);
-
-  // console.log(sg.inspect(result));
-  return result;
-};
-
-// sg.mergeSg2({f1:'A', fn:{clean: {one:'axclean' }, fast: {one:'axfast' } }}, {f2:'B', fn:{clean: {two: 'bxclean'}, fast: {five:'bxfast' }}});
 
 // Export functions
 _.each(sg, function(fn, name) {

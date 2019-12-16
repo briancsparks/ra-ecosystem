@@ -506,364 +506,365 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
 
       }, function(my, next) {
 
-        // See other stuff for cloud-init
-        //
-        // https://cloudinit.readthedocs.io/en/latest/topics/modules.html
-        //
-        // phone_home:
-        // final_message:
-        //
-        //
-        // cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
-        //   fqdn: 'xyz.com',
-        //   hostname: 'booya-123',
-        //   rsyslog: [
-        //   ],
-        //   scripts: {
-        //     "per-boot": [
-        //     ],
-        //     "per-instance": [
-        //     ],
-        //     "per-once": [
-        //     ],
-        //     vendor: [
-        //     ],
-        //   },
-        // });
+      //   // See other stuff for cloud-init
+      //   //
+      //   // https://cloudinit.readthedocs.io/en/latest/topics/modules.html
+      //   //
+      //   // phone_home:
+      //   // final_message:
+      //   //
+      //   //
+      //   // cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
+      //   //   fqdn: 'xyz.com',
+      //   //   hostname: 'booya-123',
+      //   //   rsyslog: [
+      //   //   ],
+      //   //   scripts: {
+      //   //     "per-boot": [
+      //   //     ],
+      //   //     "per-instance": [
+      //   //     ],
+      //   //     "per-once": [
+      //   //     ],
+      //   //     vendor: [
+      //   //     ],
+      //   //   },
+      //   // });
 
-        // Other stuff to install
-        //   Anaconda Linux: https://repo.anaconda.com/archive/Anaconda3-2019.10-Linux-x86_64.sh
-        //     See readme
+      //   // Other stuff to install
+      //   //   Anaconda Linux: https://repo.anaconda.com/archive/Anaconda3-2019.10-Linux-x86_64.sh
+      //   //     See readme
 
-        // Install all the stuff we install for every instance
-        cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
-          package_update: true,
-          package_upgrade: true,
-          // packages: ['ntp', 'tree', 'htop', 'zip', 'unzip', 'nodejs', 'yarn', 'redis-server', 'jq'],
-          packages: ['ntp', 'tree', 'htop', 'zip', 'unzip', 'nodejs', 'jq', 'silversearcher-ag', 'vim'],
-          hostname,
-          apt:      {
-            preserve_sources_list: true,
-            sources: {
-              vimPpa: {
-                source: `ppa:jonathonf/vim`
-              },
-              "nodesource.list": {
-                key: nodesource_com_key(),
-                source: `deb https://deb.nodesource.com/node_12.x ${osVersion} main`
-              },
-              // "yarn.list": {
-              //   key: yarnpkg_com_key(),
-              //   source: `deb https://dl.yarnpkg.com/debian/ stable main`
-              // }
-            }
-          },
-          runcmd: [
-            `echo NAMESPACE="${namespace}" >> /etc/environment`,
-            `echo NAMESPACE_LC="${namespace.toLowerCase()}" >> /etc/environment`
-          ],
-        });
+      //   // Install all the stuff we install for every instance
+      //   cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
+      //     package_update: true,
+      //     package_upgrade: true,
+      //     // packages: ['ntp', 'tree', 'htop', 'zip', 'unzip', 'nodejs', 'yarn', 'redis-server', 'jq'],
+      //     packages: ['ntp', 'tree', 'htop', 'zip', 'unzip', 'nodejs', 'jq', 'silversearcher-ag', 'vim'],
+      //     hostname,
+      //     apt:      {
+      //       preserve_sources_list: true,
+      //       sources: {
+      //         vimPpa: {
+      //           source: `ppa:jonathonf/vim`
+      //         },
+      //         "nodesource.list": {
+      //           key: nodesource_com_key(),
+      //           source: `deb https://deb.nodesource.com/node_12.x ${osVersion} main`
+      //         },
+      //         // "yarn.list": {
+      //         //   key: yarnpkg_com_key(),
+      //         //   source: `deb https://dl.yarnpkg.com/debian/ stable main`
+      //         // }
+      //       }
+      //     },
+      //     runcmd: [
+      //       `echo NAMESPACE="${namespace}" >> /etc/environment`,
+      //       `echo NAMESPACE_LC="${namespace.toLowerCase()}" >> /etc/environment`
+      //     ],
+      //   });
 
-        if (hostname) {
-          cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
-            runcmd: [
-              `echo 127.0.0.1 ${hostname} >> /etc/hosts`,
-            ],
-          });
-        }
+      //   if (hostname) {
+      //     cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
+      //       runcmd: [
+      //         `echo 127.0.0.1 ${hostname} >> /etc/hosts`,
+      //       ],
+      //     });
+      //   }
 
-        // Workstation utils
-        if (userdataOpts.INSTALL_WORKSTATION) {
-          cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
-            packages: ['build-essential', 'golang-go'],
+      //   // Workstation utils
+      //   if (userdataOpts.INSTALL_WORKSTATION) {
+      //     cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
+      //       packages: ['build-essential', 'golang-go'],
 
-            goPpa: {
-              source: `ppa:longsleep/golang-backports`
-            },
-            runcmd: [
-              // `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`,
+      //       goPpa: {
+      //         source: `ppa:longsleep/golang-backports`
+      //       },
+      //       runcmd: [
+      //         // `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`,
 
-              // Not working
-              //`curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -o rustup; sh rustup -y`,
-              `echo "" >> /home/ubuntu/readme.md`,
-              `echo "install rust:" >> /home/ubuntu/readme.md`,
-              `echo "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -o rustup; sh rustup -y" >> /home/ubuntu/readme.md`,
-              "",
-              `echo '"INSTALL_WORKSTATION": true,' >> /home/ubuntu/quicknet-installed`,
-            ],
-          });
+      //         // Not working
+      //         //`curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -o rustup; sh rustup -y`,
+      //         `echo "" >> /home/ubuntu/readme.md`,
+      //         `echo "install rust:" >> /home/ubuntu/readme.md`,
+      //         `echo "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -o rustup; sh rustup -y" >> /home/ubuntu/readme.md`,
+      //         "",
+      //         `echo '"INSTALL_WORKSTATION": true,' >> /home/ubuntu/quicknet-installed`,
+      //       ],
+      //     });
 
-          sg.addKm(roles, 'workstation');
+      //     sg.addKm(roles, 'workstation');
 
-          // TODO: See also:
-          // https://medium.com/@patdhlk/how-to-install-go-1-9-1-on-ubuntu-16-04-ee64c073cd79   (GO)
-          //
-          // LLVM C++17 on 16.04
-          // https://askubuntu.com/questions/1113974/using-c17-with-clang-on-ubuntu-16-04
-          //
-          // or:
-          //
-          // apt-get install clang-format clang-tidy clang-tools clang clangd libc++-dev libc++1 libc++abi-dev libc++abi1 libclang-dev libclang1 liblldb-dev libllvm-ocaml-dev libomp-dev libomp5 lld lldb llvm-dev llvm-runtime llvm python-clang
-          //
-          // wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key|sudo apt-key add -
-          // # Fingerprint: 6084 F3CF 814B 57C1 CF12 EFD5 15CF 4D18 AF4F 7421
-          //
-          // deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial main
-          // deb-src http://apt.llvm.org/xenial/ llvm-toolchain-xenial main
-          // # 8
-          // deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-8 main
-          // deb-src http://apt.llvm.org/xenial/ llvm-toolchain-xenial-8 main
-          // # 9
-          // deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-9 main
-          // deb-src http://apt.llvm.org/xenial/ llvm-toolchain-xenial-9 main
-        }
+      //     // TODO: See also:
+      //     // https://medium.com/@patdhlk/how-to-install-go-1-9-1-on-ubuntu-16-04-ee64c073cd79   (GO)
+      //     //
+      //     // LLVM C++17 on 16.04
+      //     // https://askubuntu.com/questions/1113974/using-c17-with-clang-on-ubuntu-16-04
+      //     //
+      //     // or:
+      //     //
+      //     // apt-get install clang-format clang-tidy clang-tools clang clangd libc++-dev libc++1 libc++abi-dev libc++abi1 libclang-dev libclang1 liblldb-dev libllvm-ocaml-dev libomp-dev libomp5 lld lldb llvm-dev llvm-runtime llvm python-clang
+      //     //
+      //     // wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key|sudo apt-key add -
+      //     // # Fingerprint: 6084 F3CF 814B 57C1 CF12 EFD5 15CF 4D18 AF4F 7421
+      //     //
+      //     // deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial main
+      //     // deb-src http://apt.llvm.org/xenial/ llvm-toolchain-xenial main
+      //     // # 8
+      //     // deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-8 main
+      //     // deb-src http://apt.llvm.org/xenial/ llvm-toolchain-xenial-8 main
+      //     // # 9
+      //     // deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-9 main
+      //     // deb-src http://apt.llvm.org/xenial/ llvm-toolchain-xenial-9 main
+      //   }
 
-        // Install docker?
-        if (userdataOpts.INSTALL_DOCKER) {
-          cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
-            packages: ['docker-ce'],
-            apt:      {
-              preserve_sources_list: true,
-              sources: {
-                "docker.list": {
-                  // key: docker_com_key(),
-                  keyid: '9DC858229FC7DD38854AE2D88D81803C0EBFCD88',
-                  source: `deb https://download.docker.com/linux/ubuntu ${osVersion} stable`
-                }
-              }
-            },
-            runcmd: [
-              `echo '"INSTALL_DOCKER": true,' >> /home/ubuntu/quicknet-installed`,
-            ],
-          });
+      //   // Install docker?
+      //   if (userdataOpts.INSTALL_DOCKER) {
+      //     cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
+      //       packages: ['docker-ce'],
+      //       apt:      {
+      //         preserve_sources_list: true,
+      //         sources: {
+      //           "docker.list": {
+      //             // key: docker_com_key(),
+      //             keyid: '9DC858229FC7DD38854AE2D88D81803C0EBFCD88',
+      //             source: `deb https://download.docker.com/linux/ubuntu ${osVersion} stable`
+      //           }
+      //         }
+      //       },
+      //       runcmd: [
+      //         `echo '"INSTALL_DOCKER": true,' >> /home/ubuntu/quicknet-installed`,
+      //       ],
+      //     });
 
-          sg.addKm(roles, 'docker');
-        }
+      //     sg.addKm(roles, 'docker');
+      //   }
 
 
-        // Install the web-tier?
-        if (userdataOpts.INSTALL_WEBTIER) {
-          cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
-            packages: ['nginx', 'nginx-module-njs'],
-            apt:      {
-              preserve_sources_list: true,
-              sources: {
-                "nginx.list": {
-                  key: nginx_org_key(),
-                  source: `deb https://nginx.org/packages/mainline/ubuntu ${osVersion} nginx`
-                }
-              }
-            },
-            runcmd: [
-              `echo '"INSTALL_WEBTIER": true,' >> /home/ubuntu/quicknet-installed`,
-            ],
-          });
+      //   // Install the web-tier?
+      //   if (userdataOpts.INSTALL_WEBTIER) {
+      //     cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
+      //       packages: ['nginx', 'nginx-module-njs'],
+      //       apt:      {
+      //         preserve_sources_list: true,
+      //         sources: {
+      //           "nginx.list": {
+      //             key: nginx_org_key(),
+      //             source: `deb https://nginx.org/packages/mainline/ubuntu ${osVersion} nginx`
+      //           }
+      //         }
+      //       },
+      //       runcmd: [
+      //         `echo '"INSTALL_WEBTIER": true,' >> /home/ubuntu/quicknet-installed`,
+      //       ],
+      //     });
 
-          sg.addKm(roles, 'webtier');
-        }
+      //     sg.addKm(roles, 'webtier');
+      //   }
 
-        // // Install certbot?
-        // if (userdataOpts.INSTALL_CERTBOT) {
-        //   cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
-        //     packages: ['certbot', 'python-certbot-nginx'],
-        //     apt:      {
-        //       preserve_sources_list: true,
-        //       sources: {
-        //         certbotPpa: {
-        //           source: `ppa:certbot/certbot`
-        //         }
-        //       }
-        //     },
-        //     runcmd: [
-        //       `echo '"INSTALL_CERTBOT": true,' >> /home/ubuntu/quicknet-installed`,
-        //     ],
-        //   });
+      //   // // Install certbot?
+      //   // if (userdataOpts.INSTALL_CERTBOT) {
+      //   //   cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
+      //   //     packages: ['certbot', 'python-certbot-nginx'],
+      //   //     apt:      {
+      //   //       preserve_sources_list: true,
+      //   //       sources: {
+      //   //         certbotPpa: {
+      //   //           source: `ppa:certbot/certbot`
+      //   //         }
+      //   //       }
+      //   //     },
+      //   //     runcmd: [
+      //   //       `echo '"INSTALL_CERTBOT": true,' >> /home/ubuntu/quicknet-installed`,
+      //   //     ],
+      //   //   });
 
-        //   sg.addKm(roles, 'certbot');
-        // }
+      //   //   sg.addKm(roles, 'certbot');
+      //   // }
 
-        // Add mongodb to apt for everyone -- only install (below) if install is requested, but we want to be able to install clients
-        cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
-          apt:      {
-            preserve_sources_list: true,
-            sources: {
-              "mongodb-org-4.0.list": {
-                keyid: '9DA31620334BD75D9DCB49F368818C72E52529D4',
-                source: `deb https://repo.mongodb.org/apt/ubuntu ${osVersion}/mongodb-org/4.0 multiverse`
-              }
-            },
-          }
-        });
+      //   // Add mongodb to apt for everyone -- only install (below) if install is requested, but we want to be able to install clients
+      //   cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
+      //     apt:      {
+      //       preserve_sources_list: true,
+      //       sources: {
+      //         "mongodb-org-4.0.list": {
+      //           keyid: '9DA31620334BD75D9DCB49F368818C72E52529D4',
+      //           source: `deb https://repo.mongodb.org/apt/ubuntu ${osVersion}/mongodb-org/4.0 multiverse`
+      //         }
+      //       },
+      //     }
+      //   });
 
-        // Install mongodb?
-        if (userdataOpts.INSTALL_MONGODB) {
-          cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
-            packages: ['mongodb-org'],
-            runcmd: [
-              "sed -i -e 's/127.0.0.1/0.0.0.0/' /etc/mongod.conf",
-              "systemctl enable mongod",
-              `echo '"INSTALL_MONGODB": true,' >> /home/ubuntu/quicknet-installed`,
-            ],
-          });
+      //   // Install mongodb?
+      //   if (userdataOpts.INSTALL_MONGODB) {
+      //     cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
+      //       packages: ['mongodb-org'],
+      //       runcmd: [
+      //         "sed -i -e 's/127.0.0.1/0.0.0.0/' /etc/mongod.conf",
+      //         "systemctl enable mongod",
+      //         `echo '"INSTALL_MONGODB": true,' >> /home/ubuntu/quicknet-installed`,
+      //       ],
+      //     });
 
-          sg.addKm(roles, 'db', 'mongo', 'nosql');
-        }
+      //     sg.addKm(roles, 'db', 'mongo', 'nosql');
+      //   }
 
-        if (userdataOpts.INSTALL_MONGO_CLIENTS) {
-          cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
-            packages: ['mongodb-clients'],
-            runcmd: [
-              `echo '"INSTALL_MONGO_CLIENTS": true,' >> /home/ubuntu/quicknet-installed`,
-            ],
-          });
-        }
+      //   if (userdataOpts.INSTALL_MONGO_CLIENTS) {
+      //     cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
+      //       packages: ['mongodb-clients'],
+      //       runcmd: [
+      //         `echo '"INSTALL_MONGO_CLIENTS": true,' >> /home/ubuntu/quicknet-installed`,
+      //       ],
+      //     });
+      //   }
 
-        if (userdataOpts.INSTALL_REDIS_CLIENTS) {
-          cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
-            packages: ['redis-tools'],
-            runcmd: [
-              `echo '"INSTALL_REDIS_CLIENTS": true,' >> /home/ubuntu/quicknet-installed`,
-            ],
-          });
-        }
+      //   if (userdataOpts.INSTALL_REDIS_CLIENTS) {
+      //     cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
+      //       packages: ['redis-tools'],
+      //       runcmd: [
+      //         `echo '"INSTALL_REDIS_CLIENTS": true,' >> /home/ubuntu/quicknet-installed`,
+      //       ],
+      //     });
+      //   }
 
-        // Install kubectl?
+      //   // Install kubectl?
 
-        // Like:
-        // $ curl -LO http://storage.googleapis.com/kubernetes-release/release/$(curl -sS http://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
-        // $ chmod +x ./kubectl
-        // $ sudo mv ./kubectl /usr/local/bin/kubectl
-        //
+      //   // Like:
+      //   // $ curl -LO http://storage.googleapis.com/kubernetes-release/release/$(curl -sS http://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
+      //   // $ chmod +x ./kubectl
+      //   // $ sudo mv ./kubectl /usr/local/bin/kubectl
+      //   //
 
-        // If you want kops:
-        // $ curl -LO https://github.com/kubernetes/kops/releases/download/$(curl -s https://api.github.com/repos/kubernetes/kops/releases/latest | jq -r '.tag_name')/kops-linux-amd64
-        // $ chmod +x kops-linux-amd64
-        // $ sudo mv kops-linux-amd64 /usr/local/bin/kops
+      //   // If you want kops:
+      //   // $ curl -LO https://github.com/kubernetes/kops/releases/download/$(curl -s https://api.github.com/repos/kubernetes/kops/releases/latest | jq -r '.tag_name')/kops-linux-amd64
+      //   // $ chmod +x kops-linux-amd64
+      //   // $ sudo mv kops-linux-amd64 /usr/local/bin/kops
 
-        if (userdataOpts.INSTALL_KUBERNETES) {
-          cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
-            packages: ['kubectl'],
-            apt:      {
-              preserve_sources_list: true,
-              sources: {
-                "kubernetes.list": {
-                  // key: kubernetes_io_key(),
-                  keyid: '6A030B21BA07F4FB',
-                  source: `deb https://apt.kubernetes.io/ kubernetes-${osVersion} main`
-                }
-              }
-            },
-            runcmd: [
-              `echo '"INSTALL_KUBERNETES": true,' >> /home/ubuntu/quicknet-installed`,
-            ],
-          });
+      //   if (userdataOpts.INSTALL_KUBERNETES) {
+      //     cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
+      //       packages: ['kubectl'],
+      //       apt:      {
+      //         preserve_sources_list: true,
+      //         sources: {
+      //           "kubernetes.list": {
+      //             // key: kubernetes_io_key(),
+      //             keyid: '6A030B21BA07F4FB',
+      //             source: `deb https://apt.kubernetes.io/ kubernetes-${osVersion} main`
+      //           }
+      //         }
+      //       },
+      //       runcmd: [
+      //         `echo '"INSTALL_KUBERNETES": true,' >> /home/ubuntu/quicknet-installed`,
+      //       ],
+      //     });
 
-          sg.addKm(roles, 'k8s');
-        }
+      //     sg.addKm(roles, 'k8s');
+      //   }
 
-        // etcd
-        // See https://devopscube.com/setup-etcd-cluster-linux/
-        //
-        // etcd on Docker:
-        //   in qn-bootstrap-nonroot
+      //   // etcd
+      //   // See https://devopscube.com/setup-etcd-cluster-linux/
+      //   //
+      //   // etcd on Docker:
+      //   //   in qn-bootstrap-nonroot
 
-        // Install stuff for NAT instances?
-        if (userdataOpts.INSTALL_NAT) {
-          cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
-            packages: ['iptables-persistent'],
-            runcmd: [
-              `echo '"INSTALL_NAT": true,' >> /home/ubuntu/quicknet-installed`,
-            ],
-          });
+      //   // Install stuff for NAT instances?
+      //   if (userdataOpts.INSTALL_NAT) {
+      //     cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
+      //       packages: ['iptables-persistent'],
+      //       runcmd: [
+      //         `echo '"INSTALL_NAT": true,' >> /home/ubuntu/quicknet-installed`,
+      //       ],
+      //     });
 
-          sg.addKm(roles, 'bastion' , 'nat');
-        }
+      //     sg.addKm(roles, 'bastion' , 'nat');
+      //   }
 
-        // Install tools for dev-ops?
-        if (!userdataOpts.INSTALL_AWSCLI_NO) {
-          userdataOpts.INSTALL_PIP = true;
+      //   // Install tools for dev-ops?
+      //   if (!userdataOpts.INSTALL_AWSCLI_NO) {
+      //     userdataOpts.INSTALL_PIP = true;
 
-          cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
-            // packages: ['python-pip'],
-            runcmd: [
-              "pip install --upgrade awscli",
-            ],
-          });
-        }
+      //     cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
+      //       // packages: ['python-pip'],
+      //       runcmd: [
+      //         "pip install --upgrade awscli",
+      //       ],
+      //     });
+      //   }
 
-        // Python-pip
-        if (userdataOpts.INSTALL_PIP) {
-          cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
-            packages: ['python-pip'],
-            runcmd: [
-              `echo '"INSTALL_PIP": true,' >> /home/ubuntu/quicknet-installed`,
-            ],
-          });
-        }
+      //   // Python-pip
+      //   if (userdataOpts.INSTALL_PIP) {
+      //     cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
+      //       packages: ['python-pip'],
+      //       runcmd: [
+      //         `echo '"INSTALL_PIP": true,' >> /home/ubuntu/quicknet-installed`,
+      //       ],
+      //     });
+      //   }
 
-        return next();
+      //   return next();
 
-      }, function(my, next) {
+      // }, function(my, next) {
 
-        // -------------------------------------------------------------------------------------------------------
-        // Finalize what we are going to cloud-init-ize
+      //   // -------------------------------------------------------------------------------------------------------
+      //   // Finalize what we are going to cloud-init-ize
 
-        // Reboot, if required
-        cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
-          power_state: {
-            mode:       "reboot",
-            message:    "Go on without me, boys... I'm done-fer [[rebooting now]]",
-            // condition:  "test -f /var/run/reboot-required"
-            condition:  true
-          },
-          // runcmd: [
-          //   "sed -i -e '$aAcceptEnv TENABLE_IO_KEY' /etc/ssh/sshd_config",
-          //   "sed -i -e '$aAcceptEnv CLOUDSTRIKE_ID' /etc/ssh/sshd_config",
-          // ],
-        });
+      //   // Reboot, if required
+      //   cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
+      //     power_state: {
+      //       mode:       "reboot",
+      //       message:    "Go on without me, boys... I'm done-fer [[rebooting now]]",
+      //       // condition:  "test -f /var/run/reboot-required"
+      //       condition:  true
+      //     },
+      //     // runcmd: [
+      //     //   "sed -i -e '$aAcceptEnv TENABLE_IO_KEY' /etc/ssh/sshd_config",
+      //     //   "sed -i -e '$aAcceptEnv CLOUDSTRIKE_ID' /etc/ssh/sshd_config",
+      //     // ],
+      //   });
 
-        return next();
+      //   return next();
 
-      }, function(my, next) {
+      // }, function(my, next) {
 
-        // -------------------------------------------------------------------------------------------------------
-        // Build the mime-archive
+      //   // -------------------------------------------------------------------------------------------------------
+      //   // Build the mime-archive
 
-        mimeArchive = new MimeBuilder('multipart/mixed');
+      //   mimeArchive = new MimeBuilder('multipart/mixed');
 
-        if (userDataScript) {
-          mimeArchive.appendChild(new MimeBuilder('text/x-shellscript')
-            .setContent(userDataScript)
-            .setHeader('content-disposition', `attachment; filename=shellscript`)
-            .setHeader('content-transfer-encoding', 'quoted-printable')                 /*  MUST use quoted-printable, so the lib does not use 'flowable' */
-          );
-        }
+      //   if (userDataScript) {
+      //     mimeArchive.appendChild(new MimeBuilder('text/x-shellscript')
+      //       .setContent(userDataScript)
+      //       .setHeader('content-disposition', `attachment; filename=shellscript`)
+      //       .setHeader('content-transfer-encoding', 'quoted-printable')                 /*  MUST use quoted-printable, so the lib does not use 'flowable' */
+      //     );
+      //   }
 
-        // write_files is erroring
-        // console.error(`writefiles`, sg.inspect({cloudInitData}));
-        delete cloudInitData['cloud-config'].write_files;
+      //   // write_files is erroring
+      //   // console.error(`writefiles`, sg.inspect({cloudInitData}));
+      //   delete cloudInitData['cloud-config'].write_files;
 
-        if (cloudInitData['cloud-config']) {
-          let yaml = jsyaml.safeDump(cloudInitData['cloud-config'], {lineWidth: 512});
+      //   if (cloudInitData['cloud-config']) {
+      //     let yaml = jsyaml.safeDump(cloudInitData['cloud-config'], {lineWidth: 512});
 
-          // addClip([
-          //   `Cloud-config size: ${yaml.length}`,
-          //   yaml,
-          // ]);
+      //     // addClip([
+      //     //   `Cloud-config size: ${yaml.length}`,
+      //     //   yaml,
+      //     // ]);
 
-          sg.debugLog(`Cloud-config size`, {size: yaml.length});
-          if (yaml.length > 16384) {
-            ractx.endMessage = ractx.endMessage + `Cloud-config size is too big: ${yaml.length}`;
+      //     sg.debugLog(`Cloud-config size`, {size: yaml.length});
+      //     if (yaml.length > 16384) {
+      //       ractx.endMessage = ractx.endMessage + `Cloud-config size is too big: ${yaml.length}`;
 
-            return callback('ETOOBIG');
-          }
+      //       return callback('ETOOBIG');
+      //     }
 
-          mimeArchive.appendChild(new MimeBuilder('text/cloud-config')
-            .setContent(yaml)
-            .setHeader('content-transfer-encoding', 'quoted-printable')                 /*  MUST use quoted-printable, so the lib does not use 'flowable' */
-          );
-        }
+      //     mimeArchive.appendChild(new MimeBuilder('text/cloud-config')
+      //       .setContent(yaml)
+      //       .setHeader('content-transfer-encoding', 'quoted-printable')                 /*  MUST use quoted-printable, so the lib does not use 'flowable' */
+      //     );
+      //   }
 
+        buildCloucInit();
         return next();
 
 
@@ -1311,6 +1312,368 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
         return next();
       }]);
 
+
+
+
+
+      // ======================================================================================================================
+      function buildCloucInit() {
+
+        // See other stuff for cloud-init
+        //
+        // https://cloudinit.readthedocs.io/en/latest/topics/modules.html
+        //
+        // phone_home:
+        // final_message:
+        //
+        //
+        // cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
+        //   fqdn: 'xyz.com',
+        //   hostname: 'booya-123',
+        //   rsyslog: [
+        //   ],
+        //   scripts: {
+        //     "per-boot": [
+        //     ],
+        //     "per-instance": [
+        //     ],
+        //     "per-once": [
+        //     ],
+        //     vendor: [
+        //     ],
+        //   },
+        // });
+
+        // Other stuff to install
+        //   Anaconda Linux: https://repo.anaconda.com/archive/Anaconda3-2019.10-Linux-x86_64.sh
+        //     See readme
+
+        // Install all the stuff we install for every instance
+        cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
+          package_update: true,
+          package_upgrade: true,
+          // packages: ['ntp', 'tree', 'htop', 'zip', 'unzip', 'nodejs', 'yarn', 'redis-server', 'jq'],
+          packages: ['ntp', 'tree', 'htop', 'zip', 'unzip', 'nodejs', 'jq', 'silversearcher-ag', 'vim'],
+          hostname,
+          apt:      {
+            preserve_sources_list: true,
+            sources: {
+              vimPpa: {
+                source: `ppa:jonathonf/vim`
+              },
+              "nodesource.list": {
+                key: nodesource_com_key(),
+                source: `deb https://deb.nodesource.com/node_12.x ${osVersion} main`
+              },
+              // "yarn.list": {
+              //   key: yarnpkg_com_key(),
+              //   source: `deb https://dl.yarnpkg.com/debian/ stable main`
+              // }
+            }
+          },
+          runcmd: [
+            `echo NAMESPACE="${namespace}" >> /etc/environment`,
+            `echo NAMESPACE_LC="${namespace.toLowerCase()}" >> /etc/environment`
+          ],
+        });
+
+        if (hostname) {
+          cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
+            runcmd: [
+              `echo 127.0.0.1 ${hostname} >> /etc/hosts`,
+            ],
+          });
+        }
+
+        // Workstation utils
+        if (userdataOpts.INSTALL_WORKSTATION) {
+          cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
+            packages: ['build-essential', 'golang-go'],
+
+            goPpa: {
+              source: `ppa:longsleep/golang-backports`
+            },
+            runcmd: [
+              // `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`,
+
+              // Not working
+              //`curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -o rustup; sh rustup -y`,
+              `echo "" >> /home/ubuntu/readme.md`,
+              `echo "install rust:" >> /home/ubuntu/readme.md`,
+              `echo "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -o rustup; sh rustup -y" >> /home/ubuntu/readme.md`,
+              "",
+              `echo '"INSTALL_WORKSTATION": true,' >> /home/ubuntu/quicknet-installed`,
+            ],
+          });
+
+          sg.addKm(roles, 'workstation');
+
+          // TODO: See also:
+          // https://medium.com/@patdhlk/how-to-install-go-1-9-1-on-ubuntu-16-04-ee64c073cd79   (GO)
+          //
+          // LLVM C++17 on 16.04
+          // https://askubuntu.com/questions/1113974/using-c17-with-clang-on-ubuntu-16-04
+          //
+          // or:
+          //
+          // apt-get install clang-format clang-tidy clang-tools clang clangd libc++-dev libc++1 libc++abi-dev libc++abi1 libclang-dev libclang1 liblldb-dev libllvm-ocaml-dev libomp-dev libomp5 lld lldb llvm-dev llvm-runtime llvm python-clang
+          //
+          // wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key|sudo apt-key add -
+          // # Fingerprint: 6084 F3CF 814B 57C1 CF12 EFD5 15CF 4D18 AF4F 7421
+          //
+          // deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial main
+          // deb-src http://apt.llvm.org/xenial/ llvm-toolchain-xenial main
+          // # 8
+          // deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-8 main
+          // deb-src http://apt.llvm.org/xenial/ llvm-toolchain-xenial-8 main
+          // # 9
+          // deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-9 main
+          // deb-src http://apt.llvm.org/xenial/ llvm-toolchain-xenial-9 main
+        }
+
+        // Install docker?
+        if (userdataOpts.INSTALL_DOCKER) {
+          cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
+            packages: ['docker-ce'],
+            apt:      {
+              preserve_sources_list: true,
+              sources: {
+                "docker.list": {
+                  // key: docker_com_key(),
+                  keyid: '9DC858229FC7DD38854AE2D88D81803C0EBFCD88',
+                  source: `deb https://download.docker.com/linux/ubuntu ${osVersion} stable`
+                }
+              }
+            },
+            runcmd: [
+              `echo '"INSTALL_DOCKER": true,' >> /home/ubuntu/quicknet-installed`,
+            ],
+          });
+
+          sg.addKm(roles, 'docker');
+        }
+
+
+        // Install the web-tier?
+        if (userdataOpts.INSTALL_WEBTIER) {
+          cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
+            packages: ['nginx', 'nginx-module-njs'],
+            apt:      {
+              preserve_sources_list: true,
+              sources: {
+                "nginx.list": {
+                  key: nginx_org_key(),
+                  source: `deb https://nginx.org/packages/mainline/ubuntu ${osVersion} nginx`
+                }
+              }
+            },
+            runcmd: [
+              `echo '"INSTALL_WEBTIER": true,' >> /home/ubuntu/quicknet-installed`,
+            ],
+          });
+
+          sg.addKm(roles, 'webtier');
+        }
+
+        // // Install certbot?
+        // if (userdataOpts.INSTALL_CERTBOT) {
+        //   cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
+        //     packages: ['certbot', 'python-certbot-nginx'],
+        //     apt:      {
+        //       preserve_sources_list: true,
+        //       sources: {
+        //         certbotPpa: {
+        //           source: `ppa:certbot/certbot`
+        //         }
+        //       }
+        //     },
+        //     runcmd: [
+        //       `echo '"INSTALL_CERTBOT": true,' >> /home/ubuntu/quicknet-installed`,
+        //     ],
+        //   });
+
+        //   sg.addKm(roles, 'certbot');
+        // }
+
+        // Add mongodb to apt for everyone -- only install (below) if install is requested, but we want to be able to install clients
+        cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
+          apt:      {
+            preserve_sources_list: true,
+            sources: {
+              "mongodb-org-4.0.list": {
+                keyid: '9DA31620334BD75D9DCB49F368818C72E52529D4',
+                source: `deb https://repo.mongodb.org/apt/ubuntu ${osVersion}/mongodb-org/4.0 multiverse`
+              }
+            },
+          }
+        });
+
+        // Install mongodb?
+        if (userdataOpts.INSTALL_MONGODB) {
+          cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
+            packages: ['mongodb-org'],
+            runcmd: [
+              "sed -i -e 's/127.0.0.1/0.0.0.0/' /etc/mongod.conf",
+              "systemctl enable mongod",
+              `echo '"INSTALL_MONGODB": true,' >> /home/ubuntu/quicknet-installed`,
+            ],
+          });
+
+          sg.addKm(roles, 'db', 'mongo', 'nosql');
+        }
+
+        if (userdataOpts.INSTALL_MONGO_CLIENTS) {
+          cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
+            packages: ['mongodb-clients'],
+            runcmd: [
+              `echo '"INSTALL_MONGO_CLIENTS": true,' >> /home/ubuntu/quicknet-installed`,
+            ],
+          });
+        }
+
+        if (userdataOpts.INSTALL_REDIS_CLIENTS) {
+          cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
+            packages: ['redis-tools'],
+            runcmd: [
+              `echo '"INSTALL_REDIS_CLIENTS": true,' >> /home/ubuntu/quicknet-installed`,
+            ],
+          });
+        }
+
+        // Install kubectl?
+
+        // Like:
+        // $ curl -LO http://storage.googleapis.com/kubernetes-release/release/$(curl -sS http://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
+        // $ chmod +x ./kubectl
+        // $ sudo mv ./kubectl /usr/local/bin/kubectl
+        //
+
+        // If you want kops:
+        // $ curl -LO https://github.com/kubernetes/kops/releases/download/$(curl -s https://api.github.com/repos/kubernetes/kops/releases/latest | jq -r '.tag_name')/kops-linux-amd64
+        // $ chmod +x kops-linux-amd64
+        // $ sudo mv kops-linux-amd64 /usr/local/bin/kops
+
+        if (userdataOpts.INSTALL_KUBERNETES) {
+          cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
+            packages: ['kubectl'],
+            apt:      {
+              preserve_sources_list: true,
+              sources: {
+                "kubernetes.list": {
+                  // key: kubernetes_io_key(),
+                  keyid: '6A030B21BA07F4FB',
+                  source: `deb https://apt.kubernetes.io/ kubernetes-${osVersion} main`
+                }
+              }
+            },
+            runcmd: [
+              `echo '"INSTALL_KUBERNETES": true,' >> /home/ubuntu/quicknet-installed`,
+            ],
+          });
+
+          sg.addKm(roles, 'k8s');
+        }
+
+        // etcd
+        // See https://devopscube.com/setup-etcd-cluster-linux/
+        //
+        // etcd on Docker:
+        //   in qn-bootstrap-nonroot
+
+        // Install stuff for NAT instances?
+        if (userdataOpts.INSTALL_NAT) {
+          cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
+            packages: ['iptables-persistent'],
+            runcmd: [
+              `echo '"INSTALL_NAT": true,' >> /home/ubuntu/quicknet-installed`,
+            ],
+          });
+
+          sg.addKm(roles, 'bastion' , 'nat');
+        }
+
+        // Install tools for dev-ops?
+        if (!userdataOpts.INSTALL_AWSCLI_NO) {
+          userdataOpts.INSTALL_PIP = true;
+
+          cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
+            // packages: ['python-pip'],
+            runcmd: [
+              "pip install --upgrade awscli",
+            ],
+          });
+        }
+
+        // Python-pip
+        if (userdataOpts.INSTALL_PIP) {
+          cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
+            packages: ['python-pip'],
+            runcmd: [
+              `echo '"INSTALL_PIP": true,' >> /home/ubuntu/quicknet-installed`,
+            ],
+          });
+        }
+
+
+        // -------------------------------------------------------------------------------------------------------
+        // Finalize what we are going to cloud-init-ize
+
+        // Reboot, if required
+        cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
+          power_state: {
+            mode:       "reboot",
+            message:    "Go on without me, boys... I'm done-fer [[rebooting now]]",
+            // condition:  "test -f /var/run/reboot-required"
+            condition:  true
+          },
+          // runcmd: [
+          //   "sed -i -e '$aAcceptEnv TENABLE_IO_KEY' /etc/ssh/sshd_config",
+          //   "sed -i -e '$aAcceptEnv CLOUDSTRIKE_ID' /etc/ssh/sshd_config",
+          // ],
+        });
+
+
+        // -------------------------------------------------------------------------------------------------------
+        // Build the mime-archive
+
+        mimeArchive = new MimeBuilder('multipart/mixed');
+
+        if (userDataScript) {
+          mimeArchive.appendChild(new MimeBuilder('text/x-shellscript')
+            .setContent(userDataScript)
+            .setHeader('content-disposition', `attachment; filename=shellscript`)
+            .setHeader('content-transfer-encoding', 'quoted-printable')                 /*  MUST use quoted-printable, so the lib does not use 'flowable' */
+          );
+        }
+
+        // write_files is erroring
+        // console.error(`writefiles`, sg.inspect({cloudInitData}));
+        delete cloudInitData['cloud-config'].write_files;
+
+        if (cloudInitData['cloud-config']) {
+          let yaml = jsyaml.safeDump(cloudInitData['cloud-config'], {lineWidth: 512});
+
+          // addClip([
+          //   `Cloud-config size: ${yaml.length}`,
+          //   yaml,
+          // ]);
+
+          sg.debugLog(`Cloud-config size`, {size: yaml.length});
+          if (yaml.length > 16384) {
+            ractx.endMessage = ractx.endMessage + `Cloud-config size is too big: ${yaml.length}`;
+
+            return callback('ETOOBIG');
+          }
+
+          mimeArchive.appendChild(new MimeBuilder('text/cloud-config')
+            .setContent(yaml)
+            .setHeader('content-transfer-encoding', 'quoted-printable')                 /*  MUST use quoted-printable, so the lib does not use 'flowable' */
+          );
+        }
+
+
+
+      }
     }());
 
 

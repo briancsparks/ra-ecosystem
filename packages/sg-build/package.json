@@ -1,6 +1,6 @@
 {
   "name": "sg-build",
-  "version": "1.0.104",
+  "version": "1.0.105",
   "description": "Buildout scripts (runnable with npx)",
   "author": "Brian C Sparks <briancsparks@gmail.com>",
   "homepage": "https://github.com/briancsparks/ra-ecosystem#readme",

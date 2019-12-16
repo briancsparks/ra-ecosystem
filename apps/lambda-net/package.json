@@ -1,7 +1,7 @@
 {
   "name": "lambda-net",
   "private": true,
-  "version": "1.0.85",
+  "version": "1.0.87",
   "description": "lambda-net",
   "main": "index.js",
   "scripts": {
