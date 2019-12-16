@@ -276,6 +276,7 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
 
       var   InstanceId;
       var   userDataScript, mimeArchive;
+      var   finalMessage = '';
 
 
 
@@ -1067,15 +1068,11 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
 
           // --location=/clientstart --upstream=clients --upstream-service=10.1.2.3:3001
           const ngArgs = {
-            // fqdns,
-            reloadServer        : false,
-            type                : 'qnwebtier',
             rpxiPort            : 3009,
             fqdns               : fqdns || 'api.cdr0.net'.split(','),
-            // sidecar             : '/clientstart,3009',
-            // upstream            : 'clients',
-            // upstream_service    : '10.1.2.3:3001',
-            // location            : '/clientstart',
+
+            reloadServer        : false,
+            type                : 'qnwebtier',
           };
           const fqdn                = (ngArgs.fqdns ||[])[0];
           const fqdnPath            = safePathFqdn(fqdn);
@@ -1085,11 +1082,9 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
             const {pack, cwd}         = data;
             const s3packPath          = _.compact([s3deployPath, 'files', ...(cwd.split('/'))]).join('/');
             const s3NginxConfTar      = `${s3packPath}/nginx-conf.tar`;
-            // const {Bucket,Key}        = parseS3Path(s3NginxConfTar);
 
             return streamToS3({Body: pack, s3path:s3NginxConfTar, ContentType: 'application/x-tar'}, context, function(err, data) {
-//            return streamToS3(pack, {Bucket, Key, ContentType: 'application/x-tar'}, function(err, data) {
-              sg.debugLog(`Upload nginx config tarball`, {err0, cwd, s3packPath, err, data});
+              sg.debugLog(`Uploaded nginx config tarball`, {err0, cwd, s3packPath, err, data});
 
               bootShellCommands = [...bootShellCommands,
                 `qn-get-certs-from-s3 s3://quicknet/quick-net/secrets/certs/${fqdnPath}.tar`,
@@ -1101,9 +1096,6 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
               return next();
             });
           });
-
-
-
 
 
 
@@ -1117,11 +1109,12 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
 
           // --location=/clientstart --upstream=clients --upstream-service=10.1.2.3:3001
           const ngArgs = {
-            reloadServer        : false,
             skipSystem          : true,
-            type                : 'qnwebtier',
             rpxiPort            : 3008,
             fqdns               : 'api.coder-zero.net'.split(','),
+
+            reloadServer        : false,
+            type                : 'qnwebtier',
           };
           const fqdn                = (ngArgs.fqdns ||[])[0];
           const fqdnPath            = safePathFqdn(fqdn);
@@ -1131,11 +1124,9 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
             const {pack, cwd}         = data;
             const s3packPath          = _.compact([s3deployPath, 'files', ...(cwd.split('/'))]).join('/');
             const s3NginxConfTar      = `${s3packPath}/${fqdnPath}.tar`;
-            // const {Bucket,Key}        = parseS3Path(s3NginxConfTar);
 
             return streamToS3({Body: pack, s3path:s3NginxConfTar, ContentType: 'application/x-tar'}, context, function(err, data) {
-//            return streamToS3(pack, {Bucket, Key, ContentType: 'application/x-tar'}, function(err, data) {
-              sg.debugLog(`Upload nginx config tarball`, {err0, cwd, s3packPath, err, data});
+              sg.debugLog(`Uploaded nginx config tarball`, {err0, cwd, s3packPath, err, data});
 
               bootShellCommands = [...bootShellCommands,
                 `qn-get-certs-from-s3 s3://quicknet/quick-net/secrets/certs/${fqdnPath}.tar`,
@@ -1149,6 +1140,11 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
           });
 
         }]);
+
+
+
+
+
 
       }, function(my, next) {
 
@@ -1186,6 +1182,8 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
         // -------------------------------------------------------------------------------------------------------
         // The only things we still have left to do require the instance to be started.
         // Must wait for launch
+
+        finalMessage += clipboardy.readSync();
 
         return sg.until(function(again, last, count, elapsed) {
           return describeInstances({InstanceIds:[InstanceId]}, rax.opts({abort:false}), function(err, data) {
@@ -1233,10 +1231,11 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
 
         // -------------------------------------------------------------------------------------------------------
         // Set the A record
-  console.log(`launch`, [my.result.fqdns]);
-        if (!my.result.fqdns)    { return next(); }
-
         const {PublicIpAddress}       = my.result.Instance;
+
+  console.log(`launch`, [my.result.fqdns], PublicIpAddress);
+        if (!my.result.fqdns || my.result.fqdns.length === 0)     { return next(); }
+        if (!PublicIpAddress)                                     { return next(); }
 
         sg.__eachll(my.result.fqdns, function(fqdn, next) {
           var   [subdomain, ...domain]  = fqdn.split('.');
@@ -1268,7 +1267,7 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
         });
       }, function(my, next) {
 
-        sg.debugLog(`Commands: ${clipboardy.readSync()}`);
+        sg.debugLog(`Commands: ${finalMessage}`);
         return next();
       }]);
 
