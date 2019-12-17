@@ -23,6 +23,7 @@
   "dependencies": {
     "@sg0/sg-smart-value": "^1.0.23",
     "aws-serverless-express": "^3.3.5",
+    "bufferutil": "^4.0.1",
     "difflet": "^1.0.1",
     "exit-on-epipe": "^1.0.1",
     "express": "^4.16.4",
@@ -39,7 +40,8 @@
     "sg-flow": "^1.0.84",
     "sg0": "^1.0.57",
     "sgsg": "^0.9.54",
-    "sprintf-js": "^1.1.2"
+    "sprintf-js": "^1.1.2",
+    "utf-8-validate": "5.0.2"
   },
   "devDependencies": {
     "ava": "^2.4.0"
