@@ -1,6 +1,6 @@
 {
   "name": "sg-config",
-  "version": "1.0.103",
+  "version": "1.0.104",
   "description": "Read configuration",
   "author": "Brian C Sparks <briancsparks@gmail.com>",
   "homepage": "https://github.com/briancsparks/ra-ecosystem#readme",
@@ -28,10 +28,10 @@
     "aws-sdk": "^2.583.0",
     "glob": "^7.1.3",
     "pkg-up": "^3.1.0",
-    "quick-merge": "^1.0.24",
+    "quick-merge": "^1.0.25",
     "read-pkg": "^5.2.0",
     "resolve-pkg": "^2.0.0",
-    "sg-clihelp": "^1.0.91"
+    "sg-clihelp": "^1.0.92"
   },
   "gitHead": "55c763905a0b5b6039ae9c1819860a00b918d958"
 }

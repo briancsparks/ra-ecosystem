@@ -1,6 +1,6 @@
 {
   "name": "sg-one",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "description": "Functions to compose other, more useful functions.",
   "main": "index.js",
   "scripts": {
