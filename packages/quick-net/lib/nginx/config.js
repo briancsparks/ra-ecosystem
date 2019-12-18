@@ -241,7 +241,7 @@ const getNginxQuicknetWebtierConfig = mod.xport(DIAG.xport({getNginxQuicknetWebt
 
       return fs.readFile(path.join(__dirname, name), 'utf8', function(err, content) {
         if (sg.ok(err, content)) {
-          entry(pack, { ...entryDefs(argv), name}, proxy_params(argv), skipSystem);
+          entry(pack, { ...entryDefs(argv), name},                                     content,                   skipSystem);
         }
 
         return next();
