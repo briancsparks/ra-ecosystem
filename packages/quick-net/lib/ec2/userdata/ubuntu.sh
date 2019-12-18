@@ -50,13 +50,7 @@ if [[ -n $INSTALL_DOCKER ]]; then
 fi
 #ZZZZ INSTALL_DOCKER
 
-
-
 npm install -g ${NODE_UTILS}
-# npm install -g -d pm2
-# npm install -g -d run-anywhere
-# npm install -g -d cli-shezargs
-# npm install -g -d quick-net
 
 
 # We like github

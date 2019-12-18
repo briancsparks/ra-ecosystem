@@ -37,7 +37,6 @@ const {
   safePathFqdn,
   addClip
 }                             = qnutils;
-var   theCommandToRun         = '';
 
 const mod                     = ra.modSquad(module, 'quickNetEc2');
 const DIAG                    = sg.DIAG(module);
@@ -119,14 +118,14 @@ const instanceBaseOpts0 = `--distro=ubuntu --classB=13 --az=d  --debug`;
 const instanceOptsTerm2 = `--distro=ubuntu --classB=13 --az=d  --Terminate --typeNum=2 --debug`;
 const instanceOptsTerm0 = `--distro=ubuntu --classB=13 --az=d  --Terminate --debug`;
 DIAG.usefulCliArgs({
-  db            : [instanceBaseOpts2, `--key=quicknetprj_demo --type=t3.micro --PrivateIpAddressX 10.13.54.8  --INSTALL_MONGODB     --INSTALL_CLIENTS --INSTALL_OPS`].join(' '),                  // 10.13.48.0/24
+  // db            : [instanceBaseOpts2, `--key=quicknetprj_demo --type=t3.micro --PrivateIpAddressX 10.13.54.8  --INSTALL_MONGODB     --INSTALL_CLIENTS --INSTALL_OPS`].join(' '),                  // 10.13.48.0/24
   util          : [instanceBaseOpts0, `--key=quicknetprj_demo --type=t3.micro --PrivateIpAddressX 10.13.54.8  --INSTALL_UTIL        --INSTALL_CLIENTS --INSTALL_OPS`].join(' '),                  // 10.13.48.0/24
-  admin         : [instanceBaseOpts2, `--key=HQ               --type=t3.nano  --PrivateIpAddressX 10.13.51.4  --INSTALL_ADMIN       --INSTALL_CLIENTS --INSTALL_USER`].join(' '),                 // 10.13.51.0/24
+  admin         : [instanceBaseOpts0, `--key=HQ               --type=t3.micro  --PrivateIpAddressX 10.13.51.4  --INSTALL_ADMIN       --INSTALL_CLIENTS --INSTALL_USER`].join(' '),                 // 10.13.51.0/24
 
   webtier       : [instanceOptsTerm0, `--key=quicknetprj_demo --type=t3.micro  --PrivateIpAddressX 10.13.48.10 --INSTALL_WEBTIER     --INSTALL_CLIENTS --INSTALL_OPS`].join(' '),                  // 10.13.48.0/24
-  worker        : [instanceOptsTerm2, `--key=quicknetprj_demo --type=t3.micro --PrivateIpAddressX 10.13.0.16  --INSTALL_WORKER      --INSTALL_CLIENTS`].join(' '),                                 // 10.13.0.0/20
-  workstation   : [instanceOptsTerm2, `--key=quicknetprj_demo --type=t3.micro --PrivateIpAddressX 10.13.0.32  --INSTALL_WORKSTATION --INSTALL_CLIENTS --INSTALL_OPS`].join(' '),                   // 10.13.0.0/20
-  workstationb  : [instanceOptsTerm2, `--key=sparksb          --type=t3.micro --PrivateIpAddressX 10.13.0.32  --INSTALL_WORKSTATION --INSTALL_CLIENTS --INSTALL_OPS`].join(' '),                   // 10.13.0.0/20
+  worker        : [instanceOptsTerm0, `--key=quicknetprj_demo --type=t3.micro --PrivateIpAddressX 10.13.0.16  --INSTALL_WORKER      --INSTALL_CLIENTS`].join(' '),                                 // 10.13.0.0/20
+  workstation   : [instanceOptsTerm0, `--key=quicknetprj_demo --type=t3.micro --PrivateIpAddressX 10.13.0.32  --INSTALL_WORKSTATION --INSTALL_CLIENTS --INSTALL_OPS`].join(' '),                   // 10.13.0.0/20
+  workstationb  : [instanceOptsTerm0, `--key=sparksb          --type=t3.micro --PrivateIpAddressX 10.13.0.32  --INSTALL_WORKSTATION --INSTALL_CLIENTS --INSTALL_OPS`].join(' '),                   // 10.13.0.0/20
 });
 
 // The last one wins. Comment out what you dont want.
@@ -266,8 +265,6 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
         }
       }
 
-      clipboardy.writeSync('');
-
       var   bootShellCommands = [
         '#!/bin/bash -ex',
         '',
@@ -277,7 +274,6 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
 
       var   InstanceId;
       var   userDataScript, mimeArchive;
-      // var   finalMessage = '';
 
 
 
@@ -320,7 +316,10 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
       const wantedIp          = getIpForInstance(argv);
       var   PrivateIpAddress  = wantedIp;
       if (awsData.index.by.PrivateIpAddress[PrivateIpAddress]) {
-        if (!sg.isnt(userTypeNum))                                       { return rax.abort(); }   /* The user wanted a specific number, wont get it */
+        if (!sg.isnt(userTypeNum)) {
+          diag.e(sg.toError('EIPNOTAVAILABLE'), `Specified type-num (${userTypeNum}), but that IP is not available (${PrivateIpAddress}).`, {userTypeNum, PrivateIpAddress});
+          return rax.abort();   /* The user wanted a specific number, wont get it */
+        }
 
         let typeNum;
         for (typeNum = 1; typeNum < 32; typeNum += 1) {
@@ -337,6 +336,18 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
       }
       hostname = getHostnameForInstance(argv);
 
+      // Read the env file, and the user-data scrip
+      var   userdataEnv = readJsonFile(envJsonFile) || {};
+      userdataEnv = { ...userdataEnv,
+        NAMESPACE     : namespace,
+        NAMESPACE_LC  : namespace.toLowerCase()
+      };
+
+      const userDataScriptFilename  = path.join(__dirname, 'userdata', `${distro}.sh`);
+      userDataScript                = fs.readFileSync(userDataScriptFilename, 'utf8');
+      userDataScript                = fixUserDataScript(userDataScript, {uniqueName, userdataOpts, userdataEnv, moreShellScript});
+
+
 
       x = 501;
 
@@ -344,33 +355,23 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
 
 
 
+
+
       return rax.__run2({result:{}}, callback, [function(my, next, last) {
 
-        // Itempotentcy -- use uniqueName so you can upsertInstance many times, and only launch once
-        if (!uniqueName)  { return next(); }
-
         // They sent in a uniqueName. See if it already exists
-        if (awsData.index.by.uniqueName[uniqueName]) {
+        if (uniqueName && awsData.index.by.uniqueName[uniqueName]) {
           my.result = {...my.result, Instance: awsData.index.by.uniqueName[uniqueName]};
           return callback(null, my);
         }
 
-        // The instance for uniqueName does not exist, continue on, and launch it.
-        return next();
-
-      }, function(my, next) {
-
         // --------------------------------------------
         // We need an AMI.
 
-        // Did the caller pass one in?
-        if (ImageId)  { return next(); }
-
-        ImageId     = ami.ImageId;
-        osVersion   = ami.osVersion;
-        return next();
-
-      }, function(my, next) {
+        if (!ImageId) {
+          ImageId     = ami.ImageId;
+          osVersion   = ami.osVersion;
+        }
 
         // We must have `ImageId` by now.
         if (rax.argErrors({ImageId}))                                                   { return rax.abort(); }
@@ -430,29 +431,6 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
 
 
 
-
-      }, function(my, next) {
-
-        // Build up the user-data script
-
-        // The env file, and the user-data script file
-        var   userdataEnv           = readJsonFile(envJsonFile) || {};
-        const shellscriptFilename   = path.join(__dirname, 'userdata', `${distro}.sh`);
-
-        userdataEnv = { ...userdataEnv,
-          NAMESPACE     : namespace,
-          NAMESPACE_LC  : namespace.toLowerCase()
-        };
-
-        // Read the user-data script file
-        calling(`fs.readFile ${shellscriptFilename}`);
-        return fs.readFile(shellscriptFilename, 'utf8', function(err, userDataScript_) {
-          if (!sg.ok(err, userDataScript_))    { return abort(err, `fail reading ${distro}`); }
-
-          // Process the user-data script
-          userDataScript  = fixUserDataScript(userDataScript_, {uniqueName, userdataOpts, userdataEnv, moreShellScript});
-          return next();
-        });
 
       }, function(my, next) {
 
@@ -670,13 +648,6 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
 
         const {PrivateIpAddress} = my.result.Instance;
 
-        theCommandToRun = `qn-bootstrap-other ${PrivateIpAddress}`;
-        // addClip([
-        //   `#for ((;;)); do ${sshix} ${PrivateIpAddress} 'whoami'; export SUCCESS="$?"; echo "$SUCCESS"; if [[ $SUCCESS == 0 ]]; then break; fi; sleep 0.4; done`,
-        //   `#${sshix} ${PrivateIpAddress} 'tail -F /var/log/cloud-init-output.log'`,
-        //   theCommandToRun,
-        // ]);
-
         bootShellCommands = [...bootShellCommands,
           'qn-hosts redis   10.13.57.8',
           'qn-hosts db      10.13.57.8',
@@ -699,8 +670,6 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
         // -------------------------------------------------------------------------------------------------------
         // The only things we still have left to do require the instance to be started.
         // Must wait for launch
-
-        // finalMessage += clipboardy.readSync();
 
         return sg.until(function(again, last, count, elapsed) {
           return describeInstances({InstanceIds:[InstanceId]}, rax.opts({abort:false}), function(err, data) {
@@ -774,14 +743,14 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
         var   bastionIp         = 'bastion.cdr0.net';
         var   targetPrivateIp   = PrivateIpAddress;
 
-        sg.debugLog(`Complete the bootstrap `, {bastionIp, targetPrivateIp, theCommand: theCommandToRun});
-        return agent.spawnit({bastionIp, targetPrivateIp, theCommand: theCommandToRun}, {}, function(err, data) {
+        var theCommand = `qn-bootstrap-other ${PrivateIpAddress}`;
+        sg.debugLog(`Complete the bootstrap `, {bastionIp, targetPrivateIp, theCommand});
+        return agent.spawnit({bastionIp, targetPrivateIp, theCommand}, {}, function(err, data) {
 
           return next();
         });
       }, function(my, next) {
 
-        // sg.debugLog(`Commands: ${finalMessage}`);
         return next();
       }]);
 
@@ -826,7 +795,7 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
           package_update: true,
           package_upgrade: true,
           // packages: ['ntp', 'tree', 'htop', 'zip', 'unzip', 'nodejs', 'yarn', 'redis-server', 'jq'],
-          packages: ['ntp', 'tree', 'htop', 'zip', 'unzip', 'nodejs', 'jq', 'silversearcher-ag', 'vim'],
+          packages: ['ntp', 'tree', 'htop', 'zip', 'unzip', 'nodejs', 'yarn', 'jq', 'silversearcher-ag', 'vim'],
           hostname,
           apt:      {
             preserve_sources_list: true,
@@ -835,13 +804,14 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
                 source: `ppa:jonathonf/vim`
               },
               "nodesource.list": {
-                key: nodesource_com_key(),
+                keyid: "68576280",
                 source: `deb https://deb.nodesource.com/node_12.x ${osVersion} main`
               },
-              // "yarn.list": {
-              //   key: yarnpkg_com_key(),
-              //   source: `deb https://dl.yarnpkg.com/debian/ stable main`
-              // }
+              "yarn.list": {
+                // key: yarnpkg_com_key(),
+                keyid: "4F77679369475BAA",
+                source: `deb https://dl.yarnpkg.com/debian/ stable main`
+              }
             }
           },
           runcmd: [
@@ -936,6 +906,7 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
               sources: {
                 "nginx.list": {
                   key: nginx_org_key(),
+                  // keyid: "ABF5BD827BD9BF62",
                   source: `deb https://nginx.org/packages/mainline/ubuntu ${osVersion} nginx`
                 }
               }
@@ -981,19 +952,19 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
           }
         });
 
-        // Install mongodb?
-        if (userdataOpts.INSTALL_MONGODB) {
-          cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
-            packages: ['mongodb-org'],
-            runcmd: [
-              "sed -i -e 's/127.0.0.1/0.0.0.0/' /etc/mongod.conf",
-              "systemctl enable mongod",
-              `echo '"INSTALL_MONGODB": true,' >> /home/ubuntu/quicknet-installed`,
-            ],
-          });
+        // // Install mongodb?
+        // if (userdataOpts.INSTALL_MONGODB) {
+        //   cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
+        //     packages: ['mongodb-org'],
+        //     runcmd: [
+        //       "sed -i -e 's/127.0.0.1/0.0.0.0/' /etc/mongod.conf",
+        //       "systemctl enable mongod",
+        //       `echo '"INSTALL_MONGODB": true,' >> /home/ubuntu/quicknet-installed`,
+        //     ],
+        //   });
 
-          sg.addKm(roles, 'db', 'mongo', 'nosql');
-        }
+        //   sg.addKm(roles, 'db', 'mongo', 'nosql');
+        // }
 
         if (userdataOpts.INSTALL_MONGO_CLIENTS) {
           cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
@@ -1126,11 +1097,6 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
         if (cloudInitData['cloud-config']) {
           let yaml = jsyaml.safeDump(cloudInitData['cloud-config'], {lineWidth: 512});
 
-          // addClip([
-          //   `Cloud-config size: ${yaml.length}`,
-          //   yaml,
-          // ]);
-
           sg.debugLog(`Cloud-config size`, {size: yaml.length});
           if (yaml.length > 16384) {
             ractx.endMessage = ractx.endMessage + `Cloud-config size is too big: ${yaml.length}`;
@@ -1150,25 +1116,7 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
     // }]);
 
   }());
-
-
-
-
-
-
-
-
-
   });
-
-
-
-
-
-
-
-
-
 }}));
 
 
@@ -1183,11 +1131,9 @@ function getSgsForInstance(argv) {
 
   // These are instance types, they come first
   if (argv.INSTALL_ADMIN)               { return ['admin']; }
-  else if (argv.INSTALL_MONGODB)        { return ['db']; }
+  // else if (argv.INSTALL_MONGODB)        { return ['db']; }
   else if (argv.INSTALL_UTIL)           { return ['util']; }
   else if (argv.INSTALL_WORKSTATION)    { return ['worker']; }
-
-  // These are features, they come second
   else if (argv.INSTALL_WEBTIER)        { return ['web']; }
   else if (argv.INSTALL_NAT)            { return ['access']; }
   else if (argv.INSTALL_WORKER)         { return ['worker']; }
@@ -1203,11 +1149,9 @@ function getTypeForInstance(argv) {
 
   // These are instance types, they come first
   if (argv.INSTALL_ADMIN)               { return 'admin'; }
-  else if (argv.INSTALL_MONGODB)        { return 'db'; }
+  // else if (argv.INSTALL_MONGODB)        { return 'db'; }
   else if (argv.INSTALL_UTIL)           { return 'util'; }
   else if (argv.INSTALL_WORKSTATION)    { return 'worker'; }
-
-  // These are features, they come second
   else if (argv.INSTALL_WEBTIER)        { return 'webtier'; }
   else if (argv.INSTALL_NAT)            { return 'access'; }
   else if (argv.INSTALL_WORKER)         { return 'worker'; }
@@ -1219,11 +1163,9 @@ function getXTypeForInstance(argv) {
 
   // These are instance types, they come first
   if (argv.INSTALL_ADMIN)               { return 'admin'; }
-  else if (argv.INSTALL_MONGODB)        { return 'db'; }
+  // else if (argv.INSTALL_MONGODB)        { return 'db'; }
   else if (argv.INSTALL_UTIL)           { return 'util'; }
   else if (argv.INSTALL_WORKSTATION)    { return 'workstation'; }
-
-  // These are features, they come second
   else if (argv.INSTALL_WEBTIER)        { return 'webtier'; }
   else if (argv.INSTALL_NAT)            { return 'access'; }
   else if (argv.INSTALL_WORKER)         { return 'worker'; }
@@ -1237,11 +1179,9 @@ function getHostnameForInstance(argv) {
 
   // These are instance types, they come first
   if (argv.INSTALL_ADMIN)               { return `admin${num}`; }
-  else if (argv.INSTALL_MONGODB)        { return `db${num}`; }
+  // else if (argv.INSTALL_MONGODB)        { return `db${num}`; }
   else if (argv.INSTALL_UTIL)           { return `util${num}`; }
   else if (argv.INSTALL_WORKSTATION)    { return `workstation${num}`; }
-
-  // These are features, they come second
   else if (argv.INSTALL_WEBTIER)        { return `web${num}`; }
   else if (argv.INSTALL_NAT)            { return `access${num}`; }
   else if (argv.INSTALL_WORKER)         { return `worker${num}`; }

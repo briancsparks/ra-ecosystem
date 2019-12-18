@@ -42,7 +42,7 @@ curl -sSL 'http://169.254.169.254/latest/dynamic/instance-identity/document' > /
   echo "}";
 )               > /home/ubuntu/quicknet-installed.json
 
-rm /home/ubuntu/quicknet-installed
+rm -f /home/ubuntu/quicknet-installed
 
 chown ubuntu:ubuntu /home/ubuntu/quicknet-installed.json
 chown ubuntu:ubuntu /home/ubuntu/quicknetinstdata.json
