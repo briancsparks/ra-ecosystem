@@ -123,7 +123,7 @@ DIAG.usefulCliArgs({
   util          : [instanceBaseOpts0, `--key=quicknetprj_demo --type=t3.micro --PrivateIpAddressX 10.13.54.8  --INSTALL_UTIL        --INSTALL_CLIENTS --INSTALL_OPS`].join(' '),                  // 10.13.48.0/24
   admin         : [instanceBaseOpts2, `--key=HQ               --type=t3.nano  --PrivateIpAddressX 10.13.51.4  --INSTALL_ADMIN       --INSTALL_CLIENTS --INSTALL_USER`].join(' '),                 // 10.13.51.0/24
 
-  webtier       : [instanceOptsTerm0, `--key=quicknetprj_demo --type=t3.nano  --PrivateIpAddressX 10.13.48.10 --INSTALL_WEBTIER     --INSTALL_CLIENTS --INSTALL_OPS`].join(' '),                  // 10.13.48.0/24
+  webtier       : [instanceOptsTerm0, `--key=quicknetprj_demo --type=t3.micro  --PrivateIpAddressX 10.13.48.10 --INSTALL_WEBTIER     --INSTALL_CLIENTS --INSTALL_OPS`].join(' '),                  // 10.13.48.0/24
   worker        : [instanceOptsTerm2, `--key=quicknetprj_demo --type=t3.micro --PrivateIpAddressX 10.13.0.16  --INSTALL_WORKER      --INSTALL_CLIENTS`].join(' '),                                 // 10.13.0.0/20
   workstation   : [instanceOptsTerm2, `--key=quicknetprj_demo --type=t3.micro --PrivateIpAddressX 10.13.0.32  --INSTALL_WORKSTATION --INSTALL_CLIENTS --INSTALL_OPS`].join(' '),                   // 10.13.0.0/20
   workstationb  : [instanceOptsTerm2, `--key=sparksb          --type=t3.micro --PrivateIpAddressX 10.13.0.32  --INSTALL_WORKSTATION --INSTALL_CLIENTS --INSTALL_OPS`].join(' '),                   // 10.13.0.0/20
@@ -277,7 +277,7 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
 
       var   InstanceId;
       var   userDataScript, mimeArchive;
-      var   finalMessage = '';
+      // var   finalMessage = '';
 
 
 
@@ -300,6 +300,7 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
       var [instances, ami, vpcs, secGroups, subnets, addresses, endpoints, tables, records] =
               [await P_instances, await P_amis, await P_vpcs, await P_secGroups, await P_subnets, await P_addresses, await P_endpoints, await P_table, await P_records];
 
+      // Parse results of all the things
       var   awsDataBlob = new sg.AwsDataBlob();
 
       awsDataBlob.addResult(instances);
@@ -315,7 +316,7 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
 
       var x = 109;
 
-
+      // Determine private IP
       const wantedIp          = getIpForInstance(argv);
       var   PrivateIpAddress  = wantedIp;
       if (awsData.index.by.PrivateIpAddress[PrivateIpAddress]) {
@@ -357,30 +358,6 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
         // The instance for uniqueName does not exist, continue on, and launch it.
         return next();
 
-        // return describeInstances(awsFilters({"tag:qn:uniqueName":[uniqueName]}), rax.opts({}), function(err, data) {
-
-        //   var   theInstance;
-        //   const count = sg.reduce(data.Reservations || [], 0, function(m0, reservations) {
-        //     return sg.reduce(reservations.Instances || [], m0, function(m, instance) {
-        //       const state = instance.State && instance.State.Name;
-        //       if (state !== 'shutting-down' && state !== 'terminated') {
-        //         theInstance = instance;
-        //         return m+1;
-        //       }
-        //       return m;
-        //     });
-        //   });
-
-        //   // If we have an instance, return it
-        //   if (count > 0) {
-        //     my.result = {...my.result, Instance: theInstance};
-        //     return callback(null, my);
-        //   }
-
-        //   // The instance for uniqueName does not exist, continue on, and launch it.
-        //   return next();
-        // });
-
       }, function(my, next) {
 
         // --------------------------------------------
@@ -392,13 +369,6 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
         ImageId     = ami.ImageId;
         osVersion   = ami.osVersion;
         return next();
-
-        // // We have to go get the AMI ourselves
-        // return getUbuntuLtsAmis({latest:true}, {}, function(err, data) {
-        //   ImageId     = data.ImageId;
-        //   osVersion   = osVersion || data.osVersion;
-        //   return next();
-        // });
 
       }, function(my, next) {
 
@@ -424,15 +394,6 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
           }
           return next();
         });
-
-
-
-
-
-
-
-
-
 
       }, function(my, next) {
 
@@ -493,386 +454,10 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
           return next();
         });
 
-
-
-
-
-
-
-
-
-
-
-
       }, function(my, next) {
-
-      //   // See other stuff for cloud-init
-      //   //
-      //   // https://cloudinit.readthedocs.io/en/latest/topics/modules.html
-      //   //
-      //   // phone_home:
-      //   // final_message:
-      //   //
-      //   //
-      //   // cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
-      //   //   fqdn: 'xyz.com',
-      //   //   hostname: 'booya-123',
-      //   //   rsyslog: [
-      //   //   ],
-      //   //   scripts: {
-      //   //     "per-boot": [
-      //   //     ],
-      //   //     "per-instance": [
-      //   //     ],
-      //   //     "per-once": [
-      //   //     ],
-      //   //     vendor: [
-      //   //     ],
-      //   //   },
-      //   // });
-
-      //   // Other stuff to install
-      //   //   Anaconda Linux: https://repo.anaconda.com/archive/Anaconda3-2019.10-Linux-x86_64.sh
-      //   //     See readme
-
-      //   // Install all the stuff we install for every instance
-      //   cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
-      //     package_update: true,
-      //     package_upgrade: true,
-      //     // packages: ['ntp', 'tree', 'htop', 'zip', 'unzip', 'nodejs', 'yarn', 'redis-server', 'jq'],
-      //     packages: ['ntp', 'tree', 'htop', 'zip', 'unzip', 'nodejs', 'jq', 'silversearcher-ag', 'vim'],
-      //     hostname,
-      //     apt:      {
-      //       preserve_sources_list: true,
-      //       sources: {
-      //         vimPpa: {
-      //           source: `ppa:jonathonf/vim`
-      //         },
-      //         "nodesource.list": {
-      //           key: nodesource_com_key(),
-      //           source: `deb https://deb.nodesource.com/node_12.x ${osVersion} main`
-      //         },
-      //         // "yarn.list": {
-      //         //   key: yarnpkg_com_key(),
-      //         //   source: `deb https://dl.yarnpkg.com/debian/ stable main`
-      //         // }
-      //       }
-      //     },
-      //     runcmd: [
-      //       `echo NAMESPACE="${namespace}" >> /etc/environment`,
-      //       `echo NAMESPACE_LC="${namespace.toLowerCase()}" >> /etc/environment`
-      //     ],
-      //   });
-
-      //   if (hostname) {
-      //     cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
-      //       runcmd: [
-      //         `echo 127.0.0.1 ${hostname} >> /etc/hosts`,
-      //       ],
-      //     });
-      //   }
-
-      //   // Workstation utils
-      //   if (userdataOpts.INSTALL_WORKSTATION) {
-      //     cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
-      //       packages: ['build-essential', 'golang-go'],
-
-      //       goPpa: {
-      //         source: `ppa:longsleep/golang-backports`
-      //       },
-      //       runcmd: [
-      //         // `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`,
-
-      //         // Not working
-      //         //`curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -o rustup; sh rustup -y`,
-      //         `echo "" >> /home/ubuntu/readme.md`,
-      //         `echo "install rust:" >> /home/ubuntu/readme.md`,
-      //         `echo "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -o rustup; sh rustup -y" >> /home/ubuntu/readme.md`,
-      //         "",
-      //         `echo '"INSTALL_WORKSTATION": true,' >> /home/ubuntu/quicknet-installed`,
-      //       ],
-      //     });
-
-      //     sg.addKm(roles, 'workstation');
-
-      //     // TODO: See also:
-      //     // https://medium.com/@patdhlk/how-to-install-go-1-9-1-on-ubuntu-16-04-ee64c073cd79   (GO)
-      //     //
-      //     // LLVM C++17 on 16.04
-      //     // https://askubuntu.com/questions/1113974/using-c17-with-clang-on-ubuntu-16-04
-      //     //
-      //     // or:
-      //     //
-      //     // apt-get install clang-format clang-tidy clang-tools clang clangd libc++-dev libc++1 libc++abi-dev libc++abi1 libclang-dev libclang1 liblldb-dev libllvm-ocaml-dev libomp-dev libomp5 lld lldb llvm-dev llvm-runtime llvm python-clang
-      //     //
-      //     // wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key|sudo apt-key add -
-      //     // # Fingerprint: 6084 F3CF 814B 57C1 CF12 EFD5 15CF 4D18 AF4F 7421
-      //     //
-      //     // deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial main
-      //     // deb-src http://apt.llvm.org/xenial/ llvm-toolchain-xenial main
-      //     // # 8
-      //     // deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-8 main
-      //     // deb-src http://apt.llvm.org/xenial/ llvm-toolchain-xenial-8 main
-      //     // # 9
-      //     // deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-9 main
-      //     // deb-src http://apt.llvm.org/xenial/ llvm-toolchain-xenial-9 main
-      //   }
-
-      //   // Install docker?
-      //   if (userdataOpts.INSTALL_DOCKER) {
-      //     cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
-      //       packages: ['docker-ce'],
-      //       apt:      {
-      //         preserve_sources_list: true,
-      //         sources: {
-      //           "docker.list": {
-      //             // key: docker_com_key(),
-      //             keyid: '9DC858229FC7DD38854AE2D88D81803C0EBFCD88',
-      //             source: `deb https://download.docker.com/linux/ubuntu ${osVersion} stable`
-      //           }
-      //         }
-      //       },
-      //       runcmd: [
-      //         `echo '"INSTALL_DOCKER": true,' >> /home/ubuntu/quicknet-installed`,
-      //       ],
-      //     });
-
-      //     sg.addKm(roles, 'docker');
-      //   }
-
-
-      //   // Install the web-tier?
-      //   if (userdataOpts.INSTALL_WEBTIER) {
-      //     cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
-      //       packages: ['nginx', 'nginx-module-njs'],
-      //       apt:      {
-      //         preserve_sources_list: true,
-      //         sources: {
-      //           "nginx.list": {
-      //             key: nginx_org_key(),
-      //             source: `deb https://nginx.org/packages/mainline/ubuntu ${osVersion} nginx`
-      //           }
-      //         }
-      //       },
-      //       runcmd: [
-      //         `echo '"INSTALL_WEBTIER": true,' >> /home/ubuntu/quicknet-installed`,
-      //       ],
-      //     });
-
-      //     sg.addKm(roles, 'webtier');
-      //   }
-
-      //   // // Install certbot?
-      //   // if (userdataOpts.INSTALL_CERTBOT) {
-      //   //   cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
-      //   //     packages: ['certbot', 'python-certbot-nginx'],
-      //   //     apt:      {
-      //   //       preserve_sources_list: true,
-      //   //       sources: {
-      //   //         certbotPpa: {
-      //   //           source: `ppa:certbot/certbot`
-      //   //         }
-      //   //       }
-      //   //     },
-      //   //     runcmd: [
-      //   //       `echo '"INSTALL_CERTBOT": true,' >> /home/ubuntu/quicknet-installed`,
-      //   //     ],
-      //   //   });
-
-      //   //   sg.addKm(roles, 'certbot');
-      //   // }
-
-      //   // Add mongodb to apt for everyone -- only install (below) if install is requested, but we want to be able to install clients
-      //   cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
-      //     apt:      {
-      //       preserve_sources_list: true,
-      //       sources: {
-      //         "mongodb-org-4.0.list": {
-      //           keyid: '9DA31620334BD75D9DCB49F368818C72E52529D4',
-      //           source: `deb https://repo.mongodb.org/apt/ubuntu ${osVersion}/mongodb-org/4.0 multiverse`
-      //         }
-      //       },
-      //     }
-      //   });
-
-      //   // Install mongodb?
-      //   if (userdataOpts.INSTALL_MONGODB) {
-      //     cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
-      //       packages: ['mongodb-org'],
-      //       runcmd: [
-      //         "sed -i -e 's/127.0.0.1/0.0.0.0/' /etc/mongod.conf",
-      //         "systemctl enable mongod",
-      //         `echo '"INSTALL_MONGODB": true,' >> /home/ubuntu/quicknet-installed`,
-      //       ],
-      //     });
-
-      //     sg.addKm(roles, 'db', 'mongo', 'nosql');
-      //   }
-
-      //   if (userdataOpts.INSTALL_MONGO_CLIENTS) {
-      //     cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
-      //       packages: ['mongodb-clients'],
-      //       runcmd: [
-      //         `echo '"INSTALL_MONGO_CLIENTS": true,' >> /home/ubuntu/quicknet-installed`,
-      //       ],
-      //     });
-      //   }
-
-      //   if (userdataOpts.INSTALL_REDIS_CLIENTS) {
-      //     cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
-      //       packages: ['redis-tools'],
-      //       runcmd: [
-      //         `echo '"INSTALL_REDIS_CLIENTS": true,' >> /home/ubuntu/quicknet-installed`,
-      //       ],
-      //     });
-      //   }
-
-      //   // Install kubectl?
-
-      //   // Like:
-      //   // $ curl -LO http://storage.googleapis.com/kubernetes-release/release/$(curl -sS http://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
-      //   // $ chmod +x ./kubectl
-      //   // $ sudo mv ./kubectl /usr/local/bin/kubectl
-      //   //
-
-      //   // If you want kops:
-      //   // $ curl -LO https://github.com/kubernetes/kops/releases/download/$(curl -s https://api.github.com/repos/kubernetes/kops/releases/latest | jq -r '.tag_name')/kops-linux-amd64
-      //   // $ chmod +x kops-linux-amd64
-      //   // $ sudo mv kops-linux-amd64 /usr/local/bin/kops
-
-      //   if (userdataOpts.INSTALL_KUBERNETES) {
-      //     cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
-      //       packages: ['kubectl'],
-      //       apt:      {
-      //         preserve_sources_list: true,
-      //         sources: {
-      //           "kubernetes.list": {
-      //             // key: kubernetes_io_key(),
-      //             keyid: '6A030B21BA07F4FB',
-      //             source: `deb https://apt.kubernetes.io/ kubernetes-${osVersion} main`
-      //           }
-      //         }
-      //       },
-      //       runcmd: [
-      //         `echo '"INSTALL_KUBERNETES": true,' >> /home/ubuntu/quicknet-installed`,
-      //       ],
-      //     });
-
-      //     sg.addKm(roles, 'k8s');
-      //   }
-
-      //   // etcd
-      //   // See https://devopscube.com/setup-etcd-cluster-linux/
-      //   //
-      //   // etcd on Docker:
-      //   //   in qn-bootstrap-nonroot
-
-      //   // Install stuff for NAT instances?
-      //   if (userdataOpts.INSTALL_NAT) {
-      //     cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
-      //       packages: ['iptables-persistent'],
-      //       runcmd: [
-      //         `echo '"INSTALL_NAT": true,' >> /home/ubuntu/quicknet-installed`,
-      //       ],
-      //     });
-
-      //     sg.addKm(roles, 'bastion' , 'nat');
-      //   }
-
-      //   // Install tools for dev-ops?
-      //   if (!userdataOpts.INSTALL_AWSCLI_NO) {
-      //     userdataOpts.INSTALL_PIP = true;
-
-      //     cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
-      //       // packages: ['python-pip'],
-      //       runcmd: [
-      //         "pip install --upgrade awscli",
-      //       ],
-      //     });
-      //   }
-
-      //   // Python-pip
-      //   if (userdataOpts.INSTALL_PIP) {
-      //     cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
-      //       packages: ['python-pip'],
-      //       runcmd: [
-      //         `echo '"INSTALL_PIP": true,' >> /home/ubuntu/quicknet-installed`,
-      //       ],
-      //     });
-      //   }
-
-      //   return next();
-
-      // }, function(my, next) {
-
-      //   // -------------------------------------------------------------------------------------------------------
-      //   // Finalize what we are going to cloud-init-ize
-
-      //   // Reboot, if required
-      //   cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
-      //     power_state: {
-      //       mode:       "reboot",
-      //       message:    "Go on without me, boys... I'm done-fer [[rebooting now]]",
-      //       // condition:  "test -f /var/run/reboot-required"
-      //       condition:  true
-      //     },
-      //     // runcmd: [
-      //     //   "sed -i -e '$aAcceptEnv TENABLE_IO_KEY' /etc/ssh/sshd_config",
-      //     //   "sed -i -e '$aAcceptEnv CLOUDSTRIKE_ID' /etc/ssh/sshd_config",
-      //     // ],
-      //   });
-
-      //   return next();
-
-      // }, function(my, next) {
-
-      //   // -------------------------------------------------------------------------------------------------------
-      //   // Build the mime-archive
-
-      //   mimeArchive = new MimeBuilder('multipart/mixed');
-
-      //   if (userDataScript) {
-      //     mimeArchive.appendChild(new MimeBuilder('text/x-shellscript')
-      //       .setContent(userDataScript)
-      //       .setHeader('content-disposition', `attachment; filename=shellscript`)
-      //       .setHeader('content-transfer-encoding', 'quoted-printable')                 /*  MUST use quoted-printable, so the lib does not use 'flowable' */
-      //     );
-      //   }
-
-      //   // write_files is erroring
-      //   // console.error(`writefiles`, sg.inspect({cloudInitData}));
-      //   delete cloudInitData['cloud-config'].write_files;
-
-      //   if (cloudInitData['cloud-config']) {
-      //     let yaml = jsyaml.safeDump(cloudInitData['cloud-config'], {lineWidth: 512});
-
-      //     // addClip([
-      //     //   `Cloud-config size: ${yaml.length}`,
-      //     //   yaml,
-      //     // ]);
-
-      //     sg.debugLog(`Cloud-config size`, {size: yaml.length});
-      //     if (yaml.length > 16384) {
-      //       ractx.endMessage = ractx.endMessage + `Cloud-config size is too big: ${yaml.length}`;
-
-      //       return callback('ETOOBIG');
-      //     }
-
-      //     mimeArchive.appendChild(new MimeBuilder('text/cloud-config')
-      //       .setContent(yaml)
-      //       .setHeader('content-transfer-encoding', 'quoted-printable')                 /*  MUST use quoted-printable, so the lib does not use 'flowable' */
-      //     );
-      //   }
 
         buildCloucInit();
         return next();
-
-
-
-
-
-
-
 
       // --------------------- runInstances, and recover from IP-already-in-use issue
 
@@ -934,127 +519,18 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
           params.PrivateIpAddress = PrivateIpAddress;
         }
 
-        return oneRun();
+        // Make the runInstances params, and launch
+        params = sg.merge(AllAwsParams, params, {ImageId, InstanceType, KeyName, SecurityGroupIds, SubnetId, MaxCount, MinCount, UserData, BlockDeviceMappings, DryRun});
+        return runInstances(params, rax.opts({abort:false}), function(err, data) {
 
-        function oneRun() {
-          // Make the runInstances params, and launch
-          params = sg.merge(AllAwsParams, params, {ImageId, InstanceType, KeyName, SecurityGroupIds, SubnetId, MaxCount, MinCount, UserData, BlockDeviceMappings, DryRun});
-          return runInstances(params, rax.opts({abort:false}), function(err, data) {
-            if (err && err.code === 'InvalidIPAddress.InUse') {
-              argv.typeNum += 1;
-
-              // ----- Re-do the hostname -----
-
-              // TODO: Put 127.0.0.1 ${hostname} into /etc/hosts in one of the scripts that runs after cloud-init
-
-              // Remove old entry in /etc/hosts (before we re-generate our hostname)
-              cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
-                runcmd: [
-                  `sed -i -e 's/127.0.0.1 ${hostname}//' /etc/hosts`,
-                ]
-              });
-
-              hostname = getHostnameForInstance(argv);
-              cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
-                hostname,
-                runcmd: [
-                  `echo 127.0.0.1 ${hostname} >> /etc/hosts`
-                ]
-              });
-
-              // ----- re-generate the MIME -----
-              redoMime();
-
-              params.PrivateIpAddress = getIpForInstance(argv);
-
-              dependentTags  = [{Key:'Name', Value:hostname}];
-              params.TagSpecifications  = [{ResourceType:'instance', Tags: [...Tags, ...(dependentTags ||[])]}];
-
-              // tries += 1;
-              // if (tries <= 12) {
-              //   return sg.setTimeout(250, oneRun);
-              // }
-
-              // Let the system assign one. Better than failing.
-              delete params.PrivateIpAddress;
-            }
-
-            if (err) {
-              return abort(err);
-            }
-
-            my.result   = {...my.result, Instance: data.Instances[0]};
-            InstanceId  = my.result.Instance.InstanceId;
-            return next();
-          });
-        }
-
-        function redoMime() {
-          mimeArchive = new MimeBuilder('multipart/mixed');
-
-          if (userDataScript) {
-            mimeArchive.appendChild(new MimeBuilder('text/x-shellscript')
-              .setContent(userDataScript)
-              .setHeader('content-disposition', `attachment; filename=shellscript`)
-              .setHeader('content-transfer-encoding', 'quoted-printable')                 /*  MUST use quoted-printable, so the lib does not use 'flowable' */
-            );
+          if (err) {
+            return abort(err);
           }
 
-          // write_files is erroring
-          // console.error(`writefiles`, sg.inspect({cloudInitData}));
-          delete cloudInitData['cloud-config'].write_files;
-
-          if (cloudInitData['cloud-config']) {
-            let yaml = jsyaml.safeDump(cloudInitData['cloud-config'], {lineWidth: 512});
-
-            // addClip([
-            //   `Cloud-config size: ${yaml.length}`,
-            //   yaml,
-            // ]);
-
-            sg.debugLog(`Cloud-config size`, {size: yaml.length});
-            if (yaml.length > 16384) {
-              ractx.endMessage = ractx.endMessage + `Cloud-config size is too big: ${yaml.length}`;
-
-              return callback('ETOOBIG');
-            }
-
-            mimeArchive.appendChild(new MimeBuilder('text/cloud-config')
-              .setContent(yaml)
-              .setHeader('content-transfer-encoding', 'quoted-printable')                 /*  MUST use quoted-printable, so the lib does not use 'flowable' */
-            );
-          }
-
-          // Build up the cloud-init userdata
-          const userdata = mimeArchive.build();
-          sg.elog(`rebuildmime=================================`, {userdataOpts, userdata, len: userdata.length});
-
-          if (userdata) {
-            UserData   = Buffer.from(userdata).toString('base64');
-          }
-
-        }
-
-        // function inc(PrivateIpAddress) {
-        //   var ip = PrivateIpAddress.split('.');
-        //   ip[3] = (+ip[3]) + 1;
-        //   return ip.join('.');
-        // }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+          my.result   = {...my.result, Instance: data.Instances[0]};
+          InstanceId  = my.result.Instance.InstanceId;
+          return next();
+        });
 
 
 
@@ -1072,7 +548,7 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
 
         return sg.__run2(next, [function(next) {
           return glob(path.join(__dirname, 'instance-help', 'usr-sbin', '*'), {}, function(err, files) {
-            diag.d('/usr/sbin files', {err, files});
+            // diag.d('/usr/sbin files', {err, files});
 
             return sg.__eachll(files, function(filename, next) {
               return copyFileToS3(filename, `${s3deployPath}/usr-sbin`, {diag}, function(err, data) {
@@ -1085,7 +561,7 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
         }, function(next) {
 
           return glob(path.join(__dirname, 'instance-help', 'home', '*'), {dot: true}, function(err, files) {
-            diag.d('/home/home files', {err, files});
+            // diag.d('/home/home files', {err, files});
 
             return sg.__eachll(files, function(filename, next) {
               return copyFileToS3(filename, `${s3deployPath}/home`, {diag}, function(err, data) {
@@ -1140,45 +616,45 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
 
 
 
-        // ------------------ api.coder-zero.net
+        // // ------------------ api.coder-zero.net
 
-        }, function(next) {
-          if (!userdataOpts.INSTALL_WEBTIER)                { return next(); }
-          if (userdataOpts.INSTALL_WEBTIER_EXTRA_NO)        { return next(); }
+        // }, function(next) {
+        //   if (!userdataOpts.INSTALL_WEBTIER)                { return next(); }
+        //   if (userdataOpts.INSTALL_WEBTIER_EXTRA_NO)        { return next(); }
 
-          const {PrivateIpAddress} = my.result.Instance;
+        //   const {PrivateIpAddress} = my.result.Instance;
 
-          // --location=/clientstart --upstream=clients --upstream-service=10.1.2.3:3001
-          const ngArgs = {
-            skipSystem          : true,
-            rpxiPort            : 3008,
-            fqdns               : 'api.coder-zero.net'.split(','),
+        //   // --location=/clientstart --upstream=clients --upstream-service=10.1.2.3:3001
+        //   const ngArgs = {
+        //     skipSystem          : true,
+        //     rpxiPort            : 3008,
+        //     fqdns               : 'api.coder-zero.net'.split(','),
 
-            reloadServer        : false,
-            type                : 'qnwebtier',
-          };
-          const fqdn                = (ngArgs.fqdns ||[])[0];
-          const fqdnPath            = safePathFqdn(fqdn);
-          my.result.fqdns           = [...(my.result.fqdns || []), fqdn];
+        //     reloadServer        : false,
+        //     type                : 'qnwebtier',
+        //   };
+        //   const fqdn                = (ngArgs.fqdns ||[])[0];
+        //   const fqdnPath            = safePathFqdn(fqdn);
+        //   my.result.fqdns           = [...(my.result.fqdns || []), fqdn];
 
-          return getNginxConfigTarball({distro, ...ngArgs}, rax.opts({}), function(err0, data) {
-            const {pack, cwd}         = data;
-            const s3packPath          = _.compact([s3deployPath, 'files', ...(cwd.split('/'))]).join('/');
-            const s3NginxConfTar      = `${s3packPath}/${fqdnPath}.tar`;
+        //   return getNginxConfigTarball({distro, ...ngArgs}, rax.opts({}), function(err0, data) {
+        //     const {pack, cwd}         = data;
+        //     const s3packPath          = _.compact([s3deployPath, 'files', ...(cwd.split('/'))]).join('/');
+        //     const s3NginxConfTar      = `${s3packPath}/${fqdnPath}.tar`;
 
-            return streamToS3({Body: pack, s3path:s3NginxConfTar, ContentType: 'application/x-tar'}, context, function(err, data) {
-              sg.debugLog(`Uploaded nginx config tarball`, {err0, cwd, s3packPath, err, data});
+        //     return streamToS3({Body: pack, s3path:s3NginxConfTar, ContentType: 'application/x-tar'}, context, function(err, data) {
+        //       sg.debugLog(`Uploaded nginx config tarball`, {err0, cwd, s3packPath, err, data});
 
-              bootShellCommands = [...bootShellCommands,
-                `qn-get-certs-from-s3 s3://quicknet/quick-net/secrets/certs/${fqdnPath}.tar`,
-                `sudo chmod -R a+rx /etc/nginx/certs/${fqdnPath}/`,
-                `qn-get-client-certs-from-s3 s3://quicknet/quick-net/secrets/certs-client/${fqdnPath}-root-client-ca.crt`,
-                `qn-untar-from-s3 ${s3NginxConfTar}`,
-              ];
+        //       bootShellCommands = [...bootShellCommands,
+        //         `qn-get-certs-from-s3 s3://quicknet/quick-net/secrets/certs/${fqdnPath}.tar`,
+        //         `sudo chmod -R a+rx /etc/nginx/certs/${fqdnPath}/`,
+        //         `qn-get-client-certs-from-s3 s3://quicknet/quick-net/secrets/certs-client/${fqdnPath}-root-client-ca.crt`,
+        //         `qn-untar-from-s3 ${s3NginxConfTar}`,
+        //       ];
 
-              return next();
-            });
-          });
+        //       return next();
+        //     });
+        //   });
 
         }]);
 
@@ -1195,11 +671,11 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
         const {PrivateIpAddress} = my.result.Instance;
 
         theCommandToRun = `qn-bootstrap-other ${PrivateIpAddress}`;
-        addClip([
-          `#for ((;;)); do ${sshix} ${PrivateIpAddress} 'whoami'; export SUCCESS="$?"; echo "$SUCCESS"; if [[ $SUCCESS == 0 ]]; then break; fi; sleep 0.4; done`,
-          `#${sshix} ${PrivateIpAddress} 'tail -F /var/log/cloud-init-output.log'`,
-          theCommandToRun,
-        ]);
+        // addClip([
+        //   `#for ((;;)); do ${sshix} ${PrivateIpAddress} 'whoami'; export SUCCESS="$?"; echo "$SUCCESS"; if [[ $SUCCESS == 0 ]]; then break; fi; sleep 0.4; done`,
+        //   `#${sshix} ${PrivateIpAddress} 'tail -F /var/log/cloud-init-output.log'`,
+        //   theCommandToRun,
+        // ]);
 
         bootShellCommands = [...bootShellCommands,
           'qn-hosts redis   10.13.57.8',
@@ -1224,7 +700,7 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
         // The only things we still have left to do require the instance to be started.
         // Must wait for launch
 
-        finalMessage += clipboardy.readSync();
+        // finalMessage += clipboardy.readSync();
 
         return sg.until(function(again, last, count, elapsed) {
           return describeInstances({InstanceIds:[InstanceId]}, rax.opts({abort:false}), function(err, data) {
@@ -1274,7 +750,7 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
         // Set the A record
         const {PublicIpAddress}       = my.result.Instance;
 
-  console.log(`launch`, [my.result.fqdns], PublicIpAddress);
+        console.log(`launch`, [my.result.fqdns], PublicIpAddress);
         if (!my.result.fqdns || my.result.fqdns.length === 0)     { return next(); }
         if (!PublicIpAddress)                                     { return next(); }
 
@@ -1298,17 +774,14 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
         var   bastionIp         = 'bastion.cdr0.net';
         var   targetPrivateIp   = PrivateIpAddress;
 
-        // `qn-bootstrap-other ${PrivateIpAddress}`,
-        var   theCommand = theCommandToRun;
-
-        sg.debugLog(`Complete the bootstrap `, {bastionIp, targetPrivateIp, theCommand});
-        return agent.spawnit({bastionIp, targetPrivateIp, theCommand}, {}, function(err, data) {
+        sg.debugLog(`Complete the bootstrap `, {bastionIp, targetPrivateIp, theCommand: theCommandToRun});
+        return agent.spawnit({bastionIp, targetPrivateIp, theCommand: theCommandToRun}, {}, function(err, data) {
 
           return next();
         });
       }, function(my, next) {
 
-        sg.debugLog(`Commands: ${finalMessage}`);
+        // sg.debugLog(`Commands: ${finalMessage}`);
         return next();
       }]);
 
@@ -1674,7 +1147,9 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
 
 
       }
-    }());
+    // }]);
+
+  }());
 
 
 

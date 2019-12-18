@@ -53,6 +53,10 @@ fi
 
 
 npm install -g ${NODE_UTILS}
+# npm install -g -ddd pm2
+# npm install -g -ddd run-anywhere
+# npm install -g -ddd cli-shezargs
+# npm install -g -ddd quick-net
 
 
 # We like github
