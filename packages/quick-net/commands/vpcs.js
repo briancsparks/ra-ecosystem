@@ -71,6 +71,13 @@ mod.xport({manageVpc: function(argv, context, callback) {
       ToPort:       65535,
       Description:  'All TCP from the data center'
     },{
+      /*GroupId*/
+      IpProtocol:   'udp',
+      CidrIp:       '10.0.0.0/8',
+      FromPort:     0,
+      ToPort:       65535,
+      Description:  'All TCP from the data center'
+    },{
       ingressGroupId: getSecurityGroupId('admin'),
       IpProtocol:   'tcp',
       FromPort:     22,
@@ -1113,6 +1120,34 @@ sgsPlus = [() => ({
     ToPort:       2380,
     Description:  'etcd'
   },{
+    /*GroupId*/
+    IpProtocol:   'tcp',
+    CidrIp:       '10.0.0.0/0',
+    FromPort:     2377,
+    ToPort:       2377,
+    Description:  'swarm mgmt'
+  },{
+    /*GroupId*/
+    IpProtocol:   'tcp',
+    CidrIp:       '10.0.0.0/0',
+    FromPort:     7946,
+    ToPort:       7946,
+    Description:  'swarm'
+  },{
+    /*GroupId*/
+    IpProtocol:   'udp',
+    CidrIp:       '10.0.0.0/0',
+    FromPort:     7946,
+    ToPort:       7946,
+    Description:  'swarm'
+  },{
+    /*GroupId*/
+    IpProtocol:   50,
+    CidrIp:       '10.0.0.0/0',
+    FromPort:     'All',
+    ToPort:       'All',
+    Description:  'swarm'
+  },{
     ingressGroupId: getSecurityGroupId('admin'),
     IpProtocol:   'tcp',
     FromPort:     22,
@@ -1148,6 +1183,34 @@ sgsPlus = [() => ({
     FromPort:     2379,
     ToPort:       2380,
     Description:  'etcd'
+  },{
+    /*GroupId*/
+    IpProtocol:   'tcp',
+    CidrIp:       '10.0.0.0/0',
+    FromPort:     2377,
+    ToPort:       2377,
+    Description:  'swarm mgmt'
+  },{
+    /*GroupId*/
+    IpProtocol:   'tcp',
+    CidrIp:       '10.0.0.0/0',
+    FromPort:     7946,
+    ToPort:       7946,
+    Description:  'swarm'
+  },{
+    /*GroupId*/
+    IpProtocol:   'udp',
+    CidrIp:       '10.0.0.0/0',
+    FromPort:     7946,
+    ToPort:       7946,
+    Description:  'swarm'
+  },{
+    /*GroupId*/
+    IpProtocol:   50,
+    CidrIp:       '10.0.0.0/0',
+    FromPort:     'All',
+    ToPort:       'All',
+    Description:  'swarm'
   },{
     ingressGroupId: getSecurityGroupId('admin'),
     IpProtocol:   'tcp',

@@ -62,10 +62,10 @@ async function getCert(argv, context) {
     if (!test('-d', params.out_dir)) {
       dg.i(`Generating cert for ${domains.join(', ')}`);
 
-      certbotStdout   = await execa.stdout(sh.which('certbot').toString(), params.params, {cwd: __dirname});
+      certbotStdout   = (await execa(sh.which('certbot').toString(), params.params, {cwd: __dirname})).stdout;
       result          = {...result, certbotStdout};
 
-      dg.d(`certbot said:`, sg.splitLn(certbotStdout));
+      dg.d(`certbot said:`, certbotStdout && sg.splitLn(certbotStdout));
     }
 
     // If we have something, pack it up and send to S3

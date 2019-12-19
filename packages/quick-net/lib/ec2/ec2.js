@@ -179,7 +179,7 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
     // INSALL_ meta packages
     if (argv.INSTALL_WORKSTATION) {
       // TODO: want nginx, do not want certs
-      argv.INSTALL_WEBTIER = argv.INSTALL_DOCKER = argv.INSTALL_KUBERNETES = argv.INSTALL_CLIENTS = true;
+      argv.INSTALL_WEBTIER = argv.INSTALL_DOCKER = argv.INSTALL_KUBERNETES = argv.INSTALL_CLIENTS = argv.INSTALL_CERTBOT = true;
 
       // _WEBTIER implies a lot. Indicate that we do not want all the extras
       argv.INSTALL_WEBTIER_EXTRA_NO = true;
@@ -189,6 +189,7 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
     argv.INSTALL_REDIS_CLIENTS  = argv.INSTALL_CLIENTS  || argv.INSTALL_REDIS_CLIENTS   || true;
     argv.INSTALL_OPS            = argv.INSTALL_USER     || argv.INSTALL_WORKSTATION     || argv.INSTALL_OPS;
     argv.INSTALL_DOCKER         = argv.INSTALL_WORKER   || argv.INSTALL_DOCKER;
+    argv.INSTALL_CERTBOT        = argv.INSTALL_WEBTIER  || argv.INSTALL_WORKSTATION     || argv.INSTALL_ADMIN;
 
     argv.INSTALL_DOCKER         = true;
 
@@ -795,7 +796,7 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
           package_update: true,
           package_upgrade: true,
           // packages: ['ntp', 'tree', 'htop', 'zip', 'unzip', 'nodejs', 'yarn', 'redis-server', 'jq'],
-          packages: ['ntp', 'tree', 'htop', 'zip', 'unzip', 'nodejs', 'yarn', 'jq', 'silversearcher-ag', 'vim'],
+          packages: ['ntp', 'tree', 'htop', 'zip', 'unzip', 'nodejs', 'yarn', 'jq', 'silversearcher-ag', 'vim', 'tmux'],
           hostname,
           apt:      {
             preserve_sources_list: true,
@@ -919,25 +920,25 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
           sg.addKm(roles, 'webtier');
         }
 
-        // // Install certbot?
-        // if (userdataOpts.INSTALL_CERTBOT) {
-        //   cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
-        //     packages: ['certbot', 'python-certbot-nginx'],
-        //     apt:      {
-        //       preserve_sources_list: true,
-        //       sources: {
-        //         certbotPpa: {
-        //           source: `ppa:certbot/certbot`
-        //         }
-        //       }
-        //     },
-        //     runcmd: [
-        //       `echo '"INSTALL_CERTBOT": true,' >> /home/ubuntu/quicknet-installed`,
-        //     ],
-        //   });
+        // Install certbot?
+        if (userdataOpts.INSTALL_CERTBOT) {
+          cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
+            packages: ['certbot', 'python-certbot-nginx'],
+            apt:      {
+              preserve_sources_list: true,
+              sources: {
+                certbotPpa: {
+                  source: `ppa:certbot/certbot`
+                }
+              }
+            },
+            runcmd: [
+              `echo '"INSTALL_CERTBOT": true,' >> /home/ubuntu/quicknet-installed`,
+            ],
+          });
 
-        //   sg.addKm(roles, 'certbot');
-        // }
+          sg.addKm(roles, 'certbot');
+        }
 
         // Add mongodb to apt for everyone -- only install (below) if install is requested, but we want to be able to install clients
         cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {

@@ -1,0 +1,24 @@
+#!/bin/bash -e
+
+SW_ITEM="$1"
+
+# ----- Anaconda for data science
+if [[ $SW_ITEM == anaconda ]]; then
+  cd /tmp
+  curl -sSL 'https://repo.anaconda.com/archive/Anaconda3-2019.10-Linux-x86_64.sh' > anaconda.sh
+  chmod +x anaconda.sh
+  ./anaconda.sh
+  exit $?
+elif [[ $SW_ITEM == "list" ]]; then
+  echo "anaconda"
+fi
+
+# ----- rust
+if [[ $SW_ITEM == rust ]]; then
+  cd /tmp
+  curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -o rustup; sh rustup -y
+  exit $?
+elif [[ $SW_ITEM == "list" ]]; then
+  echo "rust"
+fi
+
