@@ -1,0 +1,8 @@
+#!/bin/bash -e
+
+mydir="$(dirname $0)"
+
+(
+  cd $mydir
+  docker image build -t qn-certs "./assets"
+)

@@ -1,0 +1,12 @@
+#!/bin/bash -e
+
+FILENAME="$1"
+OU="$2"
+CN="$3"
+O="Coder00Zero Root CA"
+
+# -- Generate the cert / key
+openssl genrsa -out "./out/${FILENAME}.key" 4096
+openssl req -new -x509 -days 7399 -key "./out/${FILENAME}.key" -out "./out/${FILENAME}.crt" -subj "/C=US/ST=California/L=San Diego/O=${O}/OU=${OU}/CN=${CN}"
+
+

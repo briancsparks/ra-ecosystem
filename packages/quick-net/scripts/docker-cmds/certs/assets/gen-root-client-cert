@@ -1,0 +1,39 @@
+#!/bin/bash -e
+
+SUBDOMAIN="$1"
+DOMAIN_NAME="$2"
+O="Coder00Zero Root CA"
+CN="${SUBDOMAIN}.${DOMAIN_NAME}"
+
+safename="$(echo $CN | sed 's/[.]/__/g')"
+
+mkdir -p out
+
+# -- Generate the cert / key
+openssl genrsa -out "./out/${safename}-root-client-ca.key" 4096
+openssl req -new -x509 -days 7399 -key "./out/${safename}-root-client-ca.key" -out "./out/${safename}-root-client-ca.crt" -subj "/C=US/ST=California/L=San Diego/O=${O}/CN=${CN}"
+
+# Prove we did it
+openssl x509 -in "./out/${safename}-root-client-ca.crt" -text -noout
+
+# Store on S3
+aws2 s3 cp "./out/${safename}-root-client-ca.crt" s3://quicknet/quick-net/secrets/certs-client/
+aws2 s3 cp "./out/${safename}-root-client-ca.key" s3://quicknet/quick-net/secrets/certs-client/
+
+
+#
+# To generate a CA root cert for client-cert requests (i.e. for `subdomain.coder00zero.net`)
+#
+# # Build the Docker image from Cygwin:
+# $ goraqn
+# $ ./scripts/docker-cmds/certs/build
+#
+# # Run this script (gen-root-client-cert) from PowerShell:
+# > goraqn
+# > docker container run -it --rm -v "${HOME}/.aws:/root/.aws" qn-certs  gen-root-client-cert subdomain coder00zero.net
+
+
+
+
+# This is the most correctest
+# docker container run -it --rm -v "c:\Users\sparksb/.aws:/root/.aws" -v "${PWD}:/project" qn-certs  gen-root-client-cert subdomain coder00zero.net

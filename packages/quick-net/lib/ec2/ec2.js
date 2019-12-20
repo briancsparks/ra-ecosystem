@@ -189,7 +189,7 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
     argv.INSTALL_REDIS_CLIENTS  = argv.INSTALL_CLIENTS  || argv.INSTALL_REDIS_CLIENTS   || true;
     argv.INSTALL_OPS            = argv.INSTALL_USER     || argv.INSTALL_WORKSTATION     || argv.INSTALL_OPS;
     argv.INSTALL_DOCKER         = argv.INSTALL_WORKER   || argv.INSTALL_DOCKER;
-    argv.INSTALL_CERTBOT        = argv.INSTALL_WEBTIER  || argv.INSTALL_WORKSTATION     || argv.INSTALL_ADMIN;
+    argv.INSTALL_CERTBOT        = argv.INSTALL_WEBTIER  || argv.INSTALL_WORKSTATION;
 
     argv.INSTALL_DOCKER         = true;
 
@@ -234,7 +234,6 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
 
     if (argv.INSTALL_WORKER)           { sg.addKm(roles, 'worker'); }
     if (argv.INSTALL_ADMIN)            { sg.addKm(roles, 'admin'); }
-    // if (argv.INSTALL_WORKSTATION)      { sg.addKm(roles, 'workstation'); InstanceInitiatedShutdownBehavior = null; }
     if (argv.INSTALL_WORKSTATION)      { sg.addKm(roles, 'workstation'); }
 
     if (SubnetId === 'workstation')    { SubnetId = 'worker'; }
@@ -258,9 +257,6 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
     (async function() {
 
       if (!BlockDeviceMappings) {
-        // if (!rootVolumeSize)  {
-        //   return rax.abort(`Must provide BlockDeviceMappings or rootVolumeSize.`);
-        // }
         if (rootVolumeSize)  {
           BlockDeviceMappings = [{DeviceName: '/dev/sda1', Ebs:{VolumeSize: rootVolumeSize}}];
         }
