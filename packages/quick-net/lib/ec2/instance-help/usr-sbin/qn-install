@@ -2,7 +2,7 @@
 
 SW_ITEM="$1"
 
-# ----- Anaconda for data science
+# ----- Anaconda for data science ---------------------------------------------------------------------------------------------
 if [[ $SW_ITEM == anaconda ]]; then
   cd /tmp
   curl -sSL 'https://repo.anaconda.com/archive/Anaconda3-2019.10-Linux-x86_64.sh' > anaconda.sh
@@ -13,12 +13,39 @@ elif [[ $SW_ITEM == "list" ]]; then
   echo "anaconda"
 fi
 
-# ----- rust
+# ----- rust ------------------------------------------------------------------------------------------------------------------
 if [[ $SW_ITEM == rust ]]; then
   cd /tmp
   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -o rustup; sh rustup -y
   exit $?
 elif [[ $SW_ITEM == "list" ]]; then
   echo "rust"
+fi
+
+# ----- golang ------------------------------------------------------------------------------------------------------------------
+if [[ $SW_ITEM == golang ]]; then
+  cd /tmp
+  sudo apt-get install -y --no-install-recommends golang-go
+  exit $?
+elif [[ $SW_ITEM == "list" ]]; then
+  echo "golang"
+fi
+
+# ----- ansible ---------------------------------------------------------------------------------------------------------------
+if [[ $SW_ITEM == ansible ]]; then
+  cd /tmp
+
+  sudo apt-get install -y --no-install-recommends software-properties-common python-minimal virtualenv python-dev build-essential
+
+  echo "... now do:"
+  echo mkdir -p ansible
+  echo cd ansible
+  echo virtualenv venv27
+  echo source venv27/bin/activate
+  echo pip install ansible
+
+  exit $?
+elif [[ $SW_ITEM == "list" ]]; then
+  echo "ansible"
 fi
 

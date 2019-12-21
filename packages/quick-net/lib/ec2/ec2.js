@@ -179,7 +179,7 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
     // INSALL_ meta packages
     if (argv.INSTALL_WORKSTATION) {
       // TODO: want nginx, do not want certs
-      argv.INSTALL_WEBTIER = argv.INSTALL_DOCKER = argv.INSTALL_KUBERNETES = argv.INSTALL_CLIENTS = argv.INSTALL_CERTBOT = true;
+      argv.INSTALL_NGINX = argv.INSTALL_DOCKER = argv.INSTALL_KUBERNETES = argv.INSTALL_CLIENTS = argv.INSTALL_CERTBOT = true;
 
       // _WEBTIER implies a lot. Indicate that we do not want all the extras
       argv.INSTALL_WEBTIER_EXTRA_NO = true;
@@ -198,6 +198,7 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
     const uniqueName            = rax.arg(argv, 'uniqueName,unique', {required: sg.modes().production});
     var   ImageId               = rax.arg(argv, 'ImageId,image');
     var   roles                 = rax.arg(argv, 'roles,role', {required: sg.modes().production, keyMirror:true}) ||{};
+    var   features              = rax.arg(argv, 'features', {keyMirror:true}) ||{};
     var   userTypeNum           = rax.arg(argv, 'typeNum');
     var   typeNum               = rax.arg(argv, 'typeNum', {def:0, addToArgv:true});
     const distro                = rax.arg(argv, 'distro', {required:true});
@@ -466,6 +467,11 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
         if (rolesKeys.length > 0) {
           instanceName              = instanceName || rolesKeys[0];
           Tags  = [ ...Tags, {Key:'qn:roles', Value: `:${rolesKeys.join(':')}:`}];
+        }
+
+        const featuresKeys = Object.keys(features);
+        if (featuresKeys.length > 0) {
+          Tags  = [ ...Tags, {Key:'qn:features', Value: `:${featuresKeys.join(':')}:`}];
         }
 
         if (hostname || instanceName) {
@@ -758,6 +764,8 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
       // ======================================================================================================================
       function buildCloucInit() {
 
+        // dnsmasq + "hostsman" (python) === DNS server
+
         // See other stuff for cloud-init
         //
         // https://cloudinit.readthedocs.io/en/latest/topics/modules.html
@@ -791,7 +799,7 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
         cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
           package_update: true,
           package_upgrade: true,
-          // packages: ['ntp', 'tree', 'htop', 'zip', 'unzip', 'nodejs', 'yarn', 'redis-server', 'jq'],
+          // packages: ['ntp', 'tree', 'htop', 'zip', 'unzip', 'nodejs', 'yarn', 'redis-server', 'jq', 'yq'],
           packages: ['ntp', 'tree', 'htop', 'zip', 'unzip', 'nodejs', 'yarn', 'jq', 'silversearcher-ag', 'vim', 'tmux'],
           hostname,
           apt:      {
@@ -800,6 +808,9 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
               vimPpa: {
                 source: `ppa:jonathonf/vim`
               },
+              // yqPpa: {
+              //   source: `ppa:rmescandon/yq`
+              // },
               "nodesource.list": {
                 keyid: "68576280",
                 source: `deb https://deb.nodesource.com/node_12.x ${osVersion} main`
@@ -828,20 +839,13 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
         // Workstation utils
         if (userdataOpts.INSTALL_WORKSTATION) {
           cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
-            packages: ['build-essential', 'golang-go'],
+            // packages: ['build-essential', 'golang-go', 'inotify-tools', 'dnsutils', 'socat', 'telnet'],
+            packages: ['build-essential', 'inotify-tools', 'dnsutils', 'socat', 'telnet'],
 
             goPpa: {
               source: `ppa:longsleep/golang-backports`
             },
             runcmd: [
-              // `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`,
-
-              // Not working
-              //`curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -o rustup; sh rustup -y`,
-              `echo "" >> /home/ubuntu/readme.md`,
-              `echo "install rust:" >> /home/ubuntu/readme.md`,
-              `echo "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -o rustup; sh rustup -y" >> /home/ubuntu/readme.md`,
-              "",
               `echo '"INSTALL_WORKSTATION": true,' >> /home/ubuntu/quicknet-installed`,
             ],
           });
@@ -890,12 +894,13 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
             ],
           });
 
-          sg.addKm(roles, 'docker');
+          // sg.addKm(roles, 'docker');
+          sg.addKm(features, 'docker');
         }
 
 
         // Install the web-tier?
-        if (userdataOpts.INSTALL_WEBTIER) {
+        if (userdataOpts.INSTALL_WEBTIER || userdataOpts.INSTALL_NGINX) {
           cloudInitData['cloud-config'] = qm(cloudInitData['cloud-config'] || {}, {
             packages: ['nginx', 'nginx-module-njs'],
             apt:      {
@@ -913,7 +918,13 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
             ],
           });
 
-          sg.addKm(roles, 'webtier');
+          if (userdataOpts.INSTALL_WEBTIER) {
+            sg.addKm(roles, 'webtier');
+          }
+
+          if (userdataOpts.INSTALL_NGINX) {
+            sg.addKm(features, 'nginx');
+          }
         }
 
         // Install certbot?
@@ -933,7 +944,8 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
             ],
           });
 
-          sg.addKm(roles, 'certbot');
+          // sg.addKm(roles, 'certbot');
+          sg.addKm(features, 'certbot');
         }
 
         // Add mongodb to apt for everyone -- only install (below) if install is requested, but we want to be able to install clients
@@ -1012,7 +1024,8 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
             ],
           });
 
-          sg.addKm(roles, 'k8s');
+          // sg.addKm(roles, 'k8s');
+          sg.addKm(features, 'k8s');
         }
 
         // etcd

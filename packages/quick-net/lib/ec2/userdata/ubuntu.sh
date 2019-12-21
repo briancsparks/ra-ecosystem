@@ -61,14 +61,14 @@ ssh-keyscan github.azc.ext.hp.com   >> ~/.ssh/known_hosts
 
 #AAAA INSTALL_OPS
 ## ----------------------------------------------------------------------------------------------
-# If devOps, make things easier
-#if [[ -n $INSTALL_OPS ]]; then
-#  echo "Installing ops"
-#
-#  apt install -y python-pip
-#  pip install --upgrade pip
-#  pip install awscli --upgrade
-#fi
+## If devOps, make things easier
+##if [[ -n $INSTALL_OPS ]]; then
+##  echo "Installing ops"
+##
+##  apt install -y python-pip
+##  pip install --upgrade pip
+##  pip install awscli --upgrade
+##fi
 #ZZZZ INSTALL_OPS
 
 

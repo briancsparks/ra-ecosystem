@@ -25,33 +25,37 @@ git clone https://github.com/chr4/nginx.vim ~/.vim/bundle/nginx.vim
 # https://github.com/editor-bootstrap/vim-bootstrap
 
 
-# Get Node.js modules
-mkdir -p run && cd $_
+# ------------------------------------------- INSTALL_WEBTIER? -- startup nginx, rpxi handler ---------------------------------
+if [[ $INSTALL_WEBTIER == 1 ]]; then
+  # Get Node.js modules
+  mkdir -p run && cd $_
 
-# Run Anywhere
-git clone git@github.com:briancsparks/ra-ecosystem
-cd ra-ecosystem
-git checkout feature/stack
+  # Run Anywhere
+  git clone git@github.com:briancsparks/ra-ecosystem
+  cd ra-ecosystem
+  git checkout feature/stack
 
-# Webtier -----
-if which nginx; then
-  # ---- lambda-net
-  cd apps/lambda-net
-  npm i
+  # Webtier -----
+  if which nginx; then
+    # ---- lambda-net
+    cd apps/lambda-net
+    npm i
 
-  pm2 start server.js
+    pm2 start server.js
 
-  # Is nginx running?
-  if ps aux | egrep -v grep | egrep nginx; then
-    sudo nginx -t && sudo nginx -s reload
-  else
-    sudo nginx -t && sudo nginx
+    # Is nginx running?
+    if ps aux | egrep -v grep | egrep nginx; then
+      sudo nginx -t && sudo nginx -s reload
+    else
+      sudo nginx -t && sudo nginx
+    fi
+
+    tree /etc/nginx
+
+    echo "Nginx processes:"
+    ps aux | egrep -v grep | egrep nginx
   fi
 
-  tree /etc/nginx
-
-  echo "Nginx processes:"
-  ps aux | egrep -v grep | egrep nginx
 fi
 
 
