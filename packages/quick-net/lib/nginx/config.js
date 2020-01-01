@@ -16,7 +16,6 @@ const {streamToS3,
       s3ExpiringTransferPath} = require('../s3');
 var   {globalBlacklistIps}    = require('./snippets/ip-blacklist');
 const {mkS3path,
-       addClip,
        safePathFqdn,
        mkQuickNetPath}        = qnutils;
 
@@ -122,14 +121,6 @@ mod.xport(DIAG.xport({saveNginxConfigTarballToS3: function(argv, context_, callb
       // const bastionIp   = '`instance-by-role qn:roles bastion PublicIpAddress`';
       // const webtierIp   = '`instance-by-role qn:roles webtier PrivateIpAddress`';
       // const clip        = sshcmd(`ubuntu@${bastionIp}`, '"'+sshcmd(`${webtierIp}`, `'qn-untar-from-s3 ${s3deployPath}'`)+'"');
-
-      // // clipboardy.writeSync(clip);
-      // clipboardy.writeSync([
-      //   clipboardy.readSync(),
-      //   `#qnsshixx webtier 'qn-untar-from-s3 ${s3deployPath}'`
-      // ].join('\n'));
-
-      addClip([`#qnsshixx webtier 'qn-untar-from-s3 ${s3deployPath}'`]);
 
       return callback(err, data);
     });
@@ -825,10 +816,6 @@ if (https && fqdn !== 'localhost') {
                   ssl_certificate               ${ssl_certificate};
                   ssl_certificate_key           ${ssl_certificate_key};`];
 
-                  addClip([
-                    `#qnsshixx webtier 'qn-get-certs-from-s3 s3://quicknet/quick-net/secrets/certs/${fqdnPathName}.tar'`,
-                    `##qnsshixx webtier 'sudo chmod -R a+rx /etc/nginx/certs/${fqdnPathName}/'`,
-                  ]);
 }
 
                   // see: https://www.ssltrust.com.au/help/setup-guides/client-certificate-authentication
@@ -857,10 +844,6 @@ if (client) {
                   ssl_client_certificate      ${ssl_client_certificate};
                   #ssl_crl                    /etc/ssl/ca/private/ca.crl;
                   ssl_verify_client           optional;`];
-
-                  addClip([
-                    `#qnsshixx webtier 'qn-get-client-certs-from-s3 s3://quicknet/quick-net/secrets/certs-client/${fqdnPathName}-root-client-ca.crt'`
-                  ]);
 
 }
 
@@ -1085,3 +1068,4 @@ return `
 
 
 module.exports.ra_active_fn_name = DIAG.activeName;
+

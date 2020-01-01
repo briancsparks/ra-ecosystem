@@ -35,7 +35,7 @@ const {
 const {
   mkS3path,
   safePathFqdn,
-  addClip
+  // addClip
 }                             = qnutils;
 
 const mod                     = ra.modSquad(module, 'quickNetEc2');
@@ -764,7 +764,7 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
       // ======================================================================================================================
       function buildCloucInit() {
 
-        // dnsmasq + "hostsman" (python) === DNS server
+        // dnsmasq + "hostsman" (python) === DNS server or https://github.com/kevinburke/hostsfile (golang)
 
         // See other stuff for cloud-init
         //

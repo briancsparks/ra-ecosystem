@@ -17,7 +17,7 @@ var   convention              = require('../../conventions');
 const mod                     = ra.modSquad(module, 'quickNetEc2');
 var   DIAG                    = sg.DIAG(module);
 
-const {addClip}               = qnutils;
+// const {addClip}               = qnutils;
 const qm                      = quickMerge.quickMergeImmutable;
 const {stitch}                = quickMerge;
 const dg                      = DIAG.dg;
@@ -188,10 +188,10 @@ module.exports.spawnit = function(argv_, context, callback) {
 
   console.log('ssh', sshArgs);
 
-  addClip([
-    `# theCommand: ${argv.theCommand}`,
-    `#ssh ${sshArgs.map(arg => `"${arg}"`)}`,
-  ]);
+  // addClip([
+  //   `# theCommand: ${argv.theCommand}`,
+  //   `#ssh ${sshArgs.map(arg => `"${arg}"`)}`,
+  // ]);
 
   const ssh = spawn('ssh', stitch(sshArgs));
 
