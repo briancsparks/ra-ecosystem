@@ -255,6 +255,7 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
 
 
 
+    // ------------------------------------------------------------------------------------------------------------------------
     (async function() {
 
       if (!BlockDeviceMappings) {
@@ -314,11 +315,14 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
       const wantedIp          = getIpForInstance(argv);
       var   PrivateIpAddress  = wantedIp;
       if (awsData.index.by.PrivateIpAddress[PrivateIpAddress]) {
+
+        // If the caller wanted a specific IP (actually the hostname xyzNN), and it is not available, error.
         if (!sg.isnt(userTypeNum)) {
           diag.e(sg.toError('EIPNOTAVAILABLE'), `Specified type-num (${userTypeNum}), but that IP is not available (${PrivateIpAddress}).`, {userTypeNum, PrivateIpAddress});
           return rax.abort();   /* The user wanted a specific number, wont get it */
         }
 
+        // Find an unused typeNum (IP)
         let typeNum;
         for (typeNum = 1; typeNum < 32; typeNum += 1) {
           PrivateIpAddress  = getIpForInstance({...argv, typeNum});
@@ -328,6 +332,8 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
         if (typeNum !== 32) {
           argv.typeNum = typeNum;
         } else {
+
+          // The first 32 are taken... Just let the system decide.
           PrivateIpAddress = null;      /* let system decide... better than failing */
           delete argv.typeNum;
         }
@@ -355,6 +361,7 @@ mod.xport(DIAG.xport({upsertInstance: function(argv_, context_, callback) {
 
 
 
+      // All the sequential steps
       return rax.__run2({result:{}}, callback, [function(my, next, last) {
 
         // They sent in a uniqueName. See if it already exists
